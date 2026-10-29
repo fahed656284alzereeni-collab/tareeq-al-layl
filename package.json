@@ -1,0 +1,27 @@
+
+
+{
+
+  "name": "tareeq-al-layl",
+
+  "version": "1.0.0",
+
+  "description": "خادم لعبة طريق الليل للمكفوفين",
+
+  "main": "server.js",
+
+  "scripts": {
+
+    "start": "node server.js"
+
+  },
+
+  "dependencies": {
+
+    "express": "^4.21.2",
+
+    "socket.io": "^4.8.1"
+
+  }
+
+}
