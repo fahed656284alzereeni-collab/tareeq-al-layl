@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#101820">
+<title>طريق الليل — لعبة سيارات للمكفوفين</title>
+<style>
+:root{color-scheme:dark;--bg:#101820;--panel:#1b2935;--accent:#ffbd4a;--text:#f7f8fa;--muted:#c4d0da;--good:#8ce6ad;--danger:#ff8585}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(160deg,#101820,#172b37);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Tahoma,Arial,sans-serif;line-height:1.55}
+main{max-width:760px;margin:auto;padding:16px}
+h1{font-size:1.8rem;margin:8px 0 4px}
+.sub{color:var(--muted);margin:0 0 16px}
+.panel{background:var(--panel);border:1px solid #344957;border-radius:18px;padding:16px;margin:12px 0;box-shadow:0 8px 24px #0003}
+.status{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stat{background:#101b23;border-radius:12px;padding:12px}
+.stat span{display:block;color:var(--muted);font-size:.95rem}
+.stat strong{font-size:1.35rem}
+button{font:inherit;font-weight:700;color:#101820;background:var(--accent);border:0;border-radius:14px;padding:14px 12px;min-height:54px;cursor:pointer;touch-action:manipulation}
+button:focus-visible{outline:4px solid white;outline-offset:3px}
+button.secondary{background:#dce8ef}
+button.danger{background:#ff9292}
+button:disabled{opacity:.45}
+.actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:10px}
+.controls button{min-height:70px;font-size:1.1rem}
+.controls .wide{grid-column:span 3}
+#announcement{min-height:3em;font-size:1.1rem;font-weight:700}
+.small{font-size:.95rem;color:var(--muted)}
+ul{padding-right:22px}
+kbd{background:#0d141a;border:1px solid #52616b;border-radius:5px;padding:2px 6px}
+footer{color:var(--muted);font-size:.9rem;padding:12px 2px}
+@media(min-width:560px){.status{grid-template-columns:repeat(4,minmax(0,1fr))}.actions{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h1>🚘 طريق الليل</h1>
+<p class="sub">لعبة قيادة صوتية للمكفوفين — اسمع الطريق، تجنّب السيارات، واجمع النقاط.</p>
+</header>
+<section class="panel" aria-labelledby="gameStatus">
+<h2 id="gameStatus">حالة القيادة</h2>
+<div class="status" aria-live="polite">
+<div class="stat"><span>السرعة</span><strong id="speed">0 كم/س</strong></div>
+<div class="stat"><span>المسار</span><strong id="lane">الوسط</strong></div>
+<div class="stat"><span>النقاط</span><strong id="score">0</strong></div>
+<div class="stat"><span>المسافة</span><strong id="distance">0 متر</strong></div>
+</div>
+<p id="announcement" role="status" aria-live="assertive">جاهز؟ اضغط ابدأ اللعبة، وارفع صوت جهازك.</p>
+<div class="actions">
+<button id="start">ابدأ اللعبة</button>
+<button id="repeat" class="secondary">اسمع حالة الطريق</button>
+<button id="sound" class="secondary" aria-pressed="true">الصوت: مفعّل</button>
+</div>
+</section>
+<section class="panel">
+<h2>أزرار القيادة</h2>
+<p class="small">يمكن استخدام الأزرار باللمس، أو لوحة المفاتيح: الأسهم للتوجيه والسرعة، والمسافة للفرامل، وP للإيقاف المؤقت.</p>
+<div class="controls">
+<button id="left" aria-label="انعطف يسارًا">⬅ يسار</button>
+<button id="brake" class="danger" aria-label="فرامل">فرامل</button>
+<button id="right" aria-label="انعطف يمينًا">يمين ➡</button>
+<button id="accelerate" class="wide" aria-label="دعس الوقود">اضغط باستمرار للتسارع</button>
+<button id="pause" class="secondary wide">إيقاف مؤقت</button>
+</div>
+</section>
+<section class="panel">
+<h2>كيف تلعب؟</h2>
+<ul>
+<li>ابدأ اللعبة ثم استخدم التسارع لرفع السرعة.</li>
+<li>ستسمع تنبيهات صوتية عن السيارات والعوائق القادمة من اليسار أو الوسط أو اليمين.</li>
+<li>غيّر المسار لتفادي الاصطدام. الاصطدام يخصم نقاطًا ويخفّض السرعة.</li>
+<li>كلما قطعت مسافة أكثر بأمان، زادت نقاطك. اللعبة تعمل دون إنترنت بعد فتح هذا الملف.</li>
+</ul>
+<p class="small">صُممت لتكون قابلة للاستخدام مع VoiceOver وقارئات الشاشة. هذه لعبة محاكاة صوتية وليست تدريبًا حقيقيًا على القيادة.</p>
+</section>
+<footer>طريق الليل — إصدار تجريبي يعمل داخل المتصفح.</footer>
+</main>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+let running=false,paused=false,soundOn=true, speed=0,lane=1,score=0,distance=0,last=0,raf=0,obstacles=[],nextObstacle=0, audioCtx=null, lastWarning=0;
+const laneNames=['اليسار','الوسط','اليمين'];
+function say(text,urgent=false){
+ $('announcement').textContent=text;
+ if(!soundOn)return;
+ try{
+  if('speechSynthesis' in window){
+   if(urgent) speechSynthesis.cancel();
+   const u=new SpeechSynthesisUtterance(text);u.lang='ar-SA';u.rate=1.02;u.pitch=.88;
+   speechSynthesis.speak(u);
+  }
+ }catch(e){}
+}
+function audio(){
+ try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();return audioCtx}catch(e){return null}
+}
+function tone(freq=440,duration=.12,type='sine',volume=.08){
+ const c=audio();if(!c||!soundOn)return;
+ const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.value=freq;g.gain.value=volume;o.connect(g);g.connect(c.destination);o.start();g.gain.exponentialRampToValueAtTime(.001,c.currentTime+duration);o.stop(c.currentTime+duration);
+}
+function engineSound(){tone(95+speed*3,.16,'sawtooth',.035)}
+function render(){
+ $('speed').textContent=Math.round(speed)+' كم/س';
+ $('lane').textContent=laneNames[lane];
+ $('score').textContent=score;
+ $('distance').textContent=Math.floor(distance)+' متر';
+ $('start').textContent=running?'إعادة البداية':'ابدأ اللعبة';
+ $('pause').textContent=paused?'تابع القيادة':'إيقاف مؤقت';
+}
+function start(){
+ audio();if('speechSynthesis' in window)speechSynthesis.cancel();
+ running=true;paused=false;speed=0;lane=1;score=0;distance=0;obstacles=[];nextObstacle=2.5;last=performance.now();
+ say('أهلًا بك في طريق الليل. الطريق أمامك. أنت في المسار الأوسط. اضغط باستمرار على زر التسارع. انتبه للتنبيهات الصوتية.',true);
+ render();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);
+}
+function announceRoad(){
+ if(!running){say('اللعبة لم تبدأ بعد. اضغط ابدأ اللعبة.');return}
+ if(paused){say('اللعبة متوقفة مؤقتًا. اضغط تابع القيادة.');return}
+ const upcoming=obstacles.slice().sort((a,b)=>a.at-b.at).find(o=>o.at>=distance);
+ if(!upcoming)say(`أنت في المسار ${laneNames[lane]}. السرعة ${Math.round(speed)} كيلومتر في الساعة. الطريق مفتوح حاليًا.`);
+ else {const d=Math.max(0,Math.round(upcoming.at-distance));say(`تنبيه. عائق في المسار ${laneNames[upcoming.lane]} بعد ${d} متر. أنت في المسار ${laneNames[lane]}.` ,true)}
+}
+function steer(delta){
+ if(!running){say('ابدأ اللعبة أولًا.');return}
+ if(paused){say('اللعبة متوقفة مؤقتًا.');return}
+ const old=lane;lane=Math.max(0,Math.min(2,lane+delta));
+ if(old===lane){say(delta<0?'أنت في أقصى اليسار. لا يوجد مسار آخر.':'أنت في أقصى اليمين. لا يوجد مسار آخر.');tone(180,.2,'square');}
+ else{tone(delta<0?330:520,.1);say(`انتقلت إلى المسار ${laneNames[lane]}.`)}
+ render();
+}
+function accelerate(){if(!running){say('ابدأ اللعبة أولًا.');return}if(paused)return;speed=Math.min(160,speed+7);tone(160+speed*2,.08,'sawtooth',.025);render()}
+function brake(){if(!running){say('ابدأ اللعبة أولًا.');return}speed=Math.max(0,speed-18);tone(250,.15,'triangle');say(`الفرامل. السرعة الآن ${Math.round(speed)} كيلومتر في الساعة.`);render()}
+function loop(now){
+ if(!running)return;
+ const dt=Math.min(.1,(now-last)/1000||0);last=now;
+ if(!paused){
+  distance+=speed/3.6*dt;
+  score+=Math.floor(speed*dt/20);
+  if(distance>=nextObstacle){
+   const l=Math.floor(Math.random()*3);
+   obstacles.push({lane:l,at:distance+65+Math.floor(Math.random()*65),hit:false});
+   nextObstacle=distance+4+Math.random()*4;
+  }
+  for(const o of obstacles){
+   const gap=o.at-distance;
+   if(!o.hit&&gap<=9&&gap>=0&&o.lane===lane){
+    o.hit=true;speed=Math.max(0,speed-35);score=Math.max(0,score-50);tone(90,.5,'sawtooth',.13);
+    say(`اصطدام! كانت هناك سيارة في المسار ${laneNames[lane]}. خفّضنا السرعة. غيّر المسار وانتبه.`,true);
+   } else if(!o.hit&&gap<=28&&gap>26&&now-lastWarning>6500){
+    lastWarning=now;
+    say(`انتبه. سيارة أو عائق أمامك في المسار ${laneNames[o.lane]}، على بُعد نحو ${Math.round(gap)} متر.`);
+   }
+  }
+  obstacles=obstacles.filter(o=>o.at-distance>-10);
+  if(Math.floor(distance)%100===0&&distance>0&&speed>10&&now-lastWarning>8000){lastWarning=now;say('استمر. الطريق مستمر أمامك.');}
+ }
+ render();raf=requestAnimationFrame(loop);
+}
+$('start').addEventListener('click',start);
+$('repeat').addEventListener('click',announceRoad);
+$('left').addEventListener('click',()=>steer(-1));
+$('right').addEventListener('click',()=>steer(1));
+$('brake').addEventListener('click',brake);
+$('accelerate').addEventListener('pointerdown',e=>{e.preventDefault();audio();accelerate();});
+$('accelerate').addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();accelerate()}});
+$('pause').addEventListener('click',()=>{
+ if(!running){say('ابدأ اللعبة أولًا.');return}
+ paused=!paused;
+ if(paused){say('تم إيقاف اللعبة مؤقتًا.');}else{last=performance.now();say('تابعنا. أنت في المسار '+laneNames[lane]+'.');}
+ render();
+});
+$('sound').addEventListener('click',()=>{
+ soundOn=!soundOn;$('sound').textContent='الصوت: '+(soundOn?'مفعّل':'مغلق');$('sound').setAttribute('aria-pressed',String(soundOn));
+ if(!soundOn&&'speechSynthesis'in window)speechSynthesis.cancel();
+ if(soundOn){audio();say('تم تفعيل الصوت.');}
+});
+document.addEventListener('keydown',e=>{
+ if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown',' '].includes(e.key))e.preventDefault();
+ if(e.repeat)return;
+ if(e.key==='ArrowLeft')steer(-1);
+ else if(e.key==='ArrowRight')steer(1);
+ else if(e.key==='ArrowUp')accelerate();
+ else if(e.key==='ArrowDown'||e.key===' ')brake();
+ else if(e.key.toLowerCase()==='p')$('pause').click();
+});
+render();
+})();
+</script>
+</body>
+</html>
