@@ -1,0 +1,17 @@
+
+
+services:
+
+  - type: web
+
+    name: tareeq-al-layl-server
+
+    runtime: node
+
+    plan: free
+
+    buildCommand: npm install
+
+    startCommand: npm start
+
+    healthCheckPath: /
