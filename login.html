@@ -118,19 +118,9 @@
 
   <p>مرحباً بك. سجّل الدخول للمتابعة.</p>
 
-  <button id="googleButton">تسجيل الدخول باستخدام Google</button>
+  <button id="registerGoogleButton">إنشاء حساب باستخدام Google</button>
 
-  <label for="email">البريد الإلكتروني</label>
-
-  <input id="email" type="email" autocomplete="email">
-
-  <label for="password">كلمة المرور</label>
-
-  <input id="password" type="password" autocomplete="current-password">
-
-  <button id="loginButton">تسجيل الدخول</button>
-
-  <button id="registerButton">إنشاء حساب جديد</button>
+  <button id="loginGoogleButton">تسجيل الدخول باستخدام Google</button>
 
   <div id="playerNameSetup">
     <label for="playerName">اسم اللاعب الذي سيظهر للآخرين</label>
@@ -146,8 +136,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {
   getAuth, GoogleAuthProvider, indexedDBLocalPersistence, browserLocalPersistence, setPersistence,
-  signInWithPopup, signInWithRedirect, getRedirectResult,
-  signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged
+  signInWithPopup, signInWithRedirect, getRedirectResult, getAdditionalUserInfo,
+  signOut, deleteUser, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 
@@ -162,7 +152,9 @@ const app = initializeApp({
 const auth = getAuth(app);
 const db = getFirestore(app);
 const message = document.getElementById("message");
-const googleButton = document.getElementById("googleButton");
+const registerGoogleButton = document.getElementById("registerGoogleButton");
+const loginGoogleButton = document.getElementById("loginGoogleButton");
+let authMode = null;
 function showMessage(text) { message.textContent = text; }
 let activeUser = null;
 let processingUid = null;
@@ -204,15 +196,86 @@ async function continueWithUser(user) {
   }
 }
 
-async function initializeLogin() {
+async function handleGoogleCredential(result, mode) {
+  const user = result.user;
+  const isNewUser = Boolean(getAdditionalUserInfo(result)?.isNewUser);
+  const profileRef = doc(db, "users", user.uid);
+  const existingProfile = await getDoc(profileRef);
+
+  if (mode === "register" && !isNewUser && existingProfile.exists()) {
+    await signOut(auth);
+    showMessage("هذا الحساب مسجل مسبقاً. اختر تسجيل الدخول باستخدام Google.");
+    return;
+  }
+
+  if (mode === "login" && isNewUser && !existingProfile.exists()) {
+    try { await deleteUser(user); } catch (_) { await signOut(auth); }
+    showMessage("لا يوجد حساب سابق بهذا البريد. اختر إنشاء حساب باستخدام Google أولاً.");
+    return;
+  }
+
+  if (mode === "register" && isNewUser) {
+    await setDoc(profileRef, {
+      uid: user.uid, email: user.email || "", displayName: user.displayName || "",
+      photoURL: user.photoURL || "", accountCreatedAt: serverTimestamp(),
+      emailVerified: Boolean(user.emailVerified), updatedAt: serverTimestamp()
+    }, { merge: true });
+    showMessage("تم إنشاء حسابك بنجاح. بريد Google موثّق، وسيتم فتح إعداد اسم اللاعب.");
+  } else {
+    await saveProfile(user);
+    showMessage("تم تسجيل الدخول إلى حسابك.");
+  }
+  await continueWithUser(user);
+}
+
+async function startGoogleAuth(mode) {
+  authMode = mode;
+  try { sessionStorage.setItem("tareeqGoogleAuthMode", mode); } catch (_) {}
+  registerGoogleButton.disabled = true;
+  loginGoogleButton.disabled = true;
   try {
+    showMessage(mode === "register" ? "جارٍ إنشاء حسابك باستخدام Google." : "جارٍ التحقق من حسابك لدى Google.");
+    await setPersistence(auth, indexedDBLocalPersistence).catch(() => setPersistence(auth, browserLocalPersistence));
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isAppleMobile) {
+      await signInWithRedirect(auth, provider);
+      return;
+    }
     try {
-      await setPersistence(auth, indexedDBLocalPersistence);
-    } catch (storageError) {
-      await setPersistence(auth, browserLocalPersistence);
+      const result = await signInWithPopup(auth, provider);
+      await handleGoogleCredential(result, mode);
+    } catch (error) {
+      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(error.code)) {
+        await signInWithRedirect(auth, provider);
+        return;
+      }
+      throw error;
     }
   } catch (error) {
-    showMessage("تعذر تفعيل حفظ جلسة الدخول على الجهاز. رمز الخطأ: " + (error.code || "unknown"));
+    registerGoogleButton.disabled = false;
+    loginGoogleButton.disabled = false;
+    const code = error.code || "unknown";
+    const messages = {
+      "auth/unauthorized-domain": "نطاق الموقع غير مصرح به في Firebase.",
+      "auth/operation-not-allowed": "تسجيل Google غير مفعّل في Firebase.",
+      "auth/network-request-failed": "تعذر الاتصال بالإنترنت. حاول مرة أخرى."
+    };
+    showMessage((messages[code] || "تعذر إكمال العملية باستخدام Google.") + " رمز الخطأ: " + code);
+  }
+}
+
+registerGoogleButton.addEventListener("click", () => startGoogleAuth("register"));
+loginGoogleButton.addEventListener("click", () => startGoogleAuth("login"));
+
+async function initializeLogin() {
+  try {
+    await setPersistence(auth, indexedDBLocalPersistence);
+  } catch (_) {
+    try { await setPersistence(auth, browserLocalPersistence); } catch (error) {
+      showMessage("تعذر تفعيل حفظ جلسة الدخول. رمز الخطأ: " + (error.code || "unknown"));
+    }
   }
 
   onAuthStateChanged(auth, user => {
@@ -220,15 +283,19 @@ async function initializeLogin() {
       activeUser = null;
       handledUid = null;
       processingUid = null;
-      return;
     }
-    continueWithUser(user);
   });
 
   try {
     const result = await getRedirectResult(auth);
-    if (result && result.user) continueWithUser(result.user);
+    if (result && result.user) {
+      let mode = "login";
+      try { mode = sessionStorage.getItem("tareeqGoogleAuthMode") || "login"; sessionStorage.removeItem("tareeqGoogleAuthMode"); } catch (_) {}
+      await handleGoogleCredential(result, mode);
+    }
   } catch (error) {
+    registerGoogleButton.disabled = false;
+    loginGoogleButton.disabled = false;
     showMessage("فشل إكمال تسجيل Google. رمز الخطأ: " + (error.code || "unknown"));
   }
 }
@@ -286,23 +353,6 @@ googleButton.addEventListener("click", async () => {
     };
     showMessage((messages[code] || "تعذر تسجيل الدخول باستخدام Google.") + " رمز الخطأ: " + code);
   }
-});
-
-document.getElementById("loginButton").addEventListener("click", async () => {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  if (!email || !password) { showMessage("أدخل البريد الإلكتروني وكلمة المرور."); return; }
-  try { await signInWithEmailAndPassword(auth, email, password); }
-  catch (error) { showMessage("فشل تسجيل الدخول. رمز الخطأ: " + (error.code || "unknown")); }
-});
-
-document.getElementById("registerButton").addEventListener("click", async () => {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value;
-  if (!email || !password) { showMessage("أدخل البريد الإلكتروني وكلمة المرور."); return; }
-  if (password.length < 6) { showMessage("كلمة المرور يجب أن تكون 6 أحرف على الأقل."); return; }
-  try { await createUserWithEmailAndPassword(auth, email, password); }
-  catch (error) { showMessage("تعذر إنشاء الحساب. رمز الخطأ: " + (error.code || "unknown")); }
 });
 
 initializeLogin();
