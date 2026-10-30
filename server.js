@@ -273,15 +273,19 @@ io.on("connection", socket => {
       const fromUid = String(data.fromUid || "").trim();
       const accepted = data.accept === true;
       const ref = requestRef(socket.data.uid, fromUid);
-      const request = await ref.get();
-      if (!request.exists) throw new Error("طلب الصداقة غير موجود.");
+      if (!fromUid || fromUid === socket.data.uid) throw new Error("طلب الصداقة غير صالح.");
       if (accepted) {
-        const batch = admin.firestore().batch();
-        batch.set(friendshipRef(socket.data.uid, fromUid), { createdAt: admin.firestore.FieldValue.serverTimestamp() });
-        batch.set(friendshipRef(fromUid, socket.data.uid), { createdAt: admin.firestore.FieldValue.serverTimestamp() });
-        batch.delete(ref);
-        await batch.commit();
+        await admin.firestore().runTransaction(async transaction => {
+          const request = await transaction.get(ref);
+          if (!request.exists) throw new Error("طلب الصداقة غير موجود أو تمت معالجته.");
+          const createdAt = admin.firestore.FieldValue.serverTimestamp();
+          transaction.set(friendshipRef(socket.data.uid, fromUid), { createdAt });
+          transaction.set(friendshipRef(fromUid, socket.data.uid), { createdAt });
+          transaction.delete(ref);
+        });
       } else {
+        const request = await ref.get();
+        if (!request.exists) throw new Error("طلب الصداقة غير موجود أو تمت معالجته.");
         await ref.delete();
       }
       if (typeof reply === "function") reply({ success: true, message: accepted ? "تم قبول طلب الصداقة." : "تم رفض الطلب." });
@@ -293,6 +297,7 @@ io.on("connection", socket => {
   socket.on("removeFriend", async (data = {}, reply) => {
     try {
       const otherUid = String(data.uid || "").trim();
+      if (!otherUid || otherUid === socket.data.uid) throw new Error("حساب الصديق غير صالح.");
       const batch = admin.firestore().batch();
       batch.delete(friendshipRef(socket.data.uid, otherUid));
       batch.delete(friendshipRef(otherUid, socket.data.uid));
@@ -481,14 +486,34 @@ io.on("connection", socket => {
       if (typeof reply === "function") reply({ success: false, message: "اللاعب غير متصل حاليا." });
       return;
     }
-    room.invited.add(targetUid);
-    target.emit("roomInvitation", {
-      roomId: code,
-      roomName: room.name,
-      inviterName: socket.data.playerName,
-      privateRoom: room.privateRoom
+    if ([...room.players.values()].some(player => player.uid === targetUid) || room.invited.has(targetUid)) {
+      if (typeof reply === "function") reply({ success: false, message: "اللاعب موجود في الطاولة أو أُرسلت له دعوة بالفعل." });
+      return;
+    }
+    friendshipRef(socket.data.uid, targetUid).get().then(friendship => {
+      if (!friendship.exists) {
+        if (typeof reply === "function") reply({ success: false, message: "يمكن دعوة الأصدقاء فقط إلى الطاولة الخاصة." });
+        return;
+      }
+      // Re-check room and recipient after the asynchronous friendship lookup.
+      if (getRoom(code) !== room || room.host !== socket.id || !target.connected) {
+        if (typeof reply === "function") reply({ success: false, message: "تعذر إرسال الدعوة؛ تحقق من حالة الطاولة واللاعب." });
+        return;
+      }
+      room.invited.add(targetUid);
+      target.emit("roomInvitation", {
+        roomId: code,
+        roomName: room.name,
+        inviterName: socket.data.playerName,
+        privateRoom: room.privateRoom
+      });
+      if (typeof reply === "function") reply({ success: true });
+    }).catch(() => {
+      if (typeof reply === "function") reply({ success: false, message: "تعذر التحقق من الصداقة." });
     });
-    if (typeof reply === "function") reply({ success: true });
+    return;
+    /* invitation delivery is performed after friendship verification */
+
   });
 
   socket.on("acceptRoomInvitation", (data = {}, reply) => {
