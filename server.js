@@ -168,7 +168,12 @@ io.on("connection", socket => {
   });
 
   socket.on("createRoom", (data = {}, reply) => {
-
+    const requestedRoomName = String(data.name || "").trim().slice(0, 60);
+    const requestedPlayerName = String(data.playerName || "").trim().slice(0, 30);
+    if (!requestedRoomName || !requestedPlayerName) {
+      if (typeof reply === "function") reply({ success: false, message: "أدخل اسم اللاعب واسم الطاولة أولا." });
+      return;
+    }
     leaveCurrentRoom(socket);
 
     let code;
@@ -228,7 +233,11 @@ io.on("connection", socket => {
   });
 
   socket.on("joinRoom", (data = {}, reply) => {
-
+    const joiningName = String(data.name || data.playerName || "").trim().slice(0, 30);
+    if (!joiningName) {
+      if (typeof reply === "function") reply({ success: false, message: "اسم اللاعب مطلوب." });
+      return;
+    }
     const code = String(data.roomId || data.code || "").trim().toUpperCase();
 
     const room = getRoom(code);
