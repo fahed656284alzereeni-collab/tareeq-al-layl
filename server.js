@@ -167,6 +167,84 @@ io.on("connection", socket => {
     if (typeof reply === "function") reply(onlinePlayers());
   });
 
+  const usersRef = admin.firestore().collection("users");
+  const friendshipRef = (uid, otherUid) => usersRef.doc(uid).collection("friends").doc(otherUid);
+  const requestRef = (uid, otherUid) => usersRef.doc(uid).collection("friendRequests").doc(otherUid);
+
+  socket.on("sendFriendRequest", async (data = {}, reply) => {
+    try {
+      const targetUid = String(data.targetUid || "").trim();
+      if (!targetUid || targetUid === socket.data.uid) throw new Error("طلب صداقة غير صالح.");
+      const targetProfile = await usersRef.doc(targetUid).get();
+      if (!targetProfile.exists) throw new Error("الحساب غير موجود.");
+      const existing = await friendshipRef(socket.data.uid, targetUid).get();
+      if (existing.exists) throw new Error("هذا اللاعب ضمن قائمة أصدقائك.");
+      await requestRef(targetUid, socket.data.uid).set({
+        fromUid: socket.data.uid, fromName: socket.data.playerName,
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      const target = connectedUsers.get(targetUid);
+      if (target) target.emit("friendRequestReceived", { fromUid: socket.data.uid, fromName: socket.data.playerName });
+      if (typeof reply === "function") reply({ success: true, message: "تم إرسال طلب الصداقة." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر إرسال الطلب." });
+    }
+  });
+
+  socket.on("getFriendData", async reply => {
+    try {
+      const [friendsSnap, requestsSnap] = await Promise.all([
+        usersRef.doc(socket.data.uid).collection("friends").get(),
+        usersRef.doc(socket.data.uid).collection("friendRequests").get()
+      ]);
+      const friends = await Promise.all(friendsSnap.docs.map(async d => {
+        const p = await usersRef.doc(d.id).get();
+        return { uid: d.id, name: p.exists ? String(p.data().playerName || "اسم غير متوفر") : "اسم غير متوفر", online: connectedUsers.has(d.id) };
+      }));
+      const requests = requestsSnap.docs.map(d => ({ uid: d.id, name: String(d.data().fromName || "لاعب") }));
+      if (typeof reply === "function") reply({ success: true, friends, requests });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: "تعذر تحميل الأصدقاء." });
+    }
+  });
+
+  socket.on("respondFriendRequest", async (data = {}, reply) => {
+    try {
+      const fromUid = String(data.fromUid || "").trim();
+      const accepted = data.accept === true;
+      const ref = requestRef(socket.data.uid, fromUid);
+      const request = await ref.get();
+      if (!request.exists) throw new Error("طلب الصداقة غير موجود.");
+      if (accepted) {
+        const batch = admin.firestore().batch();
+        batch.set(friendshipRef(socket.data.uid, fromUid), { createdAt: admin.firestore.FieldValue.serverTimestamp() });
+        batch.set(friendshipRef(fromUid, socket.data.uid), { createdAt: admin.firestore.FieldValue.serverTimestamp() });
+        batch.delete(ref);
+        await batch.commit();
+      } else {
+        await ref.delete();
+      }
+      if (typeof reply === "function") reply({ success: true, message: accepted ? "تم قبول طلب الصداقة." : "تم رفض الطلب." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تنفيذ الطلب." });
+    }
+  });
+
+  socket.on("removeFriend", async (data = {}, reply) => {
+    try {
+      const otherUid = String(data.uid || "").trim();
+      const batch = admin.firestore().batch();
+      batch.delete(friendshipRef(socket.data.uid, otherUid));
+      batch.delete(friendshipRef(otherUid, socket.data.uid));
+      await batch.commit();
+      if (typeof reply === "function") reply({ success: true, message: "تمت إزالة الصديق." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: "تعذر إزالة الصديق." });
+    }
+  });
+
+
+
   socket.on("getPublicRooms", reply => {
 
     if (typeof reply === "function") {
