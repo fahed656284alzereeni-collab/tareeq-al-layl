@@ -160,11 +160,11 @@ io.on("connection", socket => {
 
     const room = {
 
-      name: String(data.name || "طاولة طريق الليل").slice(0, 50),
+      name: String(data.name || "").trim().slice(0, 50),
 
       host: socket.id,
 
-      privateRoom: false,
+      privateRoom: Boolean(data.privateRoom),
 
       started: false,
 
@@ -176,7 +176,7 @@ io.on("connection", socket => {
 
       id: socket.id,
 
-      name: String(data.playerName || data.namePlayer || "المالك").slice(0, 30)
+      name: String(data.playerName || data.namePlayer || "").trim().slice(0, 30)
 
     });
 
@@ -208,7 +208,7 @@ io.on("connection", socket => {
 
   socket.on("joinRoom", (data = {}, reply) => {
 
-    const code = String(data.code || "").trim().toUpperCase();
+    const code = String(data.roomId || data.code || "").trim().toUpperCase();
 
     const room = getRoom(code);
 
@@ -229,7 +229,7 @@ io.on("connection", socket => {
 
     }
 
-    if (room.privateRoom) {
+    if (room.privateRoom && !room.invited?.has(socket.id)) {
 
       if (typeof reply === "function") {
 
@@ -253,7 +253,7 @@ io.on("connection", socket => {
 
       id: socket.id,
 
-      name: String(data.name || "لاعب").slice(0, 30)
+      name: String(data.name || "").trim().slice(0, 30)
 
     });
 
