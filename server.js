@@ -194,7 +194,8 @@ io.on("connection", socket => {
 
       started: false,
 
-      players: new Map(),\n      invited: new Set()
+      players: new Map(),
+      invited: new Set()
 
     };
 
