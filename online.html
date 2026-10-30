@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html lang="ar" dir="rtl">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>طريق الليل - الطاولات</title>
+
+<style>
+
+body{font-family:Arial,sans-serif;background:#101820;color:white;padding:18px;line-height:1.8}
+
+h1,h2{text-align:center}
+
+section{background:#1d2b36;padding:15px;margin:14px 0;border-radius:12px}
+
+input,button{font-size:18px;padding:12px;margin:6px 0;width:100%;box-sizing:border-box;border-radius:8px}
+
+input{background:white;color:black;border:1px solid #aaa}
+
+button{background:#176b58;color:white;border:0}
+
+button:focus,input:focus{outline:3px solid #ffd166}
+
+#rooms button{background:#29465b}
+
+#messages{height:180px;overflow:auto;background:#0b1218;padding:10px}
+
+.notice{color:#ffd166}
+
+</style>
+
+</head>
+
+<body>
+
+<h1>طريق الليل</h1>
+
+<p>لعبة قيادة جماعية للمكفوفين</p>
+
+<section>
+
+<h2>بيانات اللاعب</h2>
+
+<label for="playerName">اسم اللاعب</label>
+
+<input id="playerName" value="لاعب">
+
+</section> 
+<section>
+
+<h2>إنشاء طاولة جديدة</h2>
+
+<label for="roomName">اسم الطاولة</label>
+
+<input id="roomName" value="طاولة طريق الليل">
+
+<button onclick="createRoom()">إنشاء طاولة عامة</button>
+
+<button onclick="createPrivateRoom()">إنشاء طاولة خاصة</button>
+
+</section>
+
+<section>
+
+<h2>الطاولات العامة</h2>
+
+<button onclick="loadRooms()">تحديث قائمة الطاولات</button>
+
+<div id="rooms" aria-live="polite">جاري الاتصال...</div>
+
+</section>
+
+<section>
+
+<h2>الانضمام إلى طاولة</h2>
+
+<label for="roomCode">رمز الطاولة</label>
+
+<input id="roomCode" autocomplete="off">
+
+<button onclick="joinRoom()">انضمام</button>
+
+</section>
+
+<section>
+
+<h2>الطاولة الحالية</h2>
+
+<p id="status" aria-live="polite">لم تنضم إلى طاولة بعد</p>
+
+<button onclick="togglePrivacy()">تغيير خصوصية الطاولة</button>
+
+<button onclick="leaveRoom()">مغادرة الطاولة</button>
+
+<h2>اللاعبون</h2>
+
+<div id="players" aria-live="polite"></div>
+
+</section>
+
+<section>
+
+<h2>المحادثة الكتابية</h2>
+
+<div id="messages" aria-live="polite"></div>
+ <label for="message">اكتب رسالتك</label>
+
+<input id="message">
+
+<button onclick="sendMessage()">إرسال الرسالة</button>
+
+</section>
+
+<p id="notice" class="notice" role="status" aria-live="assertive"></p>
+
+<script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+
+<script>
+
+const SERVER="https://tareeq-al-layl-server.onrender.com";
+
+const socket=io(SERVER);
+
+let currentRoom="";
+
+let isHost=false;
+
+let isPrivate=false;
+
+const el=id=>document.getElementById(id);
+
+function say(t){el("notice").textContent=t;}
+
+socket.on("connect",()=>{
+
+say("تم الاتصال بالخادم");
+
+loadRooms();
+
+});
+
+socket.on("connect_error",()=>say("تعذر الاتصال بالخادم"));
+
+socket.on("publicRooms",showRooms);
+
+socket.on("playersUpdate",showPlayers);
+
+socket.on("roomPrivacy",data=>{
+
+isPrivate=data.privateRoom;
+
+say(isPrivate?"الطاولة خاصة":"الطاولة عامة");
+
+});
+
+socket.on("chatMessage",data=>{
+
+const p=document.createElement("p");
+
+p.textContent=data.name+": "+data.message;
+
+el("messages").appendChild(p);
+
+});
+ socket.on("systemMessage",say);
+
+function playerName(){
+
+return el("playerName").value.trim()||"لاعب";
+
+}
+
+function createRoom(){
+
+makeRoom(false);
+
+}
+
+function createPrivateRoom(){
+
+makeRoom(true);
+
+}
+
+function makeRoom(privateMode){
+
+socket.emit("createRoom",{
+
+name:el("roomName").value.trim()||"طاولة طريق الليل",
+
+playerName:playerName()
+
+},r=>{
+
+if(!r.success){say("تعذر إنشاء الطاولة");return;}
+
+currentRoom=r.code;
+
+isHost=true;
+
+if(privateMode){
+
+socket.emit("setRoomPrivacy",{privateRoom:true},()=>{});
+
+}
+
+el("roomCode").value=r.code;
+
+el("status").textContent="أنت مالك الطاولة. رمزها: "+r.code;
+
+say("تم إنشاء الطاولة. رمزها: "+r.code);
+
+});
+
+}
+
+function loadRooms(){
+
+socket.emit("getPublicRooms",showRooms);
+
+}
+
+function showRooms(list){
+
+const area=el("rooms");
+
+area.replaceChildren();
+
+if(!list||!list.length){
+
+area.textContent="لا توجد طاولات عامة حاليا";
+
+return;
+
+}
+
+list.forEach(room=>{
+
+const b=document.createElement("button");
+
+b.textContent=room.name+"، عدد اللاعبين: "+room.playerCount+"، الرمز: "+room.code;
+
+b.onclick=()=>{
+
+el("roomCode").value=room.code;
+
+joinRoom();
+
+};
+
+area.appendChild(b);
+
+});
+
+}
+
+function joinRoom(){
+
+const code=el("roomCode").value.trim().toUpperCase();
+
+if(!code){say("اكتب رمز الطاولة");return;}
+
+socket.emit("joinRoom",{code,name:playerName()},r=>{
+
+if(!r.success){say(r.message);return;}
+
+currentRoom=r.code;
+
+isHost=false;
+
+el("status").textContent="انضممت إلى الطاولة. الرمز: "+r.code;
+
+say("تم الانضمام بنجاح");
+
+});
+
+}
+
+function togglePrivacy(){
+
+if(!currentRoom){say("انضم إلى طاولة أولا");return;}
+
+if(!isHost){say("تغيير الخصوصية متاح لمالك الطاولة فقط");return;}
+
+socket.emit("setRoomPrivacy",{privateRoom:!isPrivate},r=>{
+
+if(r.success)say(r.privateRoom?"أصبحت الطاولة خاصة":"أصبحت الطاولة عامة");
+
+else say(r.message);
+
+});
+
+}
+
+function showPlayers(players){
+
+const area=el("players");
+
+area.replaceChildren();
+
+if(!players||!players.length){
+
+area.textContent="لا يوجد لاعبون";
+
+return;
+
+}
+
+players.forEach(p=>{
+
+const line=document.createElement("p");
+
+line.textContent=p.name+(p.host?"، مالك الطاولة":"");
+
+area.appendChild(line);
+
+});
+
+}
+
+function sendMessage(){
+
+const message=el("message").value.trim();
+
+if(!currentRoom){say("انضم إلى طاولة أولا");return;}
+
+if(!message){say("اكتب رسالة أولا");return;}
+
+socket.emit("chatMessage",message);
+
+el("message").value="";
+
+}
+
+function leaveRoom(){
+
+if(!currentRoom){say("لست داخل طاولة");return;}
+
+socket.emit("leaveRoom");
+
+currentRoom="";
+
+isHost=false;
+
+el("status").textContent="غادرت الطاولة";
+
+el("players").textContent="";
+
+say("تمت مغادرة الطاولة");
+
+loadRooms();
+
+}
+
+</script>
+
+</body>
+
+</html>
