@@ -36,6 +36,13 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 #micButton.off{background:#8b2525}
 
+
+#menuToggle{width:auto;padding:12px 18px;background:#29465b}
+#sideMenu{background:#182631;border:1px solid #526575;border-radius:12px;padding:14px;margin:12px 0}
+#sideMenu[hidden],.account-panel[hidden]{display:none}
+#sideMenu button{margin:5px 0}
+.account-panel{border:2px solid #607789}
+.account-panel h2{text-align:right}
 </style>
 
 </head>
@@ -43,32 +50,34 @@ button:focus,input:focus{outline:3px solid #ffd166}
 <body>
 
 <h1>طريق الليل</h1>
+<button id="menuToggle" type="button" aria-expanded="false" aria-controls="sideMenu">فتح القائمة الجانبية</button>
+<nav id="sideMenu" aria-label="القائمة الرئيسية" hidden>
+  <button type="button" id="profileNav">الملف الشخصي</button>
+  <button type="button" id="settingsNav">الإعدادات</button>
+  <button type="button" id="closeMenu">إغلاق القائمة</button>
+</nav>
+<section id="profilePanel" class="account-panel" hidden aria-labelledby="profileHeading">
+  <h2 id="profileHeading">الملف الشخصي</h2>
+  <p id="profileSummary" aria-live="polite">جارٍ تحميل بيانات الحساب...</p>
+  <label for="playerName">اسم اللاعب</label>
+  <input id="playerName" value="" autocomplete="nickname" maxlength="30" required>
+  <button onclick="savePlayerName()">حفظ اسم اللاعب</button>
+</section>
+<section id="settingsPanel" class="account-panel" hidden aria-labelledby="settingsHeading">
+  <h2 id="settingsHeading">الإعدادات</h2>
+  <label for="themeChoice">مظهر اللعبة</label>
+  <select id="themeChoice">
+    <option value="system">حسب إعدادات الجهاز</option>
+    <option value="dark">داكن</option>
+    <option value="light">فاتح</option>
+  </select>
+  <button onclick="saveTheme()">حفظ المظهر</button>
+  <button onclick="logoutAccount()">تسجيل الخروج</button>
+</section>
 
 <p>لعبة قيادة جماعية للمكفوفين</p>
 
-<section>
-<h2>الملف الشخصي والإعدادات</h2>
-<p id="profileSummary" aria-live="polite">الحساب مسجل الدخول</p>
-<label for="themeChoice">مظهر اللعبة</label>
-<select id="themeChoice">
-<option value="system">حسب إعدادات الجهاز</option>
-<option value="dark">داكن</option>
-<option value="light">فاتح</option>
-</select>
-<button onclick="saveTheme()">حفظ المظهر</button>
-<button onclick="logoutAccount()">تسجيل الخروج</button>
-</section>
-
-<section>
-
-<h2>بيانات اللاعب</h2>
-
-<label for="playerName">اسم اللاعب</label>
-
-<input id="playerName" value="" autocomplete="nickname" maxlength="30" required>
-<button onclick="savePlayerName()">حفظ اسم اللاعب</button>
-
-</section>
+<section><h2>ابدأ اللعب</h2><p>استخدم القائمة الجانبية للوصول إلى الملف الشخصي والإعدادات.</p></section>
 
 <section>
 
@@ -257,6 +266,44 @@ const peers=new Map();
 const el=id=>document.getElementById(id);
 
 function say(t){el("notice").textContent=t;}
+
+const menuToggle=el("menuToggle"), sideMenu=el("sideMenu");
+function closeAccountPanels(){
+  el("profilePanel").hidden=true;
+  el("settingsPanel").hidden=true;
+}
+menuToggle.addEventListener("click",()=>{
+  const open=sideMenu.hidden;
+  sideMenu.hidden=!open;
+  menuToggle.setAttribute("aria-expanded",String(open));
+  menuToggle.textContent=open?"إغلاق القائمة الجانبية":"فتح القائمة الجانبية";
+  if(open) el("profileNav").focus();
+});
+el("closeMenu").addEventListener("click",()=>{
+  sideMenu.hidden=true;
+  menuToggle.setAttribute("aria-expanded","false");
+  menuToggle.textContent="فتح القائمة الجانبية";
+  menuToggle.focus();
+});
+el("profileNav").addEventListener("click",()=>{
+  closeAccountPanels();
+  el("profilePanel").hidden=false;
+  sideMenu.hidden=true;
+  menuToggle.setAttribute("aria-expanded","false");
+  menuToggle.textContent="فتح القائمة الجانبية";
+  el("profileHeading").focus();
+});
+el("settingsNav").addEventListener("click",()=>{
+  closeAccountPanels();
+  el("settingsPanel").hidden=false;
+  sideMenu.hidden=true;
+  menuToggle.setAttribute("aria-expanded","false");
+  menuToggle.textContent="فتح القائمة الجانبية";
+  el("settingsHeading").focus();
+});
+el("themeChoice").value=localStorage.getItem("tareeqTheme")||"system";
+applyTheme(el("themeChoice").value);
+
 
 socket.on("connect",()=>{
 
