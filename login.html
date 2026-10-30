@@ -152,6 +152,10 @@ import {
 
   GoogleAuthProvider,
 
+  browserLocalPersistence,
+
+  setPersistence,
+
   signInWithRedirect,
 
   getRedirectResult,
@@ -208,29 +212,11 @@ function showMessage(text) {
 
 }
 
-getRedirectResult(auth)
-
-  .then((result) => {
-
-    if (result && result.user) {
-
-      showMessage("تم استلام تسجيل الدخول من Google. جارٍ تجهيز الحساب.");
-
-    }
-
-  })
-
-  .catch((error) => {
-
-    showMessage(
-
-      "فشل تسجيل الدخول عبر Google. رمز الخطأ: " +
-
-      (error.code || "unknown")
-
-    );
-
-  });
+// Redirect errors are reported here; successful sign-in is handled once below.
+getRedirectResult(auth).catch((error) => {
+  console.error("Google redirect sign-in failed:", error.code || error.message);
+  showMessage("فشل تسجيل الدخول عبر Google. رمز الخطأ: " + (error.code || "unknown"));
+});
 
 async function saveProfile(user) {
 
@@ -271,8 +257,23 @@ async function continueWithUser(user) {
   }
 }
 
+let processingUid = null;
+let completedUid = null;
+
 onAuthStateChanged(auth, async (user) => {
-  if (user) await continueWithUser(user);
+  if (!user) {
+    processingUid = null;
+    completedUid = null;
+    return;
+  }
+  if (processingUid === user.uid || completedUid === user.uid) return;
+  processingUid = user.uid;
+  try {
+    await continueWithUser(user);
+    completedUid = user.uid;
+  } finally {
+    processingUid = null;
+  }
 });
 
 document.getElementById("savePlayerNameButton").addEventListener("click", async () => {
@@ -298,27 +299,24 @@ document.getElementById("savePlayerNameButton").addEventListener("click", async 
 });
 
 document.getElementById("googleButton").addEventListener("click", async () => {
-
   try {
-
-    showMessage("جارٍ تحويلك إلى Google.");
-
+    showMessage("جارٍ تجهيز تسجيل الدخول عبر Google.");
+    await setPersistence(auth, browserLocalPersistence);
     const provider = new GoogleAuthProvider();
-
+    provider.setCustomParameters({ prompt: "select_account" });
+    showMessage("سيتم تحويلك إلى Google لاختيار الحساب.");
     await signInWithRedirect(auth, provider);
-
   } catch (error) {
-
-    showMessage(
-
-      "تعذر بدء تسجيل الدخول. رمز الخطأ: " +
-
-      (error.code || "unknown")
-
-    );
-
+    console.error("Could not start Google sign-in:", error.code || error.message);
+    const code = error.code || "unknown";
+    const messages = {
+      "auth/unauthorized-domain": "هذا النطاق غير مضاف إلى النطاقات المسموح بها في Firebase Authentication.",
+      "auth/operation-not-allowed": "تسجيل الدخول باستخدام Google غير مفعّل في Firebase Authentication.",
+      "auth/operation-not-supported-in-this-environment": "بيئة المتصفح لا تدعم التحويل إلى Google.",
+      "auth/network-request-failed": "تعذر الاتصال. تحقق من الإنترنت ثم حاول مجدداً."
+    };
+    showMessage(messages[code] || ("تعذر بدء تسجيل الدخول. رمز الخطأ: " + code));
   }
-
 });
 
 document.getElementById("loginButton").addEventListener("click", async () => {
