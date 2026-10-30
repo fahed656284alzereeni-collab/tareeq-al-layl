@@ -435,7 +435,11 @@ io.on("connection", socket => {
       if (typeof reply === "function") reply({ success: false, message: "فقط مالك الطاولة يستطيع إرسال الدعوات." });
       return;
     }
-    if (!room.privateRoom) {\n      if (typeof reply === "function") reply({ success: false, message: "الدعوات المباشرة مخصصة للطاولات الخاصة." });\n      return;\n    }\n    if (!targetUid || targetUid === socket.data.uid || !target || !target.connected) {
+    if (!room.privateRoom) {
+      if (typeof reply === "function") reply({ success: false, message: "الدعوات المباشرة مخصصة للطاولات الخاصة." });
+      return;
+    }
+    if (!targetUid || targetUid === socket.data.uid || !target || !target.connected) {
       if (typeof reply === "function") reply({ success: false, message: "اللاعب غير متصل حاليا." });
       return;
     }
@@ -637,7 +641,11 @@ io.on("connection", socket => {
   });
 
   socket.on("disconnect", () => {
-    if (connectedUsers.get(socket.data.uid) === socket) {\n      connectedUsers.delete(socket.data.uid);\n      io.emit("onlinePlayers", [...connectedUsers.entries()].map(([uid, client]) => ({ uid, name: client.data.playerName })));\n    }\n    leaveCurrentRoom(socket);
+    if (connectedUsers.get(socket.data.uid) === socket) {
+      connectedUsers.delete(socket.data.uid);
+      io.emit("onlinePlayers", [...connectedUsers.entries()].map(([uid, client]) => ({ uid, name: client.data.playerName })));
+    }
+    leaveCurrentRoom(socket);
 
   });
 
