@@ -159,6 +159,7 @@ function showMessage(text) { message.textContent = text; }
 let activeUser = null;
 let processingUid = null;
 let handledUid = null;
+let redirectCheckFinished = false;
 
 async function saveProfile(user) {
   await setDoc(doc(db, "users", user.uid), {
@@ -283,6 +284,15 @@ async function initializeLogin() {
       activeUser = null;
       handledUid = null;
       processingUid = null;
+      return;
+    }
+
+    // On iPhone, Firebase may restore the redirected Google session
+    // after getRedirectResult has completed. Handle that late event too.
+    if (redirectCheckFinished && !handledUid && !processingUid) {
+      registerGoogleButton.disabled = false;
+      loginGoogleButton.disabled = false;
+      continueWithUser(user);
     }
   });
 
@@ -295,10 +305,18 @@ async function initializeLogin() {
     } else if (auth.currentUser) {
       await continueWithUser(auth.currentUser);
     }
+    redirectCheckFinished = true;
+    if (auth.currentUser && !handledUid && !processingUid) {
+      await continueWithUser(auth.currentUser);
+    }
   } catch (error) {
+    redirectCheckFinished = true;
     registerGoogleButton.disabled = false;
     loginGoogleButton.disabled = false;
     showMessage("فشل إكمال تسجيل Google. رمز الخطأ: " + (error.code || "unknown"));
+    if (auth.currentUser && !handledUid && !processingUid) {
+      await continueWithUser(auth.currentUser);
+    }
   }
 }
 
