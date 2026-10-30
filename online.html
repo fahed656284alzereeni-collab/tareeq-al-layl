@@ -32,6 +32,10 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 .notice{color:#ffd166}
 
+#micButton{background:#176b58;font-weight:bold}
+
+#micButton.off{background:#8b2525}
+
 </style>
 
 </head>
@@ -50,7 +54,8 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 <input id="playerName" value="لاعب">
 
-</section> 
+</section>
+
 <section>
 
 <h2>إنشاء طاولة جديدة</h2>
@@ -102,13 +107,29 @@ button:focus,input:focus{outline:3px solid #ffd166}
 <div id="players" aria-live="polite"></div>
 
 </section>
+ <section>
+
+<h2>المحادثة الصوتية</h2>
+
+<p id="voiceStatus" role="status" aria-live="polite">الميكروفون مغلق</p>
+
+<button id="micButton" class="off" aria-pressed="false" onclick="toggleMicrophone()">
+
+تشغيل الميكروفون
+
+</button>
+
+<div id="remoteAudio"></div>
+
+</section>
 
 <section>
 
 <h2>المحادثة الكتابية</h2>
 
 <div id="messages" aria-live="polite"></div>
- <label for="message">اكتب رسالتك</label>
+
+<label for="message">اكتب رسالتك</label>
 
 <input id="message">
 
@@ -132,6 +153,14 @@ let isHost=false;
 
 let isPrivate=false;
 
+let localStream=null;
+
+let microphoneOn=false;
+
+let players=[];
+
+const peers=new Map();
+
 const el=id=>document.getElementById(id);
 
 function say(t){el("notice").textContent=t;}
@@ -144,11 +173,23 @@ loadRooms();
 
 });
 
-socket.on("connect_error",()=>say("تعذر الاتصال بالخادم"));
+socket.on("connect_error",()=>{
+
+say("تعذر الاتصال بالخادم");
+
+});
 
 socket.on("publicRooms",showRooms);
 
-socket.on("playersUpdate",showPlayers);
+socket.on("playersUpdate",list=>{
+
+players=list||[];
+
+showPlayers(players);
+
+syncVoicePeers();
+
+});
 
 socket.on("roomPrivacy",data=>{
 
@@ -167,7 +208,8 @@ p.textContent=data.name+": "+data.message;
 el("messages").appendChild(p);
 
 });
- socket.on("systemMessage",say);
+
+socket.on("systemMessage",say);
 
 function playerName(){
 
@@ -175,17 +217,9 @@ return el("playerName").value.trim()||"لاعب";
 
 }
 
-function createRoom(){
+function createRoom(){makeRoom(false);}
 
-makeRoom(false);
-
-}
-
-function createPrivateRoom(){
-
-makeRoom(true);
-
-}
+function createPrivateRoom(){makeRoom(true);}
 
 function makeRoom(privateMode){
 
@@ -204,8 +238,7 @@ currentRoom=r.code;
 isHost=true;
 
 if(privateMode){
-
-socket.emit("setRoomPrivacy",{privateRoom:true},()=>{});
+ socket.emit("setRoomPrivacy",{privateRoom:true},()=>{});
 
 }
 
@@ -274,8 +307,7 @@ currentRoom=r.code;
 isHost=false;
 
 el("status").textContent="انضممت إلى الطاولة. الرمز: "+r.code;
-
-say("تم الانضمام بنجاح");
+ say("تم الانضمام بنجاح");
 
 });
 
@@ -297,13 +329,13 @@ else say(r.message);
 
 }
 
-function showPlayers(players){
+function showPlayers(list){
 
 const area=el("players");
 
 area.replaceChildren();
 
-if(!players||!players.length){
+if(!list||!list.length){
 
 area.textContent="لا يوجد لاعبون";
 
@@ -311,7 +343,7 @@ return;
 
 }
 
-players.forEach(p=>{
+list.forEach(p=>{
 
 const line=document.createElement("p");
 
@@ -337,15 +369,335 @@ el("message").value="";
 
 }
 
+/* المحادثة الصوتية */
+
+function updateMicButton(){
+
+const button=el("micButton");
+ button.setAttribute("aria-pressed",String(microphoneOn));
+
+if(microphoneOn){
+
+button.textContent="إيقاف الميكروفون";
+
+button.classList.remove("off");
+
+el("voiceStatus").textContent="الميكروفون يعمل الآن";
+
+}else{
+
+button.textContent="تشغيل الميكروفون";
+
+button.classList.add("off");
+
+el("voiceStatus").textContent="الميكروفون مغلق";
+
+}
+
+}
+
+async function toggleMicrophone(){
+
+if(!currentRoom){
+
+say("يجب الانضمام إلى طاولة أولا");
+
+return;
+
+}
+
+if(microphoneOn){
+
+microphoneOn=false;
+
+if(localStream){
+
+localStream.getAudioTracks().forEach(track=>track.enabled=false);
+
+}
+
+updateMicButton();
+
+say("تم إيقاف الميكروفون");
+
+return;
+
+}
+
+try{
+
+if(!localStream){
+
+localStream=await navigator.mediaDevices.getUserMedia({audio:true});
+
+}
+
+localStream.getAudioTracks().forEach(track=>track.enabled=true);
+
+microphoneOn=true;
+
+updateMicButton();
+
+for(const pc of peers.values()){
+
+const sender=pc.getSenders().find(s=>s.track&&s.track.kind==="audio");
+
+if(sender){
+
+await sender.replaceTrack(localStream.getAudioTracks()[0]);
+
+}else{
+
+const transceiver=pc.getTransceivers().find(t=>t.receiver.track.kind==="audio");
+
+if(transceiver)await transceiver.sender.replaceTrack(localStream.getAudioTracks()[0]);
+
+}
+
+}
+
+say("الميكروفون يعمل. يستطيع اللاعبون سماعك");
+
+}catch(error){
+
+microphoneOn=false;
+
+updateMicButton();
+
+say("تعذر تشغيل الميكروفون. تحقق من إذن استخدام المايك");
+
+}
+
+}
+
+function createPeer(peerId){
+
+if(peers.has(peerId))return peers.get(peerId);
+
+const pc=new RTCPeerConnection({
+
+iceServers:[
+
+{urls:"stun:stun.l.google.com:19302"}
+
+]
+
+});
+
+const audioTransceiver=pc.addTransceiver("audio",{direction:"sendrecv"});
+
+if(localStream&&microphoneOn){
+
+audioTransceiver.sender.replaceTrack(localStream.getAudioTracks()[0]);
+
+}
+
+pc.onicecandidate=event=>{
+
+if(event.candidate){
+
+socket.emit("voiceSignal",{
+
+target:peerId,
+
+signal:{type:"candidate",candidate:event.candidate}
+
+});
+
+}
+
+};
+
+pc.ontrack=event=>{
+
+let audio=document.getElementById("audio-"+peerId);
+ if(!audio){
+
+audio=document.createElement("audio");
+
+audio.id="audio-"+peerId;
+
+audio.autoplay=true;
+
+audio.controls=true;
+
+audio.setAttribute("aria-label","صوت لاعب من الطاولة");
+
+el("remoteAudio").appendChild(audio);
+
+}
+
+audio.srcObject=event.streams[0];
+
+audio.play().catch(()=> {
+
+el("voiceStatus").textContent="اضغط تشغيل الصوت إذا لم تسمع اللاعبين";
+
+});
+
+};
+
+pc.onconnectionstatechange=()=>{
+
+if(pc.connectionState==="failed"||pc.connectionState==="closed"){
+
+removePeer(peerId);
+
+}
+
+};
+
+peers.set(peerId,pc);
+
+return pc;
+
+}
+
+async function syncVoicePeers(){
+
+if(!currentRoom)return;
+
+const others=players.filter(p=>p.id&&p.id!==socket.id);
+
+const activeIds=new Set(others.map(p=>p.id));
+
+for(const id of peers.keys()){
+
+if(!activeIds.has(id))removePeer(id);
+
+}
+
+for(const player of others){
+
+const id=player.id;
+
+if(peers.has(id))continue;
+
+const pc=createPeer(id);
+
+if(socket.id.localeCompare(id)<0){
+
+try{
+
+const offer=await pc.createOffer();
+
+await pc.setLocalDescription(offer);
+ socket.emit("voiceSignal",{
+
+target:id,
+
+signal:{type:"description",description:pc.localDescription}
+
+});
+
+}catch(error){
+
+say("تعذر بدء الاتصال الصوتي مع أحد اللاعبين");
+
+}
+
+}
+
+}
+
+}
+
+socket.on("voiceSignal",async data=>{
+
+try{
+
+const peerId=data.from;
+
+const signal=data.signal;
+
+if(!peerId||!signal)return;
+
+const pc=createPeer(peerId);
+
+if(signal.type==="description"){
+
+await pc.setRemoteDescription(signal.description);
+
+if(signal.description.type==="offer"){
+
+const answer=await pc.createAnswer();
+
+await pc.setLocalDescription(answer);
+
+socket.emit("voiceSignal",{
+
+target:peerId,
+
+signal:{type:"description",description:pc.localDescription}
+
+});
+
+}
+
+}else if(signal.type==="candidate"){
+
+await pc.addIceCandidate(signal.candidate);
+
+}
+
+}catch(error){
+
+say("حدث خطأ في الاتصال الصوتي");
+
+}
+
+});
+
+function removePeer(id){
+
+const pc=peers.get(id);
+
+if(pc){
+
+pc.close();
+
+peers.delete(id);
+
+}
+
+const audio=document.getElementById("audio-"+id);
+
+if(audio)audio.remove();
+
+}
+
+function closeVoice(){ 
+for(const id of peers.keys())removePeer(id);
+
+if(localStream){
+
+localStream.getTracks().forEach(track=>track.stop());
+
+localStream=null;
+
+}
+
+microphoneOn=false;
+
+updateMicButton();
+
+el("remoteAudio").replaceChildren();
+
+}
+
 function leaveRoom(){
 
 if(!currentRoom){say("لست داخل طاولة");return;}
+
+closeVoice();
 
 socket.emit("leaveRoom");
 
 currentRoom="";
 
 isHost=false;
+
+players=[];
 
 el("status").textContent="غادرت الطاولة";
 
@@ -356,6 +708,8 @@ say("تمت مغادرة الطاولة");
 loadRooms();
 
 }
+
+updateMicButton();
 
 </script>
 
