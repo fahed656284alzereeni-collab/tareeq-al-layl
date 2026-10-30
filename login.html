@@ -229,41 +229,36 @@ async function handleGoogleCredential(result, mode) {
   await continueWithUser(user);
 }
 
-async function startGoogleAuth(mode) {
+function startGoogleAuth(mode) {
   authMode = mode;
-  try { sessionStorage.setItem("tareeqGoogleAuthMode", mode); } catch (_) {}
   registerGoogleButton.disabled = true;
   loginGoogleButton.disabled = true;
-  try {
-    showMessage(mode === "register" ? "جارٍ إنشاء حسابك باستخدام Google." : "جارٍ التحقق من حسابك لدى Google.");
-    await setPersistence(auth, indexedDBLocalPersistence).catch(() => setPersistence(auth, browserLocalPersistence));
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
-    // Prefer popup on iPhone to avoid cross-domain redirect session loss.
-    // Persistence is configured during page initialization, before the user taps.
-    try {
-      const result = await signInWithPopup(auth, provider);
-      try { sessionStorage.removeItem("tareeqGoogleAuthMode"); } catch (_) {}
+  showMessage(mode === "register" ? "جارٍ فتح Google لإنشاء حسابك." : "جارٍ فتح Google لتسجيل الدخول.");
+
+  // Call the popup directly from the tap handler. Do not await persistence
+  // first, because that can lose the iPhone browser's user-gesture context.
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+
+  signInWithPopup(auth, provider)
+    .then(async result => {
       await handleGoogleCredential(result, mode);
-    } catch (error) {
-      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/cancelled-popup-request"].includes(error.code)) {
-        showMessage("تعذر فتح نافذة Google المنبثقة. سنحاول تسجيل الدخول بطريقة التحويل.");
-        await signInWithRedirect(auth, provider);
-        return;
-      }
-      throw error;
-    }
-  } catch (error) {
-    registerGoogleButton.disabled = false;
-    loginGoogleButton.disabled = false;
-    const code = error.code || "unknown";
-    const messages = {
-      "auth/unauthorized-domain": "نطاق الموقع غير مصرح به في Firebase.",
-      "auth/operation-not-allowed": "تسجيل Google غير مفعّل في Firebase.",
-      "auth/network-request-failed": "تعذر الاتصال بالإنترنت. حاول مرة أخرى."
-    };
-    showMessage((messages[code] || "تعذر إكمال العملية باستخدام Google.") + " رمز الخطأ: " + code);
-  }
+    })
+    .catch(error => {
+      registerGoogleButton.disabled = false;
+      loginGoogleButton.disabled = false;
+      const code = error.code || "unknown";
+      const messages = {
+        "auth/unauthorized-domain": "نطاق الموقع غير مصرح به في Firebase.",
+        "auth/operation-not-allowed": "تسجيل Google غير مفعّل في Firebase.",
+        "auth/popup-blocked": "المتصفح منع نافذة Google. جرّب فتح الموقع في Safari مباشرة.",
+        "auth/popup-closed-by-user": "أُغلقت نافذة Google قبل إكمال تسجيل الدخول.",
+        "auth/cancelled-popup-request": "تم إلغاء طلب تسجيل Google. حاول مرة أخرى.",
+        "auth/network-request-failed": "تعذر الاتصال بالإنترنت. حاول مرة أخرى.",
+        "auth/operation-not-supported-in-this-environment": "بيئة المتصفح لا تدعم نافذة تسجيل Google."
+      };
+      showMessage((messages[code] || "تعذر إكمال تسجيل Google.") + " رمز الخطأ: " + code);
+    });
 }
 
 registerGoogleButton.addEventListener("click", () => startGoogleAuth("register"));
