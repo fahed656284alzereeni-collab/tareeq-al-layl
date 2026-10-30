@@ -32,7 +32,11 @@ io.use(async (socket, next) => {
     const token = socket.handshake.auth && socket.handshake.auth.token;
     if (!token) return next(new Error("AUTH_REQUIRED"));
     const decoded = await admin.auth().verifyIdToken(token);
+    const profile = await admin.firestore().collection("users").doc(decoded.uid).get();
+    const playerName = profile.exists ? String(profile.data().playerName || "").trim().slice(0, 30) : "";
+    if (!playerName) return next(new Error("PLAYER_PROFILE_REQUIRED"));
     socket.data.uid = decoded.uid;
+    socket.data.playerName = playerName;
     next();
   } catch (error) {
     next(new Error("AUTH_INVALID"));
@@ -169,7 +173,7 @@ io.on("connection", socket => {
 
   socket.on("createRoom", (data = {}, reply) => {
     const requestedRoomName = String(data.name || "").trim().slice(0, 60);
-    const requestedPlayerName = String(data.playerName || "").trim().slice(0, 30);
+    const requestedPlayerName = socket.data.playerName;
     if (!requestedRoomName || !requestedPlayerName) {
       if (typeof reply === "function") reply({ success: false, message: "أدخل اسم اللاعب واسم الطاولة أولا." });
       return;
@@ -234,7 +238,7 @@ io.on("connection", socket => {
   });
 
   socket.on("joinRoom", (data = {}, reply) => {
-    const joiningName = String(data.name || data.playerName || "").trim().slice(0, 30);
+    const joiningName = socket.data.playerName;
     if (!joiningName) {
       if (typeof reply === "function") reply({ success: false, message: "اسم اللاعب مطلوب." });
       return;
