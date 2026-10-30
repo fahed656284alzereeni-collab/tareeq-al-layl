@@ -149,6 +149,7 @@ onAuthStateChanged(auth, async user => {
     const profile = await getDoc(doc(db, "users", user.uid));
     const name = profile.exists() ? String(profile.data().playerName || "").trim() : "";
     if (!name) { location.replace("login.html"); return; }
+    window.getGameToken = () => auth.currentUser.getIdToken();
     const field = document.getElementById("playerName");
     field.value = name;
     field.readOnly = true;
@@ -166,7 +167,7 @@ onAuthStateChanged(auth, async user => {
 
 const SERVER="https://tareeq-al-layl-server.onrender.com";
 
-const socket=io(SERVER);
+const socket=io(SERVER,{auth: async callback => { try { callback({token: await window.getGameToken()}); } catch (error) { callback({token: ""}); } }});
 
 let currentRoom="";
 
