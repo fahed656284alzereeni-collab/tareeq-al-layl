@@ -293,7 +293,7 @@ function showOnlinePlayers(list){
     const label=document.createElement("p");
     label.textContent=player.name+"، متصل الآن";
     row.appendChild(label);
-    if(currentRoom&&isHost&&isPrivate){
+    {
       const friend=document.createElement("button");
       friend.textContent="إرسال طلب صداقة إلى "+player.name;
       friend.onclick=()=>socket.emit("sendFriendRequest",{targetUid:player.uid},result=>say(result.message));
