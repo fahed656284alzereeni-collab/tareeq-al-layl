@@ -160,6 +160,7 @@ onAuthStateChanged(auth, async user => {
     const name = profile.exists() ? String(profile.data().playerName || "").trim() : "";
     if (!name) { location.replace("login.html"); return; }
     window.getGameToken = () => auth.currentUser.getIdToken();
+    window.currentUserUid = user.uid;
     const field = document.getElementById("playerName");
     field.value = name;
     field.readOnly = true;
