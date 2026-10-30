@@ -94,7 +94,7 @@
 
     }
 
-    #message {
+    #playerNameSetup { display:none; margin-top:18px; }\n\n    #message {
 
       margin-top: 18px;
 
@@ -130,7 +130,7 @@
 
   <button id="registerButton">إنشاء حساب جديد</button>
 
-  <p id="message" role="status" aria-live="polite"></p>
+  <div id="playerNameSetup">\n    <label for="playerName">اسم اللاعب الذي سيظهر للآخرين</label>\n    <input id="playerName" maxlength="30" autocomplete="nickname">\n    <button id="savePlayerNameButton">حفظ الاسم والدخول إلى اللعبة</button>\n  </div>\n\n  <p id="message" role="status" aria-live="polite"></p>
 
 </main>
 
@@ -240,32 +240,51 @@ async function saveProfile(user) {
 
 }
 
-onAuthStateChanged(auth, async (user) => {
+let activeUser = null;
 
-  if (!user) return;
-
+async function continueWithUser(user) {
+  activeUser = user;
   try {
-
-    showMessage("تم تسجيل الدخول. جارٍ حفظ الملف الشخصي.");
-
+    showMessage("جارٍ التحقق من ملفك الشخصي.");
     await saveProfile(user);
-
-    showMessage("تم تسجيل الدخول بنجاح. جارٍ فتح اللعبة.");
-
+    const profileSnap = await getDoc(doc(db, "users", user.uid));
+    const playerName = profileSnap.exists() ? String(profileSnap.data().playerName || "").trim() : "";
+    if (!playerName) {
+      document.getElementById("playerNameSetup").style.display = "block";
+      document.getElementById("playerName").focus();
+      showMessage("هذه أول مرة تدخل فيها. اكتب اسم اللاعب قبل دخول اللعبة.");
+      return;
+    }
     window.location.href = "online.html";
-
   } catch (error) {
-
-    showMessage(
-
-      "تم تسجيل الدخول لكن تعذر حفظ الملف الشخصي. رمز الخطأ: " +
-
-      (error.code || error.message || "unknown")
-
-    );
-
+    showMessage("تعذر تجهيز الملف الشخصي. رمز الخطأ: " + (error.code || error.message || "unknown"));
   }
+}
 
+onAuthStateChanged(auth, async (user) => {
+  if (user) await continueWithUser(user);
+});
+
+document.getElementById("savePlayerNameButton").addEventListener("click", async () => {
+  const playerName = document.getElementById("playerName").value.trim();
+  if (!activeUser) { showMessage("سجّل الدخول أولاً."); return; }
+  if (!playerName) { showMessage("اسم اللاعب مطلوب قبل المتابعة."); document.getElementById("playerName").focus(); return; }
+  if (playerName.length > 30) { showMessage("الاسم يجب ألا يتجاوز 30 حرفاً."); return; }
+  try {
+    await setDoc(doc(db, "users", activeUser.uid), {
+      uid: activeUser.uid,
+      email: activeUser.email || "",
+      displayName: activeUser.displayName || "",
+      photoURL: activeUser.photoURL || "",
+      playerName,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    showMessage("تم حفظ اسم اللاعب. جارٍ فتح اللعبة.");
+    window.location.href = "online.html";
+  } catch (error) {
+    showMessage("تعذر حفظ الاسم. رمز الخطأ: " + (error.code || error.message || "unknown"));
+  }
 });
 
 document.getElementById("googleButton").addEventListener("click", async () => {
