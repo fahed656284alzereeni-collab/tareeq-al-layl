@@ -356,6 +356,8 @@ io.on("connection", socket => {
 
       id: socket.id,
 
+      uid: socket.data.uid,
+
       name: requestedPlayerName
 
     });
@@ -436,6 +438,8 @@ io.on("connection", socket => {
     room.players.set(socket.id, {
 
       id: socket.id,
+
+      uid: socket.data.uid,
 
       name: joiningName
 
@@ -525,7 +529,7 @@ io.on("connection", socket => {
     }
     room.invited.delete(socket.data.uid);
     leaveCurrentRoom(socket);
-    room.players.set(socket.id, { id: socket.id, name: socket.data.playerName });
+    room.players.set(socket.id, { id: socket.id, uid: socket.data.uid, name: socket.data.playerName });
     socket.join(code);
     socket.data.room = code;
     if (typeof reply === "function") reply({ success: true, room: roomInfo(code, room) });
