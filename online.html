@@ -100,7 +100,7 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 <section>
 <h2>دعوات الطاولات</h2>
-<div id="invitations" aria-live="assertive">لا توجد دعوات جديدة</div>
+<div id="invitations" aria-live="assertive"><p data-empty-invitations>لا توجد دعوات جديدة</p></div>
 </section>
 
 <section>
@@ -298,8 +298,9 @@ socket.on("roomInvitation",invitation=>{
     });
   };
   row.append(label,accept);
-  area.replaceChildren(row);
-  say("وصلتك دعوة جديدة إلى طاولة خاصة");
+  if (area.querySelector("p[data-empty-invitations]")) area.replaceChildren();
+  area.appendChild(row);
+  say("وصلتك دعوة جديدة إلى طاولة خاصة من " + invitation.inviterName + " إلى " + invitation.roomName);
 });
 
 socket.on("playersUpdate",list=>{
