@@ -145,7 +145,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {
-  getAuth, GoogleAuthProvider, browserLocalPersistence, setPersistence,
+  getAuth, GoogleAuthProvider, indexedDBLocalPersistence, browserLocalPersistence, setPersistence,
   signInWithPopup, signInWithRedirect, getRedirectResult,
   signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
@@ -206,16 +206,15 @@ async function continueWithUser(user) {
 
 async function initializeLogin() {
   try {
-    await setPersistence(auth, browserLocalPersistence);
+    try {
+      await setPersistence(auth, indexedDBLocalPersistence);
+    } catch (storageError) {
+      await setPersistence(auth, browserLocalPersistence);
+    }
   } catch (error) {
-    showMessage("تعذر حفظ جلسة الدخول على هذا المتصفح. رمز الخطأ: " + (error.code || "unknown"));
+    showMessage("تعذر تفعيل حفظ جلسة الدخول على الجهاز. رمز الخطأ: " + (error.code || "unknown"));
   }
-  try {
-    const result = await getRedirectResult(auth);
-    if (result && result.user) await continueWithUser(result.user);
-  } catch (error) {
-    showMessage("فشل إكمال تسجيل Google. رمز الخطأ: " + (error.code || "unknown"));
-  }
+
   onAuthStateChanged(auth, user => {
     if (!user) {
       activeUser = null;
@@ -225,6 +224,13 @@ async function initializeLogin() {
     }
     continueWithUser(user);
   });
+
+  try {
+    const result = await getRedirectResult(auth);
+    if (result && result.user) continueWithUser(result.user);
+  } catch (error) {
+    showMessage("فشل إكمال تسجيل Google. رمز الخطأ: " + (error.code || "unknown"));
+  }
 }
 
 document.getElementById("savePlayerNameButton").addEventListener("click", async () => {
@@ -252,12 +258,17 @@ googleButton.addEventListener("click", async () => {
     await setPersistence(auth, browserLocalPersistence);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
+    const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isAppleMobile) {
+      showMessage("سيتم فتح صفحة Google الآمنة، وبعد الاختيار ستعود إلى اللعبة.");
+      await signInWithRedirect(auth, provider);
+      return;
+    }
     try {
       const result = await signInWithPopup(auth, provider);
       await continueWithUser(result.user);
     } catch (error) {
-      const fallbackCodes = ["auth/popup-blocked", "auth/popup-closed-by-user", "auth/cancelled-popup-request", "auth/operation-not-supported-in-this-environment"];
-      if (fallbackCodes.includes(error.code)) {
+      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(error.code)) {
         showMessage("سيتم فتح صفحة Google لتسجيل الدخول.");
         await signInWithRedirect(auth, provider);
         return;
