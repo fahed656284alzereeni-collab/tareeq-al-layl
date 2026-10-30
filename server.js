@@ -566,17 +566,27 @@ io.on("connection", socket => {
       if (!room || !room.privateRoom || !room.invited.has(socket.data.uid)) {
         throw new Error("الدعوة غير صالحة أو انتهت.");
       }
-      const hostPlayer = [...room.players.values()].find(player => player.id === room.host);
-      if (!hostPlayer || !hostPlayer.uid) throw new Error("تعذر التحقق من مالك الطاولة.");
-      const friendship = await friendshipRef(hostPlayer.uid, socket.data.uid).get();
-      if (!friendship.exists) throw new Error("لم تعد ضمن قائمة أصدقاء مالك الطاولة.");
-      // Re-check after the asynchronous lookup; consume the one-time invite before joining.
-      if (getRoom(code) !== room || !room.privateRoom || !room.invited.has(socket.data.uid)) {
-        throw new Error("انتهت صلاحية الدعوة.");
-      }
+      // Claim the invitation synchronously so two tabs cannot accept it concurrently.
+      if (!room.claimedInvites) room.claimedInvites = new Set();
+      if (room.claimedInvites.has(socket.data.uid)) throw new Error("جارٍ قبول هذه الدعوة من جلسة أخرى.");
+      room.claimedInvites.add(socket.data.uid);
       room.invited.delete(socket.data.uid);
-      leaveCurrentRoom(socket);
-      room.players.set(socket.id, { id: socket.id, uid: socket.data.uid, name: socket.data.playerName });
+      try {
+        const hostPlayer = [...room.players.values()].find(player => player.id === room.host);
+        if (!hostPlayer || !hostPlayer.uid) throw new Error("تعذر التحقق من مالك الطاولة.");
+        const friendship = await friendshipRef(hostPlayer.uid, socket.data.uid).get();
+        if (!friendship.exists) throw new Error("لم تعد ضمن قائمة أصدقاء مالك الطاولة.");
+        if (getRoom(code) !== room || !room.privateRoom || !room.claimedInvites.has(socket.data.uid)) {
+          throw new Error("انتهت صلاحية الدعوة.");
+        }
+        leaveCurrentRoom(socket);
+        room.players.set(socket.id, { id: socket.id, uid: socket.data.uid, name: socket.data.playerName });
+        room.claimedInvites.delete(socket.data.uid);
+      } catch (error) {
+        room.claimedInvites.delete(socket.data.uid);
+        if (getRoom(code) === room && room.privateRoom) room.invited.add(socket.data.uid);
+        throw error;
+      }
       socket.join(code);
       socket.data.room = code;
       if (typeof reply === "function") reply({ success: true, room: roomInfo(code, room) });
@@ -739,7 +749,9 @@ io.on("connection", socket => {
 
     const room = getRoom(code);
 
-    if (!room || !room.players.has(data.target)) return;
+    if (!room || !room.players.has(socket.id) || !data ||
+        typeof data.target !== "string" || !room.players.has(data.target) ||
+        !data.signal || !["description", "candidate"].includes(data.signal.type)) return;
 
     io.to(data.target).emit("voiceSignal", {
 
