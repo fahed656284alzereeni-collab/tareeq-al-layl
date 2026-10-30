@@ -184,7 +184,8 @@ onAuthStateChanged(auth, async user => {
     window.getGameToken = () => auth.currentUser.getIdToken();
     window.currentUserUid = user.uid;
     const field = document.getElementById("playerName");
-    document.getElementById("profileSummary").textContent = "اسم الحساب: "+name+"؛ البريد: "+(user.email || "غير متوفر");\n    field.value = name;
+    document.getElementById("profileSummary").textContent = "اسم الحساب: "+name+"؛ البريد: "+(user.email || "غير متوفر");
+    field.value = name;
     field.readOnly = true;
     field.setAttribute("aria-label", "اسم اللاعب المحفوظ في الحساب");
     document.body.style.visibility = "visible";
