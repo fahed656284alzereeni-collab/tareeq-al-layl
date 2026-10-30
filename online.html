@@ -12,7 +12,7 @@
 
 <style>
 
-body{font-family:Arial,sans-serif;background:#101820;color:white;padding:18px;line-height:1.8}
+body{visibility:hidden;font-family:Arial,sans-serif;background:#101820;color:white;padding:18px;line-height:1.8}
 
 h1,h2{text-align:center}
 
@@ -47,12 +47,26 @@ button:focus,input:focus{outline:3px solid #ffd166}
 <p>لعبة قيادة جماعية للمكفوفين</p>
 
 <section>
+<h2>الملف الشخصي والإعدادات</h2>
+<p id="profileSummary" aria-live="polite">الحساب مسجل الدخول</p>
+<label for="themeChoice">مظهر اللعبة</label>
+<select id="themeChoice">
+<option value="system">حسب إعدادات الجهاز</option>
+<option value="dark">داكن</option>
+<option value="light">فاتح</option>
+</select>
+<button onclick="saveTheme()">حفظ المظهر</button>
+<button onclick="logoutAccount()">تسجيل الخروج</button>
+</section>
+
+<section>
 
 <h2>بيانات اللاعب</h2>
 
 <label for="playerName">اسم اللاعب</label>
 
-<input id="playerName" value="لاعب">
+<input id="playerName" value="" autocomplete="nickname" maxlength="30" required>
+<button onclick="savePlayerName()">حفظ اسم اللاعب</button>
 
 </section>
 
@@ -62,12 +76,31 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 <label for="roomName">اسم الطاولة</label>
 
-<input id="roomName" value="طاولة طريق الليل">
+<input id="roomName" value="" required>
 
 <button onclick="createRoom()">إنشاء طاولة عامة</button>
 
 <button onclick="createPrivateRoom()">إنشاء طاولة خاصة</button>
 
+</section>
+
+<section>
+<h2>اللاعبون المتصلون</h2>
+<div id="onlinePlayers" aria-live="polite">بانتظار الاتصال...</div>
+</section>
+
+<section>
+<h2>الأصدقاء</h2>
+<button onclick="refreshFriends()">تحديث الأصدقاء والطلبات</button>
+<h3>قائمة الأصدقاء</h3>
+<div id="friendsList" aria-live="polite">لم يتم تحميل الأصدقاء بعد</div>
+<h3>طلبات الصداقة الواردة</h3>
+<div id="friendRequests" aria-live="polite">لا توجد طلبات معروضة</div>
+</section>
+
+<section>
+<h2>دعوات الطاولات</h2>
+<div id="invitations" aria-live="assertive"><p data-empty-invitations>لا توجد دعوات جديدة</p></div>
 </section>
 
 <section>
@@ -80,17 +113,7 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 </section>
 
-<section>
 
-<h2>الانضمام إلى طاولة</h2>
-
-<label for="roomCode">رمز الطاولة</label>
-
-<input id="roomCode" autocomplete="off">
-
-<button onclick="joinRoom()">انضمام</button>
-
-</section>
 
 <section>
 
@@ -139,13 +162,81 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 <p id="notice" class="notice" role="status" aria-live="assertive"></p>
 
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const app = initializeApp({
+  apiKey: "AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",
+  authDomain: "tareeq-al-layl.firebaseapp.com",
+  projectId: "tareeq-al-layl",
+  storageBucket: "tareeq-al-layl.firebasestorage.app",
+  messagingSenderId: "1071185437335",
+  appId: "1:1071185437335:web:4ca6e3f87152f9ef68ffd2"
+});
+const auth = getAuth(app);
+const db = getFirestore(app);
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.replace("login.html"); return; }
+  try {
+    const profile = await getDoc(doc(db, "users", user.uid));
+    const name = profile.exists() ? String(profile.data().playerName || "").trim() : "";
+    if (!name) { location.replace("login.html"); return; }
+    window.getGameToken = () => auth.currentUser.getIdToken();
+    window.currentUserUid = user.uid;
+    const field = document.getElementById("playerName");
+    document.getElementById("profileSummary").textContent = "اسم الحساب: "+name+"؛ البريد: "+(user.email || "غير متوفر");
+    field.value = name;
+    field.readOnly = false;
+    field.setAttribute("aria-label", "اسم اللاعب الحالي؛ يمكن تعديله ثم حفظه");
+    document.body.style.visibility = "visible";
+    window.dispatchEvent(new Event("game-auth-ready"));
+  } catch (error) {
+    location.replace("login.html");
+  }
+});
+</script>
+
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 
 <script>
 
 const SERVER="https://tareeq-al-layl-server.onrender.com";
+function applyTheme(mode){
+  const light=mode==="light"||(mode==="system"&&window.matchMedia("(prefers-color-scheme: light)").matches);
+  document.body.style.background=light?"#f2f5f7":"#101820";
+  document.body.style.color=light?"#17212b":"#ffffff";
+  document.querySelectorAll("section").forEach(section=>section.style.background=light?"#ffffff":"#1d2b36");
+  el("themeChoice").value=mode;
+}
+function saveTheme(){
+  const mode=el("themeChoice").value;
+  localStorage.setItem("tareeqTheme",mode);
+  applyTheme(mode);
+  say("تم حفظ إعدادات المظهر");
+}
+function logoutAccount(){
+  import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js").then(({getAuth,signOut})=>signOut(getAuth()).then(()=>location.replace("login.html"))).catch(()=>say("تعذر تسجيل الخروج"));
+}
 
-const socket=io(SERVER);
+
+const socket=io(SERVER,{autoConnect:false,auth: async callback => { try { callback({token: await window.getGameToken()}); } catch (error) { callback({token: ""}); } }});
+window.savePlayerName = function () {
+  const playerName = el("playerName").value.trim();
+  if (!playerName) { say("اسم اللاعب مطلوب."); el("playerName").focus(); return; }
+  if (playerName.length > 30) { say("اسم اللاعب يجب ألا يتجاوز 30 حرفاً."); return; }
+  if (!socket.connected) { say("انتظر الاتصال بالخادم ثم حاول مجدداً."); return; }
+  socket.emit("updatePlayerName", { playerName }, result => {
+    say(result.message || (result.success ? "تم تحديث الاسم." : "تعذر تحديث الاسم."));
+    if (result.success) {
+      el("playerName").value = result.playerName;
+      const summary = el("profileSummary");
+      summary.textContent = summary.textContent.replace(/^اسم الحساب: [^؛]*/, "اسم الحساب: " + result.playerName);
+    }
+  });
+};
+
+window.addEventListener("game-auth-ready",()=>socket.connect(),{once:true});
 
 let currentRoom="";
 
@@ -159,6 +250,8 @@ let microphoneOn=false;
 
 let players=[];
 
+let lastOnlinePlayers=[];
+
 const peers=new Map();
 
 const el=id=>document.getElementById(id);
@@ -170,6 +263,7 @@ socket.on("connect",()=>{
 say("تم الاتصال بالخادم");
 
 loadRooms();
+refreshFriends();
 
 });
 
@@ -180,6 +274,34 @@ say("تعذر الاتصال بالخادم");
 });
 
 socket.on("publicRooms",showRooms);
+socket.on("onlinePlayers",list=>{lastOnlinePlayers=list||[];showOnlinePlayers(lastOnlinePlayers);});
+socket.on("friendRequestReceived",request=>{
+  say("وصلك طلب صداقة من "+request.fromName);
+  refreshFriends();
+});
+socket.on("roomInvitation",invitation=>{
+  const area=el("invitations");
+  const row=document.createElement("div");
+  const label=document.createElement("p");
+  label.textContent="دعوة من "+invitation.inviterName+" إلى طاولة "+invitation.roomName;
+  const accept=document.createElement("button");
+  accept.textContent="قبول الدعوة";
+  accept.onclick=()=>{
+    socket.emit("acceptRoomInvitation",{roomId:invitation.roomId},result=>{
+      if(!result.success){say(result.message);row.remove();return;}
+      currentRoom=result.room.code;
+      isHost=false;
+      isPrivate=true;
+      el("status").textContent="انضممت إلى الطاولة: "+result.room.name;
+      say("تم قبول الدعوة والانضمام إلى الطاولة");
+      row.remove();
+    });
+  };
+  row.append(label,accept);
+  if (area.querySelector("p[data-empty-invitations]")) area.replaceChildren();
+  area.appendChild(row);
+  say("وصلتك دعوة جديدة إلى طاولة خاصة من " + invitation.inviterName + " إلى " + invitation.roomName);
+});
 
 socket.on("playersUpdate",list=>{
 
@@ -194,7 +316,7 @@ syncVoicePeers();
 socket.on("roomPrivacy",data=>{
 
 isPrivate=data.privateRoom;
-
+showOnlinePlayers(lastOnlinePlayers);
 say(isPrivate?"الطاولة خاصة":"الطاولة عامة");
 
 });
@@ -211,9 +333,77 @@ el("messages").appendChild(p);
 
 socket.on("systemMessage",say);
 
+function showOnlinePlayers(list){
+  const area=el("onlinePlayers");
+  area.replaceChildren();
+  const others=(list||[]).filter(p=>p.uid!==window.currentUserUid);
+  if(!others.length){area.textContent="لا يوجد لاعبون متصلون حاليا";return;}
+  others.forEach(player=>{
+    const row=document.createElement("div");
+    const label=document.createElement("p");
+    label.textContent=player.name+"، متصل الآن";
+    row.appendChild(label);
+    {
+      const friend=document.createElement("button");
+      friend.textContent="إرسال طلب صداقة إلى "+player.name;
+      friend.onclick=()=>socket.emit("sendFriendRequest",{targetUid:player.uid},result=>say(result.message));
+      row.appendChild(friend);
+    }
+    if(currentRoom&&isHost&&isPrivate){
+      const invite=document.createElement("button");
+      invite.textContent="دعوة إلى الطاولة الخاصة";
+      invite.onclick=()=>socket.emit("invitePlayer",{targetUid:player.uid},result=>{
+        say(result.success?"تم إرسال الدعوة إلى "+player.name:result.message);
+      });
+      row.appendChild(invite);
+    }
+    area.appendChild(row);
+  });
+}
+function refreshFriends(){
+  socket.emit("getFriendData",data=>{
+    if(!data.success){say(data.message||"تعذر تحميل الأصدقاء");return;}
+    const friends=el("friendsList");
+    friends.replaceChildren();
+    if(!data.friends.length)friends.textContent="قائمة الأصدقاء فارغة";
+    data.friends.forEach(friend=>{
+      const row=document.createElement("div");
+      const label=document.createElement("p");
+      label.textContent=friend.name+(friend.online?"، متصل":"، غير متصل");
+      row.appendChild(label);
+      if(friend.online&&currentRoom&&isHost&&isPrivate){
+        const invite=document.createElement("button");
+        invite.textContent="دعوة إلى الطاولة";
+        invite.onclick=()=>socket.emit("invitePlayer",{targetUid:friend.uid},r=>say(r.message));
+        row.appendChild(invite);
+      }
+      const remove=document.createElement("button");
+      remove.textContent="إزالة الصديق "+friend.name;
+      remove.onclick=()=>socket.emit("removeFriend",{uid:friend.uid},r=>{say(r.message);refreshFriends();});
+      row.appendChild(remove);
+      friends.appendChild(row);
+    });
+    const requests=el("friendRequests");
+    requests.replaceChildren();
+    if(!data.requests.length)requests.textContent="لا توجد طلبات صداقة جديدة";
+    data.requests.forEach(request=>{
+      const row=document.createElement("div");
+      const label=document.createElement("p");
+      label.textContent="طلب صداقة من "+request.name;
+      const accept=document.createElement("button");
+      accept.textContent="قبول طلب الصداقة";
+      accept.onclick=()=>socket.emit("respondFriendRequest",{fromUid:request.uid,accept:true},r=>{say(r.message);refreshFriends();});
+      const reject=document.createElement("button");
+      reject.textContent="رفض طلب الصداقة";
+      reject.onclick=()=>socket.emit("respondFriendRequest",{fromUid:request.uid,accept:false},r=>{say(r.message);refreshFriends();});
+      row.append(label,accept,reject);
+      requests.appendChild(row);
+    });
+  });
+}
 function playerName(){
 
-return el("playerName").value.trim()||"لاعب";
+return el("playerName").value.trim();
 
 }
 
@@ -222,12 +412,15 @@ function createRoom(){makeRoom(false);}
 function createPrivateRoom(){makeRoom(true);}
 
 function makeRoom(privateMode){
-
+const player=playerName();
+const roomTitle=el("roomName").value.trim();
+if(!player||!roomTitle){say("أدخل اسم اللاعب واسم الطاولة أولا.");return;}
 socket.emit("createRoom",{
 
-name:el("roomName").value.trim()||"طاولة طريق الليل",
+name:el("roomName").value.trim(),
 
-playerName:playerName()
+playerName:player,
+privateRoom:privateMode
 
 },r=>{
 
@@ -242,11 +435,11 @@ if(privateMode){
 
 }
 
-el("roomCode").value=r.code;
 
-el("status").textContent="أنت مالك الطاولة. رمزها: "+r.code;
 
-say("تم إنشاء الطاولة. رمزها: "+r.code);
+el("status").textContent="أنت مالك الطاولة.";
+
+say("تم إنشاء الطاولة بنجاح.");
 
 });
 
@@ -276,13 +469,11 @@ list.forEach(room=>{
 
 const b=document.createElement("button");
 
-b.textContent=room.name+"، عدد اللاعبين: "+room.playerCount+"، الرمز: "+room.code;
+b.textContent=room.name+"، عدد اللاعبين: "+room.playerCount;
 
 b.onclick=()=>{
 
-el("roomCode").value=room.code;
-
-joinRoom();
+joinRoom(room.code);
 
 };
 
@@ -292,11 +483,10 @@ area.appendChild(b);
 
 }
 
-function joinRoom(){
-
-const code=el("roomCode").value.trim().toUpperCase();
-
-if(!code){say("اكتب رمز الطاولة");return;}
+function joinRoom(code){
+const name=playerName();
+if(!name){say("اسم اللاعب مطلوب.");return;}
+if(!code){say("اختر طاولة من القائمة.");return;}
 
 socket.emit("joinRoom",{code,name:playerName()},r=>{
 
@@ -306,7 +496,7 @@ currentRoom=r.code;
 
 isHost=false;
 
-el("status").textContent="انضممت إلى الطاولة. الرمز: "+r.code;
+el("status").textContent="انضممت إلى الطاولة: "+r.room.name;
  say("تم الانضمام بنجاح");
 
 });
@@ -709,6 +899,7 @@ loadRooms();
 
 }
 
+applyTheme(localStorage.getItem("tareeqTheme")||"system");
 updateMicButton();
 
 </script>
