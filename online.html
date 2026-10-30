@@ -65,7 +65,8 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 <label for="playerName">اسم اللاعب</label>
 
-<input id="playerName" value="" autocomplete="nickname" required>
+<input id="playerName" value="" autocomplete="nickname" maxlength="30" required>
+<button onclick="savePlayerName()">حفظ اسم اللاعب</button>
 
 </section>
 
@@ -186,8 +187,8 @@ onAuthStateChanged(auth, async user => {
     const field = document.getElementById("playerName");
     document.getElementById("profileSummary").textContent = "اسم الحساب: "+name+"؛ البريد: "+(user.email || "غير متوفر");
     field.value = name;
-    field.readOnly = true;
-    field.setAttribute("aria-label", "اسم اللاعب المحفوظ في الحساب");
+    field.readOnly = false;
+    field.setAttribute("aria-label", "اسم اللاعب الحالي؛ يمكن تعديله ثم حفظه");
     document.body.style.visibility = "visible";
     window.dispatchEvent(new Event("game-auth-ready"));
   } catch (error) {
@@ -220,6 +221,21 @@ function logoutAccount(){
 
 
 const socket=io(SERVER,{autoConnect:false,auth: async callback => { try { callback({token: await window.getGameToken()}); } catch (error) { callback({token: ""}); } }});
+window.savePlayerName = function () {
+  const playerName = el("playerName").value.trim();
+  if (!playerName) { say("اسم اللاعب مطلوب."); el("playerName").focus(); return; }
+  if (playerName.length > 30) { say("اسم اللاعب يجب ألا يتجاوز 30 حرفاً."); return; }
+  if (!socket.connected) { say("انتظر الاتصال بالخادم ثم حاول مجدداً."); return; }
+  socket.emit("updatePlayerName", { playerName }, result => {
+    say(result.message || (result.success ? "تم تحديث الاسم." : "تعذر تحديث الاسم."));
+    if (result.success) {
+      el("playerName").value = result.playerName;
+      const summary = el("profileSummary");
+      summary.textContent = summary.textContent.replace(/^اسم الحساب: [^؛]*/, "اسم الحساب: " + result.playerName);
+    }
+  });
+};
+
 window.addEventListener("game-auth-ready",()=>socket.connect(),{once:true});
 
 let currentRoom="";
