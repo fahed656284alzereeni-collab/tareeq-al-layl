@@ -252,7 +252,7 @@ syncVoicePeers();
 socket.on("roomPrivacy",data=>{
 
 isPrivate=data.privateRoom;
-
+showOnlinePlayers(lastOnlinePlayers);
 say(isPrivate?"الطاولة خاصة":"الطاولة عامة");
 
 });
