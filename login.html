@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 
 <html lang="ar" dir="rtl">
@@ -102,6 +100,8 @@
 
       text-align: center;
 
+      overflow-wrap: anywhere;
+
     }
 
   </style>
@@ -145,6 +145,8 @@ import {
   GoogleAuthProvider,
 
   signInWithRedirect,
+
+  getRedirectResult,
 
   signInWithEmailAndPassword,
 
@@ -196,6 +198,30 @@ function showMessage(text) {
 
 }
 
+getRedirectResult(auth)
+
+  .then((result) => {
+
+    if (result && result.user) {
+
+      showMessage("تم استلام تسجيل الدخول من Google. جارٍ تجهيز الحساب.");
+
+    }
+
+  })
+
+  .catch((error) => {
+
+    showMessage(
+
+      "فشل تسجيل الدخول عبر Google. رمز الخطأ: " +
+
+      (error.code || "unknown")
+
+    );
+
+  });
+
 async function saveProfile(user) {
 
   await setDoc(doc(db, "users", user.uid), {
@@ -216,21 +242,27 @@ async function saveProfile(user) {
 
 onAuthStateChanged(auth, async (user) => {
 
-  if (user) {
+  if (!user) return;
 
-    try {
+  try {
 
-      await saveProfile(user);
+    showMessage("تم تسجيل الدخول. جارٍ حفظ الملف الشخصي.");
 
-      showMessage("تم تسجيل الدخول. جارٍ فتح اللعبة.");
+    await saveProfile(user);
 
-      window.location.href = "online.html";
+    showMessage("تم تسجيل الدخول بنجاح. جارٍ فتح اللعبة.");
 
-    } catch (error) {
+    window.location.href = "online.html";
 
-      showMessage("تعذر حفظ الملف الشخصي: " + error.message);
+  } catch (error) {
 
-    }
+    showMessage(
+
+      "تم تسجيل الدخول لكن تعذر حفظ الملف الشخصي. رمز الخطأ: " +
+
+      (error.code || error.message || "unknown")
+
+    );
 
   }
 
@@ -240,13 +272,21 @@ document.getElementById("googleButton").addEventListener("click", async () => {
 
   try {
 
+    showMessage("جارٍ تحويلك إلى Google.");
+
     const provider = new GoogleAuthProvider();
 
     await signInWithRedirect(auth, provider);
 
   } catch (error) {
 
-    showMessage("تعذر تسجيل الدخول: " + error.message);
+    showMessage(
+
+      "تعذر بدء تسجيل الدخول. رمز الخطأ: " +
+
+      (error.code || "unknown")
+
+    );
 
   }
 
@@ -272,7 +312,7 @@ document.getElementById("loginButton").addEventListener("click", async () => {
 
   } catch (error) {
 
-    showMessage("فشل تسجيل الدخول: " + error.message);
+    showMessage("فشل تسجيل الدخول. رمز الخطأ: " + (error.code || "unknown"));
 
   }
 
@@ -306,7 +346,7 @@ document.getElementById("registerButton").addEventListener("click", async () => 
 
   } catch (error) {
 
-    showMessage("تعذر إنشاء الحساب: " + error.message);
+    showMessage("تعذر إنشاء الحساب. رمز الخطأ: " + (error.code || "unknown"));
 
   }
 
