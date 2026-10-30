@@ -48,7 +48,35 @@ const io = new Server(server, {
 });
 
 const rooms = new Map();
+// A user may be connected from more than one device or browser tab.
 const connectedUsers = new Map();
+const friendRequestLimits = new Map();
+
+function addConnectedSocket(uid, socket) {
+  if (!connectedUsers.has(uid)) connectedUsers.set(uid, new Set());
+  connectedUsers.get(uid).add(socket);
+}
+
+function removeConnectedSocket(uid, socket) {
+  const sockets = connectedUsers.get(uid);
+  if (!sockets) return;
+  sockets.delete(socket);
+  if (sockets.size === 0) connectedUsers.delete(uid);
+}
+
+function getConnectedSocket(uid) {
+  const sockets = connectedUsers.get(uid);
+  return sockets ? [...sockets].find(client => client.connected) || null : null;
+}
+
+function onlinePlayerList() {
+  const players = [];
+  for (const [uid, sockets] of connectedUsers) {
+    const client = [...sockets].find(item => item.connected);
+    if (client) players.push({ uid, name: client.data.playerName });
+  }
+  return players;
+}
 
 io.use(async (socket, next) => {
   try {
@@ -181,8 +209,8 @@ function leaveCurrentRoom(socket) {
 }
 
 io.on("connection", socket => {
-  connectedUsers.set(socket.data.uid, socket);
-  const onlinePlayers = () => [...connectedUsers.entries()].map(([uid, client]) => ({ uid, name: client.data.playerName }));
+  addConnectedSocket(socket.data.uid, socket);
+  const onlinePlayers = onlinePlayerList;
   io.emit("onlinePlayers", onlinePlayers());
   socket.emit("publicRooms", publicRoomList());
   socket.on("getOnlinePlayers", reply => {
@@ -199,13 +227,23 @@ io.on("connection", socket => {
       if (!targetUid || targetUid === socket.data.uid) throw new Error("طلب صداقة غير صالح.");
       const targetProfile = await usersRef.doc(targetUid).get();
       if (!targetProfile.exists) throw new Error("الحساب غير موجود.");
-      const existing = await friendshipRef(socket.data.uid, targetUid).get();
+      const [existing, reverseRequest, pendingRequest] = await Promise.all([
+        friendshipRef(socket.data.uid, targetUid).get(),
+        requestRef(socket.data.uid, targetUid).get(),
+        requestRef(targetUid, socket.data.uid).get()
+      ]);
       if (existing.exists) throw new Error("هذا اللاعب ضمن قائمة أصدقائك.");
+      if (reverseRequest.exists) throw new Error("لديك طلب صداقة وارد من هذا اللاعب؛ راجع الطلبات.");
+      if (pendingRequest.exists) throw new Error("سبق إرسال طلب صداقة لهذا اللاعب.");
+      const now = Date.now();
+      const lastSent = friendRequestLimits.get(socket.data.uid) || 0;
+      if (now - lastSent < 5000) throw new Error("انتظر خمس ثوانٍ قبل إرسال طلب آخر.");
       await requestRef(targetUid, socket.data.uid).set({
         fromUid: socket.data.uid, fromName: socket.data.playerName,
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       });
-      const target = connectedUsers.get(targetUid);
+      friendRequestLimits.set(socket.data.uid, now);
+      const target = getConnectedSocket(targetUid);
       if (target) target.emit("friendRequestReceived", { fromUid: socket.data.uid, fromName: socket.data.playerName });
       if (typeof reply === "function") reply({ success: true, message: "تم إرسال طلب الصداقة." });
     } catch (error) {
@@ -221,7 +259,7 @@ io.on("connection", socket => {
       ]);
       const friends = await Promise.all(friendsSnap.docs.map(async d => {
         const p = await usersRef.doc(d.id).get();
-        return { uid: d.id, name: p.exists ? String(p.data().playerName || "اسم غير متوفر") : "اسم غير متوفر", online: connectedUsers.has(d.id) };
+        return { uid: d.id, name: p.exists ? String(p.data().playerName || "اسم غير متوفر") : "اسم غير متوفر", online: Boolean(getConnectedSocket(d.id)) };
       }));
       const requests = requestsSnap.docs.map(d => ({ uid: d.id, name: String(d.data().fromName || "لاعب") }));
       if (typeof reply === "function") reply({ success: true, friends, requests });
@@ -430,7 +468,7 @@ io.on("connection", socket => {
     const code = socket.data.room;
     const room = getRoom(code);
     const targetUid = String(data.targetUid || "").trim();
-    const target = connectedUsers.get(targetUid);
+    const target = getConnectedSocket(targetUid);
     if (!room || room.host !== socket.id) {
       if (typeof reply === "function") reply({ success: false, message: "فقط مالك الطاولة يستطيع إرسال الدعوات." });
       return;
@@ -641,10 +679,8 @@ io.on("connection", socket => {
   });
 
   socket.on("disconnect", () => {
-    if (connectedUsers.get(socket.data.uid) === socket) {
-      connectedUsers.delete(socket.data.uid);
-      io.emit("onlinePlayers", [...connectedUsers.entries()].map(([uid, client]) => ({ uid, name: client.data.playerName })));
-    }
+    removeConnectedSocket(socket.data.uid, socket);
+    io.emit("onlinePlayers", onlinePlayerList());
     leaveCurrentRoom(socket);
 
   });
