@@ -52,7 +52,7 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 <label for="playerName">اسم اللاعب</label>
 
-<input id="playerName" value="لاعب">
+<input id="playerName" value="" autocomplete="nickname" required>
 
 </section>
 
@@ -62,7 +62,7 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 <label for="roomName">اسم الطاولة</label>
 
-<input id="roomName" value="طاولة طريق الليل">
+<input id="roomName" value="" required>
 
 <button onclick="createRoom()">إنشاء طاولة عامة</button>
 
@@ -80,17 +80,7 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 </section>
 
-<section>
 
-<h2>الانضمام إلى طاولة</h2>
-
-<label for="roomCode">رمز الطاولة</label>
-
-<input id="roomCode" autocomplete="off">
-
-<button onclick="joinRoom()">انضمام</button>
-
-</section>
 
 <section>
 
@@ -213,7 +203,7 @@ socket.on("systemMessage",say);
 
 function playerName(){
 
-return el("playerName").value.trim()||"لاعب";
+return el("playerName").value.trim();
 
 }
 
@@ -225,7 +215,7 @@ function makeRoom(privateMode){
 
 socket.emit("createRoom",{
 
-name:el("roomName").value.trim()||"طاولة طريق الليل",
+name:el("roomName").value.trim(),
 
 playerName:playerName()
 
@@ -244,9 +234,9 @@ if(privateMode){
 
 el("roomCode").value=r.code;
 
-el("status").textContent="أنت مالك الطاولة. رمزها: "+r.code;
+el("status").textContent="أنت مالك الطاولة.";
 
-say("تم إنشاء الطاولة. رمزها: "+r.code);
+say("تم إنشاء الطاولة بنجاح.");
 
 });
 
@@ -276,7 +266,7 @@ list.forEach(room=>{
 
 const b=document.createElement("button");
 
-b.textContent=room.name+"، عدد اللاعبين: "+room.playerCount+"، الرمز: "+room.code;
+b.textContent=room.name+"، عدد اللاعبين: "+room.playerCount;
 
 b.onclick=()=>{
 
