@@ -160,7 +160,12 @@ function leaveCurrentRoom(socket) {
 
 io.on("connection", socket => {
   connectedUsers.set(socket.data.uid, socket);
+  const onlinePlayers = () => [...connectedUsers.entries()].map(([uid, client]) => ({ uid, name: client.data.playerName }));
+  io.emit("onlinePlayers", onlinePlayers());
   socket.emit("publicRooms", publicRoomList());
+  socket.on("getOnlinePlayers", reply => {
+    if (typeof reply === "function") reply(onlinePlayers());
+  });
 
   socket.on("getPublicRooms", reply => {
 
@@ -330,7 +335,7 @@ io.on("connection", socket => {
       if (typeof reply === "function") reply({ success: false, message: "فقط مالك الطاولة يستطيع إرسال الدعوات." });
       return;
     }
-    if (!targetUid || targetUid === socket.data.uid || !target || !target.connected) {
+    if (!room.privateRoom) {\n      if (typeof reply === "function") reply({ success: false, message: "الدعوات المباشرة مخصصة للطاولات الخاصة." });\n      return;\n    }\n    if (!targetUid || targetUid === socket.data.uid || !target || !target.connected) {
       if (typeof reply === "function") reply({ success: false, message: "اللاعب غير متصل حاليا." });
       return;
     }
@@ -532,8 +537,7 @@ io.on("connection", socket => {
   });
 
   socket.on("disconnect", () => {
-    if (connectedUsers.get(socket.data.uid) === socket) connectedUsers.delete(socket.data.uid);
-    leaveCurrentRoom(socket);
+    if (connectedUsers.get(socket.data.uid) === socket) {\n      connectedUsers.delete(socket.data.uid);\n      io.emit("onlinePlayers", [...connectedUsers.entries()].map(([uid, client]) => ({ uid, name: client.data.playerName })));\n    }\n    leaveCurrentRoom(socket);
 
   });
 
