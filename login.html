@@ -292,6 +292,8 @@ async function initializeLogin() {
       let mode = "login";
       try { mode = sessionStorage.getItem("tareeqGoogleAuthMode") || "login"; sessionStorage.removeItem("tareeqGoogleAuthMode"); } catch (_) {}
       await handleGoogleCredential(result, mode);
+    } else if (auth.currentUser) {
+      await continueWithUser(auth.currentUser);
     }
   } catch (error) {
     registerGoogleButton.disabled = false;
