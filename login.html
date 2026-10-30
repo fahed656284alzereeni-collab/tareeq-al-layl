@@ -1,352 +1,66 @@
-<!DOCTYPE html>
-
+<!doctype html>
 <html lang="ar" dir="rtl">
-
 <head>
-
-  <meta charset="UTF-8">
-
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
-  <title>تسجيل الدخول - طريق الليل</title>
-
-  <style>
-
-    body {
-
-      font-family: Arial, sans-serif;
-
-      background: #101522;
-
-      color: white;
-
-      margin: 0;
-
-      padding: 25px;
-
-      line-height: 1.8;
-
-    }
-
-    main {
-
-      max-width: 420px;
-
-      margin: 35px auto;
-
-      background: #1c2638;
-
-      padding: 24px;
-
-      border-radius: 16px;
-
-    }
-
-    h1, p { text-align: center; }
-
-    label {
-
-      display: block;
-
-      margin-top: 15px;
-
-    }
-
-    input, button {
-
-      box-sizing: border-box;
-
-      width: 100%;
-
-      padding: 14px;
-
-      margin-top: 8px;
-
-      border-radius: 8px;
-
-      font-size: 17px;
-
-    }
-
-    input {
-
-      border: 1px solid #77849a;
-
-    }
-
-    button {
-
-      border: 0;
-
-      background: #3978df;
-
-      color: white;
-
-      cursor: pointer;
-
-      margin-top: 16px;
-
-    }
-
-    button:focus, input:focus {
-
-      outline: 3px solid #ffcf55;
-
-    }
-
-    #playerNameSetup { display:none; margin-top:18px; }
-
-    #message {
-
-      margin-top: 18px;
-
-      text-align: center;
-
-      overflow-wrap: anywhere;
-
-    }
-
-  </style>
-
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#101827"><title>الدخول إلى مِرسالو</title>
+<style>
+:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}
+*{box-sizing:border-box}body{margin:0;padding:22px;line-height:1.8}main{max-width:480px;margin:5vh auto;background:#1b293b;border:1px solid #34445a;border-radius:22px;padding:24px}
+h1{text-align:center;color:#8bd8c5}label{display:block;margin-top:18px;font-weight:bold}
+input,button{width:100%;padding:15px;margin-top:8px;border-radius:11px;font-size:18px}
+input{background:#fff;color:#111;border:2px solid #718096}
+button{background:#167c68;color:#fff;border:0;font-weight:bold;cursor:pointer}
+button:focus,input:focus{outline:3px solid #ffd166;outline-offset:3px}
+button:disabled{opacity:.55}
+#status{margin-top:20px;padding:12px;border-radius:10px;background:#26384e;overflow-wrap:anywhere}
+#codeArea{display:none}
+.note{font-size:.92rem;color:#c3d0df}
+</style>
 </head>
-
-<body>
-
-<main>
-
-  <h1>طريق الليل</h1>
-
-  <p>مرحباً بك. سجّل الدخول للمتابعة.</p>
-
-  <button id="registerGoogleButton">إنشاء حساب باستخدام Google</button>
-
-  <button id="loginGoogleButton">تسجيل الدخول باستخدام Google</button>
-
-  <div id="playerNameSetup">
-    <label for="playerName">اسم اللاعب الذي سيظهر للآخرين</label>
-    <input id="playerName" maxlength="30" autocomplete="nickname">
-    <button id="savePlayerNameButton">حفظ الاسم والدخول إلى اللعبة</button>
-  </div>
-
-  <p id="message" role="status" aria-live="polite"></p>
-
+<body><main>
+<h1>مِرسالو</h1>
+<p>الدخول وإنشاء الحساب برقم الهاتف فقط.</p>
+<form id="phoneForm">
+<label for="phone">رقم الهاتف مع مفتاح الدولة</label>
+<input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+9627XXXXXXXX" required>
+<button id="sendCode" type="submit">إرسال رمز التحقق</button>
+</form>
+<section id="codeArea" aria-label="التحقق من رقم الهاتف">
+<label for="code">رمز التحقق الذي وصلك برسالة SMS</label>
+<input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6">
+<button id="verifyCode" type="button">تأكيد الرمز والدخول</button>
+</section>
+<div id="recaptcha-container"></div>
+<p class="note">قد يطلب Firebase تحققاً إضافياً للتأكد من أن الطلب صادر عن شخص حقيقي.</p>
+<p id="status" role="status" aria-live="polite">أدخل رقمك بالصيغة الدولية، مثال: +9627XXXXXXXX.</p>
 </main>
-
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import {
-  getAuth, GoogleAuthProvider, indexedDBLocalPersistence, browserLocalPersistence, setPersistence,
-  signInWithPopup, signInWithRedirect, getRedirectResult, getAdditionalUserInfo,
-  signOut, deleteUser, onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-
-const app = initializeApp({
-  apiKey: "AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",
-  authDomain: "tareeq-al-layl.firebaseapp.com",
-  projectId: "tareeq-al-layl",
-  storageBucket: "tareeq-al-layl.firebasestorage.app",
-  messagingSenderId: "1071185437335",
-  appId: "1:1071185437335:web:4ca6e3f87152f9ef68ffd2"
+import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import {getAuth,RecaptchaVerifier,signInWithPhoneNumber,setPersistence,browserLocalPersistence} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getFirestore,doc,setDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+const status=document.getElementById("status"),form=document.getElementById("phoneForm"),send=document.getElementById("sendCode"),codeArea=document.getElementById("codeArea");
+let verifier=null,confirmation=null;
+function say(t){status.textContent=t}
+async function setupCaptcha(){
+ if(verifier)return verifier;
+ verifier=new RecaptchaVerifier(auth,"recaptcha-container",{size:"normal",callback:()=>say("تم اجتياز التحقق. اضغط إرسال الرمز إذا لم يبدأ الإرسال تلقائياً.") , "expired-callback":()=>say("انتهت صلاحية التحقق. أعد المحاولة.")});
+ await verifier.render();return verifier;
+}
+form.addEventListener("submit",async e=>{
+ e.preventDefault();const phone=document.getElementById("phone").value.trim();
+ if(!/^\+[1-9]\d{7,14}$/.test(phone)){say("اكتب الرقم بالصيغة الدولية، مثل +9627XXXXXXXX.");return}
+ send.disabled=true;
+ try{await setPersistence(auth,browserLocalPersistence);const captcha=await setupCaptcha();confirmation=await signInWithPhoneNumber(auth,phone,captcha);codeArea.style.display="block";document.getElementById("code").focus();say("أرسلنا رمز التحقق إلى رقمك. أدخل الرمز المكوّن من ستة أرقام.");}
+ catch(err){say("تعذر إرسال الرمز. رمز الخطأ: "+(err.code||"unknown")+" . تحقق من تفعيل Phone في Firebase وإعدادات SMS والنطاق المصرح.");if(verifier){try{await verifier.clear()}catch(_){}verifier=null}}
+ finally{send.disabled=false}
 });
-const auth = getAuth(app);
-const db = getFirestore(app);
-const message = document.getElementById("message");
-const registerGoogleButton = document.getElementById("registerGoogleButton");
-const loginGoogleButton = document.getElementById("loginGoogleButton");
-let authMode = null;
-function showMessage(text) { message.textContent = text; }
-let activeUser = null;
-let processingUid = null;
-let handledUid = null;
-let redirectCheckFinished = false;
-
-async function saveProfile(user) {
-  await setDoc(doc(db, "users", user.uid), {
-    uid: user.uid,
-    email: user.email || "",
-    displayName: user.displayName || "",
-    photoURL: user.photoURL || "",
-    updatedAt: serverTimestamp()
-  }, { merge: true });
-}
-
-async function continueWithUser(user) {
-  if (!user || processingUid === user.uid || handledUid === user.uid) return;
-  processingUid = user.uid;
-  activeUser = user;
-  try {
-    showMessage("جارٍ التحقق من ملفك الشخصي.");
-    await saveProfile(user);
-    const snap = await getDoc(doc(db, "users", user.uid));
-    const playerName = snap.exists() ? String(snap.data().playerName || "").trim() : "";
-    handledUid = user.uid;
-    if (!playerName) {
-      document.getElementById("playerNameSetup").style.display = "block";
-      document.getElementById("playerName").focus();
-      showMessage("اكتب اسم اللاعب مرة واحدة لإكمال إعداد الحساب.");
-      return;
-    }
-    showMessage("تم تسجيل الدخول. جارٍ فتح اللعبة.");
-    location.replace("online.html");
-  } catch (error) {
-    handledUid = null;
-    showMessage("تعذر تجهيز الحساب. رمز الخطأ: " + (error.code || "unknown"));
-  } finally {
-    processingUid = null;
-  }
-}
-
-async function handleGoogleCredential(result, mode) {
-  const user = result.user;
-  const isNewUser = Boolean(getAdditionalUserInfo(result)?.isNewUser);
-  const profileRef = doc(db, "users", user.uid);
-  const existingProfile = await getDoc(profileRef);
-
-  if (mode === "register" && !isNewUser && existingProfile.exists()) {
-    await signOut(auth);
-    showMessage("هذا الحساب مسجل مسبقاً. اختر تسجيل الدخول باستخدام Google.");
-    return;
-  }
-
-  if (mode === "login" && isNewUser && !existingProfile.exists()) {
-    try { await deleteUser(user); } catch (_) { await signOut(auth); }
-    showMessage("لا يوجد حساب سابق بهذا البريد. اختر إنشاء حساب باستخدام Google أولاً.");
-    return;
-  }
-
-  if (mode === "register" && isNewUser) {
-    await setDoc(profileRef, {
-      uid: user.uid, email: user.email || "", displayName: user.displayName || "",
-      photoURL: user.photoURL || "", accountCreatedAt: serverTimestamp(),
-      emailVerified: Boolean(user.emailVerified), updatedAt: serverTimestamp()
-    }, { merge: true });
-    showMessage("تم إنشاء حسابك بنجاح. بريد Google موثّق، وسيتم فتح إعداد اسم اللاعب.");
-  } else {
-    await saveProfile(user);
-    showMessage("تم تسجيل الدخول إلى حسابك.");
-  }
-  await continueWithUser(user);
-}
-
-function startGoogleAuth(mode) {
-  authMode = mode;
-  registerGoogleButton.disabled = true;
-  loginGoogleButton.disabled = true;
-  showMessage(mode === "register" ? "جارٍ فتح Google لإنشاء حسابك." : "جارٍ فتح Google لتسجيل الدخول.");
-
-  // Call the popup directly from the tap handler. Do not await persistence
-  // first, because that can lose the iPhone browser's user-gesture context.
-  const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: "select_account" });
-
-  signInWithPopup(auth, provider)
-    .then(async result => {
-      await handleGoogleCredential(result, mode);
-    })
-    .catch(error => {
-      registerGoogleButton.disabled = false;
-      loginGoogleButton.disabled = false;
-      const code = error.code || "unknown";
-      const messages = {
-        "auth/unauthorized-domain": "نطاق الموقع غير مصرح به في Firebase.",
-        "auth/operation-not-allowed": "تسجيل Google غير مفعّل في Firebase.",
-        "auth/popup-blocked": "المتصفح منع نافذة Google. جرّب فتح الموقع في Safari مباشرة.",
-        "auth/popup-closed-by-user": "أُغلقت نافذة Google قبل إكمال تسجيل الدخول.",
-        "auth/cancelled-popup-request": "تم إلغاء طلب تسجيل Google. حاول مرة أخرى.",
-        "auth/network-request-failed": "تعذر الاتصال بالإنترنت. حاول مرة أخرى.",
-        "auth/operation-not-supported-in-this-environment": "بيئة المتصفح لا تدعم نافذة تسجيل Google."
-      };
-      showMessage((messages[code] || "تعذر إكمال تسجيل Google.") + " رمز الخطأ: " + code);
-    });
-}
-
-registerGoogleButton.addEventListener("click", () => startGoogleAuth("register"));
-loginGoogleButton.addEventListener("click", () => startGoogleAuth("login"));
-
-async function initializeLogin() {
-  try {
-    await setPersistence(auth, indexedDBLocalPersistence);
-  } catch (_) {
-    try { await setPersistence(auth, browserLocalPersistence); } catch (error) {
-      showMessage("تعذر تفعيل حفظ جلسة الدخول. رمز الخطأ: " + (error.code || "unknown"));
-    }
-  }
-
-  onAuthStateChanged(auth, user => {
-    if (!user) {
-      activeUser = null;
-      handledUid = null;
-      processingUid = null;
-      return;
-    }
-
-    // On iPhone, Firebase may restore the redirected Google session
-    // after getRedirectResult has completed. Handle that late event too.
-    if (redirectCheckFinished && !handledUid && !processingUid) {
-      registerGoogleButton.disabled = false;
-      loginGoogleButton.disabled = false;
-      continueWithUser(user);
-    }
-  });
-
-  try {
-    const result = await getRedirectResult(auth);
-    if (result && result.user) {
-      let mode = "login";
-      try { mode = sessionStorage.getItem("tareeqGoogleAuthMode") || "login"; sessionStorage.removeItem("tareeqGoogleAuthMode"); } catch (_) {}
-      await handleGoogleCredential(result, mode);
-    } else if (auth.currentUser) {
-      showMessage("تمت استعادة جلسة Google. جارٍ تجهيز حسابك.");
-      await continueWithUser(auth.currentUser);
-    } else {
-      let savedMode = "";
-      try { savedMode = sessionStorage.getItem("tareeqGoogleAuthMode") || ""; } catch (_) {}
-      redirectCheckFinished = true;
-      registerGoogleButton.disabled = false;
-      loginGoogleButton.disabled = false;
-      if (savedMode) {
-        showMessage("عاد الموقع من Google، لكن Firebase لم يستعد جلسة الدخول. هذا يشير غالباً إلى مشكلة في استجابة تحويل Google أو إعداد نطاق المصادقة. أعد المحاولة، وإذا تكرر الأمر سنحتاج فحص إعدادات Firebase.");
-      } else {
-        showMessage("لم يتم العثور على جلسة Google. اختر إنشاء حساب أو تسجيل الدخول للمحاولة مجدداً.");
-      }
-    }
-    redirectCheckFinished = true;
-    if (auth.currentUser && !handledUid && !processingUid) {
-      await continueWithUser(auth.currentUser);
-    }
-  } catch (error) {
-    redirectCheckFinished = true;
-    registerGoogleButton.disabled = false;
-    loginGoogleButton.disabled = false;
-    showMessage("فشل إكمال تسجيل Google. رمز الخطأ: " + (error.code || "unknown"));
-    if (auth.currentUser && !handledUid && !processingUid) {
-      await continueWithUser(auth.currentUser);
-    }
-  }
-}
-
-document.getElementById("savePlayerNameButton").addEventListener("click", async () => {
-  const playerName = document.getElementById("playerName").value.trim();
-  if (!activeUser) { showMessage("سجّل الدخول أولاً."); return; }
-  if (!playerName) { showMessage("اسم اللاعب مطلوب."); return; }
-  if (playerName.length > 30) { showMessage("الاسم يجب ألا يتجاوز 30 حرفاً."); return; }
-  try {
-    await setDoc(doc(db, "users", activeUser.uid), {
-      uid: activeUser.uid, email: activeUser.email || "",
-      displayName: activeUser.displayName || "", photoURL: activeUser.photoURL || "",
-      playerName, updatedAt: serverTimestamp()
-    }, { merge: true });
-    showMessage("تم حفظ الاسم. جارٍ فتح اللعبة.");
-    location.replace("online.html");
-  } catch (error) {
-    showMessage("تعذر حفظ الاسم. رمز الخطأ: " + (error.code || "unknown"));
-  }
+document.getElementById("verifyCode").addEventListener("click",async()=>{
+ const code=document.getElementById("code").value.trim();if(!confirmation){say("اطلب رمز التحقق أولاً.");return}if(!/^\d{6}$/.test(code)){say("أدخل رمزاً مكوّناً من ستة أرقام.");return}
+ const button=document.getElementById("verifyCode");button.disabled=true;
+ try{const result=await confirmation.confirm(code),user=result.user;await setDoc(doc(db,"users",user.uid),{uid:user.uid,phoneNumber:user.phoneNumber||"",createdAt:serverTimestamp(),lastLoginAt:serverTimestamp()},{merge:true});say("تم التحقق بنجاح. جارٍ فتح مِرسالو.");location.replace("chat.html")}
+ catch(err){say("لم نتمكن من تأكيد الرمز. رمز الخطأ: "+(err.code||"unknown"))}
+ finally{button.disabled=false}
 });
-
-initializeLogin();
-</script>
-
-</body>
-
-</html>
+</script></body></html>
