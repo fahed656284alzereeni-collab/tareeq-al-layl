@@ -47,6 +47,19 @@ button:focus,input:focus{outline:3px solid #ffd166}
 <p>لعبة قيادة جماعية للمكفوفين</p>
 
 <section>
+<h2>الملف الشخصي والإعدادات</h2>
+<p id="profileSummary" aria-live="polite">الحساب مسجل الدخول</p>
+<label for="themeChoice">مظهر اللعبة</label>
+<select id="themeChoice">
+<option value="system">حسب إعدادات الجهاز</option>
+<option value="dark">داكن</option>
+<option value="light">فاتح</option>
+</select>
+<button onclick="saveTheme()">حفظ المظهر</button>
+<button onclick="logoutAccount()">تسجيل الخروج</button>
+</section>
+
+<section>
 
 <h2>بيانات اللاعب</h2>
 
@@ -150,7 +163,7 @@ button:focus,input:focus{outline:3px solid #ffd166}
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const app = initializeApp({
   apiKey: "AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",
@@ -171,7 +184,7 @@ onAuthStateChanged(auth, async user => {
     window.getGameToken = () => auth.currentUser.getIdToken();
     window.currentUserUid = user.uid;
     const field = document.getElementById("playerName");
-    field.value = name;
+    document.getElementById("profileSummary").textContent = "اسم الحساب: "+name+"؛ البريد: "+(user.email || "غير متوفر");\n    field.value = name;
     field.readOnly = true;
     field.setAttribute("aria-label", "اسم اللاعب المحفوظ في الحساب");
     document.body.style.visibility = "visible";
@@ -187,6 +200,23 @@ onAuthStateChanged(auth, async user => {
 <script>
 
 const SERVER="https://tareeq-al-layl-server.onrender.com";
+function applyTheme(mode){
+  const light=mode==="light"||(mode==="system"&&window.matchMedia("(prefers-color-scheme: light)").matches);
+  document.body.style.background=light?"#f2f5f7":"#101820";
+  document.body.style.color=light?"#17212b":"#ffffff";
+  document.querySelectorAll("section").forEach(section=>section.style.background=light?"#ffffff":"#1d2b36");
+  el("themeChoice").value=mode;
+}
+function saveTheme(){
+  const mode=el("themeChoice").value;
+  localStorage.setItem("tareeqTheme",mode);
+  applyTheme(mode);
+  say("تم حفظ إعدادات المظهر");
+}
+function logoutAccount(){
+  import("https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js").then(({getAuth,signOut})=>signOut(getAuth()).then(()=>location.replace("login.html"))).catch(()=>say("تعذر تسجيل الخروج"));
+}
+
 
 const socket=io(SERVER,{autoConnect:false,auth: async callback => { try { callback({token: await window.getGameToken()}); } catch (error) { callback({token: ""}); } }});
 window.addEventListener("game-auth-ready",()=>socket.connect(),{once:true});
@@ -849,6 +879,7 @@ loadRooms();
 
 }
 
+applyTheme(localStorage.getItem("tareeqTheme")||"system");
 updateMicButton();
 
 </script>
