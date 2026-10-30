@@ -12,7 +12,7 @@
 
 <style>
 
-body{font-family:Arial,sans-serif;background:#101820;color:white;padding:18px;line-height:1.8}
+body{visibility:hidden;font-family:Arial,sans-serif;background:#101820;color:white;padding:18px;line-height:1.8}
 
 h1,h2{text-align:center}
 
@@ -128,6 +128,37 @@ button:focus,input:focus{outline:3px solid #ffd166}
 </section>
 
 <p id="notice" class="notice" role="status" aria-live="assertive"></p>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const app = initializeApp({
+  apiKey: "AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",
+  authDomain: "tareeq-al-layl.firebaseapp.com",
+  projectId: "tareeq-al-layl",
+  storageBucket: "tareeq-al-layl.firebasestorage.app",
+  messagingSenderId: "1071185437335",
+  appId: "1:1071185437335:web:4ca6e3f87152f9ef68ffd2"
+});
+const auth = getAuth(app);
+const db = getFirestore(app);
+onAuthStateChanged(auth, async user => {
+  if (!user) { location.replace("login.html"); return; }
+  try {
+    const profile = await getDoc(doc(db, "users", user.uid));
+    const name = profile.exists() ? String(profile.data().playerName || "").trim() : "";
+    if (!name) { location.replace("login.html"); return; }
+    const field = document.getElementById("playerName");
+    field.value = name;
+    field.readOnly = true;
+    field.setAttribute("aria-label", "اسم اللاعب المحفوظ في الحساب");
+    document.body.style.visibility = "visible";
+  } catch (error) {
+    location.replace("login.html");
+  }
+});
+</script>
 
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 
