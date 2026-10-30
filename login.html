@@ -303,7 +303,19 @@ async function initializeLogin() {
       try { mode = sessionStorage.getItem("tareeqGoogleAuthMode") || "login"; sessionStorage.removeItem("tareeqGoogleAuthMode"); } catch (_) {}
       await handleGoogleCredential(result, mode);
     } else if (auth.currentUser) {
+      showMessage("تمت استعادة جلسة Google. جارٍ تجهيز حسابك.");
       await continueWithUser(auth.currentUser);
+    } else {
+      let savedMode = "";
+      try { savedMode = sessionStorage.getItem("tareeqGoogleAuthMode") || ""; } catch (_) {}
+      redirectCheckFinished = true;
+      registerGoogleButton.disabled = false;
+      loginGoogleButton.disabled = false;
+      if (savedMode) {
+        showMessage("عاد الموقع من Google، لكن Firebase لم يستعد جلسة الدخول. هذا يشير غالباً إلى مشكلة في استجابة تحويل Google أو إعداد نطاق المصادقة. أعد المحاولة، وإذا تكرر الأمر سنحتاج فحص إعدادات Firebase.");
+      } else {
+        showMessage("لم يتم العثور على جلسة Google. اختر إنشاء حساب أو تسجيل الدخول للمحاولة مجدداً.");
+      }
     }
     redirectCheckFinished = true;
     if (auth.currentUser && !handledUid && !processingUid) {
