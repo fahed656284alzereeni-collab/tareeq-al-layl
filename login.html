@@ -320,43 +320,6 @@ document.getElementById("savePlayerNameButton").addEventListener("click", async 
   }
 });
 
-googleButton.addEventListener("click", async () => {
-  googleButton.disabled = true;
-  try {
-    showMessage("جارٍ تجهيز تسجيل الدخول باستخدام Google.");
-    await setPersistence(auth, browserLocalPersistence);
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: "select_account" });
-    const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isAppleMobile) {
-      showMessage("سيتم فتح صفحة Google الآمنة، وبعد الاختيار ستعود إلى اللعبة.");
-      await signInWithRedirect(auth, provider);
-      return;
-    }
-    try {
-      const result = await signInWithPopup(auth, provider);
-      await continueWithUser(result.user);
-    } catch (error) {
-      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(error.code)) {
-        showMessage("سيتم فتح صفحة Google لتسجيل الدخول.");
-        await signInWithRedirect(auth, provider);
-        return;
-      }
-      throw error;
-    }
-  } catch (error) {
-    googleButton.disabled = false;
-    const code = error.code || "unknown";
-    const messages = {
-      "auth/unauthorized-domain": "نطاق الموقع غير مصرح به في Firebase.",
-      "auth/operation-not-allowed": "تسجيل Google غير مفعّل في Firebase.",
-      "auth/network-request-failed": "تعذر الاتصال بالإنترنت. حاول مرة أخرى.",
-      "auth/account-exists-with-different-credential": "هذا البريد مسجل بطريقة دخول أخرى."
-    };
-    showMessage((messages[code] || "تعذر تسجيل الدخول باستخدام Google.") + " رمز الخطأ: " + code);
-  }
-});
-
 initializeLogin();
 </script>
 
