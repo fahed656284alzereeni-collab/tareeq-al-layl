@@ -1,0 +1,319 @@
+
+
+<!DOCTYPE html>
+
+<html lang="ar" dir="rtl">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <title>تسجيل الدخول - طريق الليل</title>
+
+  <style>
+
+    body {
+
+      font-family: Arial, sans-serif;
+
+      background: #101522;
+
+      color: white;
+
+      margin: 0;
+
+      padding: 25px;
+
+      line-height: 1.8;
+
+    }
+
+    main {
+
+      max-width: 420px;
+
+      margin: 35px auto;
+
+      background: #1c2638;
+
+      padding: 24px;
+
+      border-radius: 16px;
+
+    }
+
+    h1, p { text-align: center; }
+
+    label {
+
+      display: block;
+
+      margin-top: 15px;
+
+    }
+
+    input, button {
+
+      box-sizing: border-box;
+
+      width: 100%;
+
+      padding: 14px;
+
+      margin-top: 8px;
+
+      border-radius: 8px;
+
+      font-size: 17px;
+
+    }
+
+    input {
+
+      border: 1px solid #77849a;
+
+    }
+
+    button {
+
+      border: 0;
+
+      background: #3978df;
+
+      color: white;
+
+      cursor: pointer;
+
+      margin-top: 16px;
+
+    }
+
+    button:focus, input:focus {
+
+      outline: 3px solid #ffcf55;
+
+    }
+
+    #message {
+
+      margin-top: 18px;
+
+      text-align: center;
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+<main>
+
+  <h1>طريق الليل</h1>
+
+  <p>مرحباً بك. سجّل الدخول للمتابعة.</p>
+
+  <button id="googleButton">تسجيل الدخول باستخدام Google</button>
+
+  <label for="email">البريد الإلكتروني</label>
+
+  <input id="email" type="email" autocomplete="email">
+
+  <label for="password">كلمة المرور</label>
+
+  <input id="password" type="password" autocomplete="current-password">
+
+  <button id="loginButton">تسجيل الدخول</button>
+
+  <button id="registerButton">إنشاء حساب جديد</button>
+
+  <p id="message" role="status" aria-live="polite"></p>
+
+</main>
+
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+
+import {
+
+  getAuth,
+
+  GoogleAuthProvider,
+
+  signInWithRedirect,
+
+  signInWithEmailAndPassword,
+
+  createUserWithEmailAndPassword,
+
+  onAuthStateChanged
+
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+
+import {
+
+  getFirestore,
+
+  doc,
+
+  setDoc,
+
+  serverTimestamp
+
+} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+
+const firebaseConfig = {
+
+  apiKey: "AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",
+
+  authDomain: "tareeq-al-layl.firebaseapp.com",
+
+  projectId: "tareeq-al-layl",
+
+  storageBucket: "tareeq-al-layl.firebasestorage.app",
+
+  messagingSenderId: "1071185437335",
+
+  appId: "1:1071185437335:web:4ca6e3f87152f9ef68ffd2"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const auth = getAuth(app);
+
+const db = getFirestore(app);
+
+const message = document.getElementById("message");
+
+function showMessage(text) {
+
+  message.textContent = text;
+
+}
+
+async function saveProfile(user) {
+
+  await setDoc(doc(db, "users", user.uid), {
+
+    uid: user.uid,
+
+    email: user.email || "",
+
+    displayName: user.displayName || "",
+
+    photoURL: user.photoURL || "",
+
+    updatedAt: serverTimestamp()
+
+  }, { merge: true });
+
+}
+
+onAuthStateChanged(auth, async (user) => {
+
+  if (user) {
+
+    try {
+
+      await saveProfile(user);
+
+      showMessage("تم تسجيل الدخول. جارٍ فتح اللعبة.");
+
+      window.location.href = "online.html";
+
+    } catch (error) {
+
+      showMessage("تعذر حفظ الملف الشخصي: " + error.message);
+
+    }
+
+  }
+
+});
+
+document.getElementById("googleButton").addEventListener("click", async () => {
+
+  try {
+
+    const provider = new GoogleAuthProvider();
+
+    await signInWithRedirect(auth, provider);
+
+  } catch (error) {
+
+    showMessage("تعذر تسجيل الدخول: " + error.message);
+
+  }
+
+});
+
+document.getElementById("loginButton").addEventListener("click", async () => {
+
+  const email = document.getElementById("email").value.trim();
+
+  const password = document.getElementById("password").value;
+
+  if (!email || !password) {
+
+    showMessage("أدخل البريد الإلكتروني وكلمة المرور.");
+
+    return;
+
+  }
+
+  try {
+
+    await signInWithEmailAndPassword(auth, email, password);
+
+  } catch (error) {
+
+    showMessage("فشل تسجيل الدخول: " + error.message);
+
+  }
+
+});
+
+document.getElementById("registerButton").addEventListener("click", async () => {
+
+  const email = document.getElementById("email").value.trim();
+
+  const password = document.getElementById("password").value;
+
+  if (!email || !password) {
+
+    showMessage("أدخل البريد الإلكتروني وكلمة المرور.");
+
+    return;
+
+  }
+
+  if (password.length < 6) {
+
+    showMessage("كلمة المرور يجب أن تكون 6 أحرف على الأقل.");
+
+    return;
+
+  }
+
+  try {
+
+    await createUserWithEmailAndPassword(auth, email, password);
+
+  } catch (error) {
+
+    showMessage("تعذر إنشاء الحساب: " + error.message);
+
+  }
+
+});
+
+</script>
+
+</body>
+
+</html>
