@@ -212,12 +212,15 @@ function createRoom(){makeRoom(false);}
 function createPrivateRoom(){makeRoom(true);}
 
 function makeRoom(privateMode){
-
+const player=playerName();
+const roomTitle=el("roomName").value.trim();
+if(!player||!roomTitle){say("أدخل اسم اللاعب واسم الطاولة أولا.");return;}
 socket.emit("createRoom",{
 
 name:el("roomName").value.trim(),
 
-playerName:playerName()
+playerName:player,
+privateRoom:privateMode
 
 },r=>{
 
@@ -232,7 +235,7 @@ if(privateMode){
 
 }
 
-el("roomCode").value=r.code;
+
 
 el("status").textContent="أنت مالك الطاولة.";
 
@@ -270,9 +273,7 @@ b.textContent=room.name+"، عدد اللاعبين: "+room.playerCount;
 
 b.onclick=()=>{
 
-el("roomCode").value=room.code;
-
-joinRoom();
+joinRoom(room.code);
 
 };
 
@@ -282,11 +283,10 @@ area.appendChild(b);
 
 }
 
-function joinRoom(){
-
-const code=el("roomCode").value.trim().toUpperCase();
-
-if(!code){say("اكتب رمز الطاولة");return;}
+function joinRoom(code){
+const name=playerName();
+if(!name){say("اسم اللاعب مطلوب.");return;}
+if(!code){say("اختر طاولة من القائمة.");return;}
 
 socket.emit("joinRoom",{code,name:playerName()},r=>{
 
@@ -296,7 +296,7 @@ currentRoom=r.code;
 
 isHost=false;
 
-el("status").textContent="انضممت إلى الطاولة. الرمز: "+r.code;
+el("status").textContent="انضممت إلى الطاولة: "+r.room.name;
  say("تم الانضمام بنجاح");
 
 });
