@@ -239,16 +239,15 @@ async function startGoogleAuth(mode) {
     await setPersistence(auth, indexedDBLocalPersistence).catch(() => setPersistence(auth, browserLocalPersistence));
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({ prompt: "select_account" });
-    const isAppleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-    if (isAppleMobile) {
-      await signInWithRedirect(auth, provider);
-      return;
-    }
+    // Prefer popup on iPhone to avoid cross-domain redirect session loss.
+    // Persistence is configured during page initialization, before the user taps.
     try {
       const result = await signInWithPopup(auth, provider);
+      try { sessionStorage.removeItem("tareeqGoogleAuthMode"); } catch (_) {}
       await handleGoogleCredential(result, mode);
     } catch (error) {
-      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(error.code)) {
+      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment", "auth/cancelled-popup-request"].includes(error.code)) {
+        showMessage("تعذر فتح نافذة Google المنبثقة. سنحاول تسجيل الدخول بطريقة التحويل.");
         await signInWithRedirect(auth, provider);
         return;
       }
