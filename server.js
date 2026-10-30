@@ -243,11 +243,29 @@ io.on("connection", socket => {
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       });
       friendRequestLimits.set(socket.data.uid, now);
-      const target = getConnectedSocket(targetUid);
+      const targetSockets = connectedUsers.get(targetUid);
+    const targets = targetSockets ? [...targetSockets].filter(client => client.connected) : [];
+    const target = targets[0] || null;
       if (target) target.emit("friendRequestReceived", { fromUid: socket.data.uid, fromName: socket.data.playerName });
       if (typeof reply === "function") reply({ success: true, message: "تم إرسال طلب الصداقة." });
     } catch (error) {
       if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر إرسال الطلب." });
+    }
+  });
+
+  socket.on("updatePlayerName", async (data = {}, reply) => {
+    try {
+      const playerName = String(data.playerName || "").trim().slice(0, 30);
+      if (!playerName) throw new Error("اسم اللاعب مطلوب.");
+      await usersRef.doc(socket.data.uid).set({
+        playerName,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+      socket.data.playerName = playerName;
+      io.emit("onlinePlayers", onlinePlayerList());
+      if (typeof reply === "function") reply({ success: true, playerName, message: "تم تحديث اسم اللاعب." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تحديث الاسم." });
     }
   });
 
@@ -500,12 +518,13 @@ io.on("connection", socket => {
         return;
       }
       // Re-check room and recipient after the asynchronous friendship lookup.
-      if (getRoom(code) !== room || room.host !== socket.id || !target.connected) {
+      const activeTargets = connectedUsers.get(targetUid);
+      if (getRoom(code) !== room || room.host !== socket.id || !activeTargets || ![...activeTargets].some(client => client.connected)) {
         if (typeof reply === "function") reply({ success: false, message: "تعذر إرسال الدعوة؛ تحقق من حالة الطاولة واللاعب." });
         return;
       }
       room.invited.add(targetUid);
-      target.emit("roomInvitation", {
+      for (const recipient of [...activeTargets].filter(client => client.connected)) recipient.emit("roomInvitation", {
         roomId: code,
         roomName: room.name,
         inviterName: socket.data.playerName,
@@ -520,21 +539,32 @@ io.on("connection", socket => {
 
   });
 
-  socket.on("acceptRoomInvitation", (data = {}, reply) => {
-    const code = String(data.roomId || "").trim().toUpperCase();
-    const room = getRoom(code);
-    if (!room || !room.invited.has(socket.data.uid)) {
-      if (typeof reply === "function") reply({ success: false, message: "الدعوة غير صالحة أو انتهت." });
-      return;
+  socket.on("acceptRoomInvitation", async (data = {}, reply) => {
+    try {
+      const code = String(data.roomId || "").trim().toUpperCase();
+      const room = getRoom(code);
+      if (!room || !room.privateRoom || !room.invited.has(socket.data.uid)) {
+        throw new Error("الدعوة غير صالحة أو انتهت.");
+      }
+      const hostPlayer = [...room.players.values()].find(player => player.id === room.host);
+      if (!hostPlayer || !hostPlayer.uid) throw new Error("تعذر التحقق من مالك الطاولة.");
+      const friendship = await friendshipRef(hostPlayer.uid, socket.data.uid).get();
+      if (!friendship.exists) throw new Error("لم تعد ضمن قائمة أصدقاء مالك الطاولة.");
+      // Re-check after the asynchronous lookup; consume the one-time invite before joining.
+      if (getRoom(code) !== room || !room.privateRoom || !room.invited.has(socket.data.uid)) {
+        throw new Error("انتهت صلاحية الدعوة.");
+      }
+      room.invited.delete(socket.data.uid);
+      leaveCurrentRoom(socket);
+      room.players.set(socket.id, { id: socket.id, uid: socket.data.uid, name: socket.data.playerName });
+      socket.join(code);
+      socket.data.room = code;
+      if (typeof reply === "function") reply({ success: true, room: roomInfo(code, room) });
+      sendRoomUpdate(code);
+      socket.to(code).emit("systemMessage", "انضم لاعب جديد.");
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر قبول الدعوة." });
     }
-    room.invited.delete(socket.data.uid);
-    leaveCurrentRoom(socket);
-    room.players.set(socket.id, { id: socket.id, uid: socket.data.uid, name: socket.data.playerName });
-    socket.join(code);
-    socket.data.room = code;
-    if (typeof reply === "function") reply({ success: true, room: roomInfo(code, room) });
-    sendRoomUpdate(code);
-    socket.to(code).emit("systemMessage", "انضم لاعب جديد.");
   });
 
   socket.on("setRoomPrivacy", (data = {}, reply) => {
