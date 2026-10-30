@@ -26,6 +26,7 @@ const io = new Server(server, {
 });
 
 const rooms = new Map();
+const connectedUsers = new Map();
 
 io.use(async (socket, next) => {
   try {
@@ -158,7 +159,7 @@ function leaveCurrentRoom(socket) {
 }
 
 io.on("connection", socket => {
-
+  connectedUsers.set(socket.data.uid, socket);
   socket.emit("publicRooms", publicRoomList());
 
   socket.on("getPublicRooms", reply => {
@@ -318,6 +319,46 @@ io.on("connection", socket => {
 
     socket.to(code).emit("systemMessage", "انضم لاعب جديد.");
 
+  });
+
+  socket.on("invitePlayer", (data = {}, reply) => {
+    const code = socket.data.room;
+    const room = getRoom(code);
+    const targetUid = String(data.targetUid || "").trim();
+    const target = connectedUsers.get(targetUid);
+    if (!room || room.host !== socket.id) {
+      if (typeof reply === "function") reply({ success: false, message: "فقط مالك الطاولة يستطيع إرسال الدعوات." });
+      return;
+    }
+    if (!targetUid || targetUid === socket.data.uid || !target || !target.connected) {
+      if (typeof reply === "function") reply({ success: false, message: "اللاعب غير متصل حاليا." });
+      return;
+    }
+    room.invited.add(targetUid);
+    target.emit("roomInvitation", {
+      roomId: code,
+      roomName: room.name,
+      inviterName: socket.data.playerName,
+      privateRoom: room.privateRoom
+    });
+    if (typeof reply === "function") reply({ success: true });
+  });
+
+  socket.on("acceptRoomInvitation", (data = {}, reply) => {
+    const code = String(data.roomId || "").trim().toUpperCase();
+    const room = getRoom(code);
+    if (!room || !room.invited.has(socket.data.uid)) {
+      if (typeof reply === "function") reply({ success: false, message: "الدعوة غير صالحة أو انتهت." });
+      return;
+    }
+    room.invited.delete(socket.data.uid);
+    leaveCurrentRoom(socket);
+    room.players.set(socket.id, { id: socket.id, name: socket.data.playerName });
+    socket.join(code);
+    socket.data.room = code;
+    if (typeof reply === "function") reply({ success: true, room: roomInfo(code, room) });
+    sendRoomUpdate(code);
+    socket.to(code).emit("systemMessage", "انضم لاعب جديد.");
   });
 
   socket.on("setRoomPrivacy", (data = {}, reply) => {
@@ -491,7 +532,7 @@ io.on("connection", socket => {
   });
 
   socket.on("disconnect", () => {
-
+    if (connectedUsers.get(socket.data.uid) === socket) connectedUsers.delete(socket.data.uid);
     leaveCurrentRoom(socket);
 
   });
