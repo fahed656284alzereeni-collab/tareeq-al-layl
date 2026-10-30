@@ -71,6 +71,16 @@ button:focus,input:focus{outline:3px solid #ffd166}
 </section>
 
 <section>
+<h2>اللاعبون المتصلون</h2>
+<div id="onlinePlayers" aria-live="polite">بانتظار الاتصال...</div>
+</section>
+
+<section>
+<h2>دعوات الطاولات</h2>
+<div id="invitations" aria-live="assertive">لا توجد دعوات جديدة</div>
+</section>
+
+<section>
 
 <h2>الطاولات العامة</h2>
 
@@ -155,6 +165,7 @@ onAuthStateChanged(auth, async user => {
     field.readOnly = true;
     field.setAttribute("aria-label", "اسم اللاعب المحفوظ في الحساب");
     document.body.style.visibility = "visible";
+    window.dispatchEvent(new Event("game-auth-ready"));
   } catch (error) {
     location.replace("login.html");
   }
@@ -167,7 +178,8 @@ onAuthStateChanged(auth, async user => {
 
 const SERVER="https://tareeq-al-layl-server.onrender.com";
 
-const socket=io(SERVER,{auth: async callback => { try { callback({token: await window.getGameToken()}); } catch (error) { callback({token: ""}); } }});
+const socket=io(SERVER,{autoConnect:false,auth: async callback => { try { callback({token: await window.getGameToken()}); } catch (error) { callback({token: ""}); } }});
+window.addEventListener("game-auth-ready",()=>socket.connect(),{once:true});
 
 let currentRoom="";
 
@@ -179,7 +191,7 @@ let localStream=null;
 
 let microphoneOn=false;
 
-let players=[];
+let players=[];\nlet lastOnlinePlayers=[];
 
 const peers=new Map();
 
@@ -202,6 +214,29 @@ say("تعذر الاتصال بالخادم");
 });
 
 socket.on("publicRooms",showRooms);
+socket.on("onlinePlayers",list=>{lastOnlinePlayers=list||[];showOnlinePlayers(lastOnlinePlayers);});
+socket.on("roomInvitation",invitation=>{
+  const area=el("invitations");
+  const row=document.createElement("div");
+  const label=document.createElement("p");
+  label.textContent="دعوة من "+invitation.inviterName+" إلى طاولة "+invitation.roomName;
+  const accept=document.createElement("button");
+  accept.textContent="قبول الدعوة";
+  accept.onclick=()=>{
+    socket.emit("acceptRoomInvitation",{roomId:invitation.roomId},result=>{
+      if(!result.success){say(result.message);row.remove();return;}
+      currentRoom=result.room.code;
+      isHost=false;
+      isPrivate=true;
+      el("status").textContent="انضممت إلى الطاولة: "+result.room.name;
+      say("تم قبول الدعوة والانضمام إلى الطاولة");
+      row.remove();
+    });
+  };
+  row.append(label,accept);
+  area.replaceChildren(row);
+  say("وصلتك دعوة جديدة إلى طاولة خاصة");
+});
 
 socket.on("playersUpdate",list=>{
 
@@ -233,6 +268,27 @@ el("messages").appendChild(p);
 
 socket.on("systemMessage",say);
 
+function showOnlinePlayers(list){
+  const area=el("onlinePlayers");
+  area.replaceChildren();
+  const others=(list||[]).filter(p=>p.uid!==window.currentUserUid);
+  if(!others.length){area.textContent="لا يوجد لاعبون متصلون حاليا";return;}
+  others.forEach(player=>{
+    const row=document.createElement("div");
+    const label=document.createElement("p");
+    label.textContent=player.name+"، متصل الآن";
+    row.appendChild(label);
+    if(currentRoom&&isHost&&isPrivate){
+      const invite=document.createElement("button");
+      invite.textContent="دعوة إلى الطاولة الخاصة";
+      invite.onclick=()=>socket.emit("invitePlayer",{targetUid:player.uid},result=>{
+        say(result.success?"تم إرسال الدعوة إلى "+player.name:result.message);
+      });
+      row.appendChild(invite);
+    }
+    area.appendChild(row);
+  });
+}
 function playerName(){
 
 return el("playerName").value.trim();
