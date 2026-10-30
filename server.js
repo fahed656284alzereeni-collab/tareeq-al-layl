@@ -1,8 +1,8 @@
-
-
 const express = require("express");
 
 const http = require("http");
+
+const path = require("path");
 
 const { Server } = require("socket.io");
 
@@ -216,8 +216,7 @@ io.on("connection", socket => {
 
       if (typeof reply === "function") {
 
-        reply({
-
+        reply({ 
           success: false,
 
           message: "الطاولة غير موجودة أو لم تعد متاحة."
@@ -473,6 +472,12 @@ app.get("/", (req, res) => {
 app.get("/health", (req, res) => {
 
   res.json({ success: true });
+
+});
+
+app.get("/login.html", (req, res) => {
+
+  res.sendFile(path.join(__dirname, "login.html"));
 
 });
 
