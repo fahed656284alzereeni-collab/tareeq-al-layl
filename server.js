@@ -3,16 +3,33 @@ const express = require("express");
 const http = require("http");
 
 const path = require("path");
+const fs = require("fs");
 
 const { Server } = require("socket.io");
 const admin = require("firebase-admin");
 
-if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-  console.error("Missing FIREBASE_SERVICE_ACCOUNT environment secret.");
+// Render Secret Files are mounted under /etc/secrets/<filename>.
+// Prefer the mounted file; retain the environment-variable fallback for compatibility.
+const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_FILE ||
+  "/etc/secrets/firebase-service-account.json";
+
+let serviceAccount;
+try {
+  if (fs.existsSync(serviceAccountPath)) {
+    serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+  } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  } else {
+    throw new Error("Firebase service-account secret file or environment variable was not found.");
+  }
+  if (!serviceAccount || !serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+    throw new Error("Firebase service-account JSON is missing required fields.");
+  }
+} catch (error) {
+  console.error("Unable to load Firebase service-account credentials:", error.message);
   process.exit(1);
 }
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
 const app = express();
