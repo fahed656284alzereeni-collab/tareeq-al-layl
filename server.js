@@ -84,10 +84,11 @@ io.use(async (socket, next) => {
     if (!token) return next(new Error("AUTH_REQUIRED"));
     const decoded = await admin.auth().verifyIdToken(token);
     const profile = await admin.firestore().collection("users").doc(decoded.uid).get();
-    const playerName = profile.exists ? String(profile.data().playerName || "").trim().slice(0, 30) : "";
-    if (!playerName) return next(new Error("PLAYER_PROFILE_REQUIRED"));
+    const profileData = profile.exists ? profile.data() : {};
+    const playerName = String(profileData.playerName || profileData.phoneNumber || decoded.phone_number || "مستخدم").trim().slice(0, 40);
     socket.data.uid = decoded.uid;
     socket.data.playerName = playerName;
+    socket.data.phoneNumber = String(profileData.phoneNumber || decoded.phone_number || "");
     next();
   } catch (error) {
     next(new Error("AUTH_INVALID"));
@@ -218,6 +219,91 @@ io.on("connection", socket => {
   });
 
   const usersRef = admin.firestore().collection("users");
+  const db = admin.firestore();
+  const conversationsRef = db.collection("conversations");
+
+  socket.on("findUserByPhone", async (data = {}, reply) => {
+    try {
+      const phone = String(data.phone || "").trim();
+      if (!/^\\+[1-9]\\d{7,14}$/.test(phone)) throw new Error("أدخل الرقم بالصيغة الدولية.");
+      if (phone === socket.data.phoneNumber) throw new Error("هذا رقم حسابك.");
+      const snap = await usersRef.where("phoneNumber", "==", phone).limit(1).get();
+      if (snap.empty) throw new Error("لا يوجد حساب مسجل بهذا الرقم.");
+      const target = snap.docs[0];
+      if (typeof reply === "function") reply({ success: true, user: { uid: target.id, phoneNumber: phone } });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر البحث." });
+    }
+  });
+
+  socket.on("startDirectConversation", async (data = {}, reply) => {
+    try {
+      const targetUid = String(data.targetUid || "").trim();
+      if (!targetUid || targetUid === socket.data.uid) throw new Error("المستخدم غير صالح.");
+      const targetSnap = await usersRef.doc(targetUid).get();
+      if (!targetSnap.exists || !targetSnap.data().phoneNumber) throw new Error("الحساب غير موجود.");
+      const members = [socket.data.uid, targetUid].sort();
+      const conversationId = members.join("_");
+      const ref = conversationsRef.doc(conversationId);
+      await ref.set({ type: "direct", members, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      if (typeof reply === "function") reply({ success: true, conversation: { id: conversationId, phoneNumber: targetSnap.data().phoneNumber } });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر بدء المحادثة." });
+    }
+  });
+
+  socket.on("listConversations", async reply => {
+    try {
+      const snap = await conversationsRef.where("members", "array-contains", socket.data.uid).get();
+      const conversations = await Promise.all(snap.docs.map(async item => {
+        const data = item.data();
+        const otherUid = (data.members || []).find(uid => uid !== socket.data.uid);
+        const other = otherUid ? await usersRef.doc(otherUid).get() : null;
+        const last = await item.ref.collection("messages").orderBy("createdAt", "desc").limit(1).get();
+        const msg = last.empty ? null : last.docs[0].data();
+        return { id: item.id, otherUid, phoneNumber: other && other.exists ? (other.data().phoneNumber || "") : "", lastMessage: msg ? String(msg.text || "رسالة") : "", updatedAt: data.updatedAt ? data.updatedAt.toMillis() : 0 };
+      }));
+      conversations.sort((a,b) => b.updatedAt-a.updatedAt);
+      if (typeof reply === "function") reply({ success: true, conversations });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: "تعذر تحميل المحادثات." });
+    }
+  });
+
+  socket.on("getConversationMessages", async (data = {}, reply) => {
+    try {
+      const id = String(data.conversationId || "");
+      const ref = conversationsRef.doc(id);
+      const conversation = await ref.get();
+      if (!conversation.exists || !(conversation.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بفتح هذه المحادثة.");
+      const snap = await ref.collection("messages").orderBy("createdAt", "asc").limit(100).get();
+      if (typeof reply === "function") reply({ success: true, messages: snap.docs.map(d => ({ id:d.id, ...d.data(), createdAt:d.data().createdAt ? d.data().createdAt.toMillis() : 0 })) });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تحميل الرسائل." });
+    }
+  });
+
+  socket.on("sendDirectMessage", async (data = {}, reply) => {
+    try {
+      const id = String(data.conversationId || "");
+      const text = String(data.text || "").trim();
+      if (!text || text.length > 4000) throw new Error("اكتب رسالة لا تتجاوز 4000 حرف.");
+      const ref = conversationsRef.doc(id);
+      const conversation = await ref.get();
+      if (!conversation.exists || !(conversation.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإرسال رسالة هنا.");
+      const message = { senderUid: socket.data.uid, text, createdAt: admin.firestore.FieldValue.serverTimestamp() };
+      const added = await ref.collection("messages").add(message);
+      await ref.set({ updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: text.slice(0,120) }, { merge: true });
+      const payload = { id: added.id, senderUid: socket.data.uid, text, createdAt: Date.now() };
+      for (const member of conversation.data().members) {
+        const sessions = connectedUsers.get(member);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("directMessageReceived", { conversationId:id, message:payload });
+      }
+      if (typeof reply === "function") reply({ success: true, message: payload });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر إرسال الرسالة." });
+    }
+  });
   const friendshipRef = (uid, otherUid) => usersRef.doc(uid).collection("friends").doc(otherUid);
   const requestRef = (uid, otherUid) => usersRef.doc(uid).collection("friendRequests").doc(otherUid);
 
