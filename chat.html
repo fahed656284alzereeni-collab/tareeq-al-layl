@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>محادثات مِرسالو</title>
+<style>
+:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}*{box-sizing:border-box}body{margin:0;line-height:1.8}header{padding:18px 22px;background:#1b293b;border-bottom:1px solid #34445a;display:flex;align-items:center;justify-content:space-between;gap:12px}h1{margin:0;color:#8bd8c5;font-size:1.5rem}main{max-width:760px;margin:auto;padding:22px}.panel{background:#1b293b;border:1px solid #34445a;border-radius:18px;padding:20px;margin:18px 0}button{background:#167c68;color:white;border:0;border-radius:10px;padding:12px 16px;font-size:1rem}button:focus{outline:3px solid #ffd166;outline-offset:3px}#phoneLabel{overflow-wrap:anywhere;color:#c3d0df}
+</style></head><body>
+<header><h1>مِرسالو</h1><button id="logout">تسجيل الخروج</button></header>
+<main><section class="panel"><h2>أهلاً بك في مِرسالو</h2><p id="phoneLabel" aria-live="polite">جارٍ تحميل الحساب...</p><p>تم تجهيز تسجيل الدخول برقم الهاتف. نعمل الآن على تفعيل المحادثات وجهات الاتصال بشكل آمن.</p></section>
+<section class="panel"><h2>محادثاتك</h2><p>ستظهر محادثاتك هنا بعد تجهيز نظام جهات الاتصال والرسائل.</p></section>
+<p id="status" role="status" aria-live="polite"></p></main>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+const app=initializeApp({apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"}),auth=getAuth(app);
+onAuthStateChanged(auth,user=>{if(!user){location.replace("login.html");return}document.getElementById("phoneLabel").textContent="رقم الحساب: "+(user.phoneNumber||"غير متوفر")});
+document.getElementById("logout").addEventListener("click",async()=>{await signOut(auth);location.replace("login.html")});
+</script></body></html>
