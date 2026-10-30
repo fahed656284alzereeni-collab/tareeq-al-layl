@@ -76,6 +76,15 @@ button:focus,input:focus{outline:3px solid #ffd166}
 </section>
 
 <section>
+<h2>الأصدقاء</h2>
+<button onclick="refreshFriends()">تحديث الأصدقاء والطلبات</button>
+<h3>قائمة الأصدقاء</h3>
+<div id="friendsList" aria-live="polite">لم يتم تحميل الأصدقاء بعد</div>
+<h3>طلبات الصداقة الواردة</h3>
+<div id="friendRequests" aria-live="polite">لا توجد طلبات معروضة</div>
+</section>
+
+<section>
 <h2>دعوات الطاولات</h2>
 <div id="invitations" aria-live="assertive">لا توجد دعوات جديدة</div>
 </section>
@@ -205,6 +214,7 @@ socket.on("connect",()=>{
 say("تم الاتصال بالخادم");
 
 loadRooms();
+refreshFriends();
 
 });
 
@@ -216,6 +226,10 @@ say("تعذر الاتصال بالخادم");
 
 socket.on("publicRooms",showRooms);
 socket.on("onlinePlayers",list=>{lastOnlinePlayers=list||[];showOnlinePlayers(lastOnlinePlayers);});
+socket.on("friendRequestReceived",request=>{
+  say("وصلك طلب صداقة من "+request.fromName);
+  refreshFriends();
+});
 socket.on("roomInvitation",invitation=>{
   const area=el("invitations");
   const row=document.createElement("div");
@@ -280,6 +294,12 @@ function showOnlinePlayers(list){
     label.textContent=player.name+"، متصل الآن";
     row.appendChild(label);
     if(currentRoom&&isHost&&isPrivate){
+      const friend=document.createElement("button");
+      friend.textContent="إرسال طلب صداقة إلى "+player.name;
+      friend.onclick=()=>socket.emit("sendFriendRequest",{targetUid:player.uid},result=>say(result.message));
+      row.appendChild(friend);
+    }
+    if(currentRoom&&isHost&&isPrivate){
       const invite=document.createElement("button");
       invite.textContent="دعوة إلى الطاولة الخاصة";
       invite.onclick=()=>socket.emit("invitePlayer",{targetUid:player.uid},result=>{
@@ -288,6 +308,47 @@ function showOnlinePlayers(list){
       row.appendChild(invite);
     }
     area.appendChild(row);
+  });
+}
+function refreshFriends(){
+  socket.emit("getFriendData",data=>{
+    if(!data.success){say(data.message||"تعذر تحميل الأصدقاء");return;}
+    const friends=el("friendsList");
+    friends.replaceChildren();
+    if(!data.friends.length)friends.textContent="قائمة الأصدقاء فارغة";
+    data.friends.forEach(friend=>{
+      const row=document.createElement("div");
+      const label=document.createElement("p");
+      label.textContent=friend.name+(friend.online?"، متصل":"، غير متصل");
+      row.appendChild(label);
+      if(friend.online&&currentRoom&&isHost&&isPrivate){
+        const invite=document.createElement("button");
+        invite.textContent="دعوة إلى الطاولة";
+        invite.onclick=()=>socket.emit("invitePlayer",{targetUid:friend.uid},r=>say(r.message));
+        row.appendChild(invite);
+      }
+      const remove=document.createElement("button");
+      remove.textContent="إزالة الصديق "+friend.name;
+      remove.onclick=()=>socket.emit("removeFriend",{uid:friend.uid},r=>{say(r.message);refreshFriends();});
+      row.appendChild(remove);
+      friends.appendChild(row);
+    });
+    const requests=el("friendRequests");
+    requests.replaceChildren();
+    if(!data.requests.length)requests.textContent="لا توجد طلبات صداقة جديدة";
+    data.requests.forEach(request=>{
+      const row=document.createElement("div");
+      const label=document.createElement("p");
+      label.textContent="طلب صداقة من "+request.name;
+      const accept=document.createElement("button");
+      accept.textContent="قبول طلب الصداقة";
+      accept.onclick=()=>socket.emit("respondFriendRequest",{fromUid:request.uid,accept:true},r=>{say(r.message);refreshFriends();});
+      const reject=document.createElement("button");
+      reject.textContent="رفض طلب الصداقة";
+      reject.onclick=()=>socket.emit("respondFriendRequest",{fromUid:request.uid,accept:false},r=>{say(r.message);refreshFriends();});
+      row.append(label,accept,reject);
+      requests.appendChild(row);
+    });
   });
 }
 function playerName(){
