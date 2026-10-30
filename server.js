@@ -8,29 +8,34 @@ const fs = require("fs");
 const { Server } = require("socket.io");
 const admin = require("firebase-admin");
 
-// Render Secret Files are mounted under /etc/secrets/<filename>.
-// Prefer the mounted file; retain the environment-variable fallback for compatibility.
-const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_FILE ||
-  "/etc/secrets/firebase-service-account.json";
-
-let serviceAccount;
+// Prefer keyless Google Workload Identity Federation when Render configures ADC.
+// Otherwise support a Render Secret File or the legacy JSON environment variable.
+let credential;
 try {
-  if (fs.existsSync(serviceAccountPath)) {
-    serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
-  } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-    serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    credential = admin.credential.applicationDefault();
   } else {
-    throw new Error("Firebase service-account secret file or environment variable was not found.");
-  }
-  if (!serviceAccount || !serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
-    throw new Error("Firebase service-account JSON is missing required fields.");
+    const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_FILE ||
+      "/etc/secrets/firebase-service-account.json";
+    let serviceAccount;
+    if (fs.existsSync(serviceAccountPath)) {
+      serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
+    } else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    } else {
+      throw new Error("No Google ADC, Firebase service-account secret file, or FIREBASE_SERVICE_ACCOUNT value was found.");
+    }
+    if (!serviceAccount || !serviceAccount.project_id || !serviceAccount.client_email || !serviceAccount.private_key) {
+      throw new Error("Firebase service-account JSON is missing required fields.");
+    }
+    credential = admin.credential.cert(serviceAccount);
   }
 } catch (error) {
-  console.error("Unable to load Firebase service-account credentials:", error.message);
+  console.error("Unable to configure Firebase Admin credentials:", error.message);
   process.exit(1);
 }
 
-admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+admin.initializeApp({ credential });
 
 const app = express();
 
