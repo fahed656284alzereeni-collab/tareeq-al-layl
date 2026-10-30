@@ -181,7 +181,7 @@ io.on("connection", socket => {
 
     const room = {
 
-      name: String(data.name || "").trim().slice(0, 50),
+      name: requestedRoomName,
 
       host: socket.id,
 
@@ -189,7 +189,7 @@ io.on("connection", socket => {
 
       started: false,
 
-      players: new Map()
+      players: new Map(),\n      invited: new Set()
 
     };
 
