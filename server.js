@@ -5,6 +5,15 @@ const http = require("http");
 const path = require("path");
 
 const { Server } = require("socket.io");
+const admin = require("firebase-admin");
+
+if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+  console.error("Missing FIREBASE_SERVICE_ACCOUNT environment secret.");
+  process.exit(1);
+}
+
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 
 const app = express();
 
@@ -17,6 +26,18 @@ const io = new Server(server, {
 });
 
 const rooms = new Map();
+
+io.use(async (socket, next) => {
+  try {
+    const token = socket.handshake.auth && socket.handshake.auth.token;
+    if (!token) return next(new Error("AUTH_REQUIRED"));
+    const decoded = await admin.auth().verifyIdToken(token);
+    socket.data.uid = decoded.uid;
+    next();
+  } catch (error) {
+    next(new Error("AUTH_INVALID"));
+  }
+});
 
 function getRoom(code) {
 
@@ -176,7 +197,7 @@ io.on("connection", socket => {
 
       id: socket.id,
 
-      name: String(data.playerName || data.namePlayer || "").trim().slice(0, 30)
+      name: requestedPlayerName
 
     });
 
@@ -229,7 +250,7 @@ io.on("connection", socket => {
 
     }
 
-    if (room.privateRoom && !room.invited?.has(socket.id)) {
+    if (room.privateRoom && !room.invited?.has(socket.data.uid)) {
 
       if (typeof reply === "function") {
 
@@ -253,7 +274,7 @@ io.on("connection", socket => {
 
       id: socket.id,
 
-      name: String(data.name || "").trim().slice(0, 30)
+      name: joiningName
 
     });
 
