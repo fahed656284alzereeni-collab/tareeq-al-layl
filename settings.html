@@ -1,22 +1,107 @@
 <!doctype html>
-<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>الإعدادات - مِرسالو</title>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827">
+<title>الإعدادات - مِرسالو</title>
 <style>
-:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}*{box-sizing:border-box}body{margin:0;line-height:1.8;padding:18px}main{max-width:560px;margin:24px auto;background:#1b293b;border:1px solid #34445a;border-radius:18px;padding:22px}h1{color:#8bd8c5;margin-top:0}.setting{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid #42536b}.setting label{font-weight:bold}.setting input{width:24px;height:24px;accent-color:#167c68}button,.link{display:block;width:100%;padding:13px;border:0;border-radius:10px;margin:12px 0;background:#167c68;color:white;text-align:center;text-decoration:none;font:inherit;font-weight:bold}.secondary{background:#42536b}button:focus,input:focus,a:focus{outline:3px solid #ffd166;outline-offset:3px}#status{padding:12px;background:#26384e;border-radius:10px}.large-text{font-size:1.2em}.strong-focus :focus{outline-width:5px!important;outline-offset:4px!important}
-</style></head><body><main>
-<h1>الإعدادات</h1><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
+:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}
+*{box-sizing:border-box}body{margin:0;line-height:1.8}
+header{padding:15px 20px;background:#1b293b;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+h1{color:#8bd8c5;margin:0;font-size:1.5rem}
+nav[role=tablist]{display:flex;gap:8px;flex-wrap:wrap}
+.tab{font:inherit;font-weight:bold;padding:10px 15px;border:2px solid #42536b;border-radius:10px;background:#26384e;color:#f5f7fb;cursor:pointer}
+.tab[aria-selected=true]{background:#167c68;border-color:#8bd8c5}
+button:focus,input:focus,a:focus{outline:3px solid #ffd166;outline-offset:3px}
+main{max-width:760px;margin:22px auto;padding:0 16px}
+.panel{background:#1b293b;border:1px solid #34445a;border-radius:18px;padding:22px;margin-bottom:16px}
+h2{color:#8bd8c5;margin-top:0}
+.setting{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid #42536b}
+.setting label{font-weight:bold}.setting input{width:24px;height:24px;accent-color:#167c68}
+label{display:block;font-weight:bold;margin:14px 0 5px}
+input[type=text]{width:100%;padding:12px;border-radius:10px;margin:5px 0;background:#fff;color:#111;font:inherit}
+button.action,.link{display:block;width:100%;padding:13px;border:0;border-radius:10px;margin:12px 0;background:#167c68;color:white;text-align:center;text-decoration:none;font:inherit;font-weight:bold;cursor:pointer}
+.secondary{background:#42536b!important}.danger{background:#9d3542!important}
+#settingsStatus,#profileStatus{padding:12px;background:#26384e;border-radius:10px}
+.large-text{font-size:1.2em}.strong-focus :focus{outline-width:5px!important;outline-offset:4px!important}
+.muted{color:#c3d0df}.warning{color:#ffd7dc;background:#452a35;border-radius:10px;padding:12px}
+#avatar{width:112px;height:112px;border-radius:50%;background:#30465d;color:#8bd8c5;display:flex;align-items:center;justify-content:center;margin:12px auto;font-size:42px;font-weight:bold}
+h3{margin-bottom:4px;color:#f5f7fb}
+#tabAnnouncement{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+</style>
+</head>
+<body>
+<header>
+<h1>مِرسالو</h1>
+<nav role="tablist" aria-label="أقسام الإعدادات" aria-orientation="horizontal">
+<button class="tab" id="tab-settings" type="button" role="tab" aria-selected="true" aria-controls="panel-settings" tabindex="0">الإعدادات</button>
+<button class="tab" id="tab-profile" type="button" role="tab" aria-selected="false" aria-controls="panel-profile" tabindex="-1">الملف الشخصي</button>
+<button class="tab" id="tab-about" type="button" role="tab" aria-selected="false" aria-controls="panel-about" tabindex="-1">حول مِرسالو</button>
+<button class="tab" id="tab-logout" type="button" role="tab" aria-selected="false" aria-controls="panel-logout" tabindex="-1">تسجيل الخروج</button>
+</nav>
+</header>
+<div id="tabAnnouncement" role="status" aria-live="polite" aria-atomic="true"></div>
+<main>
+<section class="panel tabPanel" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" tabindex="0">
+<h2>الإعدادات</h2><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
 <div class="setting"><label for="largeText">تكبير النصوص</label><input id="largeText" type="checkbox"></div>
 <div class="setting"><label for="strongFocus">إبراز العنصر المحدد بوضوح</label><input id="strongFocus" type="checkbox"></div>
-<p id="status" role="status" aria-live="polite">يتم حفظ التغييرات على هذا الجهاز تلقائيًا.</p>
+<p id="settingsStatus" role="status" aria-live="polite">يتم حفظ التغييرات على هذا الجهاز تلقائيًا.</p>
 <a class="link secondary" href="chat.html">العودة إلى المحادثات</a>
-<button id="logout" type="button" class="secondary">تسجيل الخروج</button>
+</section>
+
+<section class="panel tabPanel" id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" tabindex="0" hidden>
+<h2>الملف الشخصي</h2><p class="muted">يمكنك تعديل اسم المستخدم وإدارة حسابك.</p>
+<div id="avatar" role="img" aria-label="صورة افتراضية لمِرسالو">م</div>
+<p id="email" class="muted" aria-live="polite">جارٍ تحميل بيانات الحساب...</p>
+<form id="profileForm"><label for="playerName">اسم المستخدم</label><input id="playerName" type="text" maxlength="30" minlength="2" required autocomplete="nickname"><button id="save" class="action" type="submit">حفظ الاسم</button></form>
+<p class="warning">حذف الحساب نهائي ولا يمكن التراجع عنه. ستُحذف بيانات الحساب وقائمة الأصدقاء، لكن سجل المحادثات والرسائل سيبقى محفوظًا لدى الطرف الآخر.</p>
+<button id="deleteAccount" class="action danger" type="button">حذف الحساب نهائيًا</button>
+<p id="profileStatus" role="status" aria-live="polite">جارٍ تحميل الملف الشخصي...</p>
+</section>
+
+<section class="panel tabPanel" id="panel-about" role="tabpanel" aria-labelledby="tab-about" tabindex="0" hidden>
+<h2>أهلًا بك في مِرسالو</h2>
+<p>مِرسالو مساحة للتواصل والمحادثات. نريد أن تكون تجربة الجميع محترمة وآمنة، ولذلك يُرجى الالتزام بالقواعد التالية عند استخدام الموقع.</p>
+<p class="muted">آخر تحديث: 31 أكتوبر 2026</p>
+<h2>بنود الاستخدام وقواعد السلوك</h2>
+<h3>1. الاحترام المتبادل</h3><p>يُمنع توجيه الإهانات أو الشتائم أو التحقير أو المضايقة المتكررة لأي مستخدم.</p>
+<h3>2. التهديد والتحريض</h3><p>يُمنع التهديد بالعنف أو التحريض عليه أو تشجيع إيذاء الآخرين أو ابتزازهم.</p>
+<h3>3. التحرش والمضايقة</h3><p>يُمنع التحرش أو إرسال رسائل غير مرغوب فيها بصورة متكررة، ويجب احترام رغبة الطرف الآخر في عدم التواصل.</p>
+<h3>4. الخصوصية والبيانات الشخصية</h3><p>يُمنع نشر معلومات شخص آخر أو صوره أو بياناته الخاصة دون موافقته، كما يُمنع انتحال شخصية الآخرين أو استخدام حساباتهم دون إذن.</p>
+<h3>5. المحتوى غير القانوني أو الضار</h3><p>يُمنع استخدام مِرسالو لنشر أو تداول محتوى غير قانوني، أو مواد تهدف إلى الاحتيال أو الإضرار بالآخرين أو انتهاك حقوقهم.</p>
+<h3>6. سلامة الحساب</h3><p>حافظ على بيانات الدخول الخاصة بك، ولا تحاول الوصول إلى حسابات الآخرين أو تعطيل الموقع أو استغلال ثغراته.</p>
+<h3>7. الاستخدام المسؤول</h3><p>استخدم مِرسالو للتواصل المشروع والمحترم فقط. لا ترسل رسائل آلية مزعجة أو محتوى متكررًا بهدف إغراق الخدمة.</p>
+<h2>التعامل مع المخالفات</h2>
+<p>قد تؤدي مخالفة هذه القواعد إلى تقييد الوصول إلى الخدمة أو تعليق الحساب أو حذفه بحسب طبيعة المخالفة وخطورتها. وقد تُتخذ إجراءات إضافية عندما يقتضي القانون ذلك.</p>
+<p>لا يجوز استخدام هذه البنود لتبرير إساءة استخدام أدوات الموقع أو الإضرار بالمستخدمين. وتظل مسؤولية المستخدم قائمة عن المحتوى الذي يرسله والتصرفات التي يقوم بها.</p>
+<h2>تنبيه مهم</h2>
+<p>هذه البنود قواعد استخدام عامة لمِرسالو، وليست استشارة قانونية أو ضمانًا بأن الخدمة خالية من المخاطر. لا تشارك كلمات المرور أو المعلومات المالية أو البيانات شديدة الحساسية عبر المحادثات.</p>
+</section>
+
+<section class="panel tabPanel" id="panel-logout" role="tabpanel" aria-labelledby="tab-logout" tabindex="0" hidden>
+<h2>تسجيل الخروج</h2><p>اضغط الزر التالي لإنهاء الجلسة والخروج من حساب مِرسالو على هذا الجهاز.</p>
+<button id="logout" class="action secondary" type="button">تسجيل الخروج من الحساب</button>
+<p id="logoutStatus" role="status" aria-live="polite"></p>
+</section>
 </main>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getAuth,onAuthStateChanged,updateProfile,signOut}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getFirestore,doc,getDoc,setDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
-const auth=getAuth(initializeApp(cfg)),largeText=document.getElementById("largeText"),strongFocus=document.getElementById("strongFocus");
-onAuthStateChanged(auth,user=>{if(!user)location.replace("login.html")});
-function apply(){document.body.classList.toggle("large-text",largeText.checked);document.body.classList.toggle("strong-focus",strongFocus.checked);localStorage.setItem("mersalo-large-text",String(largeText.checked));localStorage.setItem("mersalo-strong-focus",String(strongFocus.checked))}
-largeText.checked=localStorage.getItem("mersalo-large-text")==="true";strongFocus.checked=localStorage.getItem("mersalo-strong-focus")==="true";apply();largeText.addEventListener("change",apply);strongFocus.addEventListener("change",apply);
-document.getElementById("logout").addEventListener("click",async()=>{await signOut(auth);location.replace("login.html")});
-</script></body></html>
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
+const tabs=[...document.querySelectorAll('[role="tab"]')],panels=[...document.querySelectorAll('[role="tabpanel"]')],announcement=document.getElementById("tabAnnouncement");
+function selectTab(tab,moveFocus=false){tabs.forEach(item=>{const selected=item===tab;item.setAttribute("aria-selected",String(selected));item.tabIndex=selected?0:-1});panels.forEach(panel=>panel.hidden=panel.id!==tab.getAttribute("aria-controls"));announcement.textContent="تم الاختيار: "+tab.textContent+"، علامة تبويب محددة.";if(moveFocus)tab.focus()}
+tabs.forEach((tab,index)=>{tab.addEventListener("click",()=>selectTab(tab));tab.addEventListener("keydown",event=>{let next=index;if(event.key==="ArrowLeft")next=(index+1)%tabs.length;else if(event.key==="ArrowRight")next=(index-1+tabs.length)%tabs.length;else if(event.key==="Home")next=0;else if(event.key==="End")next=tabs.length-1;else return;event.preventDefault();selectTab(tabs[next],true)})});
+const requestedTab=location.hash==="#profile"?"tab-profile":location.hash==="#about"?"tab-about":null;if(requestedTab)selectTab(document.getElementById(requestedTab));
+const largeText=document.getElementById("largeText"),strongFocus=document.getElementById("strongFocus");
+function applySettings(){document.body.classList.toggle("large-text",largeText.checked);document.body.classList.toggle("strong-focus",strongFocus.checked);localStorage.setItem("mersalo-large-text",String(largeText.checked));localStorage.setItem("mersalo-strong-focus",String(strongFocus.checked))}
+largeText.checked=localStorage.getItem("mersalo-large-text")==="true";strongFocus.checked=localStorage.getItem("mersalo-strong-focus")==="true";applySettings();largeText.addEventListener("change",applySettings);strongFocus.addEventListener("change",applySettings);
+const form=document.getElementById("profileForm"),nameField=document.getElementById("playerName"),email=document.getElementById("email"),profileStatus=document.getElementById("profileStatus"),save=document.getElementById("save"),deleteAccount=document.getElementById("deleteAccount");
+let activeUser=null;function sayProfile(message){profileStatus.textContent=message}
+onAuthStateChanged(auth,async user=>{if(!user){location.replace("login.html");return}activeUser=user;try{const snap=await getDoc(doc(db,"users",user.uid));const data=snap.exists()?snap.data():{};nameField.value=data.playerName||user.displayName||"";email.textContent=user.email||"لا يوجد بريد إلكتروني";sayProfile("تم تحميل بيانات الحساب.")}catch(error){sayProfile("تعذر تحميل الملف الشخصي. رمز الخطأ: "+(error.code||"unknown"))}});
+form.addEventListener("submit",async event=>{event.preventDefault();if(!activeUser)return;const playerName=nameField.value.trim();if(playerName.length<2){sayProfile("اسم المستخدم يجب أن يتكون من حرفين على الأقل.");nameField.focus();return}save.disabled=true;deleteAccount.disabled=true;try{await updateProfile(activeUser,{displayName:playerName});await setDoc(doc(db,"users",activeUser.uid),{uid:activeUser.uid,email:activeUser.email||"",displayName:playerName,playerName},{merge:true});sayProfile("تم حفظ اسم المستخدم بنجاح.")}catch(error){sayProfile("تعذر حفظ الاسم: "+(error.message||error.code||"خطأ غير معروف"))}finally{save.disabled=false;deleteAccount.disabled=false}});
+deleteAccount.addEventListener("click",async()=>{if(!activeUser)return;const confirmed=confirm("تنبيه: حذف الحساب نهائي ولا يمكن التراجع عنه. ستُحذف بيانات حسابك وقائمة أصدقائك، لكن سجل المحادثات والرسائل سيبقى محفوظًا لدى الطرف الآخر. هل تريد المتابعة؟");if(!confirmed)return;const typed=prompt("للتأكيد، اكتب كلمة حذف");if(typed!=="حذف"){sayProfile("تم إلغاء حذف الحساب.");return}save.disabled=true;deleteAccount.disabled=true;sayProfile("جارٍ حذف الحساب. يرجى عدم إغلاق الصفحة...");try{const token=await activeUser.getIdToken(true);const response=await fetch("https://tareeq-al-layl-server.onrender.com/api/delete-account",{method:"POST",headers:{Authorization:"Bearer "+token}});const result=await response.json().catch(()=>({}));if(!response.ok||!result.success)throw new Error(result.message||"تعذر حذف الحساب. حاول مرة أخرى.");await signOut(auth);location.replace("login.html")}catch(error){sayProfile("لم يكتمل حذف الحساب: "+(error.message||"خطأ غير معروف"));save.disabled=false;deleteAccount.disabled=false}});
+document.getElementById("logout").addEventListener("click",async()=>{const button=document.getElementById("logout"),status=document.getElementById("logoutStatus");button.disabled=true;status.textContent="جارٍ تسجيل الخروج...";try{await signOut(auth);location.replace("login.html")}catch(error){button.disabled=false;status.textContent="تعذر تسجيل الخروج. حاول مرة أخرى."}});
+</script>
+</body></html>
