@@ -8,7 +8,7 @@
 <section class="panel"><h2>الأشخاص المتصلون</h2><p class="muted">تظهر هنا الحسابات المتصلة بمِرسالو حاليًا. ابحث عن الاسم لبدء محادثة.</p>
 <button id="openOnline" type="button" aria-expanded="false" aria-controls="onlinePanel">عرض الأشخاص المتصلين</button>
 <div id="onlinePanel" hidden><label for="onlineSearch">ابحث عن شخص بالاسم</label><input id="onlineSearch" type="search" autocomplete="off" placeholder="اكتب اسم الشخص"><div id="onlineList" aria-live="polite">جارٍ تحميل الأشخاص المتصلين...</div></div></section>
-<section class="panel"><h2 id="conversationHeading" tabindex="-1">محادثاتك</h2><div id="conversationList" aria-live="polite"></div></section>
+<section class="panel" id="conversationListPanel"><h2 id="conversationHeading" tabindex="-1">محادثاتك</h2><div id="conversationList" aria-live="polite"></div></section>
 <section class="panel" id="chatPanel"><div class="chatHeader"><h2 id="chatTitle">المحادثة</h2><div><button id="conversationInfoButton" class="infoToggle" type="button" aria-expanded="false" aria-controls="conversationInfo">معلومات المحادثة</button><button id="closeChat" class="closeChat" type="button">إغلاق المحادثة</button></div></div><section id="conversationInfo" class="infoPanel" aria-labelledby="conversationInfoHeading" hidden><h3 id="conversationInfoHeading" tabindex="-1">معلومات المحادثة</h3><div id="conversationInfoContent" aria-live="polite">جارٍ تحميل المعلومات...</div><div class="infoActions"><button id="friendAction" type="button">إضافة إلى الأصدقاء</button><button id="blockAction" class="secondary" type="button">حظر المستخدم</button><button id="reportAction" class="secondary" type="button">الإبلاغ عن المستخدم</button></div><p id="conversationActionStatus" role="status" aria-live="polite"></p></section><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
 <div id="composePanel"><h2>إرسال رسالة</h2><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button></form></div></section>
 <p id="status" role="status" aria-live="polite">جارٍ التحقق من الحساب...</p>
@@ -55,7 +55,7 @@ function playMessageSound(kind){
 
 function call(event,data={},timeoutMs=12000){return new Promise(resolve=>{const activeSocket=socket;if(!activeSocket||!activeSocket.connected){resolve({success:false,connectionLost:true});return}let settled=false;const finish=result=>{if(settled)return;settled=true;clearTimeout(timer);activeSocket.off("disconnect",onDisconnect);resolve(result)};const onDisconnect=()=>finish({success:false,connectionLost:true});const timer=setTimeout(()=>finish(activeSocket.connected?{success:false,message:"تأخر رد الخادم أثناء تنفيذ الطلب: "+event+". تحقق من الاتصال وحاول مرة أخرى."}:{success:false,connectionLost:true}),timeoutMs);activeSocket.once("disconnect",onDisconnect);activeSocket.emit(event,data,result=>{if(event==="listConversations")activeSocket.emit("clientAckReceived",{event,success:!!result?.success});finish(result||{success:false,message:"لم يصل رد من الخادم."})})})}
 function addMessage(m){if(known.has(m.id))return;known.add(m.id);const div=document.createElement("div");div.className="msg"+(m.senderUid===auth.currentUser?.uid?" mine":"");const who=m.senderUid===auth.currentUser?.uid?"أنت":"الطرف الآخر";div.textContent=who+": "+m.text;messages.append(div);messages.scrollTop=messages.scrollHeight}
-async function openConversation(c){currentId=c.id;currentOtherUid=c.otherUid||null;currentDetails=null;known.clear();messages.replaceChildren();panel.style.display="block";document.getElementById("conversationInfo").hidden=true;document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;document.getElementById("messageHint").textContent="يمكنك كتابة رسالة تصل إلى 4000 حرف.";document.getElementById("chatTitle").textContent="محادثة مع "+(c.displayName||c.email||"مستخدم");const r=await call("getConversationMessages",{conversationId:c.id});if(!r.success){say(r.message);return}r.messages.forEach(addMessage);refreshConversationInfo();document.getElementById("messageText").focus()}
+async function openConversation(c){currentId=c.id;currentOtherUid=c.otherUid||null;currentDetails=null;known.clear();messages.replaceChildren();document.getElementById("conversationListPanel").hidden=true;panel.style.display="block";document.getElementById("conversationInfo").hidden=true;document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;document.getElementById("messageHint").textContent="يمكنك كتابة رسالة تصل إلى 4000 حرف.";document.getElementById("chatTitle").textContent="محادثة مع "+(c.displayName||c.email||"مستخدم");const r=await call("getConversationMessages",{conversationId:c.id});if(!r.success){say(r.message);return}r.messages.forEach(addMessage);refreshConversationInfo();document.getElementById("messageText").focus()}
 async function loadConversations(){const requestSocket=socket;const r=await call("listConversations",{},30000);if(r.connectionLost||requestSocket!==socket||!socket?.connected)return;if(!r.success){list.textContent=r.message;return}list.replaceChildren();if(!r.conversations.length){list.textContent="لا توجد محادثات بعد. ابحث عن اسم شخص لبدء محادثة.";return}r.conversations.forEach(c=>{const b=document.createElement("button");b.className="conversation";b.textContent=(c.displayName||c.email||"مستخدم")+"، "+(c.lastMessage||"ابدأ المحادثة");b.addEventListener("click",()=>openConversation(c));list.append(b)})}
 async function startChatWithUser(user){say("جارٍ فتح المحادثة...");const started=await call("startDirectConversation",{targetUid:user.uid});if(!started.success){say(started.message);return}openConversation({...started.conversation,otherUid:user.uid});loadConversations()}
 let onlineUsers=[];
@@ -63,7 +63,7 @@ const onlinePanel=document.getElementById("onlinePanel"),onlineList=document.get
 function renderOnlineUsers(){const term=onlineSearch.value.trim().toLocaleLowerCase("ar");onlineList.replaceChildren();const matches=onlineUsers.filter(user=>String(user.name||"").toLocaleLowerCase("ar").includes(term));if(!matches.length){onlineList.textContent=term?"لا يوجد شخص متصل بهذا الاسم.":"لا يوجد أشخاص آخرون متصلون حاليًا.";return}matches.forEach(user=>{const b=document.createElement("button");b.type="button";b.className="conversation";b.textContent=user.uid===auth.currentUser?.uid?user.name+"، أنت، متصل الآن":user.name+"، متصل الآن";if(user.uid===auth.currentUser?.uid){b.disabled=true;b.setAttribute("aria-label",user.name+"، هذا حسابك، متصل الآن");}else b.addEventListener("click",()=>startChatWithUser(user));onlineList.append(b)})}
 document.getElementById("openOnline").addEventListener("click",()=>{const opening=onlinePanel.hidden;onlinePanel.hidden=!opening;document.getElementById("openOnline").setAttribute("aria-expanded",String(opening));if(opening){onlineSearch.focus();if(!socket||!socket.connected){onlineList.textContent="الاتصال بالخادم غير متاح حاليًا. أعد المحاولة بعد قليل.";return}renderOnlineUsers()}});
 onlineSearch.addEventListener("input",renderOnlineUsers);
-document.getElementById("closeChat").addEventListener("click",()=>{currentId=null;currentOtherUid=null;currentDetails=null;panel.style.display="none";document.getElementById("conversationInfo").hidden=true;document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");messages.replaceChildren();known.clear();document.getElementById("messageText").value="";document.getElementById("messageText").disabled=true;document.getElementById("sendButton").disabled=true;document.getElementById("conversationHeading").focus()});
+document.getElementById("closeChat").addEventListener("click",()=>{currentId=null;currentOtherUid=null;currentDetails=null;panel.style.display="none";document.getElementById("conversationListPanel").hidden=false;document.getElementById("conversationInfo").hidden=true;document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");messages.replaceChildren();known.clear();document.getElementById("messageText").value="";document.getElementById("messageText").disabled=true;document.getElementById("sendButton").disabled=true;document.getElementById("conversationHeading").focus()});
 function formatInfoDate(timestamp){if(!timestamp)return "غير متوفر";return new Intl.DateTimeFormat("ar-JO",{dateStyle:"medium",timeStyle:"short"}).format(new Date(timestamp))}
 async function refreshConversationInfo(){
   const content=document.getElementById("conversationInfoContent"),statusBox=document.getElementById("conversationActionStatus");
@@ -77,7 +77,7 @@ async function refreshConversationInfo(){
   const rows=[
     ["اسم المستخدم",d.name],
     ["حالة الاتصال",d.online?"متصل الآن":"غير متصل"],
-    ["حالة الصداقة",d.isFriend?"ضمن قائمة أصدقائك":"ليس ضمن قائمة أصدقائك"],
+    ["حالة الصداقة",d.isFriend?"ضمن قائمة أصدقائك":d.pendingRequest?"طلب الصداقة مُرسل وبانتظار الرد": "ليس ضمن قائمة أصدقائك"],
     ["عدد الرسائل",String(d.messageCount)],
     ["تاريخ آخر نشاط",formatInfoDate(d.updatedAt)],
     ["بداية المحادثة",formatInfoDate(d.createdAt)]
@@ -89,7 +89,7 @@ async function refreshConversationInfo(){
   content.append(blockNote);
   const friendButton=document.getElementById("friendAction");
   friendButton.hidden=d.isFriend;
-  friendButton.textContent="إرسال طلب صداقة";
+  friendButton.textContent=d.pendingRequest?"إلغاء طلب الصداقة":"إرسال طلب صداقة";
   const blockButton=document.getElementById("blockAction");
   blockButton.hidden=d.blockedMe&&!d.blockedByMe;
   blockButton.textContent=d.blockedByMe?"إلغاء الحظر":"حظر المستخدم";
@@ -108,8 +108,8 @@ document.getElementById("conversationInfoButton").addEventListener("click",async
 document.getElementById("friendAction").addEventListener("click",async()=>{
   if(!currentOtherUid)return;
   const b=document.getElementById("friendAction"),statusBox=document.getElementById("conversationActionStatus");
-  b.disabled=true;const r=await call("sendFriendRequest",{targetUid:currentOtherUid});b.disabled=false;
-  statusBox.textContent=r.message|| (r.success?"تم إرسال طلب الصداقة.":"تعذر إرسال الطلب.");
+  b.disabled=true;const cancel=currentDetails?.pendingRequest===true;const r=await call(cancel?"cancelFriendRequest":"sendFriendRequest",cancel?{targetUid:currentOtherUid}:{targetUid:currentOtherUid});b.disabled=false;
+  statusBox.textContent=r.message|| (r.success?(cancel?"تم إلغاء طلب الصداقة.":"تم إرسال طلب الصداقة."):"تعذر تنفيذ الطلب.");
   if(r.success)await refreshConversationInfo();
 });
 document.getElementById("blockAction").addEventListener("click",async()=>{
