@@ -311,7 +311,7 @@ document.getElementById("clearChatAction").addEventListener("click",async()=>{
   button.disabled=false;
   if(!r.success){statusBox.textContent=r.message||"تعذر حذف محتوى الدردشة.";return}
   known.clear();messages.replaceChildren();await loadConversations();await refreshConversationInfo();
-  statusBox.textContent=r.message||(onlyMe?"تم حذف محتوى الدردشة من عندك فقط.":"تم حذف محتوى الدردشة لدى الطرفين.");
+  statusBox.textContent="";
   restoreConnectionStatus();
 });
 document.getElementById("deleteChatAction").addEventListener("click",async()=>{
@@ -330,7 +330,7 @@ document.getElementById("deleteChatAction").addEventListener("click",async()=>{
   document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;
   document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");
   document.getElementById("messageText").value="";document.getElementById("messageText").disabled=true;document.getElementById("sendButton").disabled=true;
-  await loadConversations();document.getElementById("conversationHeading").focus();say(r.message||"تم حذف الدردشة.");restoreConnectionStatus();
+  await loadConversations();document.getElementById("conversationHeading").focus();restoreConnectionStatus();
 });
 document.getElementById("reportAction").addEventListener("click",async()=>{
   if(!currentOtherUid||!currentId)return;
