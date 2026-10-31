@@ -258,18 +258,25 @@ io.on("connection", socket => {
   socket.on("listConversations", async reply => {
     try {
       const snap = await conversationsRef.where("members", "array-contains", socket.data.uid).get();
+      // The conversation document is already updated with lastMessage and updatedAt
+      // whenever a message is sent, so avoid a separate messages query per conversation.
       const conversations = await Promise.all(snap.docs.map(async item => {
         const data = item.data();
         const otherUid = (data.members || []).find(uid => uid !== socket.data.uid);
         const other = otherUid ? await usersRef.doc(otherUid).get() : null;
-        const last = await item.ref.collection("messages").orderBy("createdAt", "desc").limit(1).get();
-        const msg = last.empty ? null : last.docs[0].data();
         const profile = other && other.exists ? other.data() : {};
-        return { id: item.id, otherUid, displayName: profile.playerName || profile.displayName || "مستخدم", lastMessage: msg ? String(msg.text || "رسالة") : "", updatedAt: data.updatedAt ? data.updatedAt.toMillis() : 0 };
+        return {
+          id: item.id,
+          otherUid,
+          displayName: profile.playerName || profile.displayName || "مستخدم",
+          lastMessage: String(data.lastMessage || ""),
+          updatedAt: data.updatedAt ? data.updatedAt.toMillis() : 0
+        };
       }));
       conversations.sort((a,b) => b.updatedAt-a.updatedAt);
       if (typeof reply === "function") reply({ success: true, conversations });
     } catch (error) {
+      console.error("List conversations error:", error.message);
       if (typeof reply === "function") reply({ success: false, message: "تعذر تحميل المحادثات." });
     }
   });
