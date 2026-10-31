@@ -266,12 +266,13 @@ io.on("connection", socket => {
       const conversationData = conversationSnap.data();
       const otherUid = (conversationData.members || []).find(uid => uid !== socket.data.uid);
       if (!otherUid) throw new Error("تعذر تحديد الطرف الآخر.");
-      const [profileSnap, friendshipSnap, myBlockSnap, theirBlockSnap, countSnap] = await Promise.all([
+      const [profileSnap, friendshipSnap, myBlockSnap, theirBlockSnap, countSnap, outgoingRequestSnap] = await Promise.all([
         usersRef.doc(otherUid).get(),
         usersRef.doc(socket.data.uid).collection("friends").doc(otherUid).get(),
         blockedRef(socket.data.uid, otherUid).get(),
         blockedRef(otherUid, socket.data.uid).get(),
-        conversationRef.collection("messages").count().get()
+        conversationRef.collection("messages").count().get(),
+        requestRef(otherUid, socket.data.uid).get()
       ]);
       const profile = profileSnap.exists ? profileSnap.data() : {};
       const updatedAt = conversationData.updatedAt && conversationData.updatedAt.toMillis ? conversationData.updatedAt.toMillis() : 0;
@@ -283,6 +284,7 @@ io.on("connection", socket => {
           name: String(profile.playerName || profile.displayName || "مستخدم"),
           online: Boolean(getConnectedSocket(otherUid)),
           isFriend: friendshipSnap.exists,
+          pendingRequest: outgoingRequestSnap.exists,
           blockedByMe: myBlockSnap.exists,
           blockedMe: theirBlockSnap.exists,
           messageCount: countSnap.data().count || 0,
@@ -478,6 +480,22 @@ io.on("connection", socket => {
       if (typeof reply === "function") reply({ success: true, message: "تم إرسال طلب الصداقة." });
     } catch (error) {
       if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر إرسال الطلب." });
+    }
+  });
+
+  socket.on("cancelFriendRequest", async (data = {}, reply) => {
+    try {
+      const targetUid = String(data.targetUid || "").trim();
+      if (!targetUid || targetUid === socket.data.uid) throw new Error("طلب الصداقة غير صالح.");
+      const outgoingRef = requestRef(targetUid, socket.data.uid);
+      const requestSnap = await outgoingRef.get();
+      if (!requestSnap.exists || requestSnap.data().fromUid !== socket.data.uid) {
+        throw new Error("لا يوجد طلب صداقة مُرسل قابل للإلغاء.");
+      }
+      await outgoingRef.delete();
+      if (typeof reply === "function") reply({ success: true, message: "تم إلغاء طلب الصداقة." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر إلغاء طلب الصداقة." });
     }
   });
 
