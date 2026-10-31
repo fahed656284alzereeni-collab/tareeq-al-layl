@@ -303,8 +303,14 @@ io.on("connection", socket => {
       if (!otherUid || otherUid === socket.data.uid || !conversationSnap.exists ||
           !(conversationSnap.data().members || []).includes(socket.data.uid) ||
           !(conversationSnap.data().members || []).includes(otherUid)) throw new Error("بيانات الحظر غير صالحة.");
-      await blockedRef(socket.data.uid, otherUid).set({ createdAt: admin.firestore.FieldValue.serverTimestamp() });
-      if (typeof reply === "function") reply({ success: true, message: "تم حظر هذا المستخدم. لن تتمكنوا من تبادل رسائل جديدة." });
+      const batch = db.batch();
+      batch.set(blockedRef(socket.data.uid, otherUid), { createdAt: admin.firestore.FieldValue.serverTimestamp() });
+      batch.delete(usersRef.doc(socket.data.uid).collection("friends").doc(otherUid));
+      batch.delete(usersRef.doc(otherUid).collection("friends").doc(socket.data.uid));
+      batch.delete(usersRef.doc(socket.data.uid).collection("friendRequests").doc(otherUid));
+      batch.delete(usersRef.doc(otherUid).collection("friendRequests").doc(socket.data.uid));
+      await batch.commit();
+      if (typeof reply === "function") reply({ success: true, message: "تم حظر هذا المستخدم وإزالته من قائمة الأصدقاء. لن تتمكنوا من تبادل رسائل جديدة." });
     } catch (error) {
       if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر حظر المستخدم." });
     }
@@ -446,6 +452,8 @@ io.on("connection", socket => {
       if (!targetUid || targetUid === socket.data.uid) throw new Error("طلب صداقة غير صالح.");
       const targetProfile = await usersRef.doc(targetUid).get();
       if (!targetProfile.exists) throw new Error("الحساب غير موجود.");
+      const [myBlock, theirBlock] = await Promise.all([blockedRef(socket.data.uid, targetUid).get(), blockedRef(targetUid, socket.data.uid).get()]);
+      if (myBlock.exists || theirBlock.exists) throw new Error("لا يمكن إرسال طلب صداقة بسبب إعدادات الحظر بين الحسابين.");
       const [existing, reverseRequest, pendingRequest] = await Promise.all([
         friendshipRef(socket.data.uid, targetUid).get(),
         requestRef(socket.data.uid, targetUid).get(),
