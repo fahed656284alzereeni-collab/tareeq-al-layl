@@ -287,17 +287,59 @@ document.getElementById("friendAction").addEventListener("click",async()=>{
   statusBox.textContent=r.message|| (r.success?(cancel?"تم إلغاء طلب الصداقة.":"تم إرسال طلب الصداقة."):"تعذر تنفيذ الطلب.");
   if(r.success)await refreshConversationInfo();
 });
-document.getElementById("blockAction").addEventListener("click",async()=>{
-  if(!currentOtherUid||!currentId||!currentDetails)return;
-  const blocking=!currentDetails.blockedByMe;
-  const confirmText=blocking?"هل تريد حظر هذا المستخدم؟ لن تتمكنوا من تبادل رسائل جديدة.":"هل تريد إلغاء حظر هذا المستخدم؟";
-  if(!confirm(confirmText))return;
-  const button=document.getElementById("blockAction"),statusBox=document.getElementById("conversationActionStatus");
-  button.disabled=true;
-  const r=await call(blocking?"blockConversationUser":"unblockConversationUser",{uid:currentOtherUid,conversationId:currentId});
-  button.disabled=false;statusBox.textContent=r.message||(r.success?"تم تنفيذ الإجراء.":"تعذر تنفيذ الإجراء.");
-  if(r.success)await refreshConversationInfo();
-});
+function showInlineActionChoice(kind){
+  const trigger=document.getElementById(kind==="block"?"blockAction":"reportAction");
+  const existing=document.getElementById("inlineUserActionChoice");
+  if(existing&&existing.dataset.kind===kind){existing.remove();trigger.setAttribute("aria-expanded","false");return}
+  if(existing){const previous=document.getElementById(existing.dataset.kind==="block"?"blockAction":"reportAction");existing.remove();previous?.setAttribute("aria-expanded","false")}
+  const box=document.createElement("div");
+  box.id="inlineUserActionChoice";box.dataset.kind=kind;box.className="messageActions conversationDeleteChoice";
+  const title=document.createElement("h3");title.tabIndex=-1;
+  const hint=document.createElement("p");
+  const confirmButton=document.createElement("button");confirmButton.type="button";
+  const cancelButton=document.createElement("button");cancelButton.type="button";cancelButton.className="secondary";cancelButton.textContent="إلغاء";
+  trigger.setAttribute("aria-expanded","true");
+  cancelButton.addEventListener("click",()=>{box.remove();trigger.setAttribute("aria-expanded","false");trigger.focus()});
+  if(kind==="block"){
+    const blocking=!currentDetails?.blockedByMe;
+    title.textContent=blocking?"تأكيد حظر المستخدم":"تأكيد إلغاء الحظر";
+    hint.textContent=blocking?"لن تتمكنوا من تبادل رسائل جديدة بعد الحظر. هل تريد المتابعة؟":"هل تريد إلغاء حظر هذا المستخدم؟";
+    confirmButton.textContent=blocking?"تأكيد الحظر":"تأكيد إلغاء الحظر";
+    confirmButton.addEventListener("click",async()=>{
+      if(!currentOtherUid||!currentId||!currentDetails)return;
+      confirmButton.disabled=true;cancelButton.disabled=true;
+      const r=await call(blocking?"blockConversationUser":"unblockConversationUser",{uid:currentOtherUid,conversationId:currentId});
+      if(!r.success){hint.textContent=r.message||"تعذر تنفيذ الإجراء. يمكنك المحاولة مرة أخرى.";confirmButton.disabled=false;cancelButton.disabled=false;return}
+      box.remove();trigger.setAttribute("aria-expanded","false");
+      document.getElementById("conversationActionStatus").textContent=r.message||"تم تنفيذ الإجراء.";
+      await refreshConversationInfo();document.getElementById("blockAction").focus();
+    });
+  }else{
+    title.textContent="الإبلاغ عن المستخدم";
+    hint.textContent="اختر سبب الإبلاغ، ويمكنك إضافة تفاصيل تساعد في مراجعة البلاغ.";
+    const reasonLabel=document.createElement("label");reasonLabel.textContent="سبب الإبلاغ";
+    const reason=document.createElement("select");reason.required=true;reason.style.width="100%";reason.style.padding="12px";reason.style.margin="5px 0";
+    [["","اختر سبب الإبلاغ"],["إساءة","إساءة"],["تحرش","تحرش"],["تهديد","تهديد"],["انتحال شخصية","انتحال شخصية"],["محتوى غير مناسب","محتوى غير مناسب"],["سبب آخر","سبب آخر"]].forEach(([value,label])=>{const option=document.createElement("option");option.value=value;option.textContent=label;reason.append(option)});
+    const detailsLabel=document.createElement("label");detailsLabel.textContent="تفاصيل إضافية (اختياري)";
+    const details=document.createElement("textarea");details.rows=3;details.maxLength=2000;details.placeholder="اكتب أي تفاصيل إضافية هنا";
+    confirmButton.textContent="إرسال البلاغ";
+    confirmButton.addEventListener("click",async()=>{
+      if(!reason.value){hint.textContent="يرجى اختيار سبب الإبلاغ أولاً.";reason.focus();return}
+      if(!currentOtherUid||!currentId)return;
+      confirmButton.disabled=true;cancelButton.disabled=true;reason.disabled=true;details.disabled=true;
+      const r=await call("reportConversationUser",{uid:currentOtherUid,conversationId:currentId,reason:reason.value,details:details.value.trim()});
+      if(!r.success){hint.textContent=r.message||"تعذر إرسال البلاغ. يمكنك المحاولة مرة أخرى.";confirmButton.disabled=false;cancelButton.disabled=false;reason.disabled=false;details.disabled=false;return}
+      box.remove();trigger.setAttribute("aria-expanded","false");
+      document.getElementById("conversationActionStatus").textContent=r.message||"تم استلام البلاغ.";
+      trigger.focus();
+    });
+    box.append(title,hint,reasonLabel,reason,detailsLabel,details,confirmButton,cancelButton);
+    trigger.insertAdjacentElement("afterend",box);title.focus();return;
+  }
+  box.append(title,hint,confirmButton,cancelButton);
+  trigger.insertAdjacentElement("afterend",box);title.focus();
+}
+document.getElementById("blockAction").addEventListener("click",()=>{if(currentOtherUid&&currentId&&currentDetails)showInlineActionChoice("block")});
 document.getElementById("removeFriendAction").addEventListener("click",async()=>{
   if(!currentOtherUid||!currentId)return;
   if(!confirm("هل أنت متأكد من إزالة الصداقة؟ ستُزال الصداقة بينكما، لكن ستبقى المحادثة والرسائل كما هي."))return;
@@ -379,15 +421,7 @@ function showConversationDeleteChoice(kind){
 }
 document.getElementById("clearChatAction").addEventListener("click",()=>{if(currentId)showConversationDeleteChoice("clear")});
 document.getElementById("deleteChatAction").addEventListener("click",()=>{if(currentId)showConversationDeleteChoice("delete")});
-document.getElementById("reportAction").addEventListener("click",async()=>{
-  if(!currentOtherUid||!currentId)return;
-  const reason=prompt("ما سبب الإبلاغ؟ اكتب مثلًا: إساءة، تحرش، تهديد، انتحال شخصية، أو محتوى غير مناسب.");
-  if(!reason||!reason.trim())return;
-  const details=prompt("يمكنك إضافة تفاصيل تساعد في مراجعة البلاغ، أو ترك الحقل فارغًا.")||"";
-  const button=document.getElementById("reportAction"),statusBox=document.getElementById("conversationActionStatus");
-  button.disabled=true;const r=await call("reportConversationUser",{uid:currentOtherUid,conversationId:currentId,reason,details});button.disabled=false;
-  statusBox.textContent=r.message||(r.success?"تم استلام البلاغ.":"تعذر إرسال البلاغ.");
-});
+document.getElementById("reportAction").addEventListener("click",()=>{if(currentOtherUid&&currentId)showInlineActionChoice("report")});
 document.getElementById("sendForm").addEventListener("submit",async e=>{e.preventDefault();const field=document.getElementById("messageText"),button=document.getElementById("sendButton"),text=field.value.trim();if(!currentId||!text)return;unlockMessageAudio();button.disabled=true;button.textContent="جارٍ الإرسال...";const r=await call("sendDirectMessage",{conversationId:currentId,text});button.disabled=false;button.textContent="إرسال الرسالة";if(!r.success){say(r.message);return}addMessage(r.message);field.value="";playMessageSound("sent");restoreConnectionStatus()});
 
 onAuthStateChanged(auth,async user=>{if(!user){location.replace("login.html");return}try{const token=await user.getIdToken();socket=io("https://tareeq-al-layl-server.onrender.com",{auth:{token},reconnection:true,reconnectionAttempts:Infinity,reconnectionDelay:1000,reconnectionDelayMax:5000});socket.on("connect",async()=>{say("أنت متصل بمِرسالو.");await loadConversations()});socket.on("disconnect",reason=>{say("انقطع الاتصال مؤقتًا، جارٍ إعادة الاتصال بمِرسالو.");});socket.on("connect_error",err=>say("تعذر الاتصال: "+(err.message||"خطأ غير معروف")));socket.on("onlinePlayers",users=>{onlineUsers=Array.isArray(users)?users:[];if(!onlinePanel.hidden)renderOnlineUsers()});socket.on("directConversationContentDeleted",async data=>{if(!data||String(data.conversationId)!==String(currentId))return;known.clear();messages.replaceChildren();await loadConversations();if(document.getElementById("conversationInfo").hidden===false)await refreshConversationInfo();restoreConnectionStatus()});socket.on("directConversationDeleted",async data=>{if(!data||String(data.conversationId)!==String(currentId))return;currentId=null;currentOtherUid=null;currentDetails=null;known.clear();messages.replaceChildren();panel.style.display="none";document.getElementById("mainNavigation").hidden=false;document.body.classList.remove("chat-open");document.getElementById("conversationListPanel").hidden=false;document.getElementById("conversationInfo").hidden=true;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");document.getElementById("messageText").value="";document.getElementById("messageText").disabled=true;document.getElementById("sendButton").disabled=true;await loadConversations();document.getElementById("conversationHeading").focus();restoreConnectionStatus()});socket.on("directMessageDeletedForEveryone",async data=>{if(!data||String(data.conversationId)!==String(currentId))return;const deletedId=String(data.messageId||"");known.delete(deletedId);const element=Array.from(messages.children).find(item=>String(item.dataset.messageId||"")===deletedId);if(element)removeMessageFromView(element);else{const result=await call("getConversationMessages",{conversationId:currentId});if(result.success){known.clear();messages.replaceChildren();result.messages.forEach(addMessage)}}await loadConversations();restoreConnectionStatus()});socket.on("directMessageEdited",data=>{if(data?.conversationId===currentId){const element=messages.querySelector(`[data-message-id="${CSS.escape(data.messageId)}"]`);if(element){const content=element.querySelector(".messageContent");if(content){const who=element.classList.contains("mine")?"أنت":(currentOtherName||"مستخدم");content.textContent=who+": "+data.text+" (تم التعديل)";}}loadConversations();}});socket.on("directMessageReceived",data=>{if(data.message?.senderUid!==auth.currentUser?.uid)playMessageSound("received");if(data.conversationId===currentId)addMessage(data.message);loadConversations()})}catch(e){say("تعذر تهيئة الاتصال بالحساب.")}});
