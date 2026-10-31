@@ -300,7 +300,20 @@ function showInlineActionChoice(kind){
   const cancelButton=document.createElement("button");cancelButton.type="button";cancelButton.className="secondary";cancelButton.textContent="إلغاء";
   trigger.setAttribute("aria-expanded","true");
   cancelButton.addEventListener("click",()=>{box.remove();trigger.setAttribute("aria-expanded","false");trigger.focus()});
-  if(kind==="block"){
+  if(kind==="removeFriend"){
+    title.textContent="تأكيد إزالة الصداقة";
+    hint.textContent="ستُزال الصداقة بينكما، لكن ستبقى المحادثة والرسائل كما هي. هل تريد المتابعة؟";
+    confirmButton.textContent="تأكيد إزالة الصداقة";
+    confirmButton.addEventListener("click",async()=>{
+      if(!currentOtherUid||!currentId)return;
+      confirmButton.disabled=true;cancelButton.disabled=true;
+      const r=await call("removeFriend",{uid:currentOtherUid,conversationId:currentId});
+      if(!r.success){hint.textContent=r.message||"تعذر إزالة الصداقة. يمكنك المحاولة مرة أخرى.";confirmButton.disabled=false;cancelButton.disabled=false;return}
+      box.remove();trigger.setAttribute("aria-expanded","false");
+      document.getElementById("conversationActionStatus").textContent=r.message||"تمت إزالة الصداقة.";
+      await refreshConversationInfo();trigger.focus();
+    });
+  }else if(kind==="block"){
     const blocking=!currentDetails?.blockedByMe;
     title.textContent=blocking?"تأكيد حظر المستخدم":"تأكيد إلغاء الحظر";
     hint.textContent=blocking?"لن تتمكنوا من تبادل رسائل جديدة بعد الحظر. هل تريد المتابعة؟":"هل تريد إلغاء حظر هذا المستخدم؟";
@@ -340,16 +353,7 @@ function showInlineActionChoice(kind){
   trigger.insertAdjacentElement("afterend",box);title.focus();
 }
 document.getElementById("blockAction").addEventListener("click",()=>{if(currentOtherUid&&currentId&&currentDetails)showInlineActionChoice("block")});
-document.getElementById("removeFriendAction").addEventListener("click",async()=>{
-  if(!currentOtherUid||!currentId)return;
-  if(!confirm("هل أنت متأكد من إزالة الصداقة؟ ستُزال الصداقة بينكما، لكن ستبقى المحادثة والرسائل كما هي."))return;
-  const button=document.getElementById("removeFriendAction"),statusBox=document.getElementById("conversationActionStatus");
-  button.disabled=true;
-  const r=await call("removeFriend",{uid:currentOtherUid,conversationId:currentId});
-  button.disabled=false;
-  statusBox.textContent=r.message||(r.success?"تمت إزالة الصداقة.":"تعذر إزالة الصداقة.");
-  if(r.success)await refreshConversationInfo();
-});
+document.getElementById("removeFriendAction").addEventListener("click",()=>{if(currentOtherUid&&currentId)showInlineActionChoice("removeFriend")});
 function showConversationDeleteChoice(kind){
   const trigger=document.getElementById(kind==="clear"?"clearChatAction":"deleteChatAction");
   const existing=document.getElementById("conversationDeleteChoice");
