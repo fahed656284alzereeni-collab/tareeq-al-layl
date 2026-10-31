@@ -229,6 +229,7 @@ io.on("connection", socket => {
   const onlinePlayers = onlinePlayerList;
   io.emit("onlinePlayers", onlinePlayers());
   socket.emit("publicRooms", publicRoomList());
+  socket.on("clientAckReceived", data => { console.info("Client acknowledged event reply", { uid: socket.data.uid, event: data?.event, success: data?.success }); });
   socket.on("getOnlinePlayers", reply => {
     if (typeof reply === "function") reply(onlinePlayers());
   });
@@ -293,7 +294,7 @@ io.on("connection", socket => {
       });
       conversations.sort((a,b) => b.updatedAt-a.updatedAt);
       console.info("listConversations completed", { uid: socket.data.uid, count: conversations.length, durationMs: Date.now() - startedAt });
-      if (typeof reply === "function") reply({ success: true, conversations });
+      if (typeof reply === "function") { reply({ success: true, conversations }); console.info("listConversations reply sent", { uid: socket.data.uid, durationMs: Date.now() - startedAt }); }
     } catch (error) {
       console.error("List conversations error:", { uid: socket.data.uid, durationMs: Date.now() - startedAt, message: error.message });
       if (typeof reply === "function") reply({ success: false, message: "تعذر تحميل المحادثات." });
