@@ -51,6 +51,9 @@ const rooms = new Map();
 // A user may be connected from more than one device or browser tab.
 const connectedUsers = new Map();
 const friendRequestLimits = new Map();
+// Cache user profiles briefly to avoid a Firestore read on every socket reconnect.
+const profileCache = new Map();
+const PROFILE_CACHE_TTL_MS = 30_000;
 
 function addConnectedSocket(uid, socket) {
   if (!connectedUsers.has(uid)) connectedUsers.set(uid, new Set());
@@ -83,8 +86,16 @@ io.use(async (socket, next) => {
     const token = socket.handshake.auth && socket.handshake.auth.token;
     if (!token) return next(new Error("AUTH_REQUIRED"));
     const decoded = await admin.auth().verifyIdToken(token);
-    const profile = await admin.firestore().collection("users").doc(decoded.uid).get();
-    const profileData = profile.exists ? profile.data() : {};
+    let profileData;
+    const cachedProfile = profileCache.get(decoded.uid);
+    if (cachedProfile && cachedProfile.expiresAt > Date.now()) {
+      profileData = cachedProfile.data;
+    } else {
+      const profile = await admin.firestore().collection("users").doc(decoded.uid).get();
+      profileData = profile.exists ? profile.data() : {};
+      profileCache.set(decoded.uid, { data: profileData, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
+      if (profileCache.size > 1000) profileCache.delete(profileCache.keys().next().value);
+    }
     const playerName = String(profileData.playerName || profileData.displayName || decoded.name || profileData.email || decoded.email || "مستخدم").trim().slice(0, 40);
     socket.data.uid = decoded.uid;
     socket.data.playerName = playerName;
@@ -260,11 +271,13 @@ io.on("connection", socket => {
       const snap = await conversationsRef.where("members", "array-contains", socket.data.uid).get();
       // The conversation document is already updated with lastMessage and updatedAt
       // whenever a message is sent, so avoid a separate messages query per conversation.
-      const conversations = await Promise.all(snap.docs.map(async item => {
+      const otherUids = [...new Set(snap.docs.map(item => (item.data().members || []).find(uid => uid !== socket.data.uid)).filter(Boolean))];
+      const profileSnapshots = otherUids.length ? await db.getAll(...otherUids.map(uid => usersRef.doc(uid))) : [];
+      const profilesByUid = new Map(profileSnapshots.map(profile => [profile.id, profile.exists ? profile.data() : {}]));
+      const conversations = snap.docs.map(item => {
         const data = item.data();
         const otherUid = (data.members || []).find(uid => uid !== socket.data.uid);
-        const other = otherUid ? await usersRef.doc(otherUid).get() : null;
-        const profile = other && other.exists ? other.data() : {};
+        const profile = otherUid ? (profilesByUid.get(otherUid) || {}) : {};
         return {
           id: item.id,
           otherUid,
@@ -272,7 +285,7 @@ io.on("connection", socket => {
           lastMessage: String(data.lastMessage || ""),
           updatedAt: data.updatedAt ? data.updatedAt.toMillis() : 0
         };
-      }));
+      });
       conversations.sort((a,b) => b.updatedAt-a.updatedAt);
       if (typeof reply === "function") reply({ success: true, conversations });
     } catch (error) {
@@ -303,9 +316,12 @@ io.on("connection", socket => {
       const conversation = await ref.get();
       if (!conversation.exists || !(conversation.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإرسال رسالة هنا.");
       const message = { senderUid: socket.data.uid, text, createdAt: admin.firestore.FieldValue.serverTimestamp() };
-      const added = await ref.collection("messages").add(message);
-      await ref.set({ updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: text.slice(0,120) }, { merge: true });
-      const payload = { id: added.id, senderUid: socket.data.uid, text, createdAt: Date.now() };
+      const messageRef = ref.collection("messages").doc();
+      const batch = db.batch();
+      batch.set(messageRef, message);
+      batch.set(ref, { updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: text.slice(0,120) }, { merge: true });
+      await batch.commit();
+      const payload = { id: messageRef.id, senderUid: socket.data.uid, text, createdAt: Date.now() };
       for (const member of conversation.data().members) {
         const sessions = connectedUsers.get(member);
         if (sessions) for (const client of sessions) if (client.connected) client.emit("directMessageReceived", { conversationId:id, message:payload });
@@ -359,6 +375,11 @@ io.on("connection", socket => {
         playerName,
         updatedAt: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
+      const cached = profileCache.get(socket.data.uid);
+      profileCache.set(socket.data.uid, {
+        data: { ...(cached?.data || {}), playerName },
+        expiresAt: Date.now() + PROFILE_CACHE_TTL_MS
+      });
       // Keep every active session and any current room membership in sync.
       const sessions = connectedUsers.get(socket.data.uid);
       if (sessions) {
@@ -385,10 +406,12 @@ io.on("connection", socket => {
         usersRef.doc(socket.data.uid).collection("friends").get(),
         usersRef.doc(socket.data.uid).collection("friendRequests").get()
       ]);
-      const friends = await Promise.all(friendsSnap.docs.map(async d => {
-        const p = await usersRef.doc(d.id).get();
-        return { uid: d.id, name: p.exists ? String(p.data().playerName || "اسم غير متوفر") : "اسم غير متوفر", online: Boolean(getConnectedSocket(d.id)) };
-      }));
+      const friendProfiles = friendsSnap.docs.length ? await db.getAll(...friendsSnap.docs.map(d => usersRef.doc(d.id))) : [];
+      const profilesByUid = new Map(friendProfiles.map(profile => [profile.id, profile.exists ? profile.data() : {}]));
+      const friends = friendsSnap.docs.map(d => {
+        const profile = profilesByUid.get(d.id) || {};
+        return { uid: d.id, name: String(profile.playerName || "اسم غير متوفر"), online: Boolean(getConnectedSocket(d.id)) };
+      });
       const requests = requestsSnap.docs.map(d => ({ uid: d.id, name: String(d.data().fromName || "لاعب") }));
       if (typeof reply === "function") reply({ success: true, friends, requests });
     } catch (error) {
