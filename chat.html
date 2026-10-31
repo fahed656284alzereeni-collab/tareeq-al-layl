@@ -23,10 +23,9 @@ body.chat-open #status{display:none}
 .msg{max-width:88%;width:fit-content;padding:10px 14px;margin:8px 0;line-height:1.6}
 .msg.mine{margin-right:auto}
 .messageContent{margin:0 0 6px;white-space:pre-wrap}
-.msg[role="button"]{cursor:pointer}
-.msg[role="button"]:focus{outline:3px solid #ffd166;outline-offset:3px}
+.messageOptionsButton{display:block;width:auto;min-width:140px;min-height:44px;margin:8px 0 0;background:#42536b;border:1px solid #718096;text-align:center}
+.messageOptionsButton:focus{outline:3px solid #ffd166;outline-offset:3px}
 .messageActions[hidden]{display:none!important}
-.messageActions button{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 .messageActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .messageActions button{width:auto;min-width:120px;min-height:44px;margin:0}
 .messageActions button:focus{outline:3px solid #ffd166;outline-offset:3px}
@@ -102,31 +101,30 @@ function addMessage(m){
   content.className="messageContent";
   content.textContent=who+": "+m.text;
   // اجعل الرسالة نفسها عنصرًا قابلًا للتعديل لدى VoiceOver؛ لا يحتاج المستخدم إلى الانتقال إلى عنصر منفصل.
-  div.setAttribute("role","button");
-  div.setAttribute("tabindex","0");
-  div.setAttribute("aria-label",content.textContent);
   div.append(content);
   const actions=document.createElement("div");
   actions.className="messageActions";actions.hidden=true;
   const mine=m.senderUid===auth.currentUser?.uid;
-  const actionIds=[];
+  const optionsButton=document.createElement("button");
+  optionsButton.type="button";optionsButton.className="messageOptionsButton";
+  optionsButton.textContent="خيارات الرسالة";
+  optionsButton.setAttribute("aria-expanded","false");
+  optionsButton.addEventListener("click",()=>{
+    actions.hidden=!actions.hidden;
+    optionsButton.setAttribute("aria-expanded",String(!actions.hidden));
+    if(!actions.hidden)actions.querySelector("button")?.focus();
+  });
+  div.append(optionsButton);
   const own=document.createElement("button");
   own.type="button";own.id="message-delete-me-"+(++messageActionId);own.textContent="حذف لدي";
   own.addEventListener("click",()=>deleteMessageForMe(m.id,div));
-  actions.append(own);actionIds.push(own.id);
+  actions.append(own);
   if(mine){
     const everyone=document.createElement("button");
     everyone.type="button";everyone.id="message-delete-all-"+messageActionId;everyone.textContent="حذف لدى الجميع";
     everyone.addEventListener("click",()=>deleteMessageForEveryone(m.id,div));
-    actions.append(everyone);actionIds.push(everyone.id);
+    actions.append(everyone);
   }
-  div.setAttribute("aria-actions",actionIds.join(" "));
-  div.addEventListener("click",event=>{
-    if(event.target===div||event.target===content)actions.hidden=false;
-  });
-  div.addEventListener("keydown",event=>{
-    if(event.key==="Enter"||event.key===" "){event.preventDefault();actions.hidden=false;}
-  });
   div.append(actions);
   let touchStartX=null,touchStartY=null;
   div.addEventListener("touchstart",e=>{if(e.touches.length===1){touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY}},{passive:true});
