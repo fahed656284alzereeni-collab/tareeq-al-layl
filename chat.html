@@ -210,7 +210,7 @@ async function sendVoiceMessage(){
   }
 }
 const recordVoiceButton=document.getElementById("recordVoiceButton");
-let voiceHoldTimer=null,voiceHoldStarted=false,ignoreVoiceClick=false,voiceStartPending=false,voicePermissionPromise=null,voicePointerDown=false,voicePointerStartY=0,voiceMovedUp=false;
+let voiceHoldTimer=null,voiceHoldStarted=false,ignoreVoiceClick=false,voiceStartPending=false,voicePermissionPromise=null,voicePointerDown=false,voicePointerStartY=0,voiceMovedUp=false,voiceReleasedDuringStart=false;
 function requestVoicePermission(){
   return navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,sampleRate:{ideal:48000},channelCount:{ideal:1}}});
 }
@@ -226,7 +226,7 @@ function lockVoiceRecording(){
 recordVoiceButton.addEventListener("contextmenu",event=>event.preventDefault());
 recordVoiceButton.addEventListener("pointerdown",event=>{
   if(!event.isPrimary||(event.pointerType==="mouse"&&event.button!==0)||recordVoiceButton.disabled)return;
-  voicePointerDown=true;voicePointerStartY=event.clientY;voiceMovedUp=false;
+  voicePointerDown=true;voicePointerStartY=event.clientY;voiceMovedUp=false;voiceReleasedDuringStart=false;
   voiceHoldStarted=false;
   try{recordVoiceButton.setPointerCapture(event.pointerId);}catch{}
   if(!voiceRecorder&&!voiceStartPending&&!voicePermissionPromise){
@@ -241,6 +241,7 @@ recordVoiceButton.addEventListener("pointerdown",event=>{
       await startVoiceRecording(pending);
       voiceStartPending=false;
       if(voiceMovedUp)lockVoiceRecording();
+      else if(voiceReleasedDuringStart)finishAndSendVoice();
     }
   },450);
 });
@@ -255,7 +256,8 @@ recordVoiceButton.addEventListener("pointerup",()=>{
   voicePointerDown=false;
   if(voiceHoldTimer){clearTimeout(voiceHoldTimer);voiceHoldTimer=null;return;}
   if(voiceHoldStarted){
-    if(!voiceLocked)finishAndSendVoice();
+    if(voiceStartPending)voiceReleasedDuringStart=true;
+    else if(!voiceLocked)finishAndSendVoice();
     voiceHoldStarted=false;
     setTimeout(()=>{ignoreVoiceClick=false;},500);
   }
