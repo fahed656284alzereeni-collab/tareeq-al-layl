@@ -99,12 +99,15 @@ function addMessage(m){
   const content=document.createElement("p");
   content.className="messageContent";
   content.textContent=who+": "+m.text;
+  // اجعل الرسالة نفسها عنصرًا قابلًا للتعديل لدى VoiceOver؛ لا يحتاج المستخدم إلى الانتقال إلى عنصر منفصل.
+  div.setAttribute("role","slider");
+  div.setAttribute("tabindex","0");
+  div.setAttribute("aria-label",content.textContent);
+  div.setAttribute("aria-valuemin","0");
+  div.setAttribute("aria-valuemax","1");
+  div.setAttribute("aria-valuenow","0");
+  div.setAttribute("aria-valuetext","خيارات الرسالة مخفية. اسحب بإصبع واحد للأعلى أو للأسفل لإظهار خيارات الرسالة.");
   div.append(content);
-  const toggle=document.createElement("input");
-  toggle.type="range";toggle.className="messageOptionsAdjuster";
-  toggle.min="0";toggle.max="2";toggle.step="1";toggle.value="1";
-  toggle.setAttribute("aria-label","خيارات الرسالة من "+who);
-  toggle.setAttribute("aria-valuetext","خيارات الرسالة مخفية. اسحب بإصبع واحد للأعلى أو للأسفل لإظهار خيارات الحذف.");
   const actions=document.createElement("div");
   actions.className="messageActions";actions.hidden=true;
   const mine=m.senderUid===auth.currentUser?.uid;
@@ -120,17 +123,16 @@ function addMessage(m){
   }
   function revealMessageActions(){
     actions.hidden=false;
-    toggle.setAttribute("aria-valuetext","خيارات الحذف ظاهرة. انتقل إلى زر حذف لدي أو حذف لدى الجميع.");
+    div.setAttribute("aria-valuenow","1");
+    div.setAttribute("aria-valuetext","خيارات الرسالة ظاهرة. انتقل إلى زر حذف لدي أو حذف لدى الجميع.");
   }
-  toggle.addEventListener("input",revealMessageActions);
-  toggle.addEventListener("change",revealMessageActions);
-  toggle.addEventListener("keydown",event=>{
+  div.addEventListener("keydown",event=>{
     if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(event.key)){
       event.preventDefault();
       revealMessageActions();
     }
   });
-  div.append(toggle,actions);
+  div.append(actions);
   let touchStartX=null,touchStartY=null;
   div.addEventListener("touchstart",e=>{if(e.touches.length===1){touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY}},{passive:true});
   div.addEventListener("touchend",e=>{
