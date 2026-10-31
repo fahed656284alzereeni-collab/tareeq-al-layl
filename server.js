@@ -1307,7 +1307,7 @@ app.post("/api/voice-messages/:conversationId", voiceMessageCors, express.raw({ 
     const mimeType = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
     const extensions = { "audio/mp4":"m4a", "audio/webm":"webm", "audio/ogg":"ogg", "audio/aac":"aac", "audio/mpeg":"mp3", "audio/wav":"wav" };
     if (!extensions[mimeType]) return res.status(415).json({ success: false, message: "صيغة التسجيل الصوتي غير مدعومة على هذا الجهاز." });
-    if (!Buffer.isBuffer(req.body) || req.body.length < 100 || req.body.length > 8 * 1024 * 1024) return res.status(400).json({ success: false, message: "حجم التسجيل غير صالح أو يتجاوز الحد المسموح." });
+    if (!Buffer.isBuffer(req.body) || req.body.length < 1 || req.body.length > 8 * 1024 * 1024) return res.status(400).json({ success: false, message: "حجم التسجيل غير صالح أو يتجاوز الحد المسموح." });
     const durationMs = Number(req.headers["x-audio-duration-ms"] || 0);
     if (!Number.isFinite(durationMs) || durationMs < 100 || durationMs > 180000) return res.status(400).json({ success: false, message: "مدة التسجيل يجب ألا تتجاوز ثلاث دقائق." });
     const db = admin.firestore();
