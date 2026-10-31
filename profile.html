@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>الملف الشخصي - مِرسالو</title>
 <style>
-:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}*{box-sizing:border-box}body{margin:0;line-height:1.8;padding:18px}main{max-width:560px;margin:24px auto;background:#1b293b;border:1px solid #34445a;border-radius:18px;padding:22px}h1{color:#8bd8c5;margin-top:0}label{display:block;font-weight:bold;margin:14px 0 5px}input,button,a{font:inherit}input[type=text],input[type=file]{width:100%;padding:12px;border-radius:10px;margin:5px 0;background:#fff;color:#111}button,.link{display:block;width:100%;padding:13px;border:0;border-radius:10px;margin:12px 0;background:#167c68;color:white;text-align:center;text-decoration:none;font-weight:bold}.secondary{background:#42536b}button:focus,input:focus,a:focus{outline:3px solid #ffd166;outline-offset:3px}#status{padding:12px;background:#26384e;border-radius:10px}#photo{width:112px;height:112px;border-radius:50%;object-fit:cover;background:#26384e;display:block;margin:12px auto}.muted{color:#c3d0df}
+:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}*{box-sizing:border-box}body{margin:0;line-height:1.8;padding:18px}main{max-width:560px;margin:24px auto;background:#1b293b;border:1px solid #34445a;border-radius:18px;padding:22px}h1{color:#8bd8c5;margin-top:0}label{display:block;font-weight:bold;margin:14px 0 5px}input,button,a{font:inherit}input[type=text],input[type=file]{width:100%;padding:12px;border-radius:10px;margin:5px 0;background:#fff;color:#111}button,.link{display:block;width:100%;padding:13px;border:0;border-radius:10px;margin:12px 0;background:#167c68;color:white;text-align:center;text-decoration:none;font-weight:bold}.secondary{background:#42536b}.danger{background:#9d3542}button:focus,input:focus,a:focus{outline:3px solid #ffd166;outline-offset:3px}#status{padding:12px;background:#26384e;border-radius:10px}#photo{width:112px;height:112px;border-radius:50%;object-fit:cover;background:#26384e;display:block;margin:12px auto}.muted{color:#c3d0df}
 </style></head><body><main>
 <h1>الملف الشخصي</h1><p class="muted">عدّل الاسم والصورة التي تظهر للآخرين في مِرسالو.</p>
 <img id="photo" alt="الصورة الشخصية الحالية">
@@ -11,19 +11,75 @@
 <label for="photoFile">تغيير الصورة الشخصية</label><input id="photoFile" type="file" accept="image/*">
 <button id="save" type="submit">حفظ التعديلات</button>
 </form>
-<p id="status" role="status" aria-live="polite">جارٍ تحميل الملف الشخصي...</p>
+<button id="deletePhoto" class="danger" type="button">حذف الصورة الشخصية</button>\n<p id="status" role="status" aria-live="polite">جارٍ تحميل الملف الشخصي...</p>
 <a class="link secondary" href="chat.html">العودة إلى المحادثات</a>
 </main>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged,updateProfile}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,doc,getDoc,setDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-import{getStorage,ref,uploadBytes,getDownloadURL}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js";
+import{getStorage,ref,uploadBytesResumable,getDownloadURL,deleteObject}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-storage.js";
 const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app),storage=getStorage(app);
-const form=document.getElementById("profileForm"),nameField=document.getElementById("playerName"),photoFile=document.getElementById("photoFile"),photo=document.getElementById("photo"),email=document.getElementById("email"),status=document.getElementById("status"),save=document.getElementById("save");
+const form=document.getElementById("profileForm"),nameField=document.getElementById("playerName"),photoFile=document.getElementById("photoFile"),photo=document.getElementById("photo"),email=document.getElementById("email"),status=document.getElementById("status"),save=document.getElementById("save"),deletePhoto=document.getElementById("deletePhoto");
 let activeUser=null,profileData={};
 function say(t){status.textContent=t}
 onAuthStateChanged(auth,async user=>{if(!user){location.replace("login.html");return}activeUser=user;try{const snap=await getDoc(doc(db,"users",user.uid));profileData=snap.exists()?snap.data():{};nameField.value=profileData.playerName||user.displayName||"";email.textContent=user.email||"لا يوجد بريد إلكتروني";photo.src=profileData.photoURL||user.photoURL||"";photo.alt=profileData.photoURL||user.photoURL?"الصورة الشخصية الحالية":"لا توجد صورة شخصية";say("تم تحميل بيانات الحساب.")}catch(e){say("تعذر تحميل الملف الشخصي. رمز الخطأ: "+(e.code||"unknown"))}});
-form.addEventListener("submit",async e=>{e.preventDefault();if(!activeUser)return;const playerName=nameField.value.trim();if(playerName.length<2){say("اسم المستخدم يجب أن يتكون من حرفين على الأقل.");nameField.focus();return}save.disabled=true;say("جارٍ حفظ التعديلات...");try{let photoURL=profileData.photoURL||activeUser.photoURL||"";const file=photoFile.files[0];if(file){if(!file.type.startsWith("image/"))throw new Error("يرجى اختيار ملف صورة.");if(file.size>5*1024*1024)throw new Error("حجم الصورة يجب ألا يتجاوز 5 ميغابايت.");const imageRef=ref(storage,"profile-photos/"+activeUser.uid+"/avatar");await uploadBytes(imageRef,file,{contentType:file.type});photoURL=await getDownloadURL(imageRef)}await updateProfile(activeUser,{displayName:playerName,photoURL});await setDoc(doc(db,"users",activeUser.uid),{uid:activeUser.uid,email:activeUser.email||"",displayName:playerName,playerName,photoURL},{merge:true});profileData={...profileData,playerName,displayName:playerName,photoURL};photo.src=photoURL;photo.alt=photoURL?"الصورة الشخصية الحالية":"لا توجد صورة شخصية";photoFile.value="";say("تم حفظ الملف الشخصي بنجاح.");}catch(e){say(e.message||("تعذر حفظ التعديلات. رمز الخطأ: "+(e.code||"unknown")))}finally{save.disabled=false}});
+function withTimeout(promise,ms,label){let timer;return Promise.race([promise,new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(label)),ms)})]).finally(()=>clearTimeout(timer))}
+
+function uploadPhoto(file,imageRef){
+ return new Promise((resolve,reject)=>{
+  const task=uploadBytesResumable(imageRef,file,{contentType:file.type});
+  let settled=false;
+  const timer=setTimeout(()=>{if(!settled){settled=true;task.cancel();reject(new Error("استغرق رفع الصورة وقتًا طويلًا. تحقق من اتصال الإنترنت وحاول مرة أخرى."))}},90000);
+  task.on("state_changed",snapshot=>{
+   const percent=Math.round((snapshot.bytesTransferred/snapshot.totalBytes)*100);
+   say("جارٍ رفع الصورة: "+percent+"٪");
+  },error=>{if(!settled){settled=true;clearTimeout(timer);reject(error)}},()=>{
+   if(!settled){settled=true;clearTimeout(timer);resolve(task.snapshot)}
+  });
+ });
+}
+
+form.addEventListener("submit",async e=>{
+ e.preventDefault();if(!activeUser)return;
+ const playerName=nameField.value.trim();
+ if(playerName.length<2){say("اسم المستخدم يجب أن يتكون من حرفين على الأقل.");nameField.focus();return}
+ save.disabled=true;deletePhoto.disabled=true;
+ try{
+  let photoURL=profileData.photoURL||activeUser.photoURL||"";
+  const file=photoFile.files[0];
+  if(file){
+   if(!file.type.startsWith("image/"))throw new Error("يرجى اختيار ملف صورة.");
+   if(file.size>5*1024*1024)throw new Error("حجم الصورة يجب ألا يتجاوز 5 ميغابايت.");
+   const imageRef=ref(storage,"profile-photos/"+activeUser.uid+"/avatar");
+   say("جارٍ تجهيز الصورة للرفع...");
+   await uploadPhoto(file,imageRef);
+   say("اكتمل رفع الصورة، جارٍ حفظ بيانات الحساب...");
+   photoURL=await withTimeout(getDownloadURL(imageRef),20000,"تعذر الحصول على رابط الصورة. حاول مرة أخرى.");
+  }
+  await withTimeout(updateProfile(activeUser,{displayName:playerName,photoURL}),20000,"انتهت مهلة تحديث الحساب. حاول مرة أخرى.");
+  await withTimeout(setDoc(doc(db,"users",activeUser.uid),{uid:activeUser.uid,email:activeUser.email||"",displayName:playerName,playerName,photoURL},{merge:true}),20000,"انتهت مهلة حفظ بيانات الملف الشخصي. تحقق من الاتصال وحاول مرة أخرى.");
+  profileData={...profileData,playerName,displayName:playerName,photoURL};
+  photo.src=photoURL;photo.alt=photoURL?"الصورة الشخصية الحالية":"لا توجد صورة شخصية";
+  photoFile.value="";say("تم حفظ الملف الشخصي بنجاح.");
+ }catch(e){say("تعذر حفظ التعديلات: "+(e.message||e.code||"خطأ غير معروف")+" "+(e.code?"("+e.code+")":""))}
+ finally{save.disabled=false;deletePhoto.disabled=false}
+});
+
+deletePhoto.addEventListener("click",async()=>{
+ if(!activeUser)return;
+ if(!confirm("هل أنت متأكد من حذف الصورة الشخصية؟"))return;
+ deletePhoto.disabled=true;save.disabled=true;say("جارٍ حذف الصورة الشخصية...");
+ try{
+  const imageRef=ref(storage,"profile-photos/"+activeUser.uid+"/avatar");
+  try{await withTimeout(deleteObject(imageRef),20000,"انتهت مهلة حذف الصورة. حاول مرة أخرى.")}
+  catch(err){if(err.code!=="storage/object-not-found")throw err}
+  await withTimeout(updateProfile(activeUser,{photoURL:null}),20000,"انتهت مهلة تحديث الحساب. حاول مرة أخرى.");
+  await withTimeout(setDoc(doc(db,"users",activeUser.uid),{photoURL:""},{merge:true}),20000,"انتهت مهلة حفظ التغيير. حاول مرة أخرى.");
+  profileData={...profileData,photoURL:""};photo.removeAttribute("src");photo.alt="لا توجد صورة شخصية";photoFile.value="";
+  say("تم حذف الصورة الشخصية بنجاح.");
+ }catch(e){say("تعذر حذف الصورة: "+(e.message||e.code||"خطأ غير معروف")+" "+(e.code?"("+e.code+")":""))}
+ finally{deletePhoto.disabled=false;save.disabled=false}
+});
 </script></body></html>
