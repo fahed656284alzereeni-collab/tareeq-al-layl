@@ -53,7 +53,7 @@ onAuthStateChanged(auth,async user=>{
  if(!user||checking)return;checking=true;currentUser=user;button.disabled=true;say("جارٍ التحقق من ملف حسابك...");
  try{
   profileRef=doc(db,"users",user.uid);say("تم تسجيل الدخول. جارٍ تحميل ملف حسابك...");const snap=await withTimeout(getDoc(profileRef),15000,"profile-timeout");const data=snap.exists()?snap.data():{};
-  if(data.playerName){say("أهلًا بعودتك "+data.playerName+". جارٍ فتح مِرسالو.");await playLoginSound();location.replace("chat.html");return}
+  if(data.playerName){say("أهلًا بعودتك "+data.playerName+". جارٍ فتح مِرسالو.");playLoginSound().catch(()=>{});location.replace("chat.html");return}
   nameInput.value="";
   form.style.display="block";button.style.display="none";nameInput.focus();say("قبل إكمال إنشاء الحساب، اختر الاسم الذي سيظهر للآخرين عند البحث عنك.");
  }catch(e){checking=false;button.disabled=false;const code=e.code||e.message||"unknown";say(code==="profile-timeout"?"تأخر الاتصال بملف حسابك. تحقق من اتصال الإنترنت ثم أعد المحاولة.":"تعذر قراءة ملف الحساب. رمز الخطأ: "+code)}
@@ -63,7 +63,7 @@ form.addEventListener("submit",async e=>{
  if(playerName.length<2){say("اكتب اسمًا من حرفين على الأقل.");nameInput.focus();return}
  if(!currentUser||!profileRef)return;
  const save=form.querySelector("button");save.disabled=true;say("جارٍ حفظ اسمك...");
- try{await setDoc(profileRef,{uid:currentUser.uid,email:currentUser.email||"",displayName:playerName,playerName,photoURL:currentUser.photoURL||"",createdAt:serverTimestamp(),lastLoginAt:serverTimestamp()},{merge:true});say("تم إنشاء حسابك. جارٍ إرسال رسالة الترحيب إلى بريدك...");try{const token=await currentUser.getIdToken();const emailResponse=await fetch("https://tareeq-al-layl-server.onrender.com/api/welcome-email",{method:"POST",headers:{Authorization:"Bearer "+token}});const emailResult=await emailResponse.json();say(emailResult.success?"تم إنشاء حسابك وإرسال رسالة الترحيب إلى بريدك. جارٍ فتح مِرسالو.":"تم إنشاء حسابك، لكن تعذّر إرسال رسالة الترحيب حاليًا. جارٍ فتح مِرسالو.");}catch(emailError){say("تم إنشاء حسابك. تعذّر تأكيد إرسال رسالة الترحيب حاليًا. جارٍ فتح مِرسالو.");}await playLoginSound();location.replace("chat.html")}
+ try{await setDoc(profileRef,{uid:currentUser.uid,email:currentUser.email||"",displayName:playerName,playerName,photoURL:currentUser.photoURL||"",createdAt:serverTimestamp(),lastLoginAt:serverTimestamp()},{merge:true});say("تم إنشاء حسابك. جارٍ إرسال رسالة الترحيب إلى بريدك...");try{const token=await currentUser.getIdToken();const emailResponse=await fetch("https://tareeq-al-layl-server.onrender.com/api/welcome-email",{method:"POST",headers:{Authorization:"Bearer "+token}});const emailResult=await emailResponse.json();say(emailResult.success?"تم إنشاء حسابك وإرسال رسالة الترحيب إلى بريدك. جارٍ فتح مِرسالو.":"تم إنشاء حسابك، لكن تعذّر إرسال رسالة الترحيب حاليًا. جارٍ فتح مِرسالو.");}catch(emailError){say("تم إنشاء حسابك. تعذّر تأكيد إرسال رسالة الترحيب حاليًا. جارٍ فتح مِرسالو.");}playLoginSound().catch(()=>{});location.replace("chat.html")}
  catch(e){save.disabled=false;say("تعذر حفظ الاسم. رمز الخطأ: "+(e.code||"unknown"))}
 });
 </script></body></html>
