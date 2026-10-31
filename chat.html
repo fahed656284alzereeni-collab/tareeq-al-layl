@@ -32,6 +32,7 @@ function unlockMessageAudio(){
 }
 document.addEventListener("pointerdown",unlockMessageAudio,{once:true});
 document.addEventListener("keydown",unlockMessageAudio,{once:true});
+document.addEventListener("click",unlockMessageAudio,{once:true});
 function playMessageSound(kind){
   if(!audioContext||audioContext.state!=="running")return;
   const now=audioContext.currentTime;
