@@ -454,6 +454,55 @@ io.on("connection", socket => {
     }
   });
 
+  async function deleteConversationMessages(conversationRef) {
+    const snapshot = await conversationRef.collection("messages").get();
+    for (let i = 0; i < snapshot.docs.length; i += 450) {
+      const batch = db.batch();
+      for (const message of snapshot.docs.slice(i, i + 450)) batch.delete(message.ref);
+      await batch.commit();
+    }
+  }
+
+  socket.on("clearDirectConversation", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const conversationRef = conversationsRef.doc(conversationId);
+      const conversationSnap = await conversationRef.get();
+      if (!conversationSnap.exists || !(conversationSnap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بحذف محتوى هذه الدردشة.");
+      const members = conversationSnap.data().members || [];
+      await deleteConversationMessages(conversationRef);
+      await conversationRef.set({ lastMessage: "", updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      const payload = { conversationId };
+      for (const member of members) {
+        const sessions = connectedUsers.get(member);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("directConversationContentDeleted", payload);
+      }
+      if (typeof reply === "function") reply({ success: true, message: "تم حذف محتوى الدردشة لدى الطرفين." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر حذف محتوى الدردشة." });
+    }
+  });
+
+  socket.on("deleteDirectConversation", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const conversationRef = conversationsRef.doc(conversationId);
+      const conversationSnap = await conversationRef.get();
+      if (!conversationSnap.exists || !(conversationSnap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بحذف هذه الدردشة.");
+      const members = conversationSnap.data().members || [];
+      await deleteConversationMessages(conversationRef);
+      await conversationRef.delete();
+      const payload = { conversationId };
+      for (const member of members) {
+        const sessions = connectedUsers.get(member);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("directConversationDeleted", payload);
+      }
+      if (typeof reply === "function") reply({ success: true, message: "تم حذف الدردشة كاملة لدى الطرفين." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر حذف الدردشة كاملة." });
+    }
+  });
+
   socket.on("deleteDirectMessageForMe", async (data = {}, reply) => {
     try {
       const conversationId=String(data.conversationId||"");
@@ -665,14 +714,19 @@ io.on("connection", socket => {
   socket.on("removeFriend", async (data = {}, reply) => {
     try {
       const otherUid = String(data.uid || "").trim();
-      if (!otherUid || otherUid === socket.data.uid) throw new Error("حساب الصديق غير صالح.");
-      const batch = admin.firestore().batch();
+      const conversationId = String(data.conversationId || "");
+      const conversationSnap = await conversationsRef.doc(conversationId).get();
+      const members = conversationSnap.exists ? (conversationSnap.data().members || []) : [];
+      if (!otherUid || otherUid === socket.data.uid || !members.includes(socket.data.uid) || !members.includes(otherUid)) throw new Error("بيانات إزالة الصداقة غير صالحة.");
+      const batch = db.batch();
       batch.delete(friendshipRef(socket.data.uid, otherUid));
       batch.delete(friendshipRef(otherUid, socket.data.uid));
+      batch.delete(requestRef(socket.data.uid, otherUid));
+      batch.delete(requestRef(otherUid, socket.data.uid));
       await batch.commit();
-      if (typeof reply === "function") reply({ success: true, message: "تمت إزالة الصديق." });
+      if (typeof reply === "function") reply({ success: true, message: "تمت إزالة الصداقة، وبقيت المحادثة ورسائلها." });
     } catch (error) {
-      if (typeof reply === "function") reply({ success: false, message: "تعذر إزالة الصديق." });
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر إزالة الصداقة." });
     }
   });
 
