@@ -37,6 +37,49 @@ try {
 
 admin.initializeApp({ credential });
 
+const SUPABASE_URL = "https://xvczbbhxfmzqintyklde.supabase.co";
+const VOICE_BUCKET = "voice-messages";
+function supabaseStorageHeaders(extra = {}) {
+  const key = process.env.SUPABASE_SECRET_KEY;
+  if (!key) throw new Error("خدمة الرسائل الصوتية غير مهيأة على الخادم.");
+  return { apikey: key, Authorization: `Bearer ${key}`, ...extra };
+}
+function encodeStoragePath(value) { return value.split("/").map(encodeURIComponent).join("/"); }
+async function supabaseStorageRequest(endpoint, options = {}) {
+  const response = await fetch(`${SUPABASE_URL}/storage/v1${endpoint}`, {
+    ...options, headers: supabaseStorageHeaders(options.headers || {})
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    console.error("Supabase Storage error:", response.status, result.message || result.error || "Unknown error");
+    throw new Error("تعذر حفظ الملف الصوتي أو الوصول إليه.");
+  }
+  return result;
+}
+async function uploadVoiceObject(storagePath, bytes, mimeType) {
+  return supabaseStorageRequest(`/object/${VOICE_BUCKET}/${encodeStoragePath(storagePath)}`, {
+    method: "POST", headers: { "Content-Type": mimeType, "cache-control": "3600", "x-upsert": "false" }, body: bytes
+  });
+}
+async function createVoiceSignedUrl(storagePath) {
+  const result = await supabaseStorageRequest(`/object/sign/${VOICE_BUCKET}/${encodeStoragePath(storagePath)}`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ expiresIn: 3600 })
+  });
+  const signedPath = result.signedURL || result.signedUrl;
+  if (!signedPath) throw new Error("تعذر إنشاء رابط تشغيل الرسالة الصوتية.");
+  return signedPath.startsWith("http") ? signedPath : `${SUPABASE_URL}/storage/v1${signedPath.startsWith("/") ? "" : "/"}${signedPath}`;
+}
+async function deleteVoiceStorageObjects(storagePaths) {
+  const paths = [...new Set((storagePaths || []).filter(path => typeof path === "string" && path.length > 0))];
+  if (!paths.length) return;
+  try {
+    await supabaseStorageRequest(`/object/${VOICE_BUCKET}`, {
+      method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prefixes: paths })
+    });
+  } catch (error) { console.error("Voice storage cleanup failed:", error.message); }
+}
+
+
 const app = express();
 
 const server = http.createServer(app);
@@ -415,7 +458,19 @@ io.on("connection", socket => {
       const conversation = await ref.get();
       if (!conversation.exists || !(conversation.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بفتح هذه المحادثة.");
       const snap = await ref.collection("messages").orderBy("createdAt", "asc").limit(100).get();
-      if (typeof reply === "function") reply({ success: true, messages: snap.docs.filter(d => !(d.data().hiddenFor || []).includes(socket.data.uid)).map(d => ({ id:d.id, ...d.data(), createdAt:d.data().createdAt ? d.data().createdAt.toMillis() : 0 })) });
+      const visibleDocs = snap.docs.filter(d => !(d.data().hiddenFor || []).includes(socket.data.uid));
+      const messages = await Promise.all(visibleDocs.map(async d => {
+        const data = d.data();
+        const storagePath = data.storagePath;
+        const item = { id: d.id, ...data, createdAt: data.createdAt ? data.createdAt.toMillis() : 0 };
+        delete item.storagePath;
+        if (data.type === "voice" && storagePath) {
+          try { item.audioUrl = await createVoiceSignedUrl(storagePath); }
+          catch (error) { console.error("Voice playback URL error:", error.message); item.audioUrl = null; }
+        }
+        return item;
+      }));
+      if (typeof reply === "function") reply({ success: true, messages });
     } catch (error) {
       if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تحميل الرسائل." });
     }
@@ -460,6 +515,7 @@ io.on("connection", socket => {
 
   async function deleteConversationMessages(conversationRef) {
     const snapshot = await conversationRef.collection("messages").get();
+    await deleteVoiceStorageObjects(snapshot.docs.map(message => message.data().storagePath).filter(Boolean));
     for (let i = 0; i < snapshot.docs.length; i += 450) {
       const batch = db.batch();
       for (const message of snapshot.docs.slice(i, i + 450)) batch.delete(message.ref);
@@ -566,6 +622,8 @@ io.on("connection", socket => {
       const messageId=String(data.messageId||"");
       const conversationRef=conversationsRef.doc(conversationId);
       const messageRef=conversationRef.collection("messages").doc(messageId);
+      const messageBeforeDelete = await messageRef.get();
+      const voiceStoragePath = messageBeforeDelete.exists ? messageBeforeDelete.data().storagePath : null;
       const result=await db.runTransaction(async transaction=>{
         const [conversationSnap,messageSnap]=await Promise.all([transaction.get(conversationRef),transaction.get(messageRef)]);
         if(!conversationSnap.exists||!(conversationSnap.data().members||[]).includes(socket.data.uid))throw new Error("غير مصرح بهذه المحادثة.");
@@ -574,6 +632,7 @@ io.on("connection", socket => {
         transaction.delete(messageRef);
         return conversationSnap.data();
       });
+      if (voiceStoragePath) await deleteVoiceStorageObjects([voiceStoragePath]);
       const remaining=await conversationRef.collection("messages").orderBy("createdAt","desc").limit(1).get();
       const latest=remaining.docs[0];
       await conversationRef.set({
@@ -1222,6 +1281,74 @@ app.get("/", (req, res) => {
 
 app.use(express.json({ limit: "32kb" }));
 
+
+
+const voiceMessageOrigins = new Set(["https://mersalo.onrender.com","https://tareeq-al-layl.onrender.com"]);
+function voiceMessageCors(req, res, next) {
+  const origin = req.headers.origin;
+  if (origin && !voiceMessageOrigins.has(origin)) return res.status(403).json({ success: false, message: "Origin not allowed." });
+  if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Audio-Duration-Ms");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+}
+app.options("/api/voice-messages/:conversationId", voiceMessageCors);
+app.post("/api/voice-messages/:conversationId", voiceMessageCors, express.raw({ type: () => true, limit: "8mb" }), async (req, res) => {
+  let uploadedPath = null;
+  try {
+    const match = String(req.headers.authorization || "").match(/^Bearer (.+)$/i);
+    if (!match) return res.status(401).json({ success: false, message: "يلزم تسجيل الدخول لإرسال رسالة صوتية." });
+    const decoded = await admin.auth().verifyIdToken(match[1]);
+    const uid = decoded.uid;
+    const conversationId = String(req.params.conversationId || "");
+    if (!/^[A-Za-z0-9_-]{1,160}$/.test(conversationId)) return res.status(400).json({ success: false, message: "معرّف المحادثة غير صالح." });
+    const mimeType = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
+    const extensions = { "audio/mp4":"m4a", "audio/webm":"webm", "audio/ogg":"ogg", "audio/aac":"aac", "audio/mpeg":"mp3", "audio/wav":"wav" };
+    if (!extensions[mimeType]) return res.status(415).json({ success: false, message: "صيغة التسجيل الصوتي غير مدعومة على هذا الجهاز." });
+    if (!Buffer.isBuffer(req.body) || req.body.length < 100 || req.body.length > 8 * 1024 * 1024) return res.status(400).json({ success: false, message: "حجم التسجيل غير صالح أو يتجاوز الحد المسموح." });
+    const durationMs = Number(req.headers["x-audio-duration-ms"] || 0);
+    if (!Number.isFinite(durationMs) || durationMs < 100 || durationMs > 180000) return res.status(400).json({ success: false, message: "مدة التسجيل يجب ألا تتجاوز ثلاث دقائق." });
+    const db = admin.firestore();
+    const conversationRef = db.collection("conversations").doc(conversationId);
+    const conversationSnap = await conversationRef.get();
+    if (!conversationSnap.exists || !(conversationSnap.data().members || []).includes(uid)) return res.status(403).json({ success: false, message: "غير مصرح بإرسال رسالة صوتية في هذه المحادثة." });
+    const members = conversationSnap.data().members || [];
+    const otherUid = members.find(member => member !== uid);
+    if (!otherUid) return res.status(400).json({ success: false, message: "تعذر تحديد الطرف الآخر." });
+    const usersRef = db.collection("users");
+    const [myBlock, theirBlock] = await Promise.all([
+      usersRef.doc(uid).collection("blockedUsers").doc(otherUid).get(),
+      usersRef.doc(otherUid).collection("blockedUsers").doc(uid).get()
+    ]);
+    if (myBlock.exists || theirBlock.exists) return res.status(403).json({ success: false, message: "لا يمكن إرسال الرسائل بسبب إعدادات الحظر بين الحسابين." });
+    uploadedPath = `${conversationId}/${uid}/${require("crypto").randomUUID()}.${extensions[mimeType]}`;
+    await uploadVoiceObject(uploadedPath, req.body, mimeType);
+    const audioUrl = await createVoiceSignedUrl(uploadedPath);
+    const messageRef = conversationRef.collection("messages").doc();
+    const message = { senderUid: uid, type: "voice", storagePath: uploadedPath, mimeType, durationMs: Math.round(durationMs), createdAt: admin.firestore.FieldValue.serverTimestamp() };
+    const batch = db.batch();
+    batch.set(messageRef, message);
+    for (const member of members) {
+      batch.delete(usersRef.doc(member).collection("hiddenConversations").doc(conversationId));
+      batch.delete(usersRef.doc(member).collection("hiddenConversationContent").doc(conversationId));
+    }
+    batch.set(conversationRef, { updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: "رسالة صوتية" }, { merge: true });
+    await batch.commit();
+    const payload = { id: messageRef.id, senderUid: uid, type: "voice", durationMs: Math.round(durationMs), mimeType, audioUrl, createdAt: Date.now() };
+    for (const member of members) {
+      const sessions = connectedUsers.get(member);
+      if (sessions) for (const client of sessions) if (client.connected) client.emit("directMessageReceived", { conversationId, message: payload });
+    }
+    return res.status(201).json({ success: true, message: payload });
+  } catch (error) {
+    if (uploadedPath) await deleteVoiceStorageObjects([uploadedPath]);
+    console.error("Voice message upload error:", error.message);
+    const status = error.message && error.message.includes("غير مهيأة") ? 503 : 500;
+    return res.status(status).json({ success: false, message: error.message || "تعذر إرسال الرسالة الصوتية." });
+  }
+});
 
 const accountDeleteOrigins = new Set([
   "https://mersalo.onrender.com",
