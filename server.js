@@ -367,6 +367,7 @@ io.on("connection", socket => {
       const ref = conversationsRef.doc(conversationId);
       await ref.set({ type: "direct", members, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
       await usersRef.doc(socket.data.uid).collection("hiddenConversations").doc(conversationId).delete();
+      await usersRef.doc(socket.data.uid).collection("hiddenConversationContent").doc(conversationId).delete();
       const profile = targetSnap.data();
       if (typeof reply === "function") reply({ success: true, conversation: { id: conversationId, displayName: profile.playerName || profile.displayName || "مستخدم" } });
     } catch (error) {
@@ -378,8 +379,9 @@ io.on("connection", socket => {
     const startedAt = Date.now();
     console.info("listConversations started", socket.data.uid);
     try {
-      const [snap, hiddenSnap] = await Promise.all([conversationsRef.where("members", "array-contains", socket.data.uid).get(), usersRef.doc(socket.data.uid).collection("hiddenConversations").get()]);
+      const [snap, hiddenSnap, hiddenContentSnap] = await Promise.all([conversationsRef.where("members", "array-contains", socket.data.uid).get(), usersRef.doc(socket.data.uid).collection("hiddenConversations").get(), usersRef.doc(socket.data.uid).collection("hiddenConversationContent").get()]);
       const hiddenIds = new Set(hiddenSnap.docs.map(item => item.id));
+      const hiddenContentIds = new Set(hiddenContentSnap.docs.map(item => item.id));
       // The conversation document is already updated with lastMessage and updatedAt
       // whenever a message is sent, so avoid a separate messages query per conversation.
       const otherUids = [...new Set(snap.docs.map(item => (item.data().members || []).find(uid => uid !== socket.data.uid)).filter(Boolean))];
@@ -393,7 +395,7 @@ io.on("connection", socket => {
           id: item.id,
           otherUid,
           displayName: profile.playerName || profile.displayName || "مستخدم",
-          lastMessage: String(data.lastMessage || "").replace(/\s*\(تم التعديل\)\s*$/,"").replace(/^تم التعديل\.?$/,""),
+          lastMessage: hiddenContentIds.has(item.id) ? "" : String(data.lastMessage || "").replace(/\s*\(تم التعديل\)\s*$/,"").replace(/^تم التعديل\.?$/,""),
           updatedAt: data.updatedAt ? data.updatedAt.toMillis() : 0
         };
       });
@@ -477,7 +479,10 @@ io.on("connection", socket => {
         for (const message of snapshot.docs.slice(i, i + 450)) batch.update(message.ref, { hiddenFor: admin.firestore.FieldValue.arrayUnion(socket.data.uid) });
         await batch.commit();
       }
-      if (typeof reply === "function") reply({ success: true, message: "تم إخفاء محتوى الدردشة من عندك فقط. ما زالت الرسائل ظاهرة للطرف الآخر." });
+      await usersRef.doc(socket.data.uid).collection("hiddenConversationContent").doc(conversationId).set({
+        hiddenAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      if (typeof reply === "function") reply({ success: true });
     } catch (error) {
       if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر حذف محتوى الدردشة من عندك." });
     }
@@ -602,6 +607,10 @@ io.on("connection", socket => {
       const messageRef = ref.collection("messages").doc();
       const batch = db.batch();
       batch.set(messageRef, message);
+      for (const member of conversation.data().members) {
+        batch.delete(usersRef.doc(member).collection("hiddenConversations").doc(id));
+        batch.delete(usersRef.doc(member).collection("hiddenConversationContent").doc(id));
+      }
       batch.set(ref, { updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: text.slice(0,120) }, { merge: true });
       await batch.commit();
       const payload = { id: messageRef.id, senderUid: socket.data.uid, text, createdAt: Date.now() };
