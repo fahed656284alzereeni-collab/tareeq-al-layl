@@ -270,7 +270,7 @@ io.on("connection", socket => {
     }
   });
 
-  socket.on("listConversations", async reply => {
+  socket.on("listConversations", async (data = {}, reply) => {
     const startedAt = Date.now();
     console.info("listConversations started", socket.data.uid);
     try {
