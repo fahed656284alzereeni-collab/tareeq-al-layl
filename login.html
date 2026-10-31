@@ -1,64 +1,41 @@
 <!doctype html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#101827"><title>الدخول إلى مِرسالو</title>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>الدخول إلى مِرسالو</title>
 <style>
-:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}
-*{box-sizing:border-box}body{margin:0;padding:22px;line-height:1.8}main{max-width:480px;margin:5vh auto;background:#1b293b;border:1px solid #34445a;border-radius:22px;padding:24px}
-h1{text-align:center;color:#8bd8c5}button{width:100%;padding:15px;margin-top:18px;border-radius:11px;font-size:18px;background:#167c68;color:#fff;border:0;font-weight:bold;cursor:pointer}
-button:focus{outline:3px solid #ffd166;outline-offset:3px}button:disabled{opacity:.55}
-#status{margin-top:20px;padding:12px;border-radius:10px;background:#26384e;overflow-wrap:anywhere}
-.note{font-size:.92rem;color:#c3d0df}
-</style>
-</head>
-<body><main>
-<h1>مِرسالو</h1>
-<p>سجّل الدخول أو أنشئ حسابك باستخدام حساب Google.</p>
+:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}*{box-sizing:border-box}body{margin:0;padding:22px;line-height:1.8}main{max-width:480px;margin:5vh auto;background:#1b293b;border:1px solid #34445a;border-radius:22px;padding:24px}h1{text-align:center;color:#8bd8c5}button{width:100%;padding:15px;margin-top:18px;border-radius:11px;font-size:18px;background:#167c68;color:#fff;border:0;font-weight:bold;cursor:pointer}button:focus,input:focus{outline:3px solid #ffd166;outline-offset:3px}button:disabled{opacity:.55}input{width:100%;padding:14px;border-radius:10px;font:inherit;margin-top:8px}#status{margin-top:20px;padding:12px;border-radius:10px;background:#26384e;overflow-wrap:anywhere}.note{font-size:.92rem;color:#c3d0df}#nameForm{display:none}
+</style></head><body><main>
+<h1>مِرسالو</h1><p>سجّل الدخول أو أنشئ حسابك باستخدام حساب Google.</p>
 <button id="googleLogin" type="button">المتابعة باستخدام Google</button>
+<form id="nameForm"><label for="displayName">ما الاسم الذي تريد أن يظهر للآخرين ويبحثوا عنك به؟</label><input id="displayName" type="text" maxlength="30" autocomplete="nickname" required><button type="submit">حفظ الاسم وفتح مِرسالو</button></form>
 <p class="note">ستظهر نافذة Google لاختيار الحساب. لا تحتاج إلى إدخال بريدك أو كلمة المرور داخل مِرسالو.</p>
 <p id="status" role="status" aria-live="polite">اضغط على زر المتابعة باستخدام Google.</p>
 </main>
 <script type="module">
-import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import {getAuth,GoogleAuthProvider,signInWithRedirect,getRedirectResult,onAuthStateChanged,setPersistence,browserLocalPersistence} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
-import {getFirestore,doc,setDoc,serverTimestamp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-const firebaseConfig={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
-const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
-const provider=new GoogleAuthProvider();
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth,GoogleAuthProvider,signInWithRedirect,getRedirectResult,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getFirestore,doc,getDoc,setDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
+const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
+const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app),provider=new GoogleAuthProvider();
 provider.setCustomParameters({prompt:"select_account"});
-const status=document.getElementById("status"),button=document.getElementById("googleLogin");
-function say(message){status.textContent=message}
-let redirectHandled=false;
-button.addEventListener("click",async()=>{
- button.disabled=true;say("جارٍ فتح Google لاختيار الحساب...");
- try{await setPersistence(auth,browserLocalPersistence);await signInWithRedirect(auth,provider)}
- catch(error){button.disabled=false;say("تعذر بدء تسجيل الدخول. رمز الخطأ: "+(error.code||"unknown"))}
-});
-getRedirectResult(auth).then(result=>{
- redirectHandled=true;
- if(result&&result.user)say("تم اختيار الحساب. جارٍ تجهيز حسابك...");
-}).catch(error=>{
- redirectHandled=true;button.disabled=false;
- say("تعذر تسجيل الدخول باستخدام Google. رمز الخطأ: "+(error.code||"unknown"));
-});
+const button=document.getElementById("googleLogin"),form=document.getElementById("nameForm"),nameInput=document.getElementById("displayName"),status=document.getElementById("status");
+let currentUser=null,profileRef=null,checking=false;
+function say(t){status.textContent=t}
+button.addEventListener("click",async()=>{button.disabled=true;say("جارٍ فتح Google لاختيار الحساب...");try{await setPersistence(auth,browserLocalPersistence);await signInWithRedirect(auth,provider)}catch(e){button.disabled=false;say("تعذر بدء تسجيل الدخول. رمز الخطأ: "+(e.code||"unknown"))}});
+getRedirectResult(auth).catch(e=>{button.disabled=false;say("تعذر تسجيل الدخول باستخدام Google. رمز الخطأ: "+(e.code||"unknown"))});
 onAuthStateChanged(auth,async user=>{
- if(!user)return;
- button.disabled=true;say("جارٍ تجهيز حسابك...");
+ if(!user||checking)return;checking=true;currentUser=user;button.disabled=true;say("جارٍ التحقق من ملف حسابك...");
  try{
-  await setDoc(doc(db,"users",user.uid),{
-   uid:user.uid,
-   email:user.email||"",
-   displayName:user.displayName||"",
-   photoURL:user.photoURL||"",
-   createdAt:serverTimestamp(),
-   lastLoginAt:serverTimestamp()
-  },{merge:true});
-  say("تم تسجيل الدخول بنجاح. جارٍ فتح مِرسالو.");
-  location.replace("chat.html");
- }catch(error){
-  button.disabled=false;
-  say("تم تسجيل الدخول لكن تعذر حفظ بيانات الحساب. رمز الخطأ: "+(error.code||"unknown"));
- }
+  profileRef=doc(db,"users",user.uid);const snap=await getDoc(profileRef);const data=snap.exists()?snap.data():{};
+  if(data.playerName){say("أهلًا بعودتك "+data.playerName+". جارٍ فتح مِرسالو.");location.replace("chat.html");return}
+  nameInput.value=data.displayName&&data.displayName!==user.email?data.displayName:(user.displayName||"");
+  form.style.display="block";button.style.display="none";nameInput.focus();say("قبل إكمال إنشاء الحساب، اختر الاسم الذي سيظهر للآخرين عند البحث عنك.");
+ }catch(e){checking=false;button.disabled=false;say("تعذر قراءة ملف الحساب. رمز الخطأ: "+(e.code||"unknown"))}
+});
+form.addEventListener("submit",async e=>{
+ e.preventDefault();const playerName=nameInput.value.trim();
+ if(playerName.length<2){say("اكتب اسمًا من حرفين على الأقل.");nameInput.focus();return}
+ if(!currentUser||!profileRef)return;
+ const save=form.querySelector("button");save.disabled=true;say("جارٍ حفظ اسمك...");
+ try{await setDoc(profileRef,{uid:currentUser.uid,email:currentUser.email||"",displayName:playerName,playerName,photoURL:currentUser.photoURL||"",createdAt:serverTimestamp(),lastLoginAt:serverTimestamp()},{merge:true});say("تم حفظ اسمك. جارٍ فتح مِرسالو.");location.replace("chat.html")}
+ catch(e){save.disabled=false;say("تعذر حفظ الاسم. رمز الخطأ: "+(e.code||"unknown"))}
 });
 </script></body></html>
