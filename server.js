@@ -411,9 +411,57 @@ io.on("connection", socket => {
       const conversation = await ref.get();
       if (!conversation.exists || !(conversation.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بفتح هذه المحادثة.");
       const snap = await ref.collection("messages").orderBy("createdAt", "asc").limit(100).get();
-      if (typeof reply === "function") reply({ success: true, messages: snap.docs.map(d => ({ id:d.id, ...d.data(), createdAt:d.data().createdAt ? d.data().createdAt.toMillis() : 0 })) });
+      if (typeof reply === "function") reply({ success: true, messages: snap.docs.filter(d => !(d.data().hiddenFor || []).includes(socket.data.uid)).map(d => ({ id:d.id, ...d.data(), createdAt:d.data().createdAt ? d.data().createdAt.toMillis() : 0 })) });
     } catch (error) {
       if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تحميل الرسائل." });
+    }
+  });
+
+  socket.on("deleteDirectMessageForMe", async (data = {}, reply) => {
+    try {
+      const conversationId=String(data.conversationId||"");
+      const messageId=String(data.messageId||"");
+      const conversationRef=conversationsRef.doc(conversationId);
+      const conversationSnap=await conversationRef.get();
+      if(!messageId||!conversationSnap.exists||!(conversationSnap.data().members||[]).includes(socket.data.uid)) throw new Error("غير مصرح بحذف هذه الرسالة.");
+      const messageRef=conversationRef.collection("messages").doc(messageId);
+      const messageSnap=await messageRef.get();
+      if(!messageSnap.exists) throw new Error("الرسالة غير موجودة أو حُذفت بالفعل.");
+      await messageRef.update({hiddenFor:admin.firestore.FieldValue.arrayUnion(socket.data.uid)});
+      if(typeof reply==="function")reply({success:true});
+    } catch(error) {
+      if(typeof reply==="function")reply({success:false,message:error.message||"تعذر حذف الرسالة لديك."});
+    }
+  });
+
+  socket.on("deleteDirectMessageForEveryone", async (data = {}, reply) => {
+    try {
+      const conversationId=String(data.conversationId||"");
+      const messageId=String(data.messageId||"");
+      const conversationRef=conversationsRef.doc(conversationId);
+      const messageRef=conversationRef.collection("messages").doc(messageId);
+      const result=await db.runTransaction(async transaction=>{
+        const [conversationSnap,messageSnap]=await Promise.all([transaction.get(conversationRef),transaction.get(messageRef)]);
+        if(!conversationSnap.exists||!(conversationSnap.data().members||[]).includes(socket.data.uid))throw new Error("غير مصرح بهذه المحادثة.");
+        if(!messageSnap.exists)throw new Error("الرسالة غير موجودة أو حُذفت بالفعل.");
+        if(messageSnap.data().senderUid!==socket.data.uid)throw new Error("يمكن لمرسل الرسالة فقط حذفها لدى الجميع.");
+        transaction.delete(messageRef);
+        return conversationSnap.data();
+      });
+      const remaining=await conversationRef.collection("messages").orderBy("createdAt","desc").limit(1).get();
+      const latest=remaining.docs[0];
+      await conversationRef.set({
+        lastMessage:latest?String(latest.data().text||"").slice(0,120):"",
+        updatedAt:admin.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+      const payload={conversationId,messageId};
+      for(const member of result.members||[]){
+        const sessions=connectedUsers.get(member);
+        if(sessions)for(const client of sessions)if(client.connected)client.emit("directMessageDeletedForEveryone",payload);
+      }
+      if(typeof reply==="function")reply({success:true});
+    } catch(error) {
+      if(typeof reply==="function")reply({success:false,message:error.message||"تعذر حذف الرسالة لدى الجميع."});
     }
   });
 
