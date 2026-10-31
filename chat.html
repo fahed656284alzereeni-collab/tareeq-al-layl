@@ -192,7 +192,6 @@ function showMessageEditor(message,element,content,actions,optionsButton){
     content.textContent="أنت: "+updatedText+" (تم التعديل)";
     form.remove();
     await loadConversations();
-    say("تم التعديل.");
     optionsButton.focus();
   });
 }
