@@ -876,6 +876,77 @@ app.get("/", (req, res) => {
 
 app.use(express.json({ limit: "32kb" }));
 
+
+const accountDeleteOrigins = new Set([
+  "https://mersalo.onrender.com",
+  "https://tareeq-al-layl.onrender.com"
+]);
+function accountDeleteCors(req, res, next) {
+  const origin = req.headers.origin;
+  if (origin && !accountDeleteOrigins.has(origin)) {
+    return res.status(403).json({ success: false, message: "Origin not allowed." });
+  }
+  if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+}
+app.options("/api/delete-account", accountDeleteCors);
+app.post("/api/delete-account", accountDeleteCors, async (req, res) => {
+  try {
+    const authHeader = String(req.headers.authorization || "");
+    const match = authHeader.match(/^Bearer (.+)$/i);
+    if (!match) return res.status(401).json({ success: false, message: "Authentication required." });
+    const decoded = await admin.auth().verifyIdToken(match[1]);
+    const uid = decoded.uid;
+    const db = admin.firestore();
+    const userRef = db.collection("users").doc(uid);
+
+    // Preserve every conversation and message so the other participant keeps the history.
+    const [friends, incomingRequests, outgoingRequests] = await Promise.all([
+      userRef.collection("friends").get(),
+      userRef.collection("friendRequests").get(),
+      db.collectionGroup("friendRequests").where("fromUid", "==", uid).get()
+    ]);
+
+    const refsToDelete = new Map();
+    for (const item of friends.docs) {
+      refsToDelete.set(item.ref.path, item.ref);
+      refsToDelete.set(db.collection("users").doc(item.id).collection("friends").doc(uid).path,
+        db.collection("users").doc(item.id).collection("friends").doc(uid));
+    }
+    for (const item of incomingRequests.docs) refsToDelete.set(item.ref.path, item.ref);
+    for (const item of outgoingRequests.docs) refsToDelete.set(item.ref.path, item.ref);
+    refsToDelete.set(userRef.path, userRef);
+
+    const refs = [...refsToDelete.values()];
+    for (let i = 0; i < refs.length; i += 450) {
+      const batch = db.batch();
+      for (const ref of refs.slice(i, i + 450)) batch.delete(ref);
+      await batch.commit();
+    }
+
+    await admin.auth().deleteUser(uid);
+
+    const sessions = connectedUsers.get(uid);
+    if (sessions) {
+      for (const client of [...sessions]) {
+        leaveCurrentRoom(client);
+        client.disconnect(true);
+      }
+      connectedUsers.delete(uid);
+      io.emit("onlinePlayers", onlinePlayerList());
+    }
+
+    return res.json({ success: true, conversationsPreserved: true });
+  } catch (error) {
+    console.error("Account deletion error:", error.message);
+    return res.status(500).json({ success: false, message: "تعذر إكمال حذف الحساب. لم يتم تأكيد العملية؛ تواصل مع الدعم قبل إعادة المحاولة." });
+  }
+});
+
 app.post("/api/welcome-email", async (req, res) => {
   try {
     const authHeader = String(req.headers.authorization || "");
