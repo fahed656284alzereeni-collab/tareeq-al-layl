@@ -905,18 +905,33 @@ app.post("/api/delete-account", accountDeleteCors, async (req, res) => {
     const userRef = db.collection("users").doc(uid);
 
     // Preserve every conversation and message so the other participant keeps the history.
-    const [friends, incomingRequests] = await Promise.all([
+    // Friend requests are stored under the recipient as friendRequests/{senderUid}.
+    // Scan user documents and check that exact document path to find outgoing requests
+    // without requiring a Firestore collection-group index.
+    const [friends, incomingRequests, allUsers] = await Promise.all([
       userRef.collection("friends").get(),
-      userRef.collection("friendRequests").get()
+      userRef.collection("friendRequests").get(),
+      db.collection("users").get()
     ]);
 
     const refsToDelete = new Map();
     for (const item of friends.docs) {
       refsToDelete.set(item.ref.path, item.ref);
-      refsToDelete.set(db.collection("users").doc(item.id).collection("friends").doc(uid).path,
-        db.collection("users").doc(item.id).collection("friends").doc(uid));
+      const reciprocalFriendRef = db.collection("users").doc(item.id).collection("friends").doc(uid);
+      refsToDelete.set(reciprocalFriendRef.path, reciprocalFriendRef);
     }
     for (const item of incomingRequests.docs) refsToDelete.set(item.ref.path, item.ref);
+
+    // Find requests sent by this account, including requests created before this fix.
+    for (let i = 0; i < allUsers.docs.length; i += 20) {
+      const userChunk = allUsers.docs.slice(i, i + 20);
+      const outgoingSnapshots = await Promise.all(
+        userChunk.map(userDoc => userDoc.ref.collection("friendRequests").doc(uid).get())
+      );
+      for (const request of outgoingSnapshots) {
+        if (request.exists) refsToDelete.set(request.ref.path, request.ref);
+      }
+    }
     refsToDelete.set(userRef.path, userRef);
 
     const refs = [...refsToDelete.values()];
