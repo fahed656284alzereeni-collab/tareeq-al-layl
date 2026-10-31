@@ -50,7 +50,7 @@ body.chat-open #status{display:none}
 <button id="openOnline" type="button" aria-expanded="false" aria-controls="onlinePanel">عرض الأشخاص المتصلين</button>
 <div id="onlinePanel" hidden><label for="onlineSearch">ابحث عن شخص بالاسم</label><input id="onlineSearch" type="search" autocomplete="off" placeholder="اكتب اسم الشخص"><div id="onlineList" aria-live="polite">جارٍ تحميل الأشخاص المتصلين...</div></div></section>
 <section class="panel" id="conversationListPanel"><h2 id="conversationHeading" tabindex="-1">محادثاتك</h2><div id="conversationList" aria-live="polite"></div></section>
-<section class="panel" id="chatPanel"><div class="chatHeader"><h2 id="chatTitle">المحادثة</h2><div><button id="conversationInfoButton" class="infoToggle" type="button" aria-expanded="false" aria-controls="conversationInfo">معلومات المحادثة</button><button id="closeChat" class="closeChat" type="button">إغلاق المحادثة</button></div></div><section id="conversationInfo" class="infoPanel" aria-labelledby="conversationInfoHeading" hidden><h3 id="conversationInfoHeading" tabindex="-1">معلومات المحادثة</h3><div id="conversationInfoContent" aria-live="polite">جارٍ تحميل المعلومات...</div><div class="infoActions"><button id="friendAction" type="button">إضافة إلى الأصدقاء</button><button id="blockAction" class="secondary" type="button">حظر المستخدم</button><button id="reportAction" class="secondary" type="button">الإبلاغ عن المستخدم</button></div><p id="conversationActionStatus" role="status" aria-live="polite"></p></section><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
+<section class="panel" id="chatPanel"><div class="chatHeader"><h2 id="chatTitle">المحادثة</h2><div><button id="conversationInfoButton" class="infoToggle" type="button" aria-expanded="false" aria-controls="conversationInfo">معلومات المحادثة</button><button id="closeChat" class="closeChat" type="button">إغلاق المحادثة</button></div></div><section id="conversationInfo" class="infoPanel" aria-labelledby="conversationInfoHeading" hidden><h3 id="conversationInfoHeading" tabindex="-1">معلومات المحادثة</h3><div id="conversationInfoContent" aria-live="polite">جارٍ تحميل المعلومات...</div><div class="infoActions"><button id="friendAction" type="button">إضافة إلى الأصدقاء</button><button id="removeFriendAction" class="secondary" type="button">إزالة الصداقة</button><button id="clearChatAction" class="secondary" type="button">حذف محتوى الدردشة</button><button id="deleteChatAction" class="secondary" type="button">حذف الدردشة كاملة</button><button id="blockAction" class="secondary" type="button">حظر المستخدم</button><button id="reportAction" class="secondary" type="button">الإبلاغ عن المستخدم</button></div><p id="conversationActionStatus" role="status" aria-live="polite"></p></section><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
 <div id="composePanel"><h2>إرسال رسالة</h2><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button></form></div></section>
 <p id="status" role="status" aria-live="polite">جارٍ التحقق من الحساب...</p>
 </main>
@@ -253,6 +253,7 @@ async function refreshConversationInfo(){
   const friendButton=document.getElementById("friendAction");
   friendButton.hidden=d.isFriend;
   friendButton.textContent=d.pendingRequest?"إلغاء طلب الصداقة":"إرسال طلب صداقة";
+  document.getElementById("removeFriendAction").hidden=!d.isFriend;
   const blockButton=document.getElementById("blockAction");
   blockButton.hidden=d.blockedMe&&!d.blockedByMe;
   blockButton.textContent=d.blockedByMe?"إلغاء الحظر":"حظر المستخدم";
@@ -289,6 +290,44 @@ document.getElementById("blockAction").addEventListener("click",async()=>{
   button.disabled=false;statusBox.textContent=r.message||(r.success?"تم تنفيذ الإجراء.":"تعذر تنفيذ الإجراء.");
   if(r.success)await refreshConversationInfo();
 });
+document.getElementById("removeFriendAction").addEventListener("click",async()=>{
+  if(!currentOtherUid||!currentId)return;
+  if(!confirm("هل أنت متأكد من إزالة الصداقة؟ ستُزال الصداقة بينكما، لكن ستبقى المحادثة والرسائل كما هي."))return;
+  const button=document.getElementById("removeFriendAction"),statusBox=document.getElementById("conversationActionStatus");
+  button.disabled=true;
+  const r=await call("removeFriend",{uid:currentOtherUid,conversationId:currentId});
+  button.disabled=false;
+  statusBox.textContent=r.message||(r.success?"تمت إزالة الصداقة.":"تعذر إزالة الصداقة.");
+  if(r.success)await refreshConversationInfo();
+});
+document.getElementById("clearChatAction").addEventListener("click",async()=>{
+  if(!currentId)return;
+  if(!confirm("تأكيد حذف محتوى الدردشة؟ سيتم حذف جميع الرسائل عندك وعند الطرف الآخر، مع إبقاء المحادثة والصداقة."))return;
+  const button=document.getElementById("clearChatAction"),statusBox=document.getElementById("conversationActionStatus");
+  button.disabled=true;
+  const r=await call("clearDirectConversation",{conversationId:currentId});
+  button.disabled=false;
+  if(!r.success){statusBox.textContent=r.message||"تعذر حذف محتوى الدردشة.";return}
+  known.clear();messages.replaceChildren();await loadConversations();await refreshConversationInfo();
+  statusBox.textContent="تم حذف محتوى الدردشة لدى الطرفين.";
+  restoreConnectionStatus();
+});
+document.getElementById("deleteChatAction").addEventListener("click",async()=>{
+  if(!currentId)return;
+  if(!confirm("تحذير نهائي: هل أنت متأكد من حذف الدردشة كاملة؟ سيتم حذف المحادثة وجميع رسائلها لدى الطرفين. لا يمكن التراجع عن هذا الإجراء."))return;
+  const button=document.getElementById("deleteChatAction"),statusBox=document.getElementById("conversationActionStatus");
+  button.disabled=true;
+  const r=await call("deleteDirectConversation",{conversationId:currentId});
+  button.disabled=false;
+  if(!r.success){statusBox.textContent=r.message||"تعذر حذف الدردشة كاملة.";return}
+  currentId=null;currentOtherUid=null;currentOtherName="مستخدم";currentDetails=null;known.clear();messages.replaceChildren();
+  panel.style.display="none";document.getElementById("mainNavigation").hidden=false;document.body.classList.remove("chat-open");
+  document.getElementById("conversationListPanel").hidden=false;document.getElementById("conversationInfo").hidden=true;
+  document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;
+  document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");
+  document.getElementById("messageText").value="";document.getElementById("messageText").disabled=true;document.getElementById("sendButton").disabled=true;
+  await loadConversations();document.getElementById("conversationHeading").focus();restoreConnectionStatus();
+});
 document.getElementById("reportAction").addEventListener("click",async()=>{
   if(!currentOtherUid||!currentId)return;
   const reason=prompt("ما سبب الإبلاغ؟ اكتب مثلًا: إساءة، تحرش، تهديد، انتحال شخصية، أو محتوى غير مناسب.");
@@ -300,5 +339,5 @@ document.getElementById("reportAction").addEventListener("click",async()=>{
 });
 document.getElementById("sendForm").addEventListener("submit",async e=>{e.preventDefault();const field=document.getElementById("messageText"),button=document.getElementById("sendButton"),text=field.value.trim();if(!currentId||!text)return;unlockMessageAudio();button.disabled=true;button.textContent="جارٍ الإرسال...";const r=await call("sendDirectMessage",{conversationId:currentId,text});button.disabled=false;button.textContent="إرسال الرسالة";if(!r.success){say(r.message);return}addMessage(r.message);field.value="";playMessageSound("sent");restoreConnectionStatus()});
 
-onAuthStateChanged(auth,async user=>{if(!user){location.replace("login.html");return}try{const token=await user.getIdToken();socket=io("https://tareeq-al-layl-server.onrender.com",{auth:{token},reconnection:true,reconnectionAttempts:Infinity,reconnectionDelay:1000,reconnectionDelayMax:5000});socket.on("connect",async()=>{say("أنت متصل بمِرسالو.");await loadConversations()});socket.on("disconnect",reason=>{say("انقطع الاتصال مؤقتًا، جارٍ إعادة الاتصال بمِرسالو.");});socket.on("connect_error",err=>say("تعذر الاتصال: "+(err.message||"خطأ غير معروف")));socket.on("onlinePlayers",users=>{onlineUsers=Array.isArray(users)?users:[];if(!onlinePanel.hidden)renderOnlineUsers()});socket.on("directMessageDeletedForEveryone",async data=>{if(!data||String(data.conversationId)!==String(currentId))return;const deletedId=String(data.messageId||"");known.delete(deletedId);const element=Array.from(messages.children).find(item=>String(item.dataset.messageId||"")===deletedId);if(element)removeMessageFromView(element);else{const result=await call("getConversationMessages",{conversationId:currentId});if(result.success){known.clear();messages.replaceChildren();result.messages.forEach(addMessage)}}await loadConversations();restoreConnectionStatus()});socket.on("directMessageEdited",data=>{if(data?.conversationId===currentId){const element=messages.querySelector(`[data-message-id="${CSS.escape(data.messageId)}"]`);if(element){const content=element.querySelector(".messageContent");if(content){const who=element.classList.contains("mine")?"أنت":(currentOtherName||"مستخدم");content.textContent=who+": "+data.text+" (تم التعديل)";}}loadConversations();}});socket.on("directMessageReceived",data=>{if(data.message?.senderUid!==auth.currentUser?.uid)playMessageSound("received");if(data.conversationId===currentId)addMessage(data.message);loadConversations()})}catch(e){say("تعذر تهيئة الاتصال بالحساب.")}});
+onAuthStateChanged(auth,async user=>{if(!user){location.replace("login.html");return}try{const token=await user.getIdToken();socket=io("https://tareeq-al-layl-server.onrender.com",{auth:{token},reconnection:true,reconnectionAttempts:Infinity,reconnectionDelay:1000,reconnectionDelayMax:5000});socket.on("connect",async()=>{say("أنت متصل بمِرسالو.");await loadConversations()});socket.on("disconnect",reason=>{say("انقطع الاتصال مؤقتًا، جارٍ إعادة الاتصال بمِرسالو.");});socket.on("connect_error",err=>say("تعذر الاتصال: "+(err.message||"خطأ غير معروف")));socket.on("onlinePlayers",users=>{onlineUsers=Array.isArray(users)?users:[];if(!onlinePanel.hidden)renderOnlineUsers()});socket.on("directConversationContentDeleted",async data=>{if(!data||String(data.conversationId)!==String(currentId))return;known.clear();messages.replaceChildren();await loadConversations();if(document.getElementById("conversationInfo").hidden===false)await refreshConversationInfo();restoreConnectionStatus()});socket.on("directConversationDeleted",async data=>{if(!data||String(data.conversationId)!==String(currentId))return;currentId=null;currentOtherUid=null;currentDetails=null;known.clear();messages.replaceChildren();panel.style.display="none";document.getElementById("mainNavigation").hidden=false;document.body.classList.remove("chat-open");document.getElementById("conversationListPanel").hidden=false;document.getElementById("conversationInfo").hidden=true;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");document.getElementById("messageText").value="";document.getElementById("messageText").disabled=true;document.getElementById("sendButton").disabled=true;await loadConversations();document.getElementById("conversationHeading").focus();restoreConnectionStatus()});socket.on("directMessageDeletedForEveryone",async data=>{if(!data||String(data.conversationId)!==String(currentId))return;const deletedId=String(data.messageId||"");known.delete(deletedId);const element=Array.from(messages.children).find(item=>String(item.dataset.messageId||"")===deletedId);if(element)removeMessageFromView(element);else{const result=await call("getConversationMessages",{conversationId:currentId});if(result.success){known.clear();messages.replaceChildren();result.messages.forEach(addMessage)}}await loadConversations();restoreConnectionStatus()});socket.on("directMessageEdited",data=>{if(data?.conversationId===currentId){const element=messages.querySelector(`[data-message-id="${CSS.escape(data.messageId)}"]`);if(element){const content=element.querySelector(".messageContent");if(content){const who=element.classList.contains("mine")?"أنت":(currentOtherName||"مستخدم");content.textContent=who+": "+data.text+" (تم التعديل)";}}loadConversations();}});socket.on("directMessageReceived",data=>{if(data.message?.senderUid!==auth.currentUser?.uid)playMessageSound("received");if(data.conversationId===currentId)addMessage(data.message);loadConversations()})}catch(e){say("تعذر تهيئة الاتصال بالحساب.")}});
 </script></body></html>
