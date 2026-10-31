@@ -104,7 +104,9 @@ function addMessage(m){
   div.append(content);
   const actions=document.createElement("div");
   actions.className="messageActions";actions.hidden=true;
-  const mine=m.senderUid===auth.currentUser?.uid;
+  const currentUid=String(auth.currentUser?.uid||"");
+  const senderUid=String(m.senderUid||"");
+  const mine=!!currentUid&&!!senderUid&&senderUid===currentUid;
   const optionsButton=document.createElement("button");
   optionsButton.type="button";optionsButton.className="messageOptionsButton";
   optionsButton.textContent="خيارات الرسالة";
@@ -112,19 +114,27 @@ function addMessage(m){
   optionsButton.addEventListener("click",()=>{
     actions.hidden=!actions.hidden;
     optionsButton.setAttribute("aria-expanded",String(!actions.hidden));
-    if(!actions.hidden)actions.querySelector("button")?.focus();
+    if(!actions.hidden){
+      const firstAction=actions.querySelector(mine?'[data-action="delete-everyone"]':'[data-action="delete-me"]');
+      firstAction?.focus();
+    }
   });
   div.append(optionsButton);
-  const own=document.createElement("button");
-  own.type="button";own.id="message-delete-me-"+(++messageActionId);own.textContent="حذف لدي";
-  own.addEventListener("click",()=>deleteMessageForMe(m.id,div));
-  actions.append(own);
   if(mine){
     const everyone=document.createElement("button");
-    everyone.type="button";everyone.id="message-delete-all-"+messageActionId;everyone.textContent="حذف لدى الجميع";
+    everyone.type="button";everyone.dataset.action="delete-everyone";
+    everyone.id="message-delete-all-"+(++messageActionId);
+    everyone.textContent="حذف لدى الجميع";
+    everyone.setAttribute("aria-label","حذف الرسالة لدى الجميع");
     everyone.addEventListener("click",()=>deleteMessageForEveryone(m.id,div));
     actions.append(everyone);
   }
+  const own=document.createElement("button");
+  own.type="button";own.dataset.action="delete-me";
+  own.id="message-delete-me-"+(++messageActionId);own.textContent="حذف لدي";
+  own.setAttribute("aria-label","حذف الرسالة لدي فقط");
+  own.addEventListener("click",()=>deleteMessageForMe(m.id,div));
+  actions.append(own);
   div.append(actions);
   let touchStartX=null,touchStartY=null;
   div.addEventListener("touchstart",e=>{if(e.touches.length===1){touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY}},{passive:true});
