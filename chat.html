@@ -112,7 +112,7 @@ function formatVoiceDuration(milliseconds){
   return Math.floor(total/60)+" دقيقة و "+(total%60)+" ثانية";
 }
 let voiceRecorder=null,voiceStream=null,voiceChunks=[],voiceBlob=null,voiceMimeType="",voiceDurationMs=0;
-let voiceElapsedMs=0,voiceSegmentStartedAt=0,voiceDiscarding=false,voicePreviewUrl=null,voiceLimitTimer=null;
+let voiceElapsedMs=0,voiceSegmentStartedAt=0,voiceDiscarding=false,voicePreviewUrl=null,voiceLimitTimer=null,voiceLocked=false;
 function setVoiceControls(mode){
   const ids=["recordVoiceButton"];
   ids.forEach(id=>{const button=document.getElementById(id);button.hidden=true;button.disabled=mode==="uploading";});
@@ -120,7 +120,7 @@ function setVoiceControls(mode){
   button.hidden=false;
   button.disabled=mode==="uploading";
   button.setAttribute("aria-pressed",String(mode==="recording"));
-  button.textContent=mode==="recording"?"التسجيل جارٍ. اضغط مرة ثانية لإنهائه وإرساله، أو ارفع إصبعك بعد الضغط المطوّل.":mode==="uploading"?"جارٍ إرسال الرسالة الصوتية...":"اضغط لبدء التسجيل، واضغط مرة ثانية لإنهائه وإرساله. أو اضغط مطولًا وسجّل حتى ترفع إصبعك.";
+  button.textContent=mode==="recording"?(voiceLocked?"التسجيل مُثبّت. اضغط لإنهائه وإرساله.":"التسجيل جارٍ. اضغط مرة ثانية لإنهائه وإرساله، أو اسحب للأعلى لتثبيته."):mode==="uploading"?"جارٍ إرسال الرسالة الصوتية...":"اضغط لبدء التسجيل، واضغط مرة ثانية للإرسال، أو اضغط مطولًا واسحب للأعلى لتثبيت التسجيل.";
 
 }
 function releaseVoiceStream(){if(voiceStream){voiceStream.getTracks().forEach(track=>track.stop());voiceStream=null;}}
@@ -128,7 +128,7 @@ function resetVoiceComposer(){
   if(voiceLimitTimer){clearTimeout(voiceLimitTimer);voiceLimitTimer=null;}
   releaseVoiceStream();
   if(voicePreviewUrl){URL.revokeObjectURL(voicePreviewUrl);voicePreviewUrl=null;}
-  voiceRecorder=null;voiceChunks=[];voiceBlob=null;voiceMimeType="";voiceDurationMs=0;voiceElapsedMs=0;voiceSegmentStartedAt=0;voiceDiscarding=false;
+  voiceRecorder=null;voiceChunks=[];voiceBlob=null;voiceMimeType="";voiceDurationMs=0;voiceElapsedMs=0;voiceSegmentStartedAt=0;voiceDiscarding=false;voiceLocked=false;
   setVoiceControls("idle");
   document.getElementById("voiceStatus").textContent="للتسجيل: ضغطة للبدء وضغطة ثانية للإرسال، أو اضغط مطولًا ثم ارفع إصبعك للإرسال.";
 }
@@ -139,7 +139,7 @@ function discardVoiceRecording(){
     voiceRecorder.stop();releaseVoiceStream();
   }else{resetVoiceComposer();}
 }
-async function startVoiceRecording(){
+async function startVoiceRecording(streamPromise=null){
   if(!currentId)return;
   if(!navigator.mediaDevices?.getUserMedia||!window.MediaRecorder){
     document.getElementById("voiceStatus").textContent="هذا المتصفح لا يدعم تسجيل الصوت. حدّث Safari ثم حاول مجددًا.";
@@ -147,7 +147,7 @@ async function startVoiceRecording(){
   }
   try{
     voiceChunks=[];voiceElapsedMs=0;voiceDurationMs=0;voiceDiscarding=false;
-    voiceStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,sampleRate:{ideal:48000},channelCount:{ideal:1}}});
+    voiceStream=await (streamPromise||navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,sampleRate:{ideal:48000},channelCount:{ideal:1}}}));
     const candidates=["audio/webm;codecs=opus","audio/ogg;codecs=opus","audio/mp4","audio/webm"];
     const supported=candidates.find(type=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(type));
     const recorderOptions={audioBitsPerSecond:128000};
@@ -210,31 +210,70 @@ async function sendVoiceMessage(){
   }
 }
 const recordVoiceButton=document.getElementById("recordVoiceButton");
-let voiceHoldTimer=null,voiceHoldStarted=false,ignoreVoiceClick=false,voiceStartPending=false,voiceReleasedDuringStart=false;
+let voiceHoldTimer=null,voiceHoldStarted=false,ignoreVoiceClick=false,voiceStartPending=false,voicePermissionPromise=null,voicePointerDown=false,voicePointerStartY=0,voiceMovedUp=false;
+function requestVoicePermission(){
+  return navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,sampleRate:{ideal:48000},channelCount:{ideal:1}}});
+}
 function finishAndSendVoice(){
   if(voiceRecorder&&voiceRecorder.state!=="inactive")stopVoiceRecording();
 }
+function lockVoiceRecording(){
+  if(!voiceRecorder||voiceRecorder.state!=="recording"||voiceLocked)return;
+  voiceLocked=true;
+  setVoiceControls("recording");
+  document.getElementById("voiceStatus").textContent="تم تثبيت التسجيل. يمكنك رفع إصبعك، واضغط زر الميكروفون عندما تريد إنهاء التسجيل وإرساله.";
+}
 recordVoiceButton.addEventListener("contextmenu",event=>event.preventDefault());
 recordVoiceButton.addEventListener("pointerdown",event=>{
-  if(!event.isPrimary||event.pointerType==="mouse"&&event.button!==0||recordVoiceButton.disabled)return;
-  voiceHoldStarted=false;voiceReleasedDuringStart=false;
+  if(!event.isPrimary||(event.pointerType==="mouse"&&event.button!==0)||recordVoiceButton.disabled)return;
+  voicePointerDown=true;voicePointerStartY=event.clientY;voiceMovedUp=false;
+  voiceHoldStarted=false;
+  try{recordVoiceButton.setPointerCapture(event.pointerId);}catch{}
+  if(!voiceRecorder&&!voiceStartPending&&!voicePermissionPromise){
+    try{voicePermissionPromise=requestVoicePermission();}
+    catch(error){voicePermissionPromise=Promise.reject(error);}
+  }
   voiceHoldTimer=setTimeout(async()=>{
     voiceHoldTimer=null;voiceHoldStarted=true;ignoreVoiceClick=true;
-    if(!voiceRecorder){voiceStartPending=true;await startVoiceRecording();voiceStartPending=false;if(voiceReleasedDuringStart)finishAndSendVoice();}
+    if(!voiceRecorder&&!voiceStartPending){
+      voiceStartPending=true;
+      const pending=voicePermissionPromise;voicePermissionPromise=null;
+      await startVoiceRecording(pending);
+      voiceStartPending=false;
+      if(voiceMovedUp)lockVoiceRecording();
+    }
   },450);
 });
+recordVoiceButton.addEventListener("pointermove",event=>{
+  if(!voicePointerDown)return;
+  if(event.clientY<=voicePointerStartY-60){
+    voiceMovedUp=true;
+    if(voiceHoldStarted)lockVoiceRecording();
+  }
+});
 recordVoiceButton.addEventListener("pointerup",()=>{
+  voicePointerDown=false;
   if(voiceHoldTimer){clearTimeout(voiceHoldTimer);voiceHoldTimer=null;return;}
-  if(voiceHoldStarted){voiceReleasedDuringStart=true;finishAndSendVoice();voiceHoldStarted=false;}
+  if(voiceHoldStarted){
+    if(!voiceLocked)finishAndSendVoice();
+    voiceHoldStarted=false;
+    setTimeout(()=>{ignoreVoiceClick=false;},500);
+  }
 });
 recordVoiceButton.addEventListener("pointercancel",()=>{
+  voicePointerDown=false;
   if(voiceHoldTimer){clearTimeout(voiceHoldTimer);voiceHoldTimer=null;}
-  if(voiceHoldStarted){voiceReleasedDuringStart=true;finishAndSendVoice();voiceHoldStarted=false;}
+  if(voiceHoldStarted&&!voiceLocked)finishAndSendVoice();
+  voiceHoldStarted=false;
 });
 recordVoiceButton.addEventListener("click",()=>{
   if(ignoreVoiceClick){ignoreVoiceClick=false;return;}
   if(voiceRecorder&&voiceRecorder.state!=="inactive"){finishAndSendVoice();return;}
-  if(!voiceStartPending)startVoiceRecording();
+  if(!voiceStartPending){
+    voiceStartPending=true;
+    const pending=voicePermissionPromise;voicePermissionPromise=null;
+    startVoiceRecording(pending).finally(()=>{voiceStartPending=false;});
+  }
 });
 
 function addMessage(m){
