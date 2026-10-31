@@ -42,9 +42,10 @@ const app = express();
 const server = http.createServer(app);
 
 const io = new Server(server, {
-
-  cors: { origin: "*" }
-
+  cors: { origin: "*" },
+  // Tolerate brief mobile-network delays before declaring an idle socket disconnected.
+  pingInterval: 25000,
+  pingTimeout: 60000
 });
 
 const rooms = new Map();
@@ -222,6 +223,8 @@ function leaveCurrentRoom(socket) {
 }
 
 io.on("connection", socket => {
+  console.info("Socket connected", { uid: socket.data.uid, transport: socket.conn.transport.name });
+  socket.conn.on("upgrade", transport => console.info("Socket transport upgraded", { uid: socket.data.uid, transport: transport.name }));
   addConnectedSocket(socket.data.uid, socket);
   const onlinePlayers = onlinePlayerList;
   io.emit("onlinePlayers", onlinePlayers());
@@ -892,7 +895,8 @@ io.on("connection", socket => {
 
   });
 
-  socket.on("disconnect", () => {
+  socket.on("disconnect", reason => {
+    console.warn("Socket disconnected", { uid: socket.data.uid, reason });
     removeConnectedSocket(socket.data.uid, socket);
     io.emit("onlinePlayers", onlinePlayerList());
     leaveCurrentRoom(socket);
