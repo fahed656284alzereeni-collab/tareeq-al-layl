@@ -10,7 +10,7 @@
 <div id="onlinePanel" hidden><label for="onlineSearch">ابحث عن شخص بالاسم</label><input id="onlineSearch" type="search" autocomplete="off" placeholder="اكتب اسم الشخص"><div id="onlineList" aria-live="polite">جارٍ تحميل الأشخاص المتصلين...</div></div></section>
 <section class="panel"><h2>محادثاتك</h2><div id="conversationList" aria-live="polite"></div></section>
 <section class="panel" id="chatPanel"><h2 id="chatTitle">المحادثة</h2><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
-<form id="sendForm"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="2" maxlength="4000" required></textarea><button type="submit">إرسال الرسالة</button></form></section>
+<form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint"></textarea><p id="messageHint" class="muted">يمكنك كتابة رسالة تصل إلى 4000 حرف.</p><button id="sendButton" type="submit">إرسال الرسالة</button></form></section>
 <p id="status" role="status" aria-live="polite">جارٍ التحقق من الحساب...</p>
 </main>
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
@@ -22,6 +22,36 @@ const auth=getAuth(initializeApp(cfg));const status=document.getElementById("sta
 let socket=null,currentId=null,known=new Set();
 function say(t){status.textContent=t}
 
+// صوتان قصيران مختلفان للإرسال والاستقبال باستخدام Web Audio، دون ملفات خارجية.
+let audioContext=null;
+function unlockMessageAudio(){
+  const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+  if(!AudioContextClass)return;
+  if(!audioContext)audioContext=new AudioContextClass();
+  if(audioContext.state==="suspended")audioContext.resume().catch(()=>{});
+}
+document.addEventListener("pointerdown",unlockMessageAudio,{once:true});
+document.addEventListener("keydown",unlockMessageAudio,{once:true});
+function playMessageSound(kind){
+  if(!audioContext||audioContext.state!=="running")return;
+  const now=audioContext.currentTime;
+  const notes=kind==="sent"?[660,880]:[880,523];
+  notes.forEach((frequency,index)=>{
+    const start=now+index*0.13;
+    const oscillator=audioContext.createOscillator();
+    const gain=audioContext.createGain();
+    oscillator.type="sine";
+    oscillator.frequency.setValueAtTime(frequency,start);
+    gain.gain.setValueAtTime(0.0001,start);
+    gain.gain.exponentialRampToValueAtTime(0.12,start+0.025);
+    gain.gain.exponentialRampToValueAtTime(0.0001,start+0.11);
+    oscillator.connect(gain);
+    gain.connect(audioContext.destination);
+    oscillator.start(start);
+    oscillator.stop(start+0.12);
+  });
+}
+
 function call(event,data={}){return new Promise(resolve=>{if(!socket||!socket.connected){resolve({success:false,message:"الاتصال بالخادم غير متاح."});return}socket.emit(event,data,resolve)})}
 function addMessage(m){if(known.has(m.id))return;known.add(m.id);const div=document.createElement("div");div.className="msg"+(m.senderUid===auth.currentUser?.uid?" mine":"");const who=m.senderUid===auth.currentUser?.uid?"أنت":"الطرف الآخر";div.textContent=who+": "+m.text;messages.append(div);messages.scrollTop=messages.scrollHeight}
 async function openConversation(c){currentId=c.id;known.clear();messages.replaceChildren();panel.style.display="block";document.getElementById("chatTitle").textContent="محادثة مع "+(c.displayName||c.email||"مستخدم");const r=await call("getConversationMessages",{conversationId:c.id});if(!r.success){say(r.message);return}r.messages.forEach(addMessage);document.getElementById("messageText").focus()}
@@ -32,7 +62,7 @@ const onlinePanel=document.getElementById("onlinePanel"),onlineList=document.get
 function renderOnlineUsers(){const term=onlineSearch.value.trim().toLocaleLowerCase("ar");onlineList.replaceChildren();const matches=onlineUsers.filter(user=>String(user.name||"").toLocaleLowerCase("ar").includes(term));if(!matches.length){onlineList.textContent=term?"لا يوجد شخص متصل بهذا الاسم.":"لا يوجد أشخاص آخرون متصلون حاليًا.";return}matches.forEach(user=>{const b=document.createElement("button");b.type="button";b.className="conversation";b.textContent=user.uid===auth.currentUser?.uid?user.name+"، أنت، متصل الآن":user.name+"، متصل الآن";if(user.uid===auth.currentUser?.uid){b.disabled=true;b.setAttribute("aria-label",user.name+"، هذا حسابك، متصل الآن");}else b.addEventListener("click",async()=>{const found=await call("findUserByName",{name:user.name});if(!found.success){say(found.message);return}const exact=found.users.find(item=>item.uid===user.uid);if(exact)await startChatWithUser(exact);else say("تعذر العثور على الحساب لبدء المحادثة.")});onlineList.append(b)})}
 document.getElementById("openOnline").addEventListener("click",()=>{const opening=onlinePanel.hidden;onlinePanel.hidden=!opening;document.getElementById("openOnline").setAttribute("aria-expanded",String(opening));if(opening){onlineList.textContent="جارٍ تحميل الأشخاص المتصلين...";onlineSearch.focus();if(!socket||!socket.connected){onlineList.textContent="الاتصال بالخادم غير متاح حاليًا. أعد المحاولة بعد قليل.";return}let answered=false;const fallback=setTimeout(()=>{if(!answered)onlineList.textContent="تأخر تحميل الأشخاص المتصلين. أغلق القائمة وافتحها للمحاولة مجددًا."},8000);socket.emit("getOnlinePlayers",users=>{answered=true;clearTimeout(fallback);onlineUsers=Array.isArray(users)?users:[];renderOnlineUsers()})}});
 onlineSearch.addEventListener("input",renderOnlineUsers);
-document.getElementById("sendForm").addEventListener("submit",async e=>{e.preventDefault();const field=document.getElementById("messageText"),text=field.value.trim();if(!currentId||!text)return;const r=await call("sendDirectMessage",{conversationId:currentId,text});if(!r.success){say(r.message);return}addMessage(r.message);field.value="";say("تم إرسال الرسالة.")});
+document.getElementById("sendForm").addEventListener("submit",async e=>{e.preventDefault();const field=document.getElementById("messageText"),button=document.getElementById("sendButton"),text=field.value.trim();if(!currentId||!text)return;unlockMessageAudio();button.disabled=true;button.textContent="جارٍ الإرسال...";const r=await call("sendDirectMessage",{conversationId:currentId,text});button.disabled=false;button.textContent="إرسال الرسالة";if(!r.success){say(r.message);return}addMessage(r.message);field.value="";playMessageSound("sent");say("تم إرسال الرسالة بنجاح.")});
 document.getElementById("logout").addEventListener("click",async()=>{if(socket)socket.disconnect();await signOut(auth);location.replace("login.html")});
-onAuthStateChanged(auth,async user=>{if(!user){location.replace("login.html");return}try{const token=await user.getIdToken();socket=io("https://tareeq-al-layl-server.onrender.com",{auth:{token},transports:["websocket","polling"]});socket.on("connect",async()=>{say("أنت متصل بمِرسالو.");await loadConversations()});socket.on("connect_error",err=>say("تعذر الاتصال: "+(err.message||"خطأ غير معروف")));socket.on("onlinePlayers",users=>{onlineUsers=Array.isArray(users)?users:[];if(!onlinePanel.hidden)renderOnlineUsers()});socket.on("directMessageReceived",data=>{if(data.conversationId===currentId)addMessage(data.message);loadConversations()})}catch(e){say("تعذر تهيئة الاتصال بالحساب.")}});
+onAuthStateChanged(auth,async user=>{if(!user){location.replace("login.html");return}try{const token=await user.getIdToken();socket=io("https://tareeq-al-layl-server.onrender.com",{auth:{token},transports:["websocket","polling"]});socket.on("connect",async()=>{say("أنت متصل بمِرسالو.");await loadConversations()});socket.on("connect_error",err=>say("تعذر الاتصال: "+(err.message||"خطأ غير معروف")));socket.on("onlinePlayers",users=>{onlineUsers=Array.isArray(users)?users:[];if(!onlinePanel.hidden)renderOnlineUsers()});socket.on("directMessageReceived",data=>{if(data.message?.senderUid!==auth.currentUser?.uid)playMessageSound("received");if(data.conversationId===currentId)addMessage(data.message);loadConversations()})}catch(e){say("تعذر تهيئة الاتصال بالحساب.")}});
 </script></body></html>
