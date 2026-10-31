@@ -366,6 +366,7 @@ io.on("connection", socket => {
       const conversationId = members.join("_");
       const ref = conversationsRef.doc(conversationId);
       await ref.set({ type: "direct", members, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+      await usersRef.doc(socket.data.uid).collection("hiddenConversations").doc(conversationId).delete();
       const profile = targetSnap.data();
       if (typeof reply === "function") reply({ success: true, conversation: { id: conversationId, displayName: profile.playerName || profile.displayName || "مستخدم" } });
     } catch (error) {
@@ -377,13 +378,14 @@ io.on("connection", socket => {
     const startedAt = Date.now();
     console.info("listConversations started", socket.data.uid);
     try {
-      const snap = await conversationsRef.where("members", "array-contains", socket.data.uid).get();
+      const [snap, hiddenSnap] = await Promise.all([conversationsRef.where("members", "array-contains", socket.data.uid).get(), usersRef.doc(socket.data.uid).collection("hiddenConversations").get()]);
+      const hiddenIds = new Set(hiddenSnap.docs.map(item => item.id));
       // The conversation document is already updated with lastMessage and updatedAt
       // whenever a message is sent, so avoid a separate messages query per conversation.
       const otherUids = [...new Set(snap.docs.map(item => (item.data().members || []).find(uid => uid !== socket.data.uid)).filter(Boolean))];
       const profileSnapshots = otherUids.length ? await db.getAll(...otherUids.map(uid => usersRef.doc(uid))) : [];
       const profilesByUid = new Map(profileSnapshots.map(profile => [profile.id, profile.exists ? profile.data() : {}]));
-      const conversations = snap.docs.map(item => {
+      const conversations = snap.docs.filter(item => !hiddenIds.has(item.id)).map(item => {
         const data = item.data();
         const otherUid = (data.members || []).find(uid => uid !== socket.data.uid);
         const profile = otherUid ? (profilesByUid.get(otherUid) || {}) : {};
@@ -462,6 +464,39 @@ io.on("connection", socket => {
       await batch.commit();
     }
   }
+
+  socket.on("clearDirectConversationForMe", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const conversationRef = conversationsRef.doc(conversationId);
+      const conversationSnap = await conversationRef.get();
+      if (!conversationSnap.exists || !(conversationSnap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بحذف محتوى هذه الدردشة.");
+      const snapshot = await conversationRef.collection("messages").get();
+      for (let i = 0; i < snapshot.docs.length; i += 450) {
+        const batch = db.batch();
+        for (const message of snapshot.docs.slice(i, i + 450)) batch.update(message.ref, { hiddenFor: admin.firestore.FieldValue.arrayUnion(socket.data.uid) });
+        await batch.commit();
+      }
+      if (typeof reply === "function") reply({ success: true, message: "تم إخفاء محتوى الدردشة من عندك فقط. ما زالت الرسائل ظاهرة للطرف الآخر." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر حذف محتوى الدردشة من عندك." });
+    }
+  });
+
+  socket.on("hideDirectConversationForMe", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const conversationRef = conversationsRef.doc(conversationId);
+      const conversationSnap = await conversationRef.get();
+      if (!conversationSnap.exists || !(conversationSnap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بحذف هذه الدردشة.");
+      await usersRef.doc(socket.data.uid).collection("hiddenConversations").doc(conversationId).set({
+        hiddenAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      if (typeof reply === "function") reply({ success: true, message: "تم حذف الدردشة من قائمة محادثاتك فقط. بقيت المحادثة ورسائلها لدى الطرف الآخر." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر حذف الدردشة من عندك." });
+    }
+  });
 
   socket.on("clearDirectConversation", async (data = {}, reply) => {
     try {
