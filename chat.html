@@ -202,22 +202,30 @@ function showMessageEditor(message,element,content,actions,optionsButton){
     optionsButton.focus();
   });
 }
-async function deleteMessageForMe(id,element){
-  if(!confirm("هل أنت متأكد من حذف هذه الرسالة لديك فقط؟ لن تُحذف من جهاز الطرف الآخر."))return;
-  const buttons=element.querySelectorAll("button");buttons.forEach(b=>b.disabled=true);
-  const r=await call("deleteDirectMessageForMe",{conversationId:currentId,messageId:id});
-  buttons.forEach(b=>b.disabled=false);
-  if(!r.success){say(r.message||"تعذر حذف الرسالة.");return}
-  known.delete(id);removeMessageFromView(element);await loadConversations();restoreConnectionStatus();restoreConnectionStatus();
+function showMessageDeleteConfirmation(id,element,scope){
+  const actions=element.querySelector(".messageActions");
+  const previous=actions.querySelector(".messageDeleteConfirmation");
+  if(previous)previous.remove();
+  const box=document.createElement("div");
+  box.className="messageDeleteConfirmation";
+  box.setAttribute("role","group");
+  box.setAttribute("aria-label","تأكيد حذف الرسالة");
+  const note=document.createElement("p");
+  note.textContent=scope==="me"?"هل تريد حذف هذه الرسالة من عندك فقط؟ ستبقى عند الطرف الآخر.":"هل تريد حذف هذه الرسالة من عندك وعند الطرف الآخر؟";
+  const yes=document.createElement("button");yes.type="button";yes.textContent="نعم، احذف الرسالة";
+  const no=document.createElement("button");no.type="button";no.className="secondary";no.textContent="إلغاء";
+  no.addEventListener("click",()=>{box.remove();actions.querySelector(".messageOptionsButton")?.focus()});
+  yes.addEventListener("click",async()=>{
+    yes.disabled=true;no.disabled=true;
+    const event=scope==="me"?"deleteDirectMessageForMe":"deleteDirectMessageForEveryone";
+    const result=await call(event,{conversationId:currentId,messageId:id});
+    if(!result.success){note.textContent=result.message||"تعذر حذف الرسالة. حاول مرة أخرى.";yes.disabled=false;no.disabled=false;return}
+    known.delete(id);removeMessageFromView(element);await loadConversations();restoreConnectionStatus();
+  });
+  box.append(note,yes,no);actions.append(box);note.tabIndex=-1;note.focus();
 }
-async function deleteMessageForEveryone(id,element){
-  if(!confirm("تنبيه: هل أنت متأكد من حذف هذه الرسالة لدى الجميع؟ ستُحذف من المحادثة عندك وعند الطرف الآخر."))return;
-  const buttons=element.querySelectorAll("button");buttons.forEach(b=>b.disabled=true);
-  const r=await call("deleteDirectMessageForEveryone",{conversationId:currentId,messageId:id});
-  buttons.forEach(b=>b.disabled=false);
-  if(!r.success){say(r.message||"تعذر حذف الرسالة لدى الجميع.");return}
-  known.delete(id);removeMessageFromView(element);await loadConversations();
-}
+async function deleteMessageForMe(id,element){showMessageDeleteConfirmation(id,element,"me")}
+async function deleteMessageForEveryone(id,element){showMessageDeleteConfirmation(id,element,"everyone")}
 async function openConversation(c){currentId=c.id;currentOtherUid=c.otherUid||null;currentOtherName=c.displayName||c.email||"مستخدم";currentDetails=null;known.clear();messages.replaceChildren();document.getElementById("conversationListPanel").hidden=true;document.getElementById("mainNavigation").hidden=true;document.body.classList.add("chat-open");panel.style.display="block";document.getElementById("conversationInfo").hidden=true;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;document.getElementById("messageHint").textContent="يمكنك كتابة رسالة تصل إلى 4000 حرف.";document.getElementById("chatTitle").textContent="محادثة مع "+(c.displayName||c.email||"مستخدم");const r=await call("getConversationMessages",{conversationId:c.id});if(!r.success){say(r.message);return}r.messages.forEach(addMessage);refreshConversationInfo();document.getElementById("messageText").focus()}
 async function loadConversations(){const requestSocket=socket;const r=await call("listConversations",{},30000);if(r.connectionLost||requestSocket!==socket||!socket?.connected)return;if(!r.success){list.textContent=r.message;return}list.replaceChildren();if(!r.conversations.length){list.textContent="لا توجد محادثات بعد. ابحث عن اسم شخص لبدء محادثة.";return}r.conversations.forEach(c=>{const b=document.createElement("button");b.className="conversation";const preview=String(c.lastMessage||"").replace(/\s*\(تم التعديل\)\s*$/,"").replace(/^تم التعديل\.?$/,"");b.textContent=(c.displayName||c.email||"مستخدم")+"، "+(preview||"ابدأ المحادثة");b.addEventListener("click",()=>openConversation(c));list.append(b)})}
 async function startChatWithUser(user){say("جارٍ فتح المحادثة...");const started=await call("startDirectConversation",{targetUid:user.uid});if(!started.success){say(started.message);return}openConversation({...started.conversation,otherUid:user.uid});loadConversations()}
