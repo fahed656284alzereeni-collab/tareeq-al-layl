@@ -267,6 +267,8 @@ io.on("connection", socket => {
   });
 
   socket.on("listConversations", async reply => {
+    const startedAt = Date.now();
+    console.info("listConversations started", socket.data.uid);
     try {
       const snap = await conversationsRef.where("members", "array-contains", socket.data.uid).get();
       // The conversation document is already updated with lastMessage and updatedAt
@@ -287,9 +289,10 @@ io.on("connection", socket => {
         };
       });
       conversations.sort((a,b) => b.updatedAt-a.updatedAt);
+      console.info("listConversations completed", { uid: socket.data.uid, count: conversations.length, durationMs: Date.now() - startedAt });
       if (typeof reply === "function") reply({ success: true, conversations });
     } catch (error) {
-      console.error("List conversations error:", error.message);
+      console.error("List conversations error:", { uid: socket.data.uid, durationMs: Date.now() - startedAt, message: error.message });
       if (typeof reply === "function") reply({ success: false, message: "تعذر تحميل المحادثات." });
     }
   });
