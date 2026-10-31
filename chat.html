@@ -23,8 +23,10 @@ body.chat-open #status{display:none}
 .msg{max-width:88%;width:fit-content;padding:10px 14px;margin:8px 0;line-height:1.6}
 .msg.mine{margin-right:auto}
 .messageContent{margin:0 0 6px;white-space:pre-wrap}
-.messageOptionsAdjuster{display:block;width:100%;max-width:210px;height:38px;margin:6px 0 0;accent-color:#8bd8c5;cursor:pointer}
-.messageOptionsAdjuster:focus{outline:3px solid #ffd166;outline-offset:3px}
+.msg[role="button"]{cursor:pointer}
+.msg[role="button"]:focus{outline:3px solid #ffd166;outline-offset:3px}
+.messageActions[hidden]{display:none!important}
+.messageActions button{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
 .messageActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
 .messageActions button{width:auto;min-width:120px;min-height:44px;margin:0}
 .messageActions button:focus{outline:3px solid #ffd166;outline-offset:3px}
@@ -54,7 +56,7 @@ import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-ap
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
 const auth=getAuth(initializeApp(cfg));const status=document.getElementById("status"),list=document.getElementById("conversationList"),panel=document.getElementById("chatPanel"),messages=document.getElementById("messages");
-let socket=null,currentId=null,currentOtherUid=null,currentOtherName="مستخدم",known=new Set(),currentDetails=null;
+let socket=null,currentId=null,currentOtherUid=null,currentOtherName="مستخدم",known=new Set(),currentDetails=null,messageActionId=0;
 function say(t){status.textContent=t}
 
 // صوتان قصيران مختلفان للإرسال والاستقبال باستخدام Web Audio، دون ملفات خارجية.
@@ -100,37 +102,30 @@ function addMessage(m){
   content.className="messageContent";
   content.textContent=who+": "+m.text;
   // اجعل الرسالة نفسها عنصرًا قابلًا للتعديل لدى VoiceOver؛ لا يحتاج المستخدم إلى الانتقال إلى عنصر منفصل.
-  div.setAttribute("role","slider");
+  div.setAttribute("role","button");
   div.setAttribute("tabindex","0");
   div.setAttribute("aria-label",content.textContent);
-  div.setAttribute("aria-valuemin","0");
-  div.setAttribute("aria-valuemax","1");
-  div.setAttribute("aria-valuenow","0");
-  div.setAttribute("aria-valuetext","خيارات الرسالة مخفية. اسحب بإصبع واحد للأعلى أو للأسفل لإظهار خيارات الرسالة.");
   div.append(content);
   const actions=document.createElement("div");
   actions.className="messageActions";actions.hidden=true;
   const mine=m.senderUid===auth.currentUser?.uid;
+  const actionIds=[];
   const own=document.createElement("button");
-  own.type="button";own.textContent="حذف لدي";
+  own.type="button";own.id="message-delete-me-"+(++messageActionId);own.textContent="حذف لدي";
   own.addEventListener("click",()=>deleteMessageForMe(m.id,div));
-  actions.append(own);
+  actions.append(own);actionIds.push(own.id);
   if(mine){
     const everyone=document.createElement("button");
-    everyone.type="button";everyone.textContent="حذف لدى الجميع";
+    everyone.type="button";everyone.id="message-delete-all-"+messageActionId;everyone.textContent="حذف لدى الجميع";
     everyone.addEventListener("click",()=>deleteMessageForEveryone(m.id,div));
-    actions.append(everyone);
+    actions.append(everyone);actionIds.push(everyone.id);
   }
-  function revealMessageActions(){
-    actions.hidden=false;
-    div.setAttribute("aria-valuenow","1");
-    div.setAttribute("aria-valuetext","خيارات الرسالة ظاهرة. انتقل إلى زر حذف لدي أو حذف لدى الجميع.");
-  }
+  div.setAttribute("aria-actions",actionIds.join(" "));
+  div.addEventListener("click",event=>{
+    if(event.target===div||event.target===content)actions.hidden=false;
+  });
   div.addEventListener("keydown",event=>{
-    if(["ArrowUp","ArrowDown","ArrowLeft","ArrowRight"].includes(event.key)){
-      event.preventDefault();
-      revealMessageActions();
-    }
+    if(event.key==="Enter"||event.key===" "){event.preventDefault();actions.hidden=false;}
   });
   div.append(actions);
   let touchStartX=null,touchStartY=null;
@@ -140,7 +135,7 @@ function addMessage(m){
     const dx=e.changedTouches[0].clientX-touchStartX;
     const dy=e.changedTouches[0].clientY-touchStartY;
     if(Math.abs(dx)>65&&Math.abs(dx)>Math.abs(dy)*1.3){
-      actions.hidden=false;toggle.setAttribute("aria-expanded","true");
+      actions.hidden=false;
       actions.querySelector("button")?.focus();
     }
     touchStartX=null;touchStartY=null;
