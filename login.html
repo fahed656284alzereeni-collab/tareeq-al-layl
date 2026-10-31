@@ -5,7 +5,7 @@
 </style></head><body><main>
 <h1>مِرسالو</h1><p>سجّل الدخول أو أنشئ حسابك باستخدام حساب Google.</p>
 <button id="googleLogin" type="button">المتابعة باستخدام Google</button>
-<form id="nameForm"><label for="displayName">ما الاسم الذي تريد أن يظهر للآخرين ويبحثوا عنك به؟</label><input id="displayName" type="text" maxlength="30" autocomplete="nickname" required><button type="submit">حفظ الاسم وفتح مِرسالو</button></form>
+<form id="nameForm"><label for="displayName">ما الاسم الذي تريد أن يظهر للآخرين ويبحثوا عنك به؟</label><input id="displayName" type="text" maxlength="30" autocomplete="off" required><button type="submit">حفظ الاسم وفتح مِرسالو</button></form>
 <p class="note">ستظهر نافذة Google لاختيار الحساب. لا تحتاج إلى إدخال بريدك أو كلمة المرور داخل مِرسالو.</p>
 <p id="status" role="status" aria-live="polite">اضغط على زر المتابعة باستخدام Google.</p>
 </main>
@@ -25,7 +25,7 @@ onAuthStateChanged(auth,async user=>{
  try{
   profileRef=doc(db,"users",user.uid);const snap=await getDoc(profileRef);const data=snap.exists()?snap.data():{};
   if(data.playerName){say("أهلًا بعودتك "+data.playerName+". جارٍ فتح مِرسالو.");location.replace("chat.html");return}
-  nameInput.value=data.displayName&&data.displayName!==user.email?data.displayName:(user.displayName||"");
+  nameInput.value="";
   form.style.display="block";button.style.display="none";nameInput.focus();say("قبل إكمال إنشاء الحساب، اختر الاسم الذي سيظهر للآخرين عند البحث عنك.");
  }catch(e){checking=false;button.disabled=false;say("تعذر قراءة ملف الحساب. رمز الخطأ: "+(e.code||"unknown"))}
 });
