@@ -874,6 +874,56 @@ app.get("/", (req, res) => {
 
 });
 
+app.use(express.json({ limit: "32kb" }));
+
+app.post("/api/welcome-email", async (req, res) => {
+  try {
+    const authHeader = String(req.headers.authorization || "");
+    const match = authHeader.match(/^Bearer (.+)$/i);
+    if (!match) return res.status(401).json({ success: false, message: "Authentication required." });
+    const decoded = await admin.auth().verifyIdToken(match[1]);
+    const userRef = admin.firestore().collection("users").doc(decoded.uid);
+    const profileSnap = await userRef.get();
+    if (!profileSnap.exists || !profileSnap.data().playerName) {
+      return res.status(400).json({ success: false, message: "Complete your profile first." });
+    }
+    const profile = profileSnap.data();
+    const email = String(decoded.email || profile.email || "").trim();
+    if (!email) return res.status(400).json({ success: false, message: "No email address is available." });
+    if (profile.welcomeEmailSentAt) return res.json({ success: true, alreadySent: true });
+    if (!process.env.RESEND_API_KEY || !process.env.WELCOME_FROM) {
+      return res.status(503).json({ success: false, setupRequired: true, message: "Welcome email sender is not configured." });
+    }
+
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        from: process.env.WELCOME_FROM,
+        to: [email],
+        subject: "أهلاً بك في مِرسالو!",
+        html: `<div dir="rtl" style="font-family:Arial,sans-serif;line-height:1.9;color:#172033;max-width:600px;margin:auto"><h2 style="color:#167c68">أهلاً بك في عائلة مِرسالو!</h2><p>مرحباً <strong>${String(profile.playerName).replace(/[&<>"]/g, ch => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[ch]))}</strong>،</p><p>يسعدنا انضمامك إلينا. أصبح بإمكانك الآن التواصل مع أصدقائك والبحث عن الأشخاص وبدء المحادثات بسهولة.</p><p>نتمنى لك تجربة ممتعة!</p><p>فريق مِرسالو</p></div>`
+      })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      console.error("Welcome email provider error:", response.status, result.message || result.name || "Unknown error");
+      return res.status(502).json({ success: false, message: "Email provider rejected the message." });
+    }
+    await userRef.set({
+      welcomeEmailSentAt: admin.firestore.FieldValue.serverTimestamp(),
+      welcomeEmailId: result.id || null
+    }, { merge: true });
+    return res.json({ success: true });
+  } catch (error) {
+    console.error("Welcome email error:", error.message);
+    return res.status(500).json({ success: false, message: "Unable to send welcome email." });
+  }
+});
+
 app.get("/health", (req, res) => {
 
   res.json({ success: true });
