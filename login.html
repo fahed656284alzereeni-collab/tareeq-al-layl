@@ -15,10 +15,11 @@ import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,setPersiste
 import{getFirestore,doc,getDoc,setDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app),provider=new GoogleAuthProvider();
-// Keep the Firebase session on this browser so returning users skip Google sign-in.
-await setPersistence(auth,browserLocalPersistence);
+// Keep the Firebase session on this browser without blocking login UI indefinitely.
 provider.setCustomParameters({prompt:"select_account"});
 const button=document.getElementById("googleLogin"),form=document.getElementById("nameForm"),nameInput=document.getElementById("displayName"),status=document.getElementById("status");
+function withTimeout(promise,ms,label){return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label)),ms))])}
+try{await withTimeout(setPersistence(auth,browserLocalPersistence),8000,"persistence-timeout")}catch(e){console.warn("Firebase persistence setup delayed or unavailable:",e)}
 let currentUser=null,profileRef=null,checking=false,loginAudioContext=null;
 function prepareLoginAudio(){
  try{
@@ -51,11 +52,11 @@ button.addEventListener("click",async()=>{prepareLoginAudio();button.disabled=tr
 onAuthStateChanged(auth,async user=>{
  if(!user||checking)return;checking=true;currentUser=user;button.disabled=true;say("جارٍ التحقق من ملف حسابك...");
  try{
-  profileRef=doc(db,"users",user.uid);const snap=await getDoc(profileRef);const data=snap.exists()?snap.data():{};
+  profileRef=doc(db,"users",user.uid);say("تم تسجيل الدخول. جارٍ تحميل ملف حسابك...");const snap=await withTimeout(getDoc(profileRef),15000,"profile-timeout");const data=snap.exists()?snap.data():{};
   if(data.playerName){say("أهلًا بعودتك "+data.playerName+". جارٍ فتح مِرسالو.");await playLoginSound();location.replace("chat.html");return}
   nameInput.value="";
   form.style.display="block";button.style.display="none";nameInput.focus();say("قبل إكمال إنشاء الحساب، اختر الاسم الذي سيظهر للآخرين عند البحث عنك.");
- }catch(e){checking=false;button.disabled=false;say("تعذر قراءة ملف الحساب. رمز الخطأ: "+(e.code||"unknown"))}
+ }catch(e){checking=false;button.disabled=false;const code=e.code||e.message||"unknown";say(code==="profile-timeout"?"تأخر الاتصال بملف حسابك. تحقق من اتصال الإنترنت ثم أعد المحاولة.":"تعذر قراءة ملف الحساب. رمز الخطأ: "+code)}
 });
 form.addEventListener("submit",async e=>{
  e.preventDefault();prepareLoginAudio();const playerName=nameInput.value.trim();
