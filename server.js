@@ -905,10 +905,9 @@ app.post("/api/delete-account", accountDeleteCors, async (req, res) => {
     const userRef = db.collection("users").doc(uid);
 
     // Preserve every conversation and message so the other participant keeps the history.
-    const [friends, incomingRequests, outgoingRequests] = await Promise.all([
+    const [friends, incomingRequests] = await Promise.all([
       userRef.collection("friends").get(),
-      userRef.collection("friendRequests").get(),
-      db.collectionGroup("friendRequests").where("fromUid", "==", uid).get()
+      userRef.collection("friendRequests").get()
     ]);
 
     const refsToDelete = new Map();
@@ -918,7 +917,6 @@ app.post("/api/delete-account", accountDeleteCors, async (req, res) => {
         db.collection("users").doc(item.id).collection("friends").doc(uid));
     }
     for (const item of incomingRequests.docs) refsToDelete.set(item.ref.path, item.ref);
-    for (const item of outgoingRequests.docs) refsToDelete.set(item.ref.path, item.ref);
     refsToDelete.set(userRef.path, userRef);
 
     const refs = [...refsToDelete.values()];
