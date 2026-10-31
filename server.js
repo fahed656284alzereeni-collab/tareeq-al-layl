@@ -417,6 +417,43 @@ io.on("connection", socket => {
     }
   });
 
+  socket.on("editDirectMessage", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const messageId = String(data.messageId || "");
+      const text = String(data.text || "").trim();
+      if (!messageId || !text || text.length > 4000) throw new Error("اكتب رسالة لا تتجاوز 4000 حرف.");
+      const conversationRef = conversationsRef.doc(conversationId);
+      const messageRef = conversationRef.collection("messages").doc(messageId);
+      const conversationSnap = await conversationRef.get();
+      if (!conversationSnap.exists || !(conversationSnap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بتعديل هذه الرسالة.");
+      const messageSnap = await messageRef.get();
+      if (!messageSnap.exists) throw new Error("الرسالة غير موجودة أو حُذفت بالفعل.");
+      if (messageSnap.data().senderUid !== socket.data.uid) throw new Error("يمكن لمرسل الرسالة فقط تعديلها.");
+      await messageRef.update({
+        text,
+        edited: true,
+        editedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      const latest = await conversationRef.collection("messages").orderBy("createdAt", "desc").limit(1).get();
+      if (latest.docs[0]?.id === messageId) {
+        await conversationRef.set({
+          lastMessage: text.slice(0, 120),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
+      const payload = { conversationId, messageId, text, editedAt: Date.now() };
+      const members = conversationSnap.data().members || [];
+      for (const member of members) {
+        const sessions = connectedUsers.get(member);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("directMessageEdited", payload);
+      }
+      if (typeof reply === "function") reply({ success: true, message: payload });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تعديل الرسالة." });
+    }
+  });
+
   socket.on("deleteDirectMessageForMe", async (data = {}, reply) => {
     try {
       const conversationId=String(data.conversationId||"");
