@@ -8,7 +8,7 @@
 <section class="panel"><h2>الأشخاص المتصلون</h2><p class="muted">تظهر هنا الحسابات المتصلة بمِرسالو حاليًا. ابحث عن الاسم لبدء محادثة.</p>
 <button id="openOnline" type="button" aria-expanded="false" aria-controls="onlinePanel">عرض الأشخاص المتصلين</button>
 <div id="onlinePanel" hidden><label for="onlineSearch">ابحث عن شخص بالاسم</label><input id="onlineSearch" type="search" autocomplete="off" placeholder="اكتب اسم الشخص"><div id="onlineList" aria-live="polite">جارٍ تحميل الأشخاص المتصلين...</div></div></section>
-<section class="panel"><h2>محادثاتك</h2><div id="conversationList" aria-live="polite">جارٍ تحميل المحادثات...</div></section>
+<section class="panel"><h2>محادثاتك</h2><div id="conversationList" aria-live="polite"></div></section>
 <section class="panel" id="chatPanel"><h2 id="chatTitle">المحادثة</h2><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
 <form id="sendForm"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="2" maxlength="4000" required></textarea><button type="submit">إرسال الرسالة</button></form></section>
 <p id="status" role="status" aria-live="polite">جارٍ التحقق من الحساب...</p>
