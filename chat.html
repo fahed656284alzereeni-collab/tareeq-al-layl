@@ -55,7 +55,7 @@ body.chat-open #status{display:none}
   <button id="recordVoiceButton" type="button">بدء تسجيل رسالة صوتية</button>
   <button id="pauseVoiceButton" type="button" hidden>إيقاف التسجيل مؤقتًا</button>
   <button id="resumeVoiceButton" type="button" hidden>متابعة التسجيل</button>
-  <button id="stopVoiceButton" type="button" hidden>إنهاء التسجيل</button>
+  <button id="stopVoiceButton" type="button" hidden aria-label="إنهاء التسجيل. اضغط مطولًا، أو استخدم تفعيل قارئ الشاشة المعتاد.">اضغط مطولًا لإنهاء التسجيل</button>
   <button id="sendVoiceButton" type="button" hidden>إرسال الرسالة الصوتية</button>
   <button id="cancelVoiceButton" type="button" hidden>إلغاء التسجيل</button>
   <p id="voiceStatus" role="status" aria-live="polite">يمكنك تسجيل رسالة صوتية تصل إلى ثلاث دقائق.</p>
@@ -123,8 +123,8 @@ function setVoiceControls(mode){
   ids.forEach(id=>{const button=document.getElementById(id);button.hidden=true;button.disabled=mode==="uploading";});
   document.getElementById("voicePreview").hidden=mode!=="preview";
   if(mode==="idle")document.getElementById("recordVoiceButton").hidden=false;
-  if(mode==="recording"){document.getElementById("pauseVoiceButton").hidden=false;document.getElementById("stopVoiceButton").hidden=false;document.getElementById("cancelVoiceButton").hidden=false;}
-  if(mode==="paused"){document.getElementById("resumeVoiceButton").hidden=false;document.getElementById("stopVoiceButton").hidden=false;document.getElementById("cancelVoiceButton").hidden=false;}
+  if(mode==="recording"){document.getElementById("pauseVoiceButton").hidden=false;document.getElementById("stopVoiceButton").hidden=false;document.getElementById("stopVoiceButton").textContent="اضغط مطولًا لإنهاء التسجيل";document.getElementById("stopVoiceButton").setAttribute("aria-label","إنهاء التسجيل. اضغط مطولًا، أو استخدم تفعيل قارئ الشاشة المعتاد.");document.getElementById("cancelVoiceButton").hidden=false;}
+  if(mode==="paused"){document.getElementById("resumeVoiceButton").hidden=false;document.getElementById("stopVoiceButton").hidden=false;document.getElementById("stopVoiceButton").textContent="إنهاء التسجيل";document.getElementById("stopVoiceButton").setAttribute("aria-label","إنهاء التسجيل");document.getElementById("cancelVoiceButton").hidden=false;}
   if(mode==="preview"){document.getElementById("sendVoiceButton").hidden=false;document.getElementById("cancelVoiceButton").hidden=false;}
   if(mode==="uploading")document.getElementById("cancelVoiceButton").hidden=false;
 }
@@ -153,10 +153,14 @@ async function startVoiceRecording(){
   }
   try{
     voiceChunks=[];voiceElapsedMs=0;voiceDurationMs=0;voiceDiscarding=false;
-    voiceStream=await navigator.mediaDevices.getUserMedia({audio:true});
-    const candidates=["audio/mp4","audio/webm;codecs=opus","audio/webm","audio/ogg;codecs=opus"];
+    voiceStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:{ideal:48000},channelCount:{ideal:1}}});
+    const audioTrack=voiceStream.getAudioTracks()[0];
+    if(audioTrack?.applyConstraints){audioTrack.applyConstraints({sampleRate:{ideal:48000},channelCount:{ideal:1},echoCancellation:true,noiseSuppression:true,autoGainControl:true}).catch(()=>{});}
+    const candidates=["audio/webm;codecs=opus","audio/ogg;codecs=opus","audio/mp4","audio/webm"];
     const supported=candidates.find(type=>MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(type));
-    voiceRecorder=supported?new MediaRecorder(voiceStream,{mimeType:supported}):new MediaRecorder(voiceStream);
+    const recorderOptions={audioBitsPerSecond:96000};
+    if(supported)recorderOptions.mimeType=supported;
+    voiceRecorder=new MediaRecorder(voiceStream,recorderOptions);
     voiceMimeType=voiceRecorder.mimeType||supported||"audio/mp4";
     voiceRecorder.addEventListener("dataavailable",event=>{if(event.data&&event.data.size)voiceChunks.push(event.data)});
     voiceRecorder.addEventListener("pause",()=>{
@@ -180,7 +184,7 @@ async function startVoiceRecording(){
       document.getElementById("voiceStatus").textContent="انتهى التسجيل. المدة "+formatVoiceDuration(voiceDurationMs)+". استمع إلى المعاينة قبل الإرسال.";
     });
     voiceRecorder.start(250);voiceSegmentStartedAt=Date.now();setVoiceControls("recording");
-    document.getElementById("voiceStatus").textContent="بدأ التسجيل. يمكنك إيقافه مؤقتًا أو إنهاؤه.";
+    document.getElementById("voiceStatus").textContent="بدأ التسجيل بجودة مرتفعة. اضغط مطولًا على زر إنهاء التسجيل عند الانتهاء، أو فعّله بالطريقة المعتادة لقارئ الشاشة.";
     voiceLimitTimer=setTimeout(()=>{if(voiceRecorder&&voiceRecorder.state!=="inactive"){stopVoiceRecording();document.getElementById("voiceStatus").textContent="تم إنهاء التسجيل تلقائيًا بعد بلوغ ثلاث دقائق.";}},180000);
   }catch(error){
     releaseVoiceStream();voiceRecorder=null;setVoiceControls("idle");
@@ -218,7 +222,20 @@ async function sendVoiceMessage(){
 document.getElementById("recordVoiceButton").addEventListener("click",startVoiceRecording);
 document.getElementById("pauseVoiceButton").addEventListener("click",pauseVoiceRecording);
 document.getElementById("resumeVoiceButton").addEventListener("click",resumeVoiceRecording);
-document.getElementById("stopVoiceButton").addEventListener("click",stopVoiceRecording);
+const stopVoiceButton=document.getElementById("stopVoiceButton");
+let stopPressStartedAt=0,ignoreStopClick=false;
+stopVoiceButton.addEventListener("pointerdown",event=>{if(event.isPrimary){stopPressStartedAt=Date.now();ignoreStopClick=false;}});
+stopVoiceButton.addEventListener("pointerup",event=>{
+  if(!event.isPrimary||!stopPressStartedAt)return;
+  const heldFor=Date.now()-stopPressStartedAt;stopPressStartedAt=0;
+  if(heldFor>=650){ignoreStopClick=true;stopVoiceRecording();}
+});
+stopVoiceButton.addEventListener("pointercancel",()=>{stopPressStartedAt=0;});
+stopVoiceButton.addEventListener("click",event=>{
+  if(ignoreStopClick){ignoreStopClick=false;return;}
+  if(event.detail===0){stopVoiceRecording();return;}
+  document.getElementById("voiceStatus").textContent="لإنهاء التسجيل باللمس العادي، اضغط مطولًا على زر إنهاء التسجيل. ويمكن لقارئ الشاشة تفعيله بالطريقة المعتادة.";
+});
 document.getElementById("sendVoiceButton").addEventListener("click",sendVoiceMessage);
 document.getElementById("cancelVoiceButton").addEventListener("click",discardVoiceRecording);
 
