@@ -15,11 +15,13 @@ import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,setPersiste
 import{getFirestore,doc,getDoc,setDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app),provider=new GoogleAuthProvider();
+// Keep the Firebase session on this browser so returning users skip Google sign-in.
+await setPersistence(auth,browserLocalPersistence);
 provider.setCustomParameters({prompt:"select_account"});
 const button=document.getElementById("googleLogin"),form=document.getElementById("nameForm"),nameInput=document.getElementById("displayName"),status=document.getElementById("status");
 let currentUser=null,profileRef=null,checking=false;
 function say(t){status.textContent=t}
-button.addEventListener("click",async()=>{button.disabled=true;say("جارٍ فتح نافذة Google لاختيار الحساب...");try{await setPersistence(auth,browserLocalPersistence);await signInWithPopup(auth,provider)}catch(e){button.disabled=false;say("تعذر تسجيل الدخول باستخدام Google. رمز الخطأ: "+(e.code||"unknown"))}});
+button.addEventListener("click",async()=>{button.disabled=true;say("جارٍ فتح نافذة Google لاختيار الحساب...");try{await signInWithPopup(auth,provider)}catch(e){button.disabled=false;say("تعذر تسجيل الدخول باستخدام Google. رمز الخطأ: "+(e.code||"unknown"))}});
 onAuthStateChanged(auth,async user=>{
  if(!user||checking)return;checking=true;currentUser=user;button.disabled=true;say("جارٍ التحقق من ملف حسابك...");
  try{
