@@ -45,40 +45,15 @@ h3{margin-bottom:4px;color:#f5f7fb}
 <a class="link secondary" href="chat.html">العودة إلى المحادثات</a>
 </section>
 
-<section class="panel" id="panel-profile">
-<h2>الملف الشخصي</h2><p class="muted">يمكنك تعديل اسم المستخدم وإدارة حسابك.</p>
-<div id="avatar" role="img" aria-label="صورة افتراضية لمِرسالو">م</div>
-<p id="email" class="muted" aria-live="polite">جارٍ تحميل بيانات الحساب...</p>
-<form id="profileForm"><label for="playerName">اسم المستخدم</label><input id="playerName" type="text" maxlength="30" minlength="2" required autocomplete="nickname"><button id="save" class="action" type="submit">حفظ الاسم</button></form>
-<p class="warning">حذف الحساب نهائي ولا يمكن التراجع عنه. ستُحذف بيانات الحساب وقائمة الأصدقاء، لكن سجل المحادثات والرسائل سيبقى محفوظًا لدى الطرف الآخر.</p>
-<button id="deleteAccount" class="action danger" type="button">حذف الحساب نهائيًا</button>
-<p id="profileStatus" role="status" aria-live="polite">جارٍ تحميل الملف الشخصي...</p>
-</section>
-
-<section class="panel" id="panel-about">
-<h2>أهلًا بك في مِرسالو</h2>
-<p>مِرسالو مساحة للتواصل والمحادثات. نريد أن تكون تجربة الجميع محترمة وآمنة، ولذلك يُرجى الالتزام بالقواعد التالية عند استخدام الموقع.</p>
-<p class="muted">آخر تحديث: 31 أكتوبر 2026</p>
-<h2>بنود الاستخدام وقواعد السلوك</h2>
-<h3>1. الاحترام المتبادل</h3><p>يُمنع توجيه الإهانات أو الشتائم أو التحقير أو المضايقة المتكررة لأي مستخدم.</p>
-<h3>2. التهديد والتحريض</h3><p>يُمنع التهديد بالعنف أو التحريض عليه أو تشجيع إيذاء الآخرين أو ابتزازهم.</p>
-<h3>3. التحرش والمضايقة</h3><p>يُمنع التحرش أو إرسال رسائل غير مرغوب فيها بصورة متكررة، ويجب احترام رغبة الطرف الآخر في عدم التواصل.</p>
-<h3>4. الخصوصية والبيانات الشخصية</h3><p>يُمنع نشر معلومات شخص آخر أو صوره أو بياناته الخاصة دون موافقته، كما يُمنع انتحال شخصية الآخرين أو استخدام حساباتهم دون إذن.</p>
-<h3>5. المحتوى غير القانوني أو الضار</h3><p>يُمنع استخدام مِرسالو لنشر أو تداول محتوى غير قانوني، أو مواد تهدف إلى الاحتيال أو الإضرار بالآخرين أو انتهاك حقوقهم.</p>
-<h3>6. سلامة الحساب</h3><p>حافظ على بيانات الدخول الخاصة بك، ولا تحاول الوصول إلى حسابات الآخرين أو تعطيل الموقع أو استغلال ثغراته.</p>
-<h3>7. الاستخدام المسؤول</h3><p>استخدم مِرسالو للتواصل المشروع والمحترم فقط. لا ترسل رسائل آلية مزعجة أو محتوى متكررًا بهدف إغراق الخدمة.</p>
-<h2>التعامل مع المخالفات</h2>
-<p>قد تؤدي مخالفة هذه القواعد إلى تقييد الوصول إلى الخدمة أو تعليق الحساب أو حذفه بحسب طبيعة المخالفة وخطورتها. وقد تُتخذ إجراءات إضافية عندما يقتضي القانون ذلك.</p>
-<p>لا يجوز استخدام هذه البنود لتبرير إساءة استخدام أدوات الموقع أو الإضرار بالمستخدمين. وتظل مسؤولية المستخدم قائمة عن المحتوى الذي يرسله والتصرفات التي يقوم بها.</p>
-<h2>تنبيه مهم</h2>
-<p>هذه البنود قواعد استخدام عامة لمِرسالو، وليست استشارة قانونية أو ضمانًا بأن الخدمة خالية من المخاطر. لا تشارك كلمات المرور أو المعلومات المالية أو البيانات شديدة الحساسية عبر المحادثات.</p>
-</section>
-
-<section class="panel" id="panel-logout">
-<h2>تسجيل الخروج</h2><p>اضغط الزر التالي لإنهاء الجلسة والخروج من حساب مِرسالو على هذا الجهاز.</p>
-<button id="logout" class="action secondary" type="button">تسجيل الخروج من الحساب</button>
+<section class="panel" id="panel-account-options">
+<h2>إدارة الحساب ومعلومات مِرسالو</h2>
+<p>اختر القسم الذي تريد فتحه:</p>
+<a class="link" href="profile.html">الملف الشخصي</a>
+<a class="link" href="terms.html">حول مِرسالو وبنود الاستخدام</a>
+<button id="logout" class="action secondary" type="button">تسجيل الخروج</button>
 <p id="logoutStatus" role="status" aria-live="polite"></p>
 </section>
+
 </main>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
@@ -89,11 +64,6 @@ const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 const largeText=document.getElementById("largeText"),strongFocus=document.getElementById("strongFocus");
 function applySettings(){document.body.classList.toggle("large-text",largeText.checked);document.body.classList.toggle("strong-focus",strongFocus.checked);localStorage.setItem("mersalo-large-text",String(largeText.checked));localStorage.setItem("mersalo-strong-focus",String(strongFocus.checked))}
 largeText.checked=localStorage.getItem("mersalo-large-text")==="true";strongFocus.checked=localStorage.getItem("mersalo-strong-focus")==="true";applySettings();largeText.addEventListener("change",applySettings);strongFocus.addEventListener("change",applySettings);
-const form=document.getElementById("profileForm"),nameField=document.getElementById("playerName"),email=document.getElementById("email"),profileStatus=document.getElementById("profileStatus"),save=document.getElementById("save"),deleteAccount=document.getElementById("deleteAccount");
-let activeUser=null;function sayProfile(message){profileStatus.textContent=message}
-onAuthStateChanged(auth,async user=>{if(!user){location.replace("login.html");return}activeUser=user;try{const snap=await getDoc(doc(db,"users",user.uid));const data=snap.exists()?snap.data():{};nameField.value=data.playerName||user.displayName||"";email.textContent=user.email||"لا يوجد بريد إلكتروني";sayProfile("تم تحميل بيانات الحساب.")}catch(error){sayProfile("تعذر تحميل الملف الشخصي. رمز الخطأ: "+(error.code||"unknown"))}});
-form.addEventListener("submit",async event=>{event.preventDefault();if(!activeUser)return;const playerName=nameField.value.trim();if(playerName.length<2){sayProfile("اسم المستخدم يجب أن يتكون من حرفين على الأقل.");nameField.focus();return}save.disabled=true;deleteAccount.disabled=true;try{await updateProfile(activeUser,{displayName:playerName});await setDoc(doc(db,"users",activeUser.uid),{uid:activeUser.uid,email:activeUser.email||"",displayName:playerName,playerName},{merge:true});sayProfile("تم حفظ اسم المستخدم بنجاح.")}catch(error){sayProfile("تعذر حفظ الاسم: "+(error.message||error.code||"خطأ غير معروف"))}finally{save.disabled=false;deleteAccount.disabled=false}});
-deleteAccount.addEventListener("click",async()=>{if(!activeUser)return;const confirmed=confirm("تنبيه: حذف الحساب نهائي ولا يمكن التراجع عنه. ستُحذف بيانات حسابك وقائمة أصدقائك، لكن سجل المحادثات والرسائل سيبقى محفوظًا لدى الطرف الآخر. هل تريد المتابعة؟");if(!confirmed)return;const typed=prompt("للتأكيد، اكتب كلمة حذف");if(typed!=="حذف"){sayProfile("تم إلغاء حذف الحساب.");return}save.disabled=true;deleteAccount.disabled=true;sayProfile("جارٍ حذف الحساب. يرجى عدم إغلاق الصفحة...");try{const token=await activeUser.getIdToken(true);const response=await fetch("https://tareeq-al-layl-server.onrender.com/api/delete-account",{method:"POST",headers:{Authorization:"Bearer "+token}});const result=await response.json().catch(()=>({}));if(!response.ok||!result.success)throw new Error(result.message||"تعذر حذف الحساب. حاول مرة أخرى.");await signOut(auth);location.replace("login.html")}catch(error){sayProfile("لم يكتمل حذف الحساب: "+(error.message||"خطأ غير معروف"));save.disabled=false;deleteAccount.disabled=false}});
 document.getElementById("logout").addEventListener("click",async()=>{const button=document.getElementById("logout"),status=document.getElementById("logoutStatus");button.disabled=true;status.textContent="جارٍ تسجيل الخروج...";try{await signOut(auth);location.replace("login.html")}catch(error){button.disabled=false;status.textContent="تعذر تسجيل الخروج. حاول مرة أخرى."}});
 </script>
 </body></html>
