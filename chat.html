@@ -300,38 +300,75 @@ document.getElementById("removeFriendAction").addEventListener("click",async()=>
   statusBox.textContent=r.message||(r.success?"تمت إزالة الصداقة.":"تعذر إزالة الصداقة.");
   if(r.success)await refreshConversationInfo();
 });
-document.getElementById("clearChatAction").addEventListener("click",async()=>{
-  if(!currentId)return;
-  const onlyMe=confirm("اختر مكان حذف محتوى الدردشة: اضغط موافق لحذفه من عندك فقط، أو إلغاء لحذفه عند الطرفين.");
-  const scope=onlyMe?"عندك فقط":"عند الطرفين";
-  if(!confirm("تأكيد نهائي: حذف جميع رسائل الدردشة "+scope+"؟"+(onlyMe?" ستبقى الرسائل ظاهرة للطرف الآخر.":" سيتم حذف الرسائل نهائيًا من الطرفين.")))return;
-  const button=document.getElementById("clearChatAction"),statusBox=document.getElementById("conversationActionStatus");
-  button.disabled=true;
-  const r=await call(onlyMe?"clearDirectConversationForMe":"clearDirectConversation",{conversationId:currentId});
-  button.disabled=false;
-  if(!r.success){statusBox.textContent=r.message||"تعذر حذف محتوى الدردشة.";return}
-  known.clear();messages.replaceChildren();await loadConversations();await refreshConversationInfo();
-  statusBox.textContent="";
-  restoreConnectionStatus();
-});
-document.getElementById("deleteChatAction").addEventListener("click",async()=>{
-  if(!currentId)return;
-  const onlyMe=confirm("اختر مكان حذف الدردشة: اضغط موافق لحذفها من عندك فقط، أو إلغاء لحذفها عند الطرفين.");
-  const scope=onlyMe?"من قائمة محادثاتك فقط":"من حسابك وحساب الطرف الآخر";
-  if(!confirm("تأكيد نهائي: هل تريد حذف الدردشة "+scope+"؟"+(onlyMe?" لن تُحذف الرسائل من حساب الطرف الآخر.":" سيتم حذف سجل المحادثة ورسائلها نهائيًا من الطرفين.")))return;
-  const button=document.getElementById("deleteChatAction"),statusBox=document.getElementById("conversationActionStatus");
-  button.disabled=true;
-  const r=await call(onlyMe?"hideDirectConversationForMe":"deleteDirectConversation",{conversationId:currentId});
-  button.disabled=false;
-  if(!r.success){statusBox.textContent=r.message||"تعذر حذف الدردشة.";return}
-  currentId=null;currentOtherUid=null;currentOtherName="مستخدم";currentDetails=null;known.clear();messages.replaceChildren();
-  panel.style.display="none";document.getElementById("mainNavigation").hidden=false;document.body.classList.remove("chat-open");
-  document.getElementById("conversationListPanel").hidden=false;document.getElementById("conversationInfo").hidden=true;
-  document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;
-  document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");
-  document.getElementById("messageText").value="";document.getElementById("messageText").disabled=true;document.getElementById("sendButton").disabled=true;
-  await loadConversations();document.getElementById("conversationHeading").focus();restoreConnectionStatus();
-});
+function showConversationDeleteChoice(kind){
+  const info=document.getElementById("conversationInfo");
+  const existing=document.getElementById("conversationDeleteChoice");
+  if(existing){existing.remove();return}
+  const box=document.createElement("section");
+  box.id="conversationDeleteChoice";
+  box.className="infoPanel";
+  box.setAttribute("aria-labelledby","conversationDeleteChoiceTitle");
+  const title=document.createElement("h3");
+  title.id="conversationDeleteChoiceTitle";
+  title.tabIndex=-1;
+  title.textContent=kind==="clear"?"أين تريد حذف محتوى الدردشة؟":"من أين تريد حذف الدردشة؟";
+  const hint=document.createElement("p");
+  hint.textContent="اختر أحد الخيارين. لن يتم تنفيذ الحذف قبل الضغط على زر التأكيد.";
+  const group=document.createElement("div");
+  group.setAttribute("role","radiogroup");
+  group.setAttribute("aria-label","مكان الحذف");
+  const name="delete-scope-"+kind;
+  const options=[
+    {value:"me",label:"من عندي فقط"},
+    {value:"both",label:"من عندي وعند الطرف الآخر"}
+  ];
+  options.forEach((option,index)=>{
+    const label=document.createElement("label");
+    label.style.display="block";
+    const radio=document.createElement("input");
+    radio.type="radio";radio.name=name;radio.value=option.value;radio.checked=index===0;
+    radio.style.width="auto";radio.required=true;
+    label.append(radio,document.createTextNode(" "+option.label));
+    group.append(label);
+  });
+  const confirmButton=document.createElement("button");
+  confirmButton.type="button";
+  confirmButton.textContent=kind==="clear"?"تأكيد حذف المحتوى":"تأكيد حذف الدردشة";
+  const cancelButton=document.createElement("button");
+  cancelButton.type="button";cancelButton.className="secondary";cancelButton.textContent="إلغاء";
+  cancelButton.addEventListener("click",()=>{box.remove();document.getElementById(kind==="clear"?"clearChatAction":"deleteChatAction").focus()});
+  confirmButton.addEventListener("click",async()=>{
+    const selected=group.querySelector('input[name="'+name+'"]:checked');
+    if(!selected){hint.textContent="اختر مكان الحذف أولاً.";return}
+    const onlyMe=selected.value==="me";
+    confirmButton.disabled=true;cancelButton.disabled=true;
+    const event=kind==="clear"?(onlyMe?"clearDirectConversationForMe":"clearDirectConversation"):(onlyMe?"hideDirectConversationForMe":"deleteDirectConversation");
+    const result=await call(event,{conversationId:currentId});
+    if(!result.success){
+      hint.textContent=result.message||"تعذر تنفيذ العملية. يمكنك المحاولة مرة أخرى.";
+      confirmButton.disabled=false;cancelButton.disabled=false;return;
+    }
+    box.remove();
+    if(kind==="clear"){
+      known.clear();messages.replaceChildren();await loadConversations();await refreshConversationInfo();restoreConnectionStatus();
+      document.getElementById("clearChatAction").focus();
+      return;
+    }
+    currentId=null;currentOtherUid=null;currentOtherName="مستخدم";currentDetails=null;known.clear();messages.replaceChildren();
+    panel.style.display="none";document.getElementById("mainNavigation").hidden=false;document.body.classList.remove("chat-open");
+    document.getElementById("conversationListPanel").hidden=false;document.getElementById("conversationInfo").hidden=true;
+    document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;
+    document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");
+    document.getElementById("messageText").value="";document.getElementById("messageText").disabled=true;document.getElementById("sendButton").disabled=true;
+    await loadConversations();document.getElementById("conversationHeading").focus();restoreConnectionStatus();
+  });
+  box.append(title,hint,group,confirmButton,cancelButton);
+  const actions=info.querySelector(".infoActions");
+  actions.insertAdjacentElement("afterend",box);
+  title.focus();
+}
+document.getElementById("clearChatAction").addEventListener("click",()=>{if(currentId)showConversationDeleteChoice("clear")});
+document.getElementById("deleteChatAction").addEventListener("click",()=>{if(currentId)showConversationDeleteChoice("delete")});
 document.getElementById("reportAction").addEventListener("click",async()=>{
   if(!currentOtherUid||!currentId)return;
   const reason=prompt("ما سبب الإبلاغ؟ اكتب مثلًا: إساءة، تحرش، تهديد، انتحال شخصية، أو محتوى غير مناسب.");
