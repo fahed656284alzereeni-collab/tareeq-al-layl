@@ -16,7 +16,7 @@ try {
     credential = admin.credential.applicationDefault();
   } else {
     const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_FILE ||
-      "/etc/secrets/firebase-service-account.json";
+      "/etc/secrets/tareeq-al-layl-60be5c88a107.json";
     let serviceAccount;
     if (fs.existsSync(serviceAccountPath)) {
       serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, "utf8"));
