@@ -8,9 +8,9 @@
 *{box-sizing:border-box}body{margin:0;line-height:1.8}
 header{padding:15px 20px;background:#1b293b;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 h1{color:#8bd8c5;margin:0;font-size:1.5rem}
-nav[role=tablist]{display:flex;gap:8px;flex-wrap:wrap}
-.tab{font:inherit;font-weight:bold;padding:10px 15px;border:2px solid #42536b;border-radius:10px;background:#26384e;color:#f5f7fb;cursor:pointer}
-.tab[aria-selected=true]{background:#167c68;border-color:#8bd8c5}
+nav.mainNav{display:flex;gap:8px;flex-wrap:wrap}
+.navLink{display:inline-block;font:inherit;font-weight:bold;padding:10px 15px;border:2px solid #42536b;border-radius:10px;background:#26384e;color:#f5f7fb;text-decoration:none}
+.navLink[aria-current=page]{background:#167c68;border-color:#8bd8c5}
 button:focus,input:focus,a:focus{outline:3px solid #ffd166;outline-offset:3px}
 main{max-width:760px;margin:22px auto;padding:0 16px}
 .panel{background:#1b293b;border:1px solid #34445a;border-radius:18px;padding:22px;margin-bottom:16px}
@@ -26,22 +26,18 @@ button.action,.link{display:block;width:100%;padding:13px;border:0;border-radius
 .muted{color:#c3d0df}.warning{color:#ffd7dc;background:#452a35;border-radius:10px;padding:12px}
 #avatar{width:112px;height:112px;border-radius:50%;background:#30465d;color:#8bd8c5;display:flex;align-items:center;justify-content:center;margin:12px auto;font-size:42px;font-weight:bold}
 h3{margin-bottom:4px;color:#f5f7fb}
-#tabAnnouncement{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 </style>
 </head>
 <body>
 <header>
 <h1>مِرسالو</h1>
-<nav role="tablist" aria-label="أقسام الإعدادات" aria-orientation="horizontal">
-<button class="tab" id="tab-settings" type="button" role="tab" aria-selected="true" aria-controls="panel-settings" tabindex="0">الإعدادات</button>
-<button class="tab" id="tab-profile" type="button" role="tab" aria-selected="false" aria-controls="panel-profile" tabindex="-1">الملف الشخصي</button>
-<button class="tab" id="tab-about" type="button" role="tab" aria-selected="false" aria-controls="panel-about" tabindex="-1">حول مِرسالو</button>
-<button class="tab" id="tab-logout" type="button" role="tab" aria-selected="false" aria-controls="panel-logout" tabindex="-1">تسجيل الخروج</button>
+<nav class="mainNav" aria-label="التنقل الرئيسي">
+<a class="navLink" href="chat.html">الصفحة الرئيسية</a>
+<a class="navLink" href="settings.html" aria-current="page">الإعدادات</a>
 </nav>
 </header>
-<div id="tabAnnouncement" role="status" aria-live="polite" aria-atomic="true"></div>
 <main>
-<section class="panel tabPanel" id="panel-settings" role="tabpanel" aria-labelledby="tab-settings" tabindex="0">
+<section class="panel" id="panel-settings">
 <h2>الإعدادات</h2><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
 <div class="setting"><label for="largeText">تكبير النصوص</label><input id="largeText" type="checkbox"></div>
 <div class="setting"><label for="strongFocus">إبراز العنصر المحدد بوضوح</label><input id="strongFocus" type="checkbox"></div>
@@ -49,7 +45,7 @@ h3{margin-bottom:4px;color:#f5f7fb}
 <a class="link secondary" href="chat.html">العودة إلى المحادثات</a>
 </section>
 
-<section class="panel tabPanel" id="panel-profile" role="tabpanel" aria-labelledby="tab-profile" tabindex="0" hidden>
+<section class="panel" id="panel-profile">
 <h2>الملف الشخصي</h2><p class="muted">يمكنك تعديل اسم المستخدم وإدارة حسابك.</p>
 <div id="avatar" role="img" aria-label="صورة افتراضية لمِرسالو">م</div>
 <p id="email" class="muted" aria-live="polite">جارٍ تحميل بيانات الحساب...</p>
@@ -59,7 +55,7 @@ h3{margin-bottom:4px;color:#f5f7fb}
 <p id="profileStatus" role="status" aria-live="polite">جارٍ تحميل الملف الشخصي...</p>
 </section>
 
-<section class="panel tabPanel" id="panel-about" role="tabpanel" aria-labelledby="tab-about" tabindex="0" hidden>
+<section class="panel" id="panel-about">
 <h2>أهلًا بك في مِرسالو</h2>
 <p>مِرسالو مساحة للتواصل والمحادثات. نريد أن تكون تجربة الجميع محترمة وآمنة، ولذلك يُرجى الالتزام بالقواعد التالية عند استخدام الموقع.</p>
 <p class="muted">آخر تحديث: 31 أكتوبر 2026</p>
@@ -78,7 +74,7 @@ h3{margin-bottom:4px;color:#f5f7fb}
 <p>هذه البنود قواعد استخدام عامة لمِرسالو، وليست استشارة قانونية أو ضمانًا بأن الخدمة خالية من المخاطر. لا تشارك كلمات المرور أو المعلومات المالية أو البيانات شديدة الحساسية عبر المحادثات.</p>
 </section>
 
-<section class="panel tabPanel" id="panel-logout" role="tabpanel" aria-labelledby="tab-logout" tabindex="0" hidden>
+<section class="panel" id="panel-logout">
 <h2>تسجيل الخروج</h2><p>اضغط الزر التالي لإنهاء الجلسة والخروج من حساب مِرسالو على هذا الجهاز.</p>
 <button id="logout" class="action secondary" type="button">تسجيل الخروج من الحساب</button>
 <p id="logoutStatus" role="status" aria-live="polite"></p>
@@ -90,10 +86,6 @@ import{getAuth,onAuthStateChanged,updateProfile,signOut}from"https://www.gstatic
 import{getFirestore,doc,getDoc,setDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
-const tabs=[...document.querySelectorAll('[role="tab"]')],panels=[...document.querySelectorAll('[role="tabpanel"]')],announcement=document.getElementById("tabAnnouncement");
-function selectTab(tab,moveFocus=false){tabs.forEach(item=>{const selected=item===tab;item.setAttribute("aria-selected",String(selected));item.tabIndex=selected?0:-1});panels.forEach(panel=>panel.hidden=panel.id!==tab.getAttribute("aria-controls"));announcement.textContent="تم الاختيار: "+tab.textContent+"، علامة تبويب محددة.";if(moveFocus)tab.focus()}
-tabs.forEach((tab,index)=>{tab.addEventListener("click",()=>selectTab(tab));tab.addEventListener("keydown",event=>{let next=index;if(event.key==="ArrowLeft")next=(index+1)%tabs.length;else if(event.key==="ArrowRight")next=(index-1+tabs.length)%tabs.length;else if(event.key==="Home")next=0;else if(event.key==="End")next=tabs.length-1;else return;event.preventDefault();selectTab(tabs[next],true)})});
-const requestedTab=location.hash==="#profile"?"tab-profile":location.hash==="#about"?"tab-about":null;if(requestedTab)selectTab(document.getElementById(requestedTab));
 const largeText=document.getElementById("largeText"),strongFocus=document.getElementById("strongFocus");
 function applySettings(){document.body.classList.toggle("large-text",largeText.checked);document.body.classList.toggle("strong-focus",strongFocus.checked);localStorage.setItem("mersalo-large-text",String(largeText.checked));localStorage.setItem("mersalo-strong-focus",String(strongFocus.checked))}
 largeText.checked=localStorage.getItem("mersalo-large-text")==="true";strongFocus.checked=localStorage.getItem("mersalo-strong-focus")==="true";applySettings();largeText.addEventListener("change",applySettings);strongFocus.addEventListener("change",applySettings);
