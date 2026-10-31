@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>الإعدادات - مِرسالو</title>
+<style>
+:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}*{box-sizing:border-box}body{margin:0;line-height:1.8;padding:18px}main{max-width:560px;margin:24px auto;background:#1b293b;border:1px solid #34445a;border-radius:18px;padding:22px}h1{color:#8bd8c5;margin-top:0}.setting{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 0;border-bottom:1px solid #42536b}.setting label{font-weight:bold}.setting input{width:24px;height:24px;accent-color:#167c68}button,.link{display:block;width:100%;padding:13px;border:0;border-radius:10px;margin:12px 0;background:#167c68;color:white;text-align:center;text-decoration:none;font:inherit;font-weight:bold}.secondary{background:#42536b}button:focus,input:focus,a:focus{outline:3px solid #ffd166;outline-offset:3px}#status{padding:12px;background:#26384e;border-radius:10px}.large-text{font-size:1.2em}.strong-focus :focus{outline-width:5px!important;outline-offset:4px!important}
+</style></head><body><main>
+<h1>الإعدادات</h1><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
+<div class="setting"><label for="largeText">تكبير النصوص</label><input id="largeText" type="checkbox"></div>
+<div class="setting"><label for="strongFocus">إبراز العنصر المحدد بوضوح</label><input id="strongFocus" type="checkbox"></div>
+<p id="status" role="status" aria-live="polite">يتم حفظ التغييرات على هذا الجهاز تلقائيًا.</p>
+<a class="link secondary" href="chat.html">العودة إلى المحادثات</a>
+<button id="logout" type="button" class="secondary">تسجيل الخروج</button>
+</main>
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+import{getAuth,onAuthStateChanged,signOut}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
+const auth=getAuth(initializeApp(cfg)),largeText=document.getElementById("largeText"),strongFocus=document.getElementById("strongFocus");
+onAuthStateChanged(auth,user=>{if(!user)location.replace("login.html")});
+function apply(){document.body.classList.toggle("large-text",largeText.checked);document.body.classList.toggle("strong-focus",strongFocus.checked);localStorage.setItem("mersalo-large-text",String(largeText.checked));localStorage.setItem("mersalo-strong-focus",String(strongFocus.checked))}
+largeText.checked=localStorage.getItem("mersalo-large-text")==="true";strongFocus.checked=localStorage.getItem("mersalo-strong-focus")==="true";apply();largeText.addEventListener("change",apply);strongFocus.addEventListener("change",apply);
+document.getElementById("logout").addEventListener("click",async()=>{await signOut(auth);location.replace("login.html")});
+</script></body></html>
