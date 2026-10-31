@@ -223,18 +223,18 @@ io.on("connection", socket => {
   const db = admin.firestore();
   const conversationsRef = db.collection("conversations");
 
-  socket.on("findUserByEmail", async (data = {}, reply) => {
+  socket.on("findUserByName", async (data = {}, reply) => {
     try {
-      const email = String(data.email || "").trim().toLowerCase();
-      if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) throw new Error("أدخل عنوان بريد إلكتروني صحيحاً.");
-      if (email === socket.data.email) throw new Error("هذا بريد حسابك.");
-      const snap = await usersRef.where("email", "==", email).limit(1).get();
-      if (snap.empty) throw new Error("لا يوجد حساب مسجل بهذا البريد الإلكتروني.");
-      const target = snap.docs[0];
-      const profile = target.data();
-      if (typeof reply === "function") reply({ success: true, user: { uid: target.id, email, displayName: profile.displayName || "" } });
+      const name = String(data.name || "").trim();
+      if (name.length < 2 || name.length > 30) throw new Error("اكتب اسمًا من حرفين إلى 30 حرفًا.");
+      if (name.toLocaleLowerCase("ar") === socket.data.playerName.toLocaleLowerCase("ar")) throw new Error("هذا اسم حسابك.");
+      const snap = await usersRef.where("playerName", "==", name).limit(10).get();
+      if (snap.empty) throw new Error("لم نعثر على حساب بهذا الاسم. تأكد من كتابة الاسم كما اختاره صاحبه.");
+      const matches = snap.docs.map(target => ({uid:target.id,displayName:target.data().playerName || target.data().displayName || "مستخدم"})).filter(item=>item.uid!==socket.data.uid);
+      if (!matches.length) throw new Error("هذا اسم حسابك.");
+      if (typeof reply === "function") reply({success:true,users:matches});
     } catch (error) {
-      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر البحث." });
+      if (typeof reply === "function") reply({success:false,message:error.message || "تعذر البحث عن الاسم."});
     }
   });
 
@@ -243,13 +243,13 @@ io.on("connection", socket => {
       const targetUid = String(data.targetUid || "").trim();
       if (!targetUid || targetUid === socket.data.uid) throw new Error("المستخدم غير صالح.");
       const targetSnap = await usersRef.doc(targetUid).get();
-      if (!targetSnap.exists || !targetSnap.data().email) throw new Error("الحساب غير موجود.");
+      if (!targetSnap.exists || !targetSnap.data().playerName) throw new Error("الحساب غير موجود.");
       const members = [socket.data.uid, targetUid].sort();
       const conversationId = members.join("_");
       const ref = conversationsRef.doc(conversationId);
       await ref.set({ type: "direct", members, updatedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
       const profile = targetSnap.data();
-      if (typeof reply === "function") reply({ success: true, conversation: { id: conversationId, email: profile.email || "", displayName: profile.displayName || "" } });
+      if (typeof reply === "function") reply({ success: true, conversation: { id: conversationId, displayName: profile.playerName || profile.displayName || "مستخدم" } });
     } catch (error) {
       if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر بدء المحادثة." });
     }
@@ -265,7 +265,7 @@ io.on("connection", socket => {
         const last = await item.ref.collection("messages").orderBy("createdAt", "desc").limit(1).get();
         const msg = last.empty ? null : last.docs[0].data();
         const profile = other && other.exists ? other.data() : {};
-        return { id: item.id, otherUid, email: profile.email || "", displayName: profile.displayName || "", lastMessage: msg ? String(msg.text || "رسالة") : "", updatedAt: data.updatedAt ? data.updatedAt.toMillis() : 0 };
+        return { id: item.id, otherUid, displayName: profile.playerName || profile.displayName || "مستخدم", lastMessage: msg ? String(msg.text || "رسالة") : "", updatedAt: data.updatedAt ? data.updatedAt.toMillis() : 0 };
       }));
       conversations.sort((a,b) => b.updatedAt-a.updatedAt);
       if (typeof reply === "function") reply({ success: true, conversations });
