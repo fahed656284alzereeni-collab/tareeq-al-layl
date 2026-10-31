@@ -309,12 +309,15 @@ document.getElementById("removeFriendAction").addEventListener("click",async()=>
   if(r.success)await refreshConversationInfo();
 });
 function showConversationDeleteChoice(kind){
-  const info=document.getElementById("conversationInfo");
+  const trigger=document.getElementById(kind==="clear"?"clearChatAction":"deleteChatAction");
   const existing=document.getElementById("conversationDeleteChoice");
-  if(existing){existing.remove();return}
-  const box=document.createElement("section");
+  if(existing && existing.dataset.kind===kind){existing.remove();trigger.setAttribute("aria-expanded","false");return}
+  if(existing)existing.remove();
+  const box=document.createElement("div");
   box.id="conversationDeleteChoice";
-  box.className="infoPanel";
+  box.dataset.kind=kind;
+  box.className="messageActions conversationDeleteChoice";
+  trigger.setAttribute("aria-expanded","true");
   box.setAttribute("aria-labelledby","conversationDeleteChoiceTitle");
   const title=document.createElement("h3");
   title.id="conversationDeleteChoiceTitle";
@@ -344,7 +347,7 @@ function showConversationDeleteChoice(kind){
   confirmButton.textContent=kind==="clear"?"تأكيد حذف المحتوى":"تأكيد حذف الدردشة";
   const cancelButton=document.createElement("button");
   cancelButton.type="button";cancelButton.className="secondary";cancelButton.textContent="إلغاء";
-  cancelButton.addEventListener("click",()=>{box.remove();document.getElementById(kind==="clear"?"clearChatAction":"deleteChatAction").focus()});
+  cancelButton.addEventListener("click",()=>{box.remove();trigger.setAttribute("aria-expanded","false");trigger.focus()});
   confirmButton.addEventListener("click",async()=>{
     const selected=group.querySelector('input[name="'+name+'"]:checked');
     if(!selected){hint.textContent="اختر مكان الحذف أولاً.";return}
@@ -356,7 +359,7 @@ function showConversationDeleteChoice(kind){
       hint.textContent=result.message||"تعذر تنفيذ العملية. يمكنك المحاولة مرة أخرى.";
       confirmButton.disabled=false;cancelButton.disabled=false;return;
     }
-    box.remove();
+    box.remove();trigger.setAttribute("aria-expanded","false");
     if(kind==="clear"){
       known.clear();messages.replaceChildren();await loadConversations();await refreshConversationInfo();restoreConnectionStatus();
       document.getElementById("clearChatAction").focus();
@@ -371,8 +374,7 @@ function showConversationDeleteChoice(kind){
     await loadConversations();document.getElementById("conversationHeading").focus();restoreConnectionStatus();
   });
   box.append(title,hint,group,confirmButton,cancelButton);
-  const actions=info.querySelector(".infoActions");
-  actions.insertAdjacentElement("afterend",box);
+  trigger.insertAdjacentElement("afterend",box);
   title.focus();
 }
 document.getElementById("clearChatAction").addEventListener("click",()=>{if(currentId)showConversationDeleteChoice("clear")});
