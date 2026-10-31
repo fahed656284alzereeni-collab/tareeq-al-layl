@@ -253,12 +253,107 @@ io.on("connection", socket => {
     }
   });
 
+  const blockedRef = (uid, otherUid) => usersRef.doc(uid).collection("blockedUsers").doc(otherUid);
+
+  socket.on("getConversationDetails", async (data = {}, reply) => {
+    try {
+      const id = String(data.conversationId || "");
+      const conversationRef = conversationsRef.doc(id);
+      const [conversationSnap] = await Promise.all([conversationRef.get()]);
+      if (!conversationSnap.exists || !(conversationSnap.data().members || []).includes(socket.data.uid)) {
+        throw new Error("غير مصرح بعرض معلومات هذه المحادثة.");
+      }
+      const conversationData = conversationSnap.data();
+      const otherUid = (conversationData.members || []).find(uid => uid !== socket.data.uid);
+      if (!otherUid) throw new Error("تعذر تحديد الطرف الآخر.");
+      const [profileSnap, friendshipSnap, myBlockSnap, theirBlockSnap, countSnap] = await Promise.all([
+        usersRef.doc(otherUid).get(),
+        usersRef.doc(socket.data.uid).collection("friends").doc(otherUid).get(),
+        blockedRef(socket.data.uid, otherUid).get(),
+        blockedRef(otherUid, socket.data.uid).get(),
+        conversationRef.collection("messages").count().get()
+      ]);
+      const profile = profileSnap.exists ? profileSnap.data() : {};
+      const updatedAt = conversationData.updatedAt && conversationData.updatedAt.toMillis ? conversationData.updatedAt.toMillis() : 0;
+      const createdAt = conversationData.createdAt && conversationData.createdAt.toMillis ? conversationData.createdAt.toMillis() : 0;
+      if (typeof reply === "function") reply({
+        success: true,
+        details: {
+          uid: otherUid,
+          name: String(profile.playerName || profile.displayName || "مستخدم"),
+          online: Boolean(getConnectedSocket(otherUid)),
+          isFriend: friendshipSnap.exists,
+          blockedByMe: myBlockSnap.exists,
+          blockedMe: theirBlockSnap.exists,
+          messageCount: countSnap.data().count || 0,
+          createdAt,
+          updatedAt
+        }
+      });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تحميل معلومات المحادثة." });
+    }
+  });
+
+  socket.on("blockConversationUser", async (data = {}, reply) => {
+    try {
+      const otherUid = String(data.uid || "").trim();
+      const conversationId = String(data.conversationId || "");
+      const conversationSnap = await conversationsRef.doc(conversationId).get();
+      if (!otherUid || otherUid === socket.data.uid || !conversationSnap.exists ||
+          !(conversationSnap.data().members || []).includes(socket.data.uid) ||
+          !(conversationSnap.data().members || []).includes(otherUid)) throw new Error("بيانات الحظر غير صالحة.");
+      await blockedRef(socket.data.uid, otherUid).set({ createdAt: admin.firestore.FieldValue.serverTimestamp() });
+      if (typeof reply === "function") reply({ success: true, message: "تم حظر هذا المستخدم. لن تتمكنوا من تبادل رسائل جديدة." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر حظر المستخدم." });
+    }
+  });
+
+  socket.on("unblockConversationUser", async (data = {}, reply) => {
+    try {
+      const otherUid = String(data.uid || "").trim();
+      if (!otherUid || otherUid === socket.data.uid) throw new Error("بيانات إلغاء الحظر غير صالحة.");
+      await blockedRef(socket.data.uid, otherUid).delete();
+      if (typeof reply === "function") reply({ success: true, message: "تم إلغاء الحظر." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: "تعذر إلغاء الحظر." });
+    }
+  });
+
+  socket.on("reportConversationUser", async (data = {}, reply) => {
+    try {
+      const otherUid = String(data.uid || "").trim();
+      const conversationId = String(data.conversationId || "");
+      const reason = String(data.reason || "").trim().slice(0, 80);
+      const details = String(data.details || "").trim().slice(0, 1000);
+      const conversationSnap = await conversationsRef.doc(conversationId).get();
+      if (!otherUid || otherUid === socket.data.uid || !reason || !conversationSnap.exists ||
+          !(conversationSnap.data().members || []).includes(socket.data.uid) ||
+          !(conversationSnap.data().members || []).includes(otherUid)) throw new Error("بيانات البلاغ غير صالحة.");
+      await db.collection("userReports").add({
+        reporterUid: socket.data.uid,
+        reportedUid: otherUid,
+        conversationId,
+        reason,
+        details,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        status: "new"
+      });
+      if (typeof reply === "function") reply({ success: true, message: "تم استلام بلاغك وحفظه للمراجعة." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر إرسال البلاغ." });
+    }
+  });
+
   socket.on("startDirectConversation", async (data = {}, reply) => {
     try {
       const targetUid = String(data.targetUid || "").trim();
       if (!targetUid || targetUid === socket.data.uid) throw new Error("المستخدم غير صالح.");
       const targetSnap = await usersRef.doc(targetUid).get();
       if (!targetSnap.exists || !targetSnap.data().playerName) throw new Error("الحساب غير موجود.");
+      const [myBlock, theirBlock] = await Promise.all([blockedRef(socket.data.uid, targetUid).get(), blockedRef(targetUid, socket.data.uid).get()]);
+      if (myBlock.exists || theirBlock.exists) throw new Error("لا يمكن بدء المحادثة بسبب إعدادات الحظر بين الحسابين.");
       const members = [socket.data.uid, targetUid].sort();
       const conversationId = members.join("_");
       const ref = conversationsRef.doc(conversationId);
@@ -322,6 +417,10 @@ io.on("connection", socket => {
       const ref = conversationsRef.doc(id);
       const conversation = await ref.get();
       if (!conversation.exists || !(conversation.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإرسال رسالة هنا.");
+      const otherUid = (conversation.data().members || []).find(uid => uid !== socket.data.uid);
+      if (!otherUid) throw new Error("تعذر تحديد الطرف الآخر.");
+      const [myBlock, theirBlock] = await Promise.all([blockedRef(socket.data.uid, otherUid).get(), blockedRef(otherUid, socket.data.uid).get()]);
+      if (myBlock.exists || theirBlock.exists) throw new Error("لا يمكن إرسال الرسائل بسبب إعدادات الحظر بين الحسابين.");
       const message = { senderUid: socket.data.uid, text, createdAt: admin.firestore.FieldValue.serverTimestamp() };
       const messageRef = ref.collection("messages").doc();
       const batch = db.batch();
