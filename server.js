@@ -391,7 +391,7 @@ io.on("connection", socket => {
           id: item.id,
           otherUid,
           displayName: profile.playerName || profile.displayName || "مستخدم",
-          lastMessage: String(data.lastMessage || ""),
+          lastMessage: String(data.lastMessage || "").replace(/\s*\(تم التعديل\)\s*$/,"").replace(/^تم التعديل\.?$/,""),
           updatedAt: data.updatedAt ? data.updatedAt.toMillis() : 0
         };
       });
