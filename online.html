@@ -43,6 +43,7 @@ button:focus,input:focus{outline:3px solid #ffd166}
 #sideMenu button{margin:5px 0}
 .account-panel{border:2px solid #607789}
 .account-panel h2{text-align:right}
+[hidden]{display:none!important}body.account-screen{overflow:hidden}.account-panel:not([hidden]){position:fixed!important;inset:0!important;z-index:2147483000!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-height:100dvh!important;overflow-y:auto!important;margin:0!important;padding:calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))!important;border:0!important;border-radius:0!important;background:#101820!important;display:block!important}.account-panel .panelBack{background:#29465b;min-height:50px}
 </style>
 
 </head>
@@ -56,14 +57,14 @@ button:focus,input:focus{outline:3px solid #ffd166}
   <button type="button" id="settingsNav">الإعدادات</button>
   <button type="button" id="closeMenu">إغلاق القائمة</button>
 </nav>
-<section id="profilePanel" class="account-panel" hidden aria-labelledby="profileHeading">
+<section id="profilePanel" class="account-panel" hidden aria-labelledby="profileHeading"><button class="panelBack" type="button" data-account-back="profile">رجوع إلى الصفحة الرئيسية</button>
   <h2 id="profileHeading">الملف الشخصي</h2>
   <p id="profileSummary" aria-live="polite">جارٍ تحميل بيانات الحساب...</p>
   <label for="playerName">اسم اللاعب</label>
   <input id="playerName" value="" autocomplete="nickname" maxlength="30" required>
   <button onclick="savePlayerName()">حفظ اسم اللاعب</button>
 </section>
-<section id="settingsPanel" class="account-panel" hidden aria-labelledby="settingsHeading">
+<section id="settingsPanel" class="account-panel" hidden aria-labelledby="settingsHeading"><button class="panelBack" type="button" data-account-back="settings">رجوع إلى الصفحة الرئيسية</button>
   <h2 id="settingsHeading">الإعدادات</h2>
   <label for="themeChoice">مظهر اللعبة</label>
   <select id="themeChoice">
@@ -271,7 +272,9 @@ const menuToggle=el("menuToggle"), sideMenu=el("sideMenu");
 function closeAccountPanels(){
   el("profilePanel").hidden=true;
   el("settingsPanel").hidden=true;
+  document.body.classList.remove("account-screen");
 }
+document.querySelectorAll("[data-account-back]").forEach(button=>button.addEventListener("click",()=>{closeAccountPanels();menuToggle.focus()}));
 menuToggle.addEventListener("click",()=>{
   const open=sideMenu.hidden;
   sideMenu.hidden=!open;
@@ -288,6 +291,7 @@ el("closeMenu").addEventListener("click",()=>{
 el("profileNav").addEventListener("click",()=>{
   closeAccountPanels();
   el("profilePanel").hidden=false;
+  document.body.classList.add("account-screen");
   sideMenu.hidden=true;
   menuToggle.setAttribute("aria-expanded","false");
   menuToggle.textContent="فتح القائمة الجانبية";
@@ -296,6 +300,7 @@ el("profileNav").addEventListener("click",()=>{
 el("settingsNav").addEventListener("click",()=>{
   closeAccountPanels();
   el("settingsPanel").hidden=false;
+  document.body.classList.add("account-screen");
   sideMenu.hidden=true;
   menuToggle.setAttribute("aria-expanded","false");
   menuToggle.textContent="فتح القائمة الجانبية";
