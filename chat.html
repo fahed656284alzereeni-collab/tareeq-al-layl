@@ -489,7 +489,7 @@ function addMessage(m){
   const who=m.senderUid===auth.currentUser?.uid?"أنت":(m.senderName||currentOtherName||"مستخدم");
   const content=document.createElement("p");
   content.className="messageContent";
-  content.textContent=who+": "+(m.text|| (m.attachment?"أرسل مرفقًا":""))+(m.edited?" (تم التعديل)":"");
+  content.textContent=m.text?(who+": "+m.text+(m.edited?" (تم التعديل)":"")):"";
   let videoAttachmentRow=null;
   if(m.attachment&&m.attachment.url){
     const isVideo=(m.attachment.type||"").startsWith("video/");
