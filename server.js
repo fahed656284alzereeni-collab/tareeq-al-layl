@@ -550,7 +550,7 @@ io.on("connection", socket => {
       const allOtherUids = [...new Set(snap.docs.flatMap(item => (item.data().members || []).filter(uid => uid !== socket.data.uid)))];
       const profileSnapshots = allOtherUids.length ? await db.getAll(...allOtherUids.map(uid => usersRef.doc(uid))) : [];
       const profilesByUid = new Map(profileSnapshots.map(profile => [profile.id, profile.exists ? profile.data() : {}]));
-      const conversations = snap.docs.filter(item => !hiddenIds.has(item.id)).map(item => {
+      const conversations = await Promise.all(snap.docs.filter(item => !hiddenIds.has(item.id)).map(async item => {
         const data = item.data();
         const members = data.members || [];
         const otherUid = members.find(uid => uid !== socket.data.uid);
@@ -558,14 +558,25 @@ io.on("connection", socket => {
         const isGroup = data.type === "group";
         const groupName = String(data.groupName || "مجموعة");
         const memberNames = isGroup ? members.map(uid => String(profilesByUid.get(uid)?.playerName || profilesByUid.get(uid)?.displayName || "مستخدم")) : [];
+        let lastMessage = hiddenContentIds.has(item.id) ? "" : String(data.lastMessage || "").replace(/\s*\(تم التعديل\)\s*$/,"").replace(/^تم التعديل\.?$/,"");
+        // Direct-chat previews are read from the newest visible message to avoid stale/empty conversation summaries.
+        if (!isGroup && !hiddenContentIds.has(item.id)) {
+          const latestMessages = await item.ref.collection("messages").orderBy("createdAt", "desc").limit(10).get();
+          const latestVisible = latestMessages.docs.find(message => !(message.data().hiddenFor || []).includes(socket.data.uid));
+          if (latestVisible) {
+            const messageData = latestVisible.data();
+            lastMessage = String(messageData.text || (messageData.attachment ? "مرفق: " + (messageData.attachment.name || "ملف") : "")).slice(0, 120);
+          } else {
+            lastMessage = "";
+          }
+        }
         return {
           id: item.id, type: isGroup ? "group" : "direct", otherUid,
           displayName: isGroup ? groupName : (profile.playerName || profile.displayName || "مستخدم"),
-          groupName, memberNames,
-          lastMessage: hiddenContentIds.has(item.id) ? "" : String(data.lastMessage || "").replace(/\s*\(تم التعديل\)\s*$/,"").replace(/^تم التعديل\.?$/,""),
+          groupName, memberNames, lastMessage,
           updatedAt: data.updatedAt ? data.updatedAt.toMillis() : 0
         };
-      });
+      }));
       conversations.sort((a,b) => b.updatedAt-a.updatedAt);
       console.info("listConversations completed", { uid: socket.data.uid, count: conversations.length, durationMs: Date.now() - startedAt });
       if (typeof reply === "function") { reply({ success: true, conversations }); console.info("listConversations reply sent", { uid: socket.data.uid, durationMs: Date.now() - startedAt }); }
