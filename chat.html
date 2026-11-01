@@ -189,13 +189,13 @@ function playMessageSound(kind){
 }
 
 
-let voicePeer=null,voiceStream=null,activeVoiceCallId=null,pendingVoiceCall=null,queuedIce=[];
+let voicePeer=null,voiceStream=null,activeVoiceCallId=null,pendingVoiceCall=null,queuedIce=[],queuedCallerIce=[];
 const voicePanel=document.getElementById("voiceCallPanel"),voiceStatus=document.getElementById("voiceCallStatus");
 const startVoiceCallButton=document.getElementById("startVoiceCall"),acceptVoiceCallButton=document.getElementById("acceptVoiceCall"),rejectVoiceCallButton=document.getElementById("rejectVoiceCall"),endVoiceCallButton=document.getElementById("endVoiceCall"),remoteCallAudio=document.getElementById("remoteCallAudio");
 function resetVoiceCall(message){
   if(voicePeer){voicePeer.onicecandidate=null;voicePeer.ontrack=null;voicePeer.close();voicePeer=null}
   if(voiceStream){voiceStream.getTracks().forEach(track=>track.stop());voiceStream=null}
-  remoteCallAudio.srcObject=null;activeVoiceCallId=null;pendingVoiceCall=null;queuedIce=[];
+  remoteCallAudio.srcObject=null;activeVoiceCallId=null;pendingVoiceCall=null;queuedIce=[];queuedCallerIce=[];
   acceptVoiceCallButton.hidden=true;rejectVoiceCallButton.hidden=true;endVoiceCallButton.hidden=true;
   startVoiceCallButton.hidden=currentConversationType!=="direct"||!currentOtherUid;
   voiceStatus.textContent=message||"لا توجد مكالمة نشطة.";
@@ -203,7 +203,7 @@ function resetVoiceCall(message){
 async function createVoicePeer(callId){
   const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]});
   voicePeer=pc;activeVoiceCallId=callId;
-  pc.onicecandidate=event=>{if(event.candidate&&socket?.connected)socket.emit("voiceCall:signal",{callId,candidate:event.candidate})};
+  pc.onicecandidate=event=>{if(!event.candidate)return;if(activeVoiceCallId&&socket?.connected)socket.emit("voiceCall:signal",{callId:activeVoiceCallId,candidate:event.candidate});else queuedCallerIce.push(event.candidate)};
   pc.ontrack=event=>{remoteCallAudio.srcObject=event.streams[0];remoteCallAudio.play().catch(()=>{voiceStatus.textContent="اضغط تشغيل الصوت للسماح بسماع المكالمة."})};
   pc.onconnectionstatechange=()=>{if(pc.connectionState==="connected")voiceStatus.textContent="المكالمة الصوتية متصلة.";else if(["failed","disconnected"].includes(pc.connectionState))voiceStatus.textContent="الاتصال الصوتي غير مستقر؛ جارٍ محاولة الاستعادة."};
   return pc;
@@ -220,7 +220,7 @@ startVoiceCallButton.addEventListener("click",async()=>{
     const offer=await pc.createOffer();await pc.setLocalDescription(offer);
     const result=await call("voiceCall:start",{targetUid:currentOtherUid,conversationId:currentId});
     if(!result.success)throw new Error(result.message||"تعذر بدء المكالمة.");
-    activeVoiceCallId=result.callId;pc.onicecandidate=event=>{if(event.candidate&&socket?.connected)socket.emit("voiceCall:signal",{callId:activeVoiceCallId,candidate:event.candidate})};
+    activeVoiceCallId=result.callId;for(const candidate of queuedCallerIce.splice(0))socket.emit("voiceCall:signal",{callId:activeVoiceCallId,candidate});
     socket.emit("voiceCall:offer",{callId:result.callId,offer:pc.localDescription});
     voiceStatus.textContent="جارٍ الاتصال بـ"+currentOtherName+"...";
     endVoiceCallButton.hidden=false;
@@ -249,10 +249,10 @@ endVoiceCallButton.addEventListener("click",()=>{if(activeVoiceCallId)socket?.em
 function handleVoiceCallEvents(){
   socket.on("voiceCall:incoming",data=>{
     if(currentConversationType!=="direct"||data.conversationId!==currentId){say("لديك مكالمة صوتية واردة من "+(data.caller?.name||"مستخدم")+". افتح محادثته لقبولها.");pendingVoiceCall={...data,offer:null};return}
-    pendingVoiceCall={...data,offer:null};voicePanel.hidden=false;voiceStatus.textContent="مكالمة صوتية واردة من "+(data.caller?.name||"مستخدم")+".";
-    acceptVoiceCallButton.hidden=false;rejectVoiceCallButton.hidden=false;startVoiceCallButton.hidden=true;
+    pendingVoiceCall={...data,offer:null};voicePanel.hidden=false;voiceStatus.textContent="مكالمة صوتية واردة من "+(data.caller?.name||"مستخدم")+". جارٍ تجهيز الاتصال.";
+    acceptVoiceCallButton.hidden=false;acceptVoiceCallButton.disabled=true;rejectVoiceCallButton.hidden=false;startVoiceCallButton.hidden=true;
   });
-  socket.on("voiceCall:offer",data=>{if(pendingVoiceCall?.callId===data.callId)pendingVoiceCall.offer=data.offer});
+  socket.on("voiceCall:offer",data=>{if(pendingVoiceCall?.callId===data.callId){pendingVoiceCall.offer=data.offer;acceptVoiceCallButton.disabled=false;voiceStatus.textContent="مكالمة صوتية واردة من "+(pendingVoiceCall.caller?.name||"مستخدم")+". يمكنك قبول المكالمة الآن."}});
   socket.on("voiceCall:accepted",async data=>{
     if(!voicePeer||activeVoiceCallId!==data.callId)return;
     try{await voicePeer.setRemoteDescription(data.answer);await addQueuedIce();voiceStatus.textContent="تم قبول المكالمة؛ جارٍ توصيل الصوت."}
@@ -401,7 +401,7 @@ async function openConversation(c){
   document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;document.getElementById("messageHint").textContent="يمكنك كتابة رسالة تصل إلى 4000 حرف.";
   document.getElementById("chatTitle").textContent=currentConversationType==="group"?"مجموعة: "+currentOtherName:"محادثة مع "+currentOtherName;say("جارٍ تحميل المحادثة...");
   document.getElementById("conversationInfoButton").textContent=currentConversationType==="group"?"معلومات المجموعة":"معلومات المحادثة";
-  voicePanel.hidden=currentConversationType!=="direct";resetVoiceCall();
+  const waitingCall=pendingVoiceCall;voicePanel.hidden=currentConversationType!=="direct";resetVoiceCall();if(currentConversationType==="direct"&&waitingCall?.conversationId===currentId){pendingVoiceCall=waitingCall;voiceStatus.textContent="مكالمة صوتية واردة من "+(waitingCall.caller?.name||"مستخدم")+".";acceptVoiceCallButton.hidden=false;acceptVoiceCallButton.disabled=!waitingCall.offer;rejectVoiceCallButton.hidden=false;startVoiceCallButton.hidden=true;}
   document.getElementById("conversationInfoHeading").textContent=currentConversationType==="group"?"معلومات المجموعة":"معلومات المحادثة";
   const r=await call("getConversationMessages",{conversationId:c.id},30000);
   if(!r.success){say(r.message||"تعذر تحميل رسائل المحادثة.");return}
