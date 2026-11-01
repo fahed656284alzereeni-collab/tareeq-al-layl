@@ -507,7 +507,7 @@ function addMessage(m){
       videoAttachmentRow=document.createElement("div");videoAttachmentRow.className="videoMessageRow";
       videoAttachmentRow.append(open);
       const metadataVideo=document.createElement("video");
-      metadataVideo.preload="metadata";metadataVideo.muted=true;metadataVideo.playsInline=true;metadataVideo.src=item.url;
+      metadataVideo.preload="metadata";metadataVideo.muted=true;metadataVideo.playsInline=true;
       metadataVideo.setAttribute("aria-hidden","true");metadataVideo.tabIndex=-1;
       metadataVideo.style.cssText="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden";
       videoAttachmentRow.append(metadataVideo);
@@ -588,7 +588,7 @@ function addMessage(m){
   messages.append(div);
   if(videoAttachmentRow){
     const metadataVideo=videoAttachmentRow.querySelector("video");
-    if(metadataVideo)metadataVideo.load();
+    if(metadataVideo){metadataVideo.src=attachmentItems[attachmentItems.length-1]?.url||"";metadataVideo.load();}
   }
   messages.scrollTop=messages.scrollHeight;
 }
