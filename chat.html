@@ -533,7 +533,7 @@ function addMessage(m){
   });
   if(videoAttachmentRow)videoAttachmentRow.append(optionsButton);
   else div.append(optionsButton);
-  if(mine){
+  if(mine&&String(m.text||"").trim()&&!m.attachment){
     const edit=document.createElement("button");
     edit.type="button";edit.dataset.action="edit-message";
     edit.textContent="تعديل الرسالة";
