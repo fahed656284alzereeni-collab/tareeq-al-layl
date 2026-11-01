@@ -1534,9 +1534,12 @@ app.post("/api/delete-account", accountDeleteCors, async (req, res) => {
     // Friend requests are stored under the recipient as friendRequests/{senderUid}.
     // Scan user documents and check that exact document path to find outgoing requests
     // without requiring a Firestore collection-group index.
-    const [friends, incomingRequests, allUsers] = await Promise.all([
+    const [friends, incomingRequests, blockedUsers, hiddenConversations, hiddenConversationContent, allUsers] = await Promise.all([
       userRef.collection("friends").get(),
       userRef.collection("friendRequests").get(),
+      userRef.collection("blockedUsers").get(),
+      userRef.collection("hiddenConversations").get(),
+      userRef.collection("hiddenConversationContent").get(),
       db.collection("users").get()
     ]);
 
@@ -1547,6 +1550,11 @@ app.post("/api/delete-account", accountDeleteCors, async (req, res) => {
       refsToDelete.set(reciprocalFriendRef.path, reciprocalFriendRef);
     }
     for (const item of incomingRequests.docs) refsToDelete.set(item.ref.path, item.ref);
+    // Deleting a Firestore user document does not delete its subcollections.
+    // Explicitly remove the account's remaining private subcollection documents.
+    for (const snapshot of [blockedUsers, hiddenConversations, hiddenConversationContent]) {
+      for (const item of snapshot.docs) refsToDelete.set(item.ref.path, item.ref);
+    }
 
     // Find requests sent by this account, including requests created before this fix.
     for (let i = 0; i < allUsers.docs.length; i += 20) {
