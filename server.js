@@ -418,6 +418,27 @@ io.on("connection", socket => {
     }
   });
 
+  socket.on("searchUsers", async (data = {}, reply) => {
+    try {
+      const query = String(data.query || "").trim().toLocaleLowerCase("ar");
+      if (query.length < 2 || query.length > 40) throw new Error("اكتب حرفين على الأقل للبحث.");
+      const snapshot = await usersRef.get();
+      const matches = snapshot.docs
+        .filter(doc => doc.id !== socket.data.uid)
+        .map(doc => {
+          const profile = doc.data() || {};
+          const name = String(profile.playerName || profile.displayName || "").trim();
+          return name ? { uid: doc.id, name, online: Boolean(getConnectedSocket(doc.id)) } : null;
+        })
+        .filter(user => user && user.name.toLocaleLowerCase("ar").includes(query))
+        .sort((a, b) => a.name.localeCompare(b.name, "ar"))
+        .slice(0, 30);
+      if (typeof reply === "function") reply({ success: true, users: matches });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر البحث عن المستخدمين." });
+    }
+  });
+
   socket.on("listConversations", async (data = {}, reply) => {
     const startedAt = Date.now();
     console.info("listConversations started", socket.data.uid);
@@ -1282,73 +1303,6 @@ app.get("/", (req, res) => {
 app.use(express.json({ limit: "32kb" }));
 
 
-
-const voiceMessageOrigins = new Set(["https://mersalo.onrender.com","https://tareeq-al-layl.onrender.com"]);
-function voiceMessageCors(req, res, next) {
-  const origin = req.headers.origin;
-  if (origin && !voiceMessageOrigins.has(origin)) return res.status(403).json({ success: false, message: "Origin not allowed." });
-  if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
-  res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Audio-Duration-Ms");
-  if (req.method === "OPTIONS") return res.sendStatus(204);
-  next();
-}
-app.options("/api/voice-messages/:conversationId", voiceMessageCors);
-app.post("/api/voice-messages/:conversationId", voiceMessageCors, express.raw({ type: () => true, limit: "8mb" }), async (req, res) => {
-  let uploadedPath = null;
-  try {
-    const match = String(req.headers.authorization || "").match(/^Bearer (.+)$/i);
-    if (!match) return res.status(401).json({ success: false, message: "يلزم تسجيل الدخول لإرسال رسالة صوتية." });
-    const decoded = await admin.auth().verifyIdToken(match[1]);
-    const uid = decoded.uid;
-    const conversationId = String(req.params.conversationId || "");
-    if (!/^[A-Za-z0-9_-]{1,160}$/.test(conversationId)) return res.status(400).json({ success: false, message: "معرّف المحادثة غير صالح." });
-    const mimeType = String(req.headers["content-type"] || "").split(";")[0].trim().toLowerCase();
-    const extensions = { "audio/mp4":"m4a", "audio/webm":"webm", "audio/ogg":"ogg", "audio/aac":"aac", "audio/mpeg":"mp3", "audio/wav":"wav" };
-    if (!extensions[mimeType]) return res.status(415).json({ success: false, message: "صيغة التسجيل الصوتي غير مدعومة على هذا الجهاز." });
-    if (!Buffer.isBuffer(req.body) || req.body.length < 1 || req.body.length > 8 * 1024 * 1024) return res.status(400).json({ success: false, message: "حجم التسجيل غير صالح أو يتجاوز الحد المسموح." });
-    const durationMs = Number(req.headers["x-audio-duration-ms"] || 0);
-    if (!Number.isFinite(durationMs) || durationMs < 100 || durationMs > 180000) return res.status(400).json({ success: false, message: "مدة التسجيل يجب ألا تتجاوز ثلاث دقائق." });
-    const db = admin.firestore();
-    const conversationRef = db.collection("conversations").doc(conversationId);
-    const conversationSnap = await conversationRef.get();
-    if (!conversationSnap.exists || !(conversationSnap.data().members || []).includes(uid)) return res.status(403).json({ success: false, message: "غير مصرح بإرسال رسالة صوتية في هذه المحادثة." });
-    const members = conversationSnap.data().members || [];
-    const otherUid = members.find(member => member !== uid);
-    if (!otherUid) return res.status(400).json({ success: false, message: "تعذر تحديد الطرف الآخر." });
-    const usersRef = db.collection("users");
-    const [myBlock, theirBlock] = await Promise.all([
-      usersRef.doc(uid).collection("blockedUsers").doc(otherUid).get(),
-      usersRef.doc(otherUid).collection("blockedUsers").doc(uid).get()
-    ]);
-    if (myBlock.exists || theirBlock.exists) return res.status(403).json({ success: false, message: "لا يمكن إرسال الرسائل بسبب إعدادات الحظر بين الحسابين." });
-    uploadedPath = `${conversationId}/${uid}/${require("crypto").randomUUID()}.${extensions[mimeType]}`;
-    await uploadVoiceObject(uploadedPath, req.body, mimeType);
-    const audioUrl = await createVoiceSignedUrl(uploadedPath);
-    const messageRef = conversationRef.collection("messages").doc();
-    const message = { senderUid: uid, type: "voice", storagePath: uploadedPath, mimeType, durationMs: Math.round(durationMs), createdAt: admin.firestore.FieldValue.serverTimestamp() };
-    const batch = db.batch();
-    batch.set(messageRef, message);
-    for (const member of members) {
-      batch.delete(usersRef.doc(member).collection("hiddenConversations").doc(conversationId));
-      batch.delete(usersRef.doc(member).collection("hiddenConversationContent").doc(conversationId));
-    }
-    batch.set(conversationRef, { updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: "رسالة صوتية" }, { merge: true });
-    await batch.commit();
-    const payload = { id: messageRef.id, senderUid: uid, type: "voice", durationMs: Math.round(durationMs), mimeType, audioUrl, createdAt: Date.now() };
-    for (const member of members) {
-      const sessions = connectedUsers.get(member);
-      if (sessions) for (const client of sessions) if (client.connected) client.emit("directMessageReceived", { conversationId, message: payload });
-    }
-    return res.status(201).json({ success: true, message: payload });
-  } catch (error) {
-    if (uploadedPath) await deleteVoiceStorageObjects([uploadedPath]);
-    console.error("Voice message upload error:", error.message);
-    const status = error.message && error.message.includes("غير مهيأة") ? 503 : 500;
-    return res.status(status).json({ success: false, message: error.message || "تعذر إرسال الرسالة الصوتية." });
-  }
-});
 
 const accountDeleteOrigins = new Set([
   "https://mersalo.onrender.com",
