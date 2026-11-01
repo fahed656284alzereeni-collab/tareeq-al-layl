@@ -559,9 +559,9 @@ io.on("connection", socket => {
         const groupName = String(data.groupName || "مجموعة");
         const memberNames = isGroup ? members.map(uid => String(profilesByUid.get(uid)?.playerName || profilesByUid.get(uid)?.displayName || "مستخدم")) : [];
         let lastMessage = hiddenContentIds.has(item.id) ? "" : String(data.lastMessage || "").replace(/\s*\(تم التعديل\)\s*$/,"").replace(/^تم التعديل\.?$/,"");
-        // Direct-chat previews are read from the newest visible message to avoid stale/empty conversation summaries.
-        if (!isGroup && !hiddenContentIds.has(item.id)) {
-          const latestMessages = await item.ref.collection("messages").orderBy("createdAt", "desc").limit(10).get();
+        // Read the newest visible message for both direct and group chats so attachment previews never fall back to "ابدأ المحادثة".
+        if (!hiddenContentIds.has(item.id)) {
+          const latestMessages = await item.ref.collection("messages").orderBy("createdAt", "desc").limit(20).get();
           const latestVisible = latestMessages.docs.find(message => !(message.data().hiddenFor || []).includes(socket.data.uid));
           if (latestVisible) {
             const messageData = latestVisible.data();
