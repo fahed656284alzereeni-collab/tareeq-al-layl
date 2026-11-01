@@ -37,49 +37,6 @@ try {
 
 admin.initializeApp({ credential });
 
-const SUPABASE_URL = "https://xvczbbhxfmzqintyklde.supabase.co";
-const VOICE_BUCKET = "voice-messages";
-function supabaseStorageHeaders(extra = {}) {
-  const key = process.env.SUPABASE_SECRET_KEY;
-  if (!key) throw new Error("خدمة الرسائل الصوتية غير مهيأة على الخادم.");
-  return { apikey: key, Authorization: `Bearer ${key}`, ...extra };
-}
-function encodeStoragePath(value) { return value.split("/").map(encodeURIComponent).join("/"); }
-async function supabaseStorageRequest(endpoint, options = {}) {
-  const response = await fetch(`${SUPABASE_URL}/storage/v1${endpoint}`, {
-    ...options, headers: supabaseStorageHeaders(options.headers || {})
-  });
-  const result = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    console.error("Supabase Storage error:", response.status, result.message || result.error || "Unknown error");
-    throw new Error("تعذر حفظ الملف الصوتي أو الوصول إليه.");
-  }
-  return result;
-}
-async function uploadVoiceObject(storagePath, bytes, mimeType) {
-  return supabaseStorageRequest(`/object/${VOICE_BUCKET}/${encodeStoragePath(storagePath)}`, {
-    method: "POST", headers: { "Content-Type": mimeType, "cache-control": "3600", "x-upsert": "false" }, body: bytes
-  });
-}
-async function createVoiceSignedUrl(storagePath) {
-  const result = await supabaseStorageRequest(`/object/sign/${VOICE_BUCKET}/${encodeStoragePath(storagePath)}`, {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ expiresIn: 3600 })
-  });
-  const signedPath = result.signedURL || result.signedUrl;
-  if (!signedPath) throw new Error("تعذر إنشاء رابط تشغيل الرسالة الصوتية.");
-  return signedPath.startsWith("http") ? signedPath : `${SUPABASE_URL}/storage/v1${signedPath.startsWith("/") ? "" : "/"}${signedPath}`;
-}
-async function deleteVoiceStorageObjects(storagePaths) {
-  const paths = [...new Set((storagePaths || []).filter(path => typeof path === "string" && path.length > 0))];
-  if (!paths.length) return;
-  try {
-    await supabaseStorageRequest(`/object/${VOICE_BUCKET}`, {
-      method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prefixes: paths })
-    });
-  } catch (error) { console.error("Voice storage cleanup failed:", error.message); }
-}
-
-
 const app = express();
 
 const server = http.createServer(app);
@@ -91,7 +48,6 @@ const io = new Server(server, {
   pingTimeout: 60000
 });
 
-const rooms = new Map();
 // A user may be connected from more than one device or browser tab.
 const connectedUsers = new Map();
 const friendRequestLimits = new Map();
@@ -151,131 +107,12 @@ io.use(async (socket, next) => {
   }
 });
 
-function getRoom(code) {
-
-  return rooms.get(code);
-
-}
-
-function publicPlayers(room) {
-
-  return [...room.players.values()].map(p => ({
-
-    id: p.id,
-
-    name: p.name,
-
-    host: p.id === room.host
-
-  }));
-
-}
-
-function roomInfo(code, room) {
-
-  return {
-
-    code,
-
-    name: room.name,
-
-    privateRoom: room.privateRoom,
-
-    started: room.started,
-
-    playerCount: room.players.size,
-
-    players: publicPlayers(room)
-
-  };
-
-}
-
-function publicRoomList() {
-
-  return [...rooms.entries()]
-
-    .filter(([code, room]) =>
-
-      !room.privateRoom && room.players.size > 0
-
-    )
-
-    .map(([code, room]) => roomInfo(code, room));
-
-}
-
-function updateRoomList() {
-
-  io.emit("publicRooms", publicRoomList());
-
-}
-
-function sendRoomUpdate(code) {
-
-  const room = getRoom(code);
-
-  if (!room) return;
-
-  io.to(code).emit("playersUpdate", publicPlayers(room));
-
-  io.to(code).emit("roomPrivacy", {
-
-    privateRoom: room.privateRoom
-
-  });
-
-  updateRoomList();
-
-}
-
-function leaveCurrentRoom(socket) {
-
-  const code = socket.data.room;
-
-  if (!code) return;
-
-  const room = getRoom(code);
-
-  socket.leave(code);
-
-  delete socket.data.room;
-
-  if (!room) return;
-
-  room.players.delete(socket.id);
-
-  if (room.host === socket.id) {
-
-    room.host = room.players.keys().next().value || null;
-
-  }
-
-  if (room.players.size === 0) {
-
-    rooms.delete(code);
-
-  } else {
-
-    sendRoomUpdate(code);
-
-  }
-
-  updateRoomList();
-
-}
-
 io.on("connection", socket => {
   console.info("Socket connected", { uid: socket.data.uid, transport: socket.conn.transport.name });
   socket.conn.on("upgrade", transport => console.info("Socket transport upgraded", { uid: socket.data.uid, transport: transport.name }));
   addConnectedSocket(socket.data.uid, socket);
-  const onlinePlayers = onlinePlayerList;
-  io.emit("onlinePlayers", onlinePlayers());
-  socket.emit("publicRooms", publicRoomList());
+  io.emit("onlinePlayers", onlinePlayerList());
   socket.on("clientAckReceived", data => { console.info("Client acknowledged event reply", { uid: socket.data.uid, event: data?.event, success: data?.success }); });
-  socket.on("getOnlinePlayers", reply => {
-    if (typeof reply === "function") reply(onlinePlayers());
-  });
 
   const usersRef = admin.firestore().collection("users");
   const db = admin.firestore();
@@ -653,17 +490,10 @@ io.on("connection", socket => {
       const senderProfiles = senderUids.length ? await db.getAll(...senderUids.map(uid => usersRef.doc(uid))) : [];
       const senderNames = new Map(senderProfiles.map(profile => [profile.id, String(profile.exists ? (profile.data().playerName || profile.data().displayName || "مستخدم") : "مستخدم")]));
 
-      const messages = await Promise.all(visibleDocs.map(async d => {
+      const messages = visibleDocs.map(d => {
         const data = d.data();
-        const storagePath = data.storagePath;
-        const item = { id: d.id, ...data, senderName: data.senderName || senderNames.get(data.senderUid) || "مستخدم", createdAt: data.createdAt ? data.createdAt.toMillis() : 0 };
-        delete item.storagePath;
-        if (data.type === "voice" && storagePath) {
-          try { item.audioUrl = await createVoiceSignedUrl(storagePath); }
-          catch (error) { console.error("Voice playback URL error:", error.message); item.audioUrl = null; }
-        }
-        return item;
-      }));
+        return { id: d.id, ...data, senderName: data.senderName || senderNames.get(data.senderUid) || "مستخدم", createdAt: data.createdAt ? data.createdAt.toMillis() : 0 };
+      });
       if (typeof reply === "function") reply({ success: true, messages });
     } catch (error) {
       if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تحميل الرسائل." });
@@ -709,7 +539,6 @@ io.on("connection", socket => {
 
   async function deleteConversationMessages(conversationRef) {
     const snapshot = await conversationRef.collection("messages").get();
-    await deleteVoiceStorageObjects(snapshot.docs.map(message => message.data().storagePath).filter(Boolean));
     for (let i = 0; i < snapshot.docs.length; i += 450) {
       const batch = db.batch();
       for (const message of snapshot.docs.slice(i, i + 450)) batch.delete(message.ref);
@@ -817,7 +646,6 @@ io.on("connection", socket => {
       const conversationRef=conversationsRef.doc(conversationId);
       const messageRef=conversationRef.collection("messages").doc(messageId);
       const messageBeforeDelete = await messageRef.get();
-      const voiceStoragePath = messageBeforeDelete.exists ? messageBeforeDelete.data().storagePath : null;
       const result=await db.runTransaction(async transaction=>{
         const [conversationSnap,messageSnap]=await Promise.all([transaction.get(conversationRef),transaction.get(messageRef)]);
         if(!conversationSnap.exists||!(conversationSnap.data().members||[]).includes(socket.data.uid))throw new Error("غير مصرح بهذه المحادثة.");
@@ -826,7 +654,6 @@ io.on("connection", socket => {
         transaction.delete(messageRef);
         return conversationSnap.data();
       });
-      if (voiceStoragePath) await deleteVoiceStorageObjects([voiceStoragePath]);
       const remaining=await conversationRef.collection("messages").orderBy("createdAt","desc").limit(1).get();
       const latest=remaining.docs[0];
       await conversationRef.set({
@@ -947,19 +774,9 @@ io.on("connection", socket => {
         data: { ...(cached?.data || {}), playerName },
         expiresAt: Date.now() + PROFILE_CACHE_TTL_MS
       });
-      // Keep every active session and any current room membership in sync.
+      // Keep every active session in sync for social presence and messaging.
       const sessions = connectedUsers.get(socket.data.uid);
-      if (sessions) {
-        for (const session of sessions) {
-          session.data.playerName = playerName;
-          const room = getRoom(session.data.room);
-          const player = room && room.players.get(session.id);
-          if (player) player.name = playerName;
-          if (room) sendRoomUpdate(session.data.room);
-        }
-      } else {
-        socket.data.playerName = playerName;
-      }
+      if (sessions) for (const session of sessions) session.data.playerName = playerName;
       io.emit("onlinePlayers", onlinePlayerList());
       if (typeof reply === "function") reply({ success: true, playerName, message: "تم تحديث اسم اللاعب." });
     } catch (error) {
@@ -1047,434 +864,6 @@ io.on("connection", socket => {
 
 
 
-  socket.on("getPublicRooms", reply => {
-
-    if (typeof reply === "function") {
-
-      reply(publicRoomList());
-
-    }
-
-  });
-
-  socket.on("createRoom", (data = {}, reply) => {
-    const requestedRoomName = String(data.name || "").trim().slice(0, 60);
-    const requestedPlayerName = socket.data.playerName;
-    if (!requestedRoomName || !requestedPlayerName) {
-      if (typeof reply === "function") reply({ success: false, message: "أدخل اسم اللاعب واسم الطاولة أولا." });
-      return;
-    }
-    leaveCurrentRoom(socket);
-
-    let code;
-
-    do {
-
-      code = Math.random().toString(36).slice(2, 8).toUpperCase();
-
-    } while (rooms.has(code));
-
-    const room = {
-
-      name: requestedRoomName,
-
-      host: socket.id,
-
-      privateRoom: Boolean(data.privateRoom),
-
-      started: false,
-
-      players: new Map(),
-      invited: new Set()
-
-    };
-
-    room.players.set(socket.id, {
-
-      id: socket.id,
-
-      uid: socket.data.uid,
-
-      name: requestedPlayerName
-
-    });
-
-    rooms.set(code, room);
-
-    socket.join(code);
-
-    socket.data.room = code;
-
-    if (typeof reply === "function") {
-
-      reply({
-
-        success: true,
-
-        code,
-
-        host: true,
-
-        room: roomInfo(code, room)
-
-      });
-
-    }
-
-    sendRoomUpdate(code);
-
-  });
-
-  socket.on("joinRoom", (data = {}, reply) => {
-    const joiningName = socket.data.playerName;
-    if (!joiningName) {
-      if (typeof reply === "function") reply({ success: false, message: "اسم اللاعب مطلوب." });
-      return;
-    }
-    const code = String(data.roomId || data.code || "").trim().toUpperCase();
-
-    const room = getRoom(code);
-
-    if (!room) {
-
-      if (typeof reply === "function") {
-
-        reply({ 
-          success: false,
-
-          message: "الطاولة غير موجودة أو لم تعد متاحة."
-
-        });
-
-      }
-
-      return;
-
-    }
-
-    if (room.privateRoom && !room.invited?.has(socket.data.uid)) {
-
-      if (typeof reply === "function") {
-
-        reply({
-
-          success: false,
-
-          message: "هذه الطاولة خاصة. الدخول ممنوع حتى يعيدها المالك إلى عامة."
-
-        });
-
-      }
-
-      return;
-
-    }
-
-    leaveCurrentRoom(socket);
-
-    room.players.set(socket.id, {
-
-      id: socket.id,
-
-      uid: socket.data.uid,
-
-      name: joiningName
-
-    });
-
-    socket.join(code);
-
-    socket.data.room = code;
-
-    if (typeof reply === "function") {
-
-      reply({
-
-        success: true,
-
-        code,
-
-        host: false,
-
-        started: room.started,
-
-        room: roomInfo(code, room)
-
-      });
-
-    }
-
-    sendRoomUpdate(code);
-
-    socket.to(code).emit("systemMessage", "انضم لاعب جديد.");
-
-  });
-
-  socket.on("invitePlayer", (data = {}, reply) => {
-    const code = socket.data.room;
-    const room = getRoom(code);
-    const targetUid = String(data.targetUid || "").trim();
-    const target = getConnectedSocket(targetUid);
-    if (!room || room.host !== socket.id) {
-      if (typeof reply === "function") reply({ success: false, message: "فقط مالك الطاولة يستطيع إرسال الدعوات." });
-      return;
-    }
-    if (!room.privateRoom) {
-      if (typeof reply === "function") reply({ success: false, message: "الدعوات المباشرة مخصصة للطاولات الخاصة." });
-      return;
-    }
-    if (!targetUid || targetUid === socket.data.uid || !target || !target.connected) {
-      if (typeof reply === "function") reply({ success: false, message: "اللاعب غير متصل حاليا." });
-      return;
-    }
-    if ([...room.players.values()].some(player => player.uid === targetUid) || room.invited.has(targetUid) || room.pendingInvites?.has(targetUid)) {
-      if (typeof reply === "function") reply({ success: false, message: "اللاعب موجود في الطاولة أو أُرسلت له دعوة بالفعل." });
-      return;
-    }
-    if (!room.pendingInvites) room.pendingInvites = new Set();
-    room.pendingInvites.add(targetUid);
-    friendshipRef(socket.data.uid, targetUid).get().then(friendship => {
-      if (!friendship.exists) {
-        if (typeof reply === "function") reply({ success: false, message: "يمكن دعوة الأصدقاء فقط إلى الطاولة الخاصة." });
-        return;
-      }
-      // Re-check room and recipient after the asynchronous friendship lookup.
-      const activeTargets = connectedUsers.get(targetUid);
-      if (getRoom(code) !== room || room.host !== socket.id || !activeTargets || ![...activeTargets].some(client => client.connected)) {
-        if (typeof reply === "function") reply({ success: false, message: "تعذر إرسال الدعوة؛ تحقق من حالة الطاولة واللاعب." });
-        return;
-      }
-      if (room.invited.has(targetUid)) {
-        if (typeof reply === "function") reply({ success: false, message: "أُرسلت دعوة بالفعل." });
-        return;
-      }
-      room.invited.add(targetUid);
-      for (const recipient of [...activeTargets].filter(client => client.connected)) recipient.emit("roomInvitation", {
-        roomId: code,
-        roomName: room.name,
-        inviterName: socket.data.playerName,
-        privateRoom: room.privateRoom
-      });
-      if (typeof reply === "function") reply({ success: true });
-    }).catch(() => {
-      if (typeof reply === "function") reply({ success: false, message: "تعذر التحقق من الصداقة." });
-    }).finally(() => {
-      room.pendingInvites?.delete(targetUid);
-    });
-    return;
-
-  });
-
-  socket.on("acceptRoomInvitation", async (data = {}, reply) => {
-    try {
-      const code = String(data.roomId || "").trim().toUpperCase();
-      const room = getRoom(code);
-      if (!room || !room.privateRoom || !room.invited.has(socket.data.uid)) {
-        throw new Error("الدعوة غير صالحة أو انتهت.");
-      }
-      // Claim the invitation synchronously so two tabs cannot accept it concurrently.
-      if (!room.claimedInvites) room.claimedInvites = new Set();
-      if (room.claimedInvites.has(socket.data.uid)) throw new Error("جارٍ قبول هذه الدعوة من جلسة أخرى.");
-      room.claimedInvites.add(socket.data.uid);
-      room.invited.delete(socket.data.uid);
-      try {
-        const hostPlayer = [...room.players.values()].find(player => player.id === room.host);
-        if (!hostPlayer || !hostPlayer.uid) throw new Error("تعذر التحقق من مالك الطاولة.");
-        const friendship = await friendshipRef(hostPlayer.uid, socket.data.uid).get();
-        if (!friendship.exists) throw new Error("لم تعد ضمن قائمة أصدقاء مالك الطاولة.");
-        if (getRoom(code) !== room || !room.privateRoom || !room.claimedInvites.has(socket.data.uid)) {
-          throw new Error("انتهت صلاحية الدعوة.");
-        }
-        leaveCurrentRoom(socket);
-        room.players.set(socket.id, { id: socket.id, uid: socket.data.uid, name: socket.data.playerName });
-        room.claimedInvites.delete(socket.data.uid);
-      } catch (error) {
-        room.claimedInvites.delete(socket.data.uid);
-        if (getRoom(code) === room && room.privateRoom) room.invited.add(socket.data.uid);
-        throw error;
-      }
-      socket.join(code);
-      socket.data.room = code;
-      if (typeof reply === "function") reply({ success: true, room: roomInfo(code, room) });
-      sendRoomUpdate(code);
-      socket.to(code).emit("systemMessage", "انضم لاعب جديد.");
-    } catch (error) {
-      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر قبول الدعوة." });
-    }
-  });
-
-  socket.on("setRoomPrivacy", (data = {}, reply) => {
-
-    const code = socket.data.room;
-
-    const room = getRoom(code);
-
-    if (!room || room.host !== socket.id) {
-
-      if (typeof reply === "function") {
-
-        reply({
-
-          success: false,
-
-          message: "فقط مالك الطاولة يستطيع تغيير الخصوصية."
-
-        });
-
-      }
-
-      return;
-
-    }
-
-    room.privateRoom = Boolean(data.privateRoom);
-
-    io.to(code).emit("systemMessage",
-
-      room.privateRoom
-
-        ? "أصبحت الطاولة خاصة. لن يُسمح بدخول لاعبين جدد."
-
-        : "أصبحت الطاولة عامة. يمكن للاعبين الجدد الدخول."
-
-    );
-
-    if (typeof reply === "function") {
-
-      reply({
-
-        success: true,
-
-        privateRoom: room.privateRoom
-
-      });
-
-    }
-
-    sendRoomUpdate(code);
-
-  });
-
-  socket.on("chatMessage", message => {
-
-    const code = socket.data.room;
-
-    const room = getRoom(code);
-
-    if (!room || !room.players.has(socket.id)) return;
-
-    const player = room.players.get(socket.id);
-
-    io.to(code).emit("chatMessage", {
-
-      name: player.name,
-
-      message: String(message || "").slice(0, 1000),
-
-      time: new Date().toISOString()
-
-    });
-
-  });
-
-  socket.on("startGame", reply => {
-
-    const code = socket.data.room;
-
-    const room = getRoom(code);
-
-    if (!room || room.host !== socket.id) {
-
-      if (typeof reply === "function") {
-
-        reply({
-
-          success: false,
-
-          message: "فقط المالك يستطيع بدء اللعبة."
-
-        });
-
-      }
-
-      return;
-
-    }
-
-    room.started = true;
-
-    io.to(code).emit("gameState", { started: true });
-
-    if (typeof reply === "function") {
-
-      reply({ success: true });
-
-    }
-
-  });
-
-  socket.on("stopGame", reply => {
-
-    const code = socket.data.room;
-
-    const room = getRoom(code);
-
-    if (!room || room.host !== socket.id) {
-
-      if (typeof reply === "function") {
-
-        reply({
-
-          success: false,
-
-          message: "فقط المالك يستطيع إيقاف اللعبة."
-
-        });
-
-      }
-
-      return;
-
-    }
-
-    room.started = false;
-
-    io.to(code).emit("gameState", { started: false });
-
-    if (typeof reply === "function") {
-
-      reply({ success: true });
-
-    }
-
-  });
-
-  socket.on("voiceSignal", data => {
-
-    const code = socket.data.room;
-
-    const room = getRoom(code);
-
-    if (!room || !room.players.has(socket.id) || !data ||
-        typeof data.target !== "string" || !room.players.has(data.target) ||
-        !data.signal || !["description", "candidate"].includes(data.signal.type)) return;
-
-    io.to(data.target).emit("voiceSignal", {
-
-      from: socket.id,
-
-      signal: data.signal
-
-    });
-
-  });
-
-  socket.on("leaveRoom", () => {
-
-    leaveCurrentRoom(socket);
-
-  });
-
   socket.on("disconnect", reason => {
     console.warn("Socket disconnected", { uid: socket.data.uid, reason });
     removeConnectedSocket(socket.data.uid, socket);
@@ -1487,16 +876,13 @@ io.on("connection", socket => {
       });
     }
     io.emit("onlinePlayers", onlinePlayerList());
-    leaveCurrentRoom(socket);
 
   });
 
 });
 
 app.get("/", (req, res) => {
-
-  res.send("خادم طريق الليل يعمل");
-
+  res.send("خادم مِرسالو يعمل");
 });
 
 app.use(express.json({ limit: "32kb" }));
