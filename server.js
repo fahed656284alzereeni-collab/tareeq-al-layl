@@ -970,7 +970,6 @@ app.post("/api/delete-account", accountDeleteCors, async (req, res) => {
     const sessions = connectedUsers.get(uid);
     if (sessions) {
       for (const client of [...sessions]) {
-        leaveCurrentRoom(client);
         client.disconnect(true);
       }
       connectedUsers.delete(uid);
