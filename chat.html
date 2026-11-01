@@ -144,6 +144,33 @@ body:has(.msg .messageActions:not([hidden])) #chatPanel>#composePanel,
 body:has(.voiceCallPanel:not([hidden])) #chatPanel>.chatHeader,
 body:has(.voiceCallPanel:not([hidden])) #chatPanel>.messages,
 body:has(.voiceCallPanel:not([hidden])) #chatPanel>#composePanel{visibility:hidden!important}
+
+/* عزل جميع نوافذ التأكيد والإجراءات داخل المحادثات الفردية والجماعية */
+.groupInlinePanel:not([hidden]),
+.messageDeleteConfirmation{
+ position:fixed!important;inset:0!important;z-index:2147483647!important;
+ width:100vw!important;height:100vh!important;height:100dvh!important;max-height:100dvh!important;
+ margin:0!important;padding:calc(28px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))!important;
+ box-sizing:border-box!important;border:0!important;border-radius:0!important;
+ background:#101827!important;color:#f5f7fb!important;
+ overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;
+ display:flex!important;flex-direction:column!important;justify-content:flex-start!important;
+ align-items:stretch!important;gap:14px!important;visibility:visible!important;
+}
+.groupInlinePanel:not([hidden]) button,
+.messageDeleteConfirmation button{width:100%!important;min-height:56px!important;flex-shrink:0!important}
+.groupInlinePanel:not([hidden]) input,
+.groupInlinePanel:not([hidden]) textarea{width:100%!important;max-width:100%!important}
+body:has(.groupInlinePanel:not([hidden])) #chatPanel *{visibility:hidden!important}
+body:has(.groupInlinePanel:not([hidden])) #chatPanel .groupInlinePanel:not([hidden]),
+body:has(.groupInlinePanel:not([hidden])) #chatPanel .groupInlinePanel:not([hidden]) *{visibility:visible!important}
+.messageActions:has(.messageDeleteConfirmation)>:not(.messageDeleteConfirmation){display:none!important}
+body:has(.messageDeleteConfirmation) #chatPanel .chatHeader,
+body:has(.messageDeleteConfirmation) #chatPanel .messages,
+body:has(.messageDeleteConfirmation) #chatPanel #composePanel{visibility:hidden!important}
+body:has(.groupInlinePanel:not([hidden])),
+body:has(.messageDeleteConfirmation){overflow:hidden!important}
+
 </style></head><body>
 <header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><a class="tabLink" href="chat.html" aria-current="page">الصفحة الرئيسية</a><a class="tabLink" href="settings.html">الإعدادات</a></nav></header>
 <main>
