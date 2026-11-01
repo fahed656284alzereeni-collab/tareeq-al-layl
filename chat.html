@@ -646,7 +646,14 @@ async function refreshConversationInfo(){
       const chosenText=document.createElement("p");chosenText.textContent="لم تختر أعضاء جددًا.";
       const selected=new Map();let timer=null,requestId=0;
       const addConfirm=makeButton("إضافة المحددين","");
+      const addCancel=makeButton("إلغاء والعودة إلى معلومات المجموعة","secondary");
       const updateAdd=()=>{chosenText.textContent=selected.size?"الأعضاء المختارون: "+[...selected.values()].map(u=>u.name).join("، "):"لم تختر أعضاء جددًا.";addConfirm.disabled=!selected.size;};
+      addCancel.addEventListener("click",()=>{
+        clearTimeout(timer);requestId++;
+        selected.clear();search.value="";results.replaceChildren();
+        updateAdd();renderRecentMembers();
+        addPanel.hidden=true;addButton.focus();
+      });
       const toggleMember=(user,button)=>{if(selected.has(user.uid))selected.delete(user.uid);else selected.set(user.uid,user);button.textContent=(selected.has(user.uid)?"تم اختيار ":"اختيار ")+user.name;button.setAttribute("aria-pressed",String(selected.has(user.uid)));updateAdd();};
       const renderRecentMembers=()=>{
         recentResults.replaceChildren();
@@ -659,7 +666,7 @@ async function refreshConversationInfo(){
       search.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(async()=>{const q=search.value.trim(),id=++requestId;results.replaceChildren();if(q.length<2){results.textContent="اكتب حرفين على الأقل للبحث.";return}const found=await call("searchUsers",{query:q},20000);if(id!==requestId)return;if(!found.success){results.textContent=found.message||"تعذر البحث.";return}const available=(found.users||[]).filter(u=>!d.members.some(m=>m.uid===u.uid));if(!available.length){results.textContent="لا توجد نتائج جديدة.";return}available.forEach(user=>{const pick=makeButton((selected.has(user.uid)?"تم اختيار ":"اختيار ")+user.name);pick.setAttribute("aria-pressed",String(selected.has(user.uid)));pick.addEventListener("click",()=>toggleMember(user,pick));results.append(pick)})},350)});
       addConfirm.disabled=true;
       addConfirm.addEventListener("click",async()=>{if(!selected.size)return;addConfirm.disabled=true;const result=await call("addGroupMembers",{conversationId:currentId,memberUids:[...selected.keys()]});if(!result.success){document.getElementById("conversationActionStatus").textContent=result.message||"تعذرت إضافة الأعضاء.";updateAdd();return}selected.clear();search.value="";results.replaceChildren();updateAdd();addPanel.hidden=true;await refreshConversationInfo();await loadConversations();document.getElementById("conversationActionStatus").textContent=result.message||"تمت إضافة الأعضاء."});
-      addPanel.append(recentHeading,recentResults,addLabel,search,results,chosenText,addConfirm);actions.append(addButton,addPanel);
+      addPanel.append(recentHeading,recentResults,addLabel,search,results,chosenText,addConfirm,addCancel);actions.append(addButton,addPanel);
       // Selection controls call updateAdd through a delegated click listener.
       results.addEventListener("click",()=>updateAdd());
     }else{
