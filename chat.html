@@ -403,6 +403,17 @@ function addMessage(m){
   own.setAttribute("aria-label","حذف الرسالة لدي فقط");
   own.addEventListener("click",()=>deleteMessageForMe(m.id,div));
   actions.append(own);
+  const cancelOptions=document.createElement("button");
+  cancelOptions.type="button";
+  cancelOptions.className="secondary";
+  cancelOptions.dataset.action="cancel-message-options";
+  cancelOptions.textContent="إلغاء والعودة إلى المحادثة";
+  cancelOptions.addEventListener("click",()=>{
+    actions.hidden=true;
+    optionsButton.setAttribute("aria-expanded","false");
+    optionsButton.focus();
+  });
+  actions.append(cancelOptions);
   div.append(actions);
   let touchStartX=null,touchStartY=null;
   div.addEventListener("touchstart",e=>{if(e.touches.length===1){touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY}},{passive:true});
