@@ -5,7 +5,7 @@
 <title>الإعدادات - مِرسالو</title>
 <style>
 :root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}
-*{box-sizing:border-box}body{margin:0;line-height:1.8}
+*{box-sizing:border-box}body{margin:0;line-height:1.8}body.section-open{overflow:hidden}body.section-open>header{display:none}body.section-open>main{max-width:none;margin:0;padding:0}body.section-open .section-screen:not(.active){display:none!important}.section-screen.active{position:fixed!important;inset:0!important;z-index:2147483000!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;margin:0!important;padding:24px 18px!important;border:0!important;border-radius:0!important;overflow-y:auto!important;background:#101827!important;display:block!important}.section-screen .section-back{display:block;width:100%;padding:14px;margin:0 0 20px;border:0;border-radius:10px;background:#42536b;color:#fff;font:inherit;font-weight:bold}
 header{padding:15px 20px;background:#1b293b;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 h1{color:#8bd8c5;margin:0;font-size:1.5rem}
 nav.mainNav{display:flex;gap:8px;flex-wrap:wrap}
@@ -37,23 +37,23 @@ h3{margin-bottom:4px;color:#f5f7fb}
 </nav>
 </header>
 <main>
-<section class="panel" id="panel-settings">
+<section class="panel section-screen active" id="panel-settings">
 <h2>الإعدادات</h2><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
 <div class="setting"><label for="largeText">تكبير النصوص</label><input id="largeText" type="checkbox"></div>
 <div class="setting"><label for="strongFocus">إبراز العنصر المحدد بوضوح</label><input id="strongFocus" type="checkbox"></div>
-<p id="settingsStatus" role="status" aria-live="polite">يتم حفظ التغييرات على هذا الجهاز تلقائيًا.</p>
+<p id="settingsStatus" role="status" aria-live="polite">يتم حفظ التغييرات على هذا الجهاز تلقائيًا.</p><button class="action" type="button" data-open-section="panel-friend-requests">طلبات الصداقة</button><button class="action" type="button" data-open-section="panel-account-options">إدارة الحساب</button>
 <a class="link secondary" href="chat.html">العودة إلى المحادثات</a>
 </section>
 
-<section class="panel" id="panel-friend-requests">
-<h2>طلبات الصداقة الواردة</h2>
+<section class="panel section-screen" id="panel-friend-requests" hidden>
+<button class="section-back" type="button">رجوع إلى الإعدادات</button><h2 tabindex="-1">طلبات الصداقة الواردة</h2>
 <p class="muted">يمكنك مراجعة الطلبات الواردة وقبولها أو رفضها. لن تُضاف الصداقة إلا بعد موافقتك.</p>
 <div id="friendRequestsList" aria-live="polite" aria-relevant="additions">جارٍ الاتصال لتحميل الطلبات...</div>
 <p id="friendRequestsStatus" class="requestStatus" role="status" aria-live="polite"></p>
 </section>
 
-<section class="panel" id="panel-account-options">
-<h2>إدارة الحساب ومعلومات مِرسالو</h2>
+<section class="panel section-screen" id="panel-account-options" hidden>
+<button class="section-back" type="button">رجوع إلى الإعدادات</button><h2 tabindex="-1">إدارة الحساب ومعلومات مِرسالو</h2>
 <p>اختر القسم الذي تريد فتحه:</p>
 <a class="link" href="profile.html">الملف الشخصي</a>
 <a class="link" href="terms.html">حول مِرسالو وبنود الاستخدام</a>
@@ -70,6 +70,9 @@ import{getFirestore,doc,getDoc,setDoc}from"https://www.gstatic.com/firebasejs/11
 const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 const largeText=document.getElementById("largeText"),strongFocus=document.getElementById("strongFocus");
+function showSection(id){document.querySelectorAll(".section-screen").forEach(section=>{const active=section.id===id;section.classList.toggle("active",active);section.hidden=!active});document.body.classList.toggle("section-open",id!=="panel-settings");const heading=document.querySelector("#"+id+" h2");if(heading)heading.focus();}
+document.querySelectorAll("[data-open-section]").forEach(button=>button.addEventListener("click",()=>showSection(button.dataset.openSection)));
+document.querySelectorAll(".section-back").forEach(button=>button.addEventListener("click",()=>showSection("panel-settings")));
 function applySettings(){document.body.classList.toggle("large-text",largeText.checked);document.body.classList.toggle("strong-focus",strongFocus.checked);localStorage.setItem("mersalo-large-text",String(largeText.checked));localStorage.setItem("mersalo-strong-focus",String(strongFocus.checked))}
 largeText.checked=localStorage.getItem("mersalo-large-text")==="true";strongFocus.checked=localStorage.getItem("mersalo-strong-focus")==="true";applySettings();largeText.addEventListener("change",applySettings);strongFocus.addEventListener("change",applySettings);
 const requestsList=document.getElementById("friendRequestsList"),requestsStatus=document.getElementById("friendRequestsStatus");
