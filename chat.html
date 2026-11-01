@@ -74,7 +74,7 @@ import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-ap
 import{getAuth,onAuthStateChanged}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
 const auth=getAuth(initializeApp(cfg));const status=document.getElementById("status"),list=document.getElementById("conversationList"),panel=document.getElementById("chatPanel"),messages=document.getElementById("messages");
-let socket=null,currentId=null,currentOtherUid=null,currentOtherName="مستخدم",known=new Set(),currentDetails=null,messageActionId=0;
+let socket=null,currentId=null,currentConversationType="direct",currentOtherUid=null,currentOtherName="مستخدم",known=new Set(),currentDetails=null,messageActionId=0;
 function say(t){status.textContent=t}
 function restoreConnectionStatus(){say(socket?.connected?"أنت متصل بمِرسالو.":"انقطع الاتصال مؤقتًا، جارٍ إعادة الاتصال بمِرسالو.")}
 function removeMessageFromView(element){
