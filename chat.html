@@ -1139,6 +1139,19 @@ async function uploadConversationAttachment(file){
     addMessage(sent.message);
     if(isVideoFile){
       durationPromise.then(durationSeconds=>updateVideoMessageDuration(sent.message.id,durationSeconds)).catch(()=>{});
+      const sentConversationId=currentId;
+      const sentMessageId=String(sent.message.id||"");
+      const refreshed=await call("getConversationMessages",{conversationId:sentConversationId},30000);
+      if(refreshed.success&&currentId===sentConversationId){
+        const savedMessage=(refreshed.messages||[]).find(message=>String(message.id||"")===sentMessageId);
+        if(savedMessage&&savedMessage.attachment?.url){
+          const oldElement=Array.from(messages.children).find(element=>String(element.dataset.messageId||"")===sentMessageId);
+          oldElement?.remove();
+          known.delete(sentMessageId);
+          removeAttachmentForMessage(sentMessageId);
+          addMessage(savedMessage);
+        }
+      }
     }
     await loadConversations();status.textContent=isVideoFile?"تم إرسال الفيديو بنجاح.":"تم إرسال الملف بنجاح: "+file.name;playMessageSound("sent");
   }catch(error){status.textContent=error.message||"حدث خطأ أثناء مشاركة الملف."}
