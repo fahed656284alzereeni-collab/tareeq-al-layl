@@ -115,7 +115,9 @@ body:has(#conversationInfo:not([hidden])) #chatPanel>.chatHeader~:not(#conversat
 .infoActions:has(#inlineUserActionChoice)>:not(#inlineUserActionChoice){display:none!important}
 #conversationInfo:has(.conversationDeleteChoice) .infoActions,
 #conversationInfo:has(#inlineUserActionChoice) .infoActions{display:block!important;margin:0!important}
-.conversationDeleteChoice{z-index:2147483647!important;background:#101827!important}
+.conversationDeleteChoice{z-index:2147483647!important;background:#101827!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;align-items:stretch!important;gap:14px!important;position:fixed!important;inset:0!important;width:100vw!important;height:100dvh!important;max-height:100dvh!important;overflow-y:auto!important;padding:calc(28px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))!important;margin:0!important;border:0!important;border-radius:0!important;box-sizing:border-box!important}
+.conversationDeleteChoice button{width:100%!important;min-height:56px!important;flex-shrink:0!important}
+body:has(>.conversationDeleteChoice){overflow:hidden!important}
 </style></head><body>
 <header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><a class="tabLink" href="chat.html" aria-current="page">الصفحة الرئيسية</a><a class="tabLink" href="settings.html">الإعدادات</a></nav></header>
 <main>
@@ -579,7 +581,7 @@ function showInlineActionChoice(kind){
   if(existing&&existing.dataset.kind===kind){existing.remove();trigger.setAttribute("aria-expanded","false");return}
   if(existing){const previous=document.getElementById(existing.dataset.kind==="block"?"blockAction":"reportAction");existing.remove();previous?.setAttribute("aria-expanded","false")}
   const box=document.createElement("div");
-  box.id="inlineUserActionChoice";box.dataset.kind=kind;box.className="messageActions conversationDeleteChoice";
+  box.id="inlineUserActionChoice";box.dataset.kind=kind;box.className="messageActions conversationDeleteChoice";box.setAttribute("role","dialog");box.setAttribute("aria-modal","true");
   const title=document.createElement("h3");title.tabIndex=-1;
   const hint=document.createElement("p");
   const confirmButton=document.createElement("button");confirmButton.type="button";
@@ -633,7 +635,7 @@ function showInlineActionChoice(kind){
       trigger.focus();
     });
     box.append(title,hint,reasonLabel,reason,detailsLabel,details,confirmButton,cancelButton);
-    trigger.insertAdjacentElement("afterend",box);title.focus();return;
+    document.body.append(box);title.focus();return;
   }
   box.append(title,hint,confirmButton,cancelButton);
   trigger.insertAdjacentElement("afterend",box);title.focus();
