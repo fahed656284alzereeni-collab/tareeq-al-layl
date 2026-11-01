@@ -540,6 +540,8 @@ function addMessage(m){
     edit.setAttribute("aria-label","تعديل رسالتك");
     edit.addEventListener("click",()=>showMessageEditor(m,div,content,actions,optionsButton));
     actions.append(edit);
+  }
+  if(mine){
     const everyone=document.createElement("button");
     everyone.type="button";everyone.dataset.action="delete-everyone";
     everyone.id="message-delete-all-"+(++messageActionId);
