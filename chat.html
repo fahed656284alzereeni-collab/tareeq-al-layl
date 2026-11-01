@@ -122,6 +122,28 @@ body:has(>.conversationDeleteChoice){overflow:hidden!important}
 .voiceCallPanel{background:#26384e;border:1px solid #42536b;border-radius:12px;padding:12px;margin:10px 0}
 .voiceCallPanel button{min-height:48px}
 #voiceCallStatus{display:block;margin:6px 0}
+
+/* توحيد جميع القوائم والإجراءات المنبثقة لتعمل كشاشات مستقلة. */
+.msg .messageActions:not([hidden]),
+.voiceCallPanel:not([hidden]){
+ position:fixed!important;inset:0!important;z-index:2147483600!important;
+ width:100vw!important;height:100vh!important;height:100dvh!important;max-height:100dvh!important;
+ margin:0!important;padding:calc(26px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))!important;
+ border:0!important;border-radius:0!important;background:#101827!important;color:#f5f7fb!important;
+ overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;
+ display:flex!important;flex-direction:column!important;justify-content:flex-start!important;align-items:stretch!important;gap:12px!important;
+}
+.msg .messageActions:not([hidden]) button,
+.voiceCallPanel:not([hidden]) button{width:100%!important;min-height:52px!important;margin:4px 0!important;flex-shrink:0!important}
+.msg .messageActions:not([hidden])::before{content:"خيارات الرسالة";display:block;font-size:1.25rem;font-weight:bold;margin:4px 0 12px}
+body:has(.msg .messageActions:not([hidden])),
+body:has(.voiceCallPanel:not([hidden])){overflow:hidden!important}
+body:has(.msg .messageActions:not([hidden])) #chatPanel>.chatHeader,
+body:has(.msg .messageActions:not([hidden])) #chatPanel>.messages,
+body:has(.msg .messageActions:not([hidden])) #chatPanel>#composePanel,
+body:has(.voiceCallPanel:not([hidden])) #chatPanel>.chatHeader,
+body:has(.voiceCallPanel:not([hidden])) #chatPanel>.messages,
+body:has(.voiceCallPanel:not([hidden])) #chatPanel>#composePanel{visibility:hidden!important}
 </style></head><body>
 <header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><a class="tabLink" href="chat.html" aria-current="page">الصفحة الرئيسية</a><a class="tabLink" href="settings.html">الإعدادات</a></nav></header>
 <main>
