@@ -74,6 +74,25 @@ body.chat-open #status{display:none}
   .infoActions{grid-template-columns:repeat(2,minmax(0,1fr))}
   .infoActions #reportAction{grid-column:1/-1}
 }
+
+/* تثبيت قواعد الشاشة الكاملة بعد جميع قواعد المكونات حتى لا تلغيها قواعد لاحقة. */
+.groupInlinePanel:not([hidden]),.conversationDeleteChoice,.messageEditForm,
+#onlinePanel:not([hidden]),#newChatOptions:not([hidden]),#directChatPanel:not([hidden]),
+#newGroupPanel:not([hidden]),#conversationInfo:not([hidden]){
+ position:fixed!important;inset:0!important;z-index:2147483000!important;
+ width:100vw!important;height:100vh!important;height:100dvh!important;max-height:100vh!important;max-height:100dvh!important;
+ margin:0!important;padding:calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))!important;
+ border:0!important;border-radius:0!important;background:#101827!important;color:#f5f7fb!important;
+ overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain!important;
+ display:flex!important;flex-direction:column!important;justify-content:flex-start!important;gap:12px!important;
+}
+.groupInlinePanel[hidden]{display:none!important}
+.conversationDeleteChoice button,.messageEditForm button,.groupInlinePanel button{width:100%!important;min-height:52px!important;margin:4px 0!important}
+.conversationDeleteChoice label,.messageEditForm label,.groupInlinePanel label{width:100%!important}
+.conversationDeleteChoice input,.messageEditForm textarea,.groupInlinePanel input,.groupInlinePanel textarea{width:100%!important;max-width:100%!important}
+body:has(.groupInlinePanel:not([hidden])),body:has(.conversationDeleteChoice),body:has(.messageEditForm),
+body:has(#onlinePanel:not([hidden])),body:has(#newChatOptions:not([hidden])),body:has(#directChatPanel:not([hidden])),
+body:has(#newGroupPanel:not([hidden])),body:has(#conversationInfo:not([hidden])){overflow:hidden!important}
 </style></head><body>
 <header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><a class="tabLink" href="chat.html" aria-current="page">الصفحة الرئيسية</a><a class="tabLink" href="settings.html">الإعدادات</a></nav></header>
 <main>
