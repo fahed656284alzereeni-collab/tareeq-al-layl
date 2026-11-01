@@ -507,7 +507,7 @@ function addMessage(m){
       videoAttachmentRow=document.createElement("div");videoAttachmentRow.className="videoMessageRow";
       videoAttachmentRow.append(open);
       const metadataVideo=document.createElement("video");
-      metadataVideo.preload="metadata";metadataVideo.muted=true;metadataVideo.src=item.url;
+      metadataVideo.preload="metadata";metadataVideo.muted=true;metadataVideo.playsInline=true;metadataVideo.src=item.url;
       metadataVideo.setAttribute("aria-hidden","true");metadataVideo.tabIndex=-1;
       metadataVideo.style.cssText="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden";
       videoAttachmentRow.append(metadataVideo);
@@ -585,7 +585,12 @@ function addMessage(m){
     }
     touchStartX=null;touchStartY=null;
   },{passive:true});
-  messages.append(div);messages.scrollTop=messages.scrollHeight;
+  messages.append(div);
+  if(videoAttachmentRow){
+    const metadataVideo=videoAttachmentRow.querySelector("video");
+    if(metadataVideo)metadataVideo.load();
+  }
+  messages.scrollTop=messages.scrollHeight;
 }
 function showMessageEditor(message,element,content,actions,optionsButton){
   if(element.querySelector(".messageEditForm"))return;
