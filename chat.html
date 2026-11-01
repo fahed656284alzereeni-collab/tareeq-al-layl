@@ -169,7 +169,7 @@ async function startVoiceRecording(streamPromise=null){
       if(voiceDiscarding){resetVoiceComposer();return;}
       voiceDurationMs=voiceElapsedMs;
       voiceBlob=new Blob(voiceChunks,{type:voiceMimeType});
-      if(!voiceBlob.size){resetVoiceComposer();document.getElementById("voiceStatus").textContent="لم يتم تسجيل صوت. حاول مرة أخرى.";return;}
+      if(!voiceBlob.size||voiceDurationMs<500){resetVoiceComposer();document.getElementById("voiceStatus").textContent="لم يتم تسجيل صوت كافٍ، لذلك لم تُرسل رسالة فارغة. اضغط زر الميكروفون لبدء التسجيل، ثم اضغطه مرة أخرى لإنهائه وإرساله.";return;}
       document.getElementById("voiceStatus").textContent="انتهى التسجيل. جارٍ إرسال الرسالة الصوتية.";
       await sendVoiceMessage();
     });
@@ -245,7 +245,10 @@ recordVoiceButton.addEventListener("pointerdown",event=>{
       await startVoiceRecording();
       voiceStartPending=false;
       if(voiceMovedUp)lockVoiceRecording();
-      else if(voiceReleasedDuringStart)finishAndSendVoice();
+      else if(voiceReleasedDuringStart){
+        voiceReleasedDuringStart=false;
+        document.getElementById("voiceStatus").textContent="تم السماح للميكروفون وبدأ التسجيل. اضغط زر الميكروفون مرة ثانية لإنهاء التسجيل وإرساله.";
+      }
     }
   },450);
 });
