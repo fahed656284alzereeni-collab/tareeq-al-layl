@@ -468,7 +468,7 @@ async function refreshConversationInfo(){
     ["حالة الاتصال",d.online?"متصل الآن":"غير متصل"],
     ["حالة الصداقة",d.isFriend?"ضمن قائمة أصدقائك":d.pendingRequest?"طلب الصداقة مُرسل وبانتظار الرد": "ليس ضمن قائمة أصدقائك"],
     ["عدد الرسائل",String(d.messageCount)],
-    ["تاريخ آخر نشاط",formatInfoDate(d.updatedAt)],
+    ["آخر ظهور",d.online?"متصل الآن":formatInfoDate(d.lastSeenAt)],
     ["بداية المحادثة",formatInfoDate(d.createdAt)]
   ];
   rows.forEach(([label,value])=>{const row=document.createElement("p");row.className="infoMeta";row.textContent=label+": "+value;content.append(row)});
