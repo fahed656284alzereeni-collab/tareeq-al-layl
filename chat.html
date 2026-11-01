@@ -178,7 +178,19 @@ async function startVoiceRecording(streamPromise=null){
     voiceLimitTimer=setTimeout(()=>{if(voiceRecorder&&voiceRecorder.state!=="inactive"){stopVoiceRecording();document.getElementById("voiceStatus").textContent="تم إنهاء التسجيل تلقائيًا بعد بلوغ ثلاث دقائق.";}},180000);
   }catch(error){
     releaseVoiceStream();voiceRecorder=null;setVoiceControls("idle");
-    document.getElementById("voiceStatus").textContent=error.name==="NotAllowedError"?"لم تسمح للمتصفح باستخدام الميكروفون. فعّل إذن الميكروفون من إعدادات الآيفون.":"تعذر بدء التسجيل. تحقق من إذن الميكروفون وحاول مرة أخرى.";
+    let permissionState="";
+    try{
+      if(navigator.permissions?.query){
+        const permission=await navigator.permissions.query({name:"microphone"});
+        permissionState=" حالة الإذن: "+({granted:"مسموح",denied:"مرفوض",prompt:"يحتاج إلى موافقة"}[permission.state]||permission.state)+".";
+      }
+    }catch{}
+    const errorName=String(error?.name||"UnknownError");
+    const errorMessage=String(error?.message||"");
+    document.getElementById("voiceStatus").textContent=
+      errorName==="NotAllowedError"||errorName==="SecurityError"
+        ?"المتصفح منع الوصول إلى الميكروفون. افحص إذن الميكروفون لموقع mersalo.onrender.com في إعدادات الموقع بالمتصفح وإعدادات الآيفون."+permissionState
+        :"تعذر بدء التسجيل ("+errorName+(errorMessage?": "+errorMessage:"")+")."+permissionState+" جرّب مرة أخرى.";
   }
 }
 function pauseVoiceRecording(){if(voiceRecorder&&voiceRecorder.state==="recording")voiceRecorder.pause();}
