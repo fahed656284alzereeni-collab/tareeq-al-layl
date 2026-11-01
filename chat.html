@@ -10,7 +10,7 @@
 .groupInlinePanel[hidden]{display:none!important}
 
 /* وضع الشاشة المستقلة: عند فتح أي نموذج أو خطوة تأكيد، تظهر وحدها بملء الشاشة. */
-.focusScreen,.groupInlinePanel:not([hidden]),.conversationDeleteChoice,.messageEditForm{
+.focusScreen,.groupInlinePanel:not([hidden]),.conversationDeleteChoice,.messageEditForm,#onlinePanel:not([hidden]),#newChatOptions:not([hidden]),#directChatPanel:not([hidden]),#newGroupPanel:not([hidden]),#conversationInfo:not([hidden]){
  position:fixed!important;inset:0!important;z-index:10000!important;
  width:100%!important;height:100dvh!important;max-height:100dvh!important;
  margin:0!important;padding:clamp(20px,5vw,32px)!important;
@@ -19,12 +19,12 @@
  overflow-y:auto!important;overscroll-behavior:contain!important;
  display:flex;flex-direction:column;justify-content:flex-start;gap:12px;
 }
-.groupInlinePanel:not([hidden]),.conversationDeleteChoice,.messageEditForm{padding-top:max(28px,env(safe-area-inset-top))!important;padding-bottom:max(24px,env(safe-area-inset-bottom))!important}
+.groupInlinePanel:not([hidden]),.conversationDeleteChoice,.messageEditForm,#onlinePanel:not([hidden]),#newChatOptions:not([hidden]),#directChatPanel:not([hidden]),#newGroupPanel:not([hidden]),#conversationInfo:not([hidden]){padding-top:max(28px,env(safe-area-inset-top))!important;padding-bottom:max(24px,env(safe-area-inset-bottom))!important}
 .focusScreen[hidden],.groupInlinePanel[hidden]{display:none!important}
 .focusScreen h2,.focusScreen h3,.groupInlinePanel h4,.conversationDeleteChoice h3,.messageEditForm label{margin-top:12px}
 .focusScreen button,.groupInlinePanel button,.conversationDeleteChoice button,.messageEditForm button{min-height:52px;flex-shrink:0}
 .focusScreen input,.focusScreen textarea,.groupInlinePanel input,.conversationDeleteChoice textarea,.messageEditForm textarea{flex-shrink:0}
-body:has(.groupInlinePanel:not([hidden])),body:has(.conversationDeleteChoice),body:has(.messageEditForm){overflow:hidden}
+body:has(.groupInlinePanel:not([hidden])),body:has(.conversationDeleteChoice),body:has(.messageEditForm),body:has(#onlinePanel:not([hidden])),body:has(#newChatOptions:not([hidden])),body:has(#directChatPanel:not([hidden])),body:has(#newGroupPanel:not([hidden])),body:has(#conversationInfo:not([hidden])){overflow:hidden}
 
 .groupInlinePanel input,.groupInlinePanel textarea{width:100%}
 .groupInlinePanel .groupConfirmButtons{display:flex;flex-wrap:wrap;gap:8px}
