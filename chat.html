@@ -249,6 +249,36 @@ body:has(#newChatOptions:not([hidden])) #newChatSection> :not(#newChatOptions),
 body:has(#newChatOptions:not([hidden]))>#status{
   display:none!important;
 }
+body:has(#onlinePanel:not([hidden]))>header,
+body:has(#onlinePanel:not([hidden]))>main> :not(#onlineSection),
+body:has(#onlinePanel:not([hidden])) #onlineSection> :not(#onlinePanel),
+body:has(#onlinePanel:not([hidden]))>#status{
+  display:none!important;
+}
+body:has(#onlinePanel:not([hidden])) #onlinePanel{
+  position:fixed!important;
+  inset:0!important;
+  z-index:2147483647!important;
+  box-sizing:border-box!important;
+  width:100vw!important;
+  min-width:100vw!important;
+  height:100vh!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  margin:0!important;
+  padding:calc(28px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))!important;
+  border:0!important;
+  border-radius:0!important;
+  display:flex!important;
+  visibility:visible!important;
+  flex-direction:column!important;
+  gap:14px!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  background:#101827!important;
+  color:#f5f7fb!important;
+}
+body:has(#onlinePanel:not([hidden])){overflow:hidden!important}
 body:has(#newChatOptions:not([hidden])) #newChatOptions{
   position:fixed!important;
   inset:0!important;
