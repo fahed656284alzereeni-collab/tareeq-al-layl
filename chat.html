@@ -288,6 +288,7 @@ body:has(#newChatOptions:not([hidden])) #newChatOptions{
 }
 
 
+.videoMessageRow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}.videoMessageRow .videoAttachmentButton{width:auto;min-width:0;min-height:48px;flex:1 1 auto;margin:0}.videoMessageRow .messageOptionsButton{width:auto;min-width:118px;min-height:48px;margin:0;flex:0 0 auto}.videoAttachmentButton{white-space:nowrap}
 .attachmentOpen{display:flex;flex-direction:column;align-items:flex-start;gap:8px;width:auto;max-width:100%;min-width:190px;margin:8px 0;padding:10px;background:#1b293b;color:#f5f7fb;border:1px solid #718096;text-align:right;overflow-wrap:anywhere}
 .attachmentPreview{display:block;width:min(100%,260px);max-height:190px;object-fit:contain;border-radius:8px}
 .attachmentVideoPreview{display:block;padding:28px 48px;background:#101827;border-radius:8px;font-size:1.2rem}
@@ -489,18 +490,26 @@ function addMessage(m){
   const content=document.createElement("p");
   content.className="messageContent";
   content.textContent=who+": "+(m.text|| (m.attachment?"أرسل مرفقًا":""))+(m.edited?" (تم التعديل)":"");
+  let videoAttachmentRow=null;
   if(m.attachment&&m.attachment.url){
-    const item={url:m.attachment.url,name:(m.attachment.type||"").startsWith("video/")?"فيديو":(m.attachment.name||"مرفق"),originalName:m.attachment.name||"مرفق",type:m.attachment.type||"application/octet-stream",size:Number(m.attachment.size)||0,messageId:String(m.id||"")};
+    const isVideo=(m.attachment.type||"").startsWith("video/");
+    const item={url:m.attachment.url,name:isVideo?"فيديو":(m.attachment.name||"مرفق"),originalName:m.attachment.name||"مرفق",type:m.attachment.type||"application/octet-stream",size:Number(m.attachment.size)||0,messageId:String(m.id||"")};
     const itemIndex=attachmentItems.push(item)-1;
     const open=document.createElement("button");
-    open.type="button";open.className="attachmentOpen";
-    const isImage=item.type.startsWith("image/"),isVideo=item.type.startsWith("video/");
-    open.textContent=isImage?"عرض الصورة: "+item.name:isVideo?"عرض الفيديو":"فتح الملف: "+item.name;
-    open.setAttribute("aria-label",open.textContent+"، الحجم "+formatAttachmentSize(item.size));
+    open.type="button";open.className="attachmentOpen"+(isVideo?" videoAttachmentButton":"");
+    const isImage=item.type.startsWith("image/");
+    open.textContent=isImage?"عرض الصورة: "+item.name:isVideo?"▶ فيديو · المدة جارٍ تحديدها":"فتح الملف: "+item.name;
+    open.setAttribute("aria-label",isVideo?"فيديو، جارٍ تحديد مدة الفيديو":open.textContent);
     open.addEventListener("click",()=>openAttachmentViewer(itemIndex));
     if(isImage){const preview=document.createElement("img");preview.src=item.url;preview.alt="معاينة الصورة: "+item.name;preview.loading="lazy";preview.className="attachmentPreview";open.prepend(preview)}
-    else if(isVideo){const preview=document.createElement("span");preview.className="attachmentVideoPreview";preview.textContent="▶ فيديو";open.prepend(preview)}
-    content.append(document.createTextNode(" "),open);
+    if(isVideo){
+      videoAttachmentRow=document.createElement("div");videoAttachmentRow.className="videoMessageRow";
+      videoAttachmentRow.append(open);
+      const metadataVideo=document.createElement("video");metadataVideo.preload="metadata";metadataVideo.muted=true;metadataVideo.src=item.url;
+      const updateDuration=()=>{if(!Number.isFinite(metadataVideo.duration)||metadataVideo.duration<=0)return;const total=Math.floor(metadataVideo.duration);const minutes=Math.floor(total/60);const seconds=total%60;const duration=minutes+":"+String(seconds).padStart(2,"0");open.textContent="▶ فيديو · "+duration;open.setAttribute("aria-label","فيديو، المدة "+duration);metadataVideo.removeAttribute("src");metadataVideo.load()};
+      metadataVideo.addEventListener("loadedmetadata",updateDuration,{once:true});
+      metadataVideo.addEventListener("error",()=>{open.textContent="▶ فيديو";open.setAttribute("aria-label","فيديو، المدة غير متاحة")},{once:true});
+    }else content.append(document.createTextNode(" "),open);
   }
   // اجعل الرسالة نفسها عنصرًا قابلًا للتعديل لدى VoiceOver؛ لا يحتاج المستخدم إلى الانتقال إلى عنصر منفصل.
   div.append(content);
@@ -521,7 +530,8 @@ function addMessage(m){
       firstAction?.focus();
     }
   });
-  div.append(optionsButton);
+  if(videoAttachmentRow)videoAttachmentRow.append(optionsButton);
+  else div.append(optionsButton);
   if(mine){
     const edit=document.createElement("button");
     edit.type="button";edit.dataset.action="edit-message";
@@ -555,6 +565,7 @@ function addMessage(m){
   });
   actions.append(cancelOptions);
   div.append(actions);
+  if(videoAttachmentRow)div.append(videoAttachmentRow);
   let touchStartX=null,touchStartY=null;
   div.addEventListener("touchstart",e=>{if(e.touches.length===1){touchStartX=e.touches[0].clientX;touchStartY=e.touches[0].clientY}},{passive:true});
   div.addEventListener("touchend",e=>{
