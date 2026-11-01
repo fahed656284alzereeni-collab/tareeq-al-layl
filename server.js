@@ -281,6 +281,61 @@ io.on("connection", socket => {
   const db = admin.firestore();
   const conversationsRef = db.collection("conversations");
 
+  socket.on("startGroupConversation", async (data = {}, reply) => {
+    try {
+      const name = String(data.name || "").trim().slice(0, 50);
+      const requested = Array.isArray(data.memberUids) ? [...new Set(data.memberUids.map(String))] : [];
+      const memberUids = requested.filter(uid => uid && uid !== socket.data.uid).slice(0, 49);
+      if (!name) throw new Error("اكتب اسمًا للمجموعة.");
+      if (!memberUids.length) throw new Error("اختر شخصًا واحدًا على الأقل لإضافته.");
+      const profiles = await db.getAll(...memberUids.map(uid => usersRef.doc(uid)));
+      if (profiles.some(profile => !profile.exists || !profile.data().playerName)) throw new Error("تعذر العثور على أحد الحسابات المختارة.");
+      const checks = await Promise.all(memberUids.flatMap(uid => [blockedRef(socket.data.uid, uid).get(), blockedRef(uid, socket.data.uid).get()]));
+      if (checks.some(snap => snap.exists)) throw new Error("لا يمكن إضافة أحد المستخدمين بسبب إعدادات الحظر.");
+      const members = [socket.data.uid, ...memberUids];
+      const ref = conversationsRef.doc();
+      const now = admin.firestore.FieldValue.serverTimestamp();
+      await ref.set({ type: "group", groupName: name, createdBy: socket.data.uid, members, createdAt: now, updatedAt: now, lastMessage: "تم إنشاء المجموعة" });
+      const payload = { id: ref.id, type: "group", groupName: name, displayName: name, members, createdBy: socket.data.uid, lastMessage: "تم إنشاء المجموعة" };
+      if (typeof reply === "function") reply({ success: true, conversation: payload });
+      for (const uid of members) {
+        const sessions = connectedUsers.get(uid);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("groupConversationUpdated", { conversationId: ref.id });
+      }
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر إنشاء المجموعة." });
+    }
+  });
+
+  socket.on("addGroupMembers", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const requested = Array.isArray(data.memberUids) ? [...new Set(data.memberUids.map(String))] : [];
+      const ref = conversationsRef.doc(conversationId);
+      const snap = await ref.get();
+      if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإدارة هذه المجموعة.");
+      if (snap.data().createdBy !== socket.data.uid) throw new Error("منشئ المجموعة فقط يستطيع إضافة أعضاء.");
+      const currentMembers = snap.data().members || [];
+      const newUids = requested.filter(uid => uid && !currentMembers.includes(uid)).slice(0, 49);
+      if (!newUids.length) throw new Error("اختر أشخاصًا جددًا لإضافتهم.");
+      if (currentMembers.length + newUids.length > 50) throw new Error("الحد الأقصى للمجموعة 50 عضوًا.");
+      const profiles = await db.getAll(...newUids.map(uid => usersRef.doc(uid)));
+      if (profiles.some(profile => !profile.exists || !profile.data().playerName)) throw new Error("تعذر العثور على أحد الحسابات المختارة.");
+      const checks = await Promise.all(newUids.flatMap(uid => [blockedRef(socket.data.uid, uid).get(), blockedRef(uid, socket.data.uid).get()]));
+      if (checks.some(s => s.exists)) throw new Error("لا يمكن إضافة أحد المستخدمين بسبب إعدادات الحظر.");
+      await ref.update({ members: admin.firestore.FieldValue.arrayUnion(...newUids), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      for (const uid of [...currentMembers, ...newUids]) {
+        const sessions = connectedUsers.get(uid);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("groupConversationUpdated", { conversationId });
+      }
+      if (typeof reply === "function") reply({ success: true, message: "تمت إضافة الأعضاء إلى المجموعة.", added: newUids.length });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذرت إضافة الأعضاء." });
+    }
+  });
+
+
+
   socket.on("findUserByName", async (data = {}, reply) => {
     try {
       const name = String(data.name || "").trim();
@@ -307,6 +362,24 @@ io.on("connection", socket => {
         throw new Error("غير مصرح بعرض معلومات هذه المحادثة.");
       }
       const conversationData = conversationSnap.data();
+      if (conversationData.type === "group") {
+        const memberUids = conversationData.members || [];
+        const profiles = await db.getAll(...memberUids.map(uid => usersRef.doc(uid)));
+        const members = profiles.map(profile => ({
+          uid: profile.id,
+          name: String(profile.exists ? (profile.data().playerName || profile.data().displayName || "مستخدم") : "مستخدم"),
+          online: Boolean(getConnectedSocket(profile.id))
+        }));
+        const countSnap = await conversationRef.collection("messages").count().get();
+        if (typeof reply === "function") reply({ success: true, details: {
+          type: "group", name: String(conversationData.groupName || "مجموعة"),
+          members, isAdmin: conversationData.createdBy === socket.data.uid,
+          messageCount: countSnap.data().count || 0,
+          createdAt: conversationData.createdAt?.toMillis?.() || 0,
+          updatedAt: conversationData.updatedAt?.toMillis?.() || 0
+        }});
+        return;
+      }
       const otherUid = (conversationData.members || []).find(uid => uid !== socket.data.uid);
       if (!otherUid) throw new Error("تعذر تحديد الطرف الآخر.");
       const [profileSnap, friendshipSnap, myBlockSnap, theirBlockSnap, countSnap, outgoingRequestSnap] = await Promise.all([
@@ -448,17 +521,21 @@ io.on("connection", socket => {
       const hiddenContentIds = new Set(hiddenContentSnap.docs.map(item => item.id));
       // The conversation document is already updated with lastMessage and updatedAt
       // whenever a message is sent, so avoid a separate messages query per conversation.
-      const otherUids = [...new Set(snap.docs.map(item => (item.data().members || []).find(uid => uid !== socket.data.uid)).filter(Boolean))];
-      const profileSnapshots = otherUids.length ? await db.getAll(...otherUids.map(uid => usersRef.doc(uid))) : [];
+      const allOtherUids = [...new Set(snap.docs.flatMap(item => (item.data().members || []).filter(uid => uid !== socket.data.uid)))];
+      const profileSnapshots = allOtherUids.length ? await db.getAll(...allOtherUids.map(uid => usersRef.doc(uid))) : [];
       const profilesByUid = new Map(profileSnapshots.map(profile => [profile.id, profile.exists ? profile.data() : {}]));
       const conversations = snap.docs.filter(item => !hiddenIds.has(item.id)).map(item => {
         const data = item.data();
-        const otherUid = (data.members || []).find(uid => uid !== socket.data.uid);
+        const members = data.members || [];
+        const otherUid = members.find(uid => uid !== socket.data.uid);
         const profile = otherUid ? (profilesByUid.get(otherUid) || {}) : {};
+        const isGroup = data.type === "group";
+        const groupName = String(data.groupName || "مجموعة");
+        const memberNames = isGroup ? members.map(uid => String(profilesByUid.get(uid)?.playerName || profilesByUid.get(uid)?.displayName || "مستخدم")) : [];
         return {
-          id: item.id,
-          otherUid,
-          displayName: profile.playerName || profile.displayName || "مستخدم",
+          id: item.id, type: isGroup ? "group" : "direct", otherUid,
+          displayName: isGroup ? groupName : (profile.playerName || profile.displayName || "مستخدم"),
+          groupName, memberNames,
           lastMessage: hiddenContentIds.has(item.id) ? "" : String(data.lastMessage || "").replace(/\s*\(تم التعديل\)\s*$/,"").replace(/^تم التعديل\.?$/,""),
           updatedAt: data.updatedAt ? data.updatedAt.toMillis() : 0
         };
@@ -679,11 +756,15 @@ io.on("connection", socket => {
       const ref = conversationsRef.doc(id);
       const conversation = await ref.get();
       if (!conversation.exists || !(conversation.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإرسال رسالة هنا.");
-      const otherUid = (conversation.data().members || []).find(uid => uid !== socket.data.uid);
-      if (!otherUid) throw new Error("تعذر تحديد الطرف الآخر.");
-      const [myBlock, theirBlock] = await Promise.all([blockedRef(socket.data.uid, otherUid).get(), blockedRef(otherUid, socket.data.uid).get()]);
-      if (myBlock.exists || theirBlock.exists) throw new Error("لا يمكن إرسال الرسائل بسبب إعدادات الحظر بين الحسابين.");
-      const message = { senderUid: socket.data.uid, text, createdAt: admin.firestore.FieldValue.serverTimestamp() };
+      const conversationData = conversation.data();
+      const isGroup = conversationData.type === "group";
+      if (!isGroup) {
+        const otherUid = (conversationData.members || []).find(uid => uid !== socket.data.uid);
+        if (!otherUid) throw new Error("تعذر تحديد الطرف الآخر.");
+        const [myBlock, theirBlock] = await Promise.all([blockedRef(socket.data.uid, otherUid).get(), blockedRef(otherUid, socket.data.uid).get()]);
+        if (myBlock.exists || theirBlock.exists) throw new Error("لا يمكن إرسال الرسائل بسبب إعدادات الحظر بين الحسابين.");
+      }
+      const message = { senderUid: socket.data.uid, senderName: socket.data.playerName, text, createdAt: admin.firestore.FieldValue.serverTimestamp() };
       const messageRef = ref.collection("messages").doc();
       const batch = db.batch();
       batch.set(messageRef, message);
