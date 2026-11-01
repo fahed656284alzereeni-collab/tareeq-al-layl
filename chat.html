@@ -178,6 +178,13 @@ body:has(.conversationDeleteChoice)>*:not(.conversationDeleteChoice){visibility:
 body:has(.conversationDeleteChoice) .conversationDeleteChoice,
 body:has(.conversationDeleteChoice) .conversationDeleteChoice *{visibility:visible!important}
 
+
+/* إصلاح ظهور قائمة خيارات الرسالة فوق حاوية الرسائل المخفية */
+.msg .messageActions:not([hidden]),
+.msg .messageActions:not([hidden]) *{
+ visibility:visible!important;
+}
+
 </style></head><body>
 <header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><a class="tabLink" href="chat.html" aria-current="page">الصفحة الرئيسية</a><a class="tabLink" href="settings.html">الإعدادات</a></nav></header>
 <main>
