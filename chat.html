@@ -638,7 +638,7 @@ function showInlineActionChoice(kind){
     document.body.append(box);title.focus();return;
   }
   box.append(title,hint,confirmButton,cancelButton);
-  trigger.insertAdjacentElement("afterend",box);title.focus();
+  document.body.append(box);title.focus();
 }
 document.getElementById("blockAction").addEventListener("click",()=>{if(currentOtherUid&&currentId&&currentDetails)showInlineActionChoice("block")});
 document.getElementById("removeFriendAction").addEventListener("click",()=>{if(currentOtherUid&&currentId)showInlineActionChoice("removeFriend")});
