@@ -373,7 +373,7 @@ io.on("connection", socket => {
         const countSnap = await conversationRef.collection("messages").count().get();
         if (typeof reply === "function") reply({ success: true, details: {
           type: "group", name: String(conversationData.groupName || "مجموعة"),
-          members, isAdmin: conversationData.createdBy === socket.data.uid,
+          members, createdBy: conversationData.createdBy || "", isAdmin: conversationData.createdBy === socket.data.uid,
           messageCount: countSnap.data().count || 0,
           createdAt: conversationData.createdAt?.toMillis?.() || 0,
           updatedAt: conversationData.updatedAt?.toMillis?.() || 0
@@ -778,7 +778,7 @@ io.on("connection", socket => {
       }
       batch.set(ref, { updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: text.slice(0,120) }, { merge: true });
       await batch.commit();
-      const payload = { id: messageRef.id, senderUid: socket.data.uid, text, createdAt: Date.now() };
+      const payload = { id: messageRef.id, senderUid: socket.data.uid, senderName: socket.data.playerName, text, createdAt: Date.now() };
       for (const member of conversation.data().members) {
         const sessions = connectedUsers.get(member);
         if (sessions) for (const client of sessions) if (client.connected) client.emit("directMessageReceived", { conversationId:id, message:payload });
