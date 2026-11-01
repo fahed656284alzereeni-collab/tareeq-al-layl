@@ -990,7 +990,7 @@ function mediaUploadCors(req,res,next){
   if(origin)res.setHeader("Access-Control-Allow-Origin",origin);
   res.setHeader("Vary","Origin");
   res.setHeader("Access-Control-Allow-Methods","POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers","Authorization, Content-Type, X-File-Name, X-File-Type");
+  res.setHeader("Access-Control-Allow-Headers","Authorization, Content-Type, X-File-Name, X-File-Type, X-Conversation-Id");
   if(req.method==="OPTIONS")return res.sendStatus(204);
   next();
 }
