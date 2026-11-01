@@ -565,9 +565,10 @@ io.on("connection", socket => {
           const latestVisible = latestMessages.docs.find(message => !(message.data().hiddenFor || []).includes(socket.data.uid));
           if (latestVisible) {
             const messageData = latestVisible.data();
-            lastMessage = String(messageData.text || (messageData.attachment ? ((messageData.attachment.type || "").startsWith("video/") ? "فيديو" : "مرفق: " + (messageData.attachment.name || "ملف")) : "")).slice(0, 120);
-          } else {
-            lastMessage = "";
+            const latestPreview = String(messageData.text || (messageData.attachment ? ((messageData.attachment.type || "").startsWith("video/") ? "فيديو" : "مرفق: " + (messageData.attachment.name || "ملف")) : "")).trim();
+            // Keep the conversation document's lastMessage as a reliable fallback
+            // if the newest message has no previewable text/attachment fields.
+            if (latestPreview) lastMessage = latestPreview.slice(0, 120);
           }
         }
         return {
