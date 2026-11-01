@@ -506,10 +506,14 @@ function addMessage(m){
     if(isVideo){
       videoAttachmentRow=document.createElement("div");videoAttachmentRow.className="videoMessageRow";
       videoAttachmentRow.append(open);
-      const metadataVideo=document.createElement("video");metadataVideo.preload="metadata";metadataVideo.muted=true;metadataVideo.src=item.url;
+      const metadataVideo=document.createElement("video");
+      metadataVideo.preload="metadata";metadataVideo.muted=true;metadataVideo.src=item.url;
+      metadataVideo.setAttribute("aria-hidden","true");metadataVideo.tabIndex=-1;
+      metadataVideo.style.cssText="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden";
+      videoAttachmentRow.append(metadataVideo);
       const updateDuration=()=>{if(!Number.isFinite(metadataVideo.duration)||metadataVideo.duration<=0)return;const total=Math.floor(metadataVideo.duration);const minutes=Math.floor(total/60);const seconds=total%60;const duration=minutes+":"+String(seconds).padStart(2,"0");open.textContent="▶ فيديو · "+duration;open.setAttribute("aria-label","فيديو، المدة "+duration);metadataVideo.removeAttribute("src");metadataVideo.load()};
       metadataVideo.addEventListener("loadedmetadata",updateDuration,{once:true});
-      metadataVideo.addEventListener("error",()=>{open.textContent="▶ فيديو";open.setAttribute("aria-label","فيديو، المدة غير متاحة")},{once:true});
+      metadataVideo.addEventListener("error",()=>{open.textContent="▶ فيديو";open.setAttribute("aria-label","فيديو، المدة غير متاحة");metadataVideo.removeAttribute("src");metadataVideo.load()},{once:true});
     }else content.append(document.createTextNode(" "),open);
   }
   // اجعل الرسالة نفسها عنصرًا قابلًا للتعديل لدى VoiceOver؛ لا يحتاج المستخدم إلى الانتقال إلى عنصر منفصل.
