@@ -189,13 +189,13 @@ function playMessageSound(kind){
 }
 
 
-let voicePeer=null,voiceStream=null,activeVoiceCallId=null,pendingVoiceCall=null,queuedIce=[],queuedCallerIce=[];
+let voicePeer=null,voiceStream=null,activeVoiceCallId=null,pendingVoiceCall=null,queuedIce=[],queuedCallerIce=[],voiceSignalingReady=false;
 const voicePanel=document.getElementById("voiceCallPanel"),voiceStatus=document.getElementById("voiceCallStatus");
 const startVoiceCallButton=document.getElementById("startVoiceCall"),acceptVoiceCallButton=document.getElementById("acceptVoiceCall"),rejectVoiceCallButton=document.getElementById("rejectVoiceCall"),endVoiceCallButton=document.getElementById("endVoiceCall"),remoteCallAudio=document.getElementById("remoteCallAudio");
 function resetVoiceCall(message){
   if(voicePeer){voicePeer.onicecandidate=null;voicePeer.ontrack=null;voicePeer.close();voicePeer=null}
   if(voiceStream){voiceStream.getTracks().forEach(track=>track.stop());voiceStream=null}
-  remoteCallAudio.srcObject=null;activeVoiceCallId=null;pendingVoiceCall=null;queuedIce=[];queuedCallerIce=[];
+  remoteCallAudio.srcObject=null;activeVoiceCallId=null;pendingVoiceCall=null;queuedIce=[];queuedCallerIce=[];voiceSignalingReady=false;
   acceptVoiceCallButton.hidden=true;rejectVoiceCallButton.hidden=true;endVoiceCallButton.hidden=true;
   startVoiceCallButton.hidden=currentConversationType!=="direct"||!currentOtherUid;
   voiceStatus.textContent=message||"لا توجد مكالمة نشطة.";
@@ -203,7 +203,7 @@ function resetVoiceCall(message){
 async function createVoicePeer(callId){
   const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]});
   voicePeer=pc;activeVoiceCallId=callId==="pending"?null:callId;
-  pc.onicecandidate=event=>{if(!event.candidate)return;if(activeVoiceCallId&&socket?.connected)socket.emit("voiceCall:signal",{callId:activeVoiceCallId,candidate:event.candidate});else queuedCallerIce.push(event.candidate)};
+  pc.onicecandidate=event=>{if(!event.candidate)return;if(activeVoiceCallId&&voiceSignalingReady&&socket?.connected)socket.emit("voiceCall:signal",{callId:activeVoiceCallId,candidate:event.candidate});else queuedCallerIce.push(event.candidate)};
   pc.ontrack=event=>{remoteCallAudio.srcObject=event.streams[0];remoteCallAudio.play().catch(()=>{voiceStatus.textContent="اضغط تشغيل الصوت للسماح بسماع المكالمة."})};
   pc.onconnectionstatechange=()=>{if(pc.connectionState==="connected")voiceStatus.textContent="المكالمة الصوتية متصلة.";else if(["failed","disconnected"].includes(pc.connectionState))voiceStatus.textContent="الاتصال الصوتي غير مستقر؛ جارٍ محاولة الاستعادة."};
   return pc;
@@ -220,8 +220,7 @@ startVoiceCallButton.addEventListener("click",async()=>{
     const offer=await pc.createOffer();await pc.setLocalDescription(offer);
     const result=await call("voiceCall:start",{targetUid:currentOtherUid,conversationId:currentId});
     if(!result.success)throw new Error(result.message||"تعذر بدء المكالمة.");
-    activeVoiceCallId=result.callId;for(const candidate of queuedCallerIce.splice(0))socket.emit("voiceCall:signal",{callId:activeVoiceCallId,candidate});
-    socket.emit("voiceCall:offer",{callId:result.callId,offer:pc.localDescription});
+    activeVoiceCallId=result.callId;socket.emit("voiceCall:offer",{callId:result.callId,offer:pc.localDescription});voiceSignalingReady=true;for(const candidate of queuedCallerIce.splice(0))socket.emit("voiceCall:signal",{callId:activeVoiceCallId,candidate});
     voiceStatus.textContent="جارٍ الاتصال بـ"+currentOtherName+"...";
     endVoiceCallButton.hidden=false;
   }catch(error){resetVoiceCall(error.message||"تعذر بدء المكالمة. تحقق من إذن الميكروفون.");}
