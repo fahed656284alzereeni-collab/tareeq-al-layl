@@ -202,7 +202,7 @@ function resetVoiceCall(message){
 }
 async function createVoicePeer(callId){
   const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]});
-  voicePeer=pc;activeVoiceCallId=callId;
+  voicePeer=pc;activeVoiceCallId=callId==="pending"?null:callId;
   pc.onicecandidate=event=>{if(!event.candidate)return;if(activeVoiceCallId&&socket?.connected)socket.emit("voiceCall:signal",{callId:activeVoiceCallId,candidate:event.candidate});else queuedCallerIce.push(event.candidate)};
   pc.ontrack=event=>{remoteCallAudio.srcObject=event.streams[0];remoteCallAudio.play().catch(()=>{voiceStatus.textContent="اضغط تشغيل الصوت للسماح بسماع المكالمة."})};
   pc.onconnectionstatechange=()=>{if(pc.connectionState==="connected")voiceStatus.textContent="المكالمة الصوتية متصلة.";else if(["failed","disconnected"].includes(pc.connectionState))voiceStatus.textContent="الاتصال الصوتي غير مستقر؛ جارٍ محاولة الاستعادة."};
