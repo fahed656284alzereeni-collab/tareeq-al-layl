@@ -480,6 +480,16 @@ function openAttachmentViewer(index){if(index<0||index>=attachmentItems.length)r
 function closeAttachmentViewer(){const viewer=document.getElementById("attachmentViewer");viewer.hidden=true;document.getElementById("attachmentViewerMedia").replaceChildren();if(lastAttachmentTrigger?.isConnected)lastAttachmentTrigger.focus()}
 document.getElementById("closeAttachmentViewer").addEventListener("click",closeAttachmentViewer);document.getElementById("previousAttachment").addEventListener("click",()=>{if(activeAttachmentIndex>0){activeAttachmentIndex--;renderAttachmentViewer();document.getElementById("attachmentViewerTitle").focus()}});document.getElementById("nextAttachment").addEventListener("click",()=>{if(activeAttachmentIndex<attachmentItems.length-1){activeAttachmentIndex++;renderAttachmentViewer();document.getElementById("attachmentViewerTitle").focus()}});document.getElementById("downloadAttachment").addEventListener("click",async()=>{const item=attachmentItems[activeAttachmentIndex];if(!item)return;const button=document.getElementById("downloadAttachment");button.disabled=true;const originalText=button.textContent;button.textContent="جارٍ تجهيز التنزيل...";try{const response=await fetch(item.url);if(!response.ok)throw new Error("تعذر تنزيل المرفق");const blob=await response.blob();const objectUrl=URL.createObjectURL(blob);const a=document.createElement("a");a.href=objectUrl;a.download=item.originalName||item.name||"video";a.rel="noopener";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(objectUrl),60000)}catch(error){const a=document.createElement("a");a.href=item.url;a.download=item.originalName||item.name||"video";a.rel="noopener";document.body.append(a);a.click();a.remove();document.getElementById("attachmentViewerDetails").textContent="إذا لم يبدأ التنزيل، افتح الرابط واختر حفظ الفيديو."}finally{button.disabled=false;button.textContent=originalText}});
 
+function updateVideoMessageDuration(messageId,durationSeconds){
+  const total=Math.floor(Number(durationSeconds));
+  if(!Number.isFinite(total)||total<=0)return;
+  const element=Array.from(messages.children).find(item=>String(item.dataset.messageId||"")===String(messageId||""));
+  const button=element?.querySelector(".videoAttachmentButton");
+  if(!button)return;
+  const formatted=Math.floor(total/60)+":"+String(total%60).padStart(2,"0");
+  button.textContent="▶ فيديو · "+formatted;
+  button.setAttribute("aria-label","فيديو، المدة "+formatted);
+}
 function addMessage(m){
   if(known.has(m.id))return Array.from(messages.children).find(element=>String(element.dataset.messageId||"")===String(m.id||""))||null;
   known.add(m.id);
@@ -516,8 +526,9 @@ function addMessage(m){
       videoAttachmentRow.append(metadataVideo);
       const updateDuration=()=>{if(knownDuration)return;const duration=formatVideoDuration(metadataVideo.duration);if(!duration)return;open.textContent="▶ فيديو · "+duration;open.setAttribute("aria-label","فيديو، المدة "+duration);metadataVideo.removeAttribute("src");metadataVideo.load()};
       if(!knownDuration){
-        metadataVideo.addEventListener("loadedmetadata",updateDuration,{once:true});
-        metadataVideo.addEventListener("error",()=>{open.textContent="▶ فيديو";open.setAttribute("aria-label","فيديو، المدة غير متاحة");metadataVideo.removeAttribute("src");metadataVideo.load()},{once:true});
+        metadataVideo.addEventListener("loadedmetadata",updateDuration);
+        metadataVideo.addEventListener("durationchange",updateDuration);
+        metadataVideo.addEventListener("error",()=>{if(!open.textContent.includes(" · "))open.setAttribute("aria-label","فيديو، المدة غير متاحة");metadataVideo.removeAttribute("src");metadataVideo.load()},{once:true});
       }
     }else content.append(document.createTextNode(" "),open);
   }
@@ -1098,19 +1109,9 @@ async function uploadConversationAttachment(file){
     const attachment={...result.attachment};if((attachment.type||file.type||"").startsWith("video/")){attachment.name="فيديو";const durationSeconds=await Promise.race([durationPromise,new Promise(resolve=>setTimeout(()=>resolve(null),1200))]);if(durationSeconds)attachment.durationSeconds=durationSeconds;}
      const sent=await call("sendDirectMessage",{conversationId:currentId,text:"",attachment},30000);
     if(!sent.success)throw new Error(sent.message||"تم رفع الملف لكن تعذر إرساله داخل المحادثة.");
-    const sentMessageElement=addMessage(sent.message);
+    addMessage(sent.message);
     if(isVideoFile){
-      durationPromise.then(durationSeconds=>{
-        if(!durationSeconds)return;
-        const videoButton=sentMessageElement?.querySelector(".videoAttachmentButton");
-        if(videoButton){
-          const minutes=Math.floor(durationSeconds/60);
-          const seconds=String(durationSeconds%60).padStart(2,"0");
-          const formatted=minutes+":"+seconds;
-          videoButton.textContent="▶ فيديو · "+formatted;
-          videoButton.setAttribute("aria-label","فيديو، المدة "+formatted);
-        }
-      }).catch(()=>{});
+      durationPromise.then(durationSeconds=>updateVideoMessageDuration(sent.message.id,durationSeconds)).catch(()=>{});
     }
     await loadConversations();status.textContent=isVideoFile?"تم إرسال الفيديو بنجاح.":"تم إرسال الملف بنجاح: "+file.name;playMessageSound("sent");
   }catch(error){status.textContent=error.message||"حدث خطأ أثناء مشاركة الملف."}
