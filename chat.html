@@ -171,6 +171,13 @@ body:has(.messageDeleteConfirmation) #chatPanel #composePanel{visibility:hidden!
 body:has(.groupInlinePanel:not([hidden])),
 body:has(.messageDeleteConfirmation){overflow:hidden!important}
 
+
+/* Isolate every individual-conversation confirmation screen */
+body:has(.conversationDeleteChoice){overflow:hidden!important}
+body:has(.conversationDeleteChoice)>*:not(.conversationDeleteChoice){visibility:hidden!important}
+body:has(.conversationDeleteChoice) .conversationDeleteChoice,
+body:has(.conversationDeleteChoice) .conversationDeleteChoice *{visibility:visible!important}
+
 </style></head><body>
 <header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><a class="tabLink" href="chat.html" aria-current="page">الصفحة الرئيسية</a><a class="tabLink" href="settings.html">الإعدادات</a></nav></header>
 <main>
