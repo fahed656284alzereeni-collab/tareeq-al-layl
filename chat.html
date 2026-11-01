@@ -465,6 +465,9 @@ async function refreshConversationInfo(){
   friendButton.hidden=d.isFriend;
   friendButton.textContent=d.pendingRequest?"إلغاء طلب الصداقة":"إرسال طلب صداقة";
   document.getElementById("removeFriendAction").hidden=!d.isFriend;
+  document.getElementById("clearChatAction").hidden=false;
+  document.getElementById("deleteChatAction").hidden=false;
+  document.getElementById("reportAction").hidden=false;
   const blockButton=document.getElementById("blockAction");
   blockButton.hidden=d.blockedMe&&!d.blockedByMe;
   blockButton.textContent=d.blockedByMe?"إلغاء الحظر":"حظر المستخدم";
