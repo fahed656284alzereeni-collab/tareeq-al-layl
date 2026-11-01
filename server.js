@@ -752,8 +752,18 @@ io.on("connection", socket => {
   socket.on("sendDirectMessage", async (data = {}, reply) => {
     try {
       const id = String(data.conversationId || "");
+      const attachment=data.attachment&&typeof data.attachment==="object"?data.attachment:null;
       const text = String(data.text || "").trim();
-      if (!text || text.length > 4000) throw new Error("اكتب رسالة لا تتجاوز 4000 حرف.");
+      if ((!text&&!attachment) || text.length > 4000) throw new Error("اكتب رسالة أو اختر ملفًا لإرساله.");
+      if(attachment){
+        const storagePath=String(attachment.storagePath||"");
+        if(!storagePath.startsWith("conversations/"+id+"/"))throw new Error("مسار الملف غير صالح لهذه المحادثة.");
+        const file=admin.storage().bucket("tareeq-al-layl.firebasestorage.app").file(storagePath);
+        const [exists]=await file.exists();
+        if(!exists)throw new Error("الملف المرفق غير موجود في مساحة التخزين.");
+        const [metadata]=await file.getMetadata();
+        if(metadata.metadata?.uploadedBy!==socket.data.uid||metadata.metadata?.conversationId!==id)throw new Error("غير مصرح بإرسال هذا الملف.");
+      }
       const ref = conversationsRef.doc(id);
       const conversation = await ref.get();
       if (!conversation.exists || !(conversation.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإرسال رسالة هنا.");
@@ -765,7 +775,7 @@ io.on("connection", socket => {
         const [myBlock, theirBlock] = await Promise.all([blockedRef(socket.data.uid, otherUid).get(), blockedRef(otherUid, socket.data.uid).get()]);
         if (myBlock.exists || theirBlock.exists) throw new Error("لا يمكن إرسال الرسائل بسبب إعدادات الحظر بين الحسابين.");
       }
-      const message = { senderUid: socket.data.uid, senderName: socket.data.playerName, text, createdAt: admin.firestore.FieldValue.serverTimestamp() };
+      const message = { senderUid: socket.data.uid, senderName: socket.data.playerName, text, ...(attachment?{attachment}:{}), createdAt: admin.firestore.FieldValue.serverTimestamp() };
       const messageRef = ref.collection("messages").doc();
       const batch = db.batch();
       batch.set(messageRef, message);
@@ -773,9 +783,9 @@ io.on("connection", socket => {
         batch.delete(usersRef.doc(member).collection("hiddenConversations").doc(id));
         batch.delete(usersRef.doc(member).collection("hiddenConversationContent").doc(id));
       }
-      batch.set(ref, { updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: text.slice(0,120) }, { merge: true });
+      batch.set(ref, { updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: (text||("مرفق: "+attachment.name)).slice(0,120) }, { merge: true });
       await batch.commit();
-      const payload = { id: messageRef.id, senderUid: socket.data.uid, senderName: socket.data.playerName, text, createdAt: Date.now() };
+      const payload = { id: messageRef.id, senderUid: socket.data.uid, senderName: socket.data.playerName, text, ...(attachment?{attachment}:{}), createdAt: Date.now() };
       for (const member of conversation.data().members) {
         const sessions = connectedUsers.get(member);
         if (sessions) for (const client of sessions) if (client.connected) client.emit("directMessageReceived", { conversationId:id, message:payload });
@@ -970,6 +980,44 @@ io.on("connection", socket => {
 
 app.get("/", (req, res) => {
   res.send("خادم مِرسالو يعمل");
+});
+
+
+const mediaUploadOrigins = new Set(["https://mersalo.onrender.com"]);
+function mediaUploadCors(req,res,next){
+  const origin=req.headers.origin;
+  if(origin&&!mediaUploadOrigins.has(origin))return res.status(403).json({success:false,message:"Origin not allowed."});
+  if(origin)res.setHeader("Access-Control-Allow-Origin",origin);
+  res.setHeader("Vary","Origin");
+  res.setHeader("Access-Control-Allow-Methods","POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers","Authorization, Content-Type, X-File-Name, X-File-Type");
+  if(req.method==="OPTIONS")return res.sendStatus(204);
+  next();
+}
+app.options("/api/upload-media",mediaUploadCors);
+app.post("/api/upload-media",mediaUploadCors,express.raw({type:"application/octet-stream",limit:"50mb"}),async(req,res)=>{
+  try{
+    const authHeader=String(req.headers.authorization||"");
+    const match=authHeader.match(/^Bearer (.+)$/i);
+    if(!match)return res.status(401).json({success:false,message:"Authentication required."});
+    const decoded=await admin.auth().verifyIdToken(match[1]);
+    const conversationId=String(req.headers["x-conversation-id"]||"");
+    const mimeType=String(req.headers["x-file-type"]||"application/octet-stream").slice(0,150);
+    const fileName=decodeURIComponent(String(req.headers["x-file-name"]||"file").slice(0,600)).replace(/[\\/]/g,"_").slice(0,180);
+    if(!conversationId||!req.body||!Buffer.isBuffer(req.body)||!req.body.length) return res.status(400).json({success:false,message:"الملف فارغ أو بيانات الرفع غير مكتملة."});
+    if(req.body.length>50*1024*1024)return res.status(413).json({success:false,message:"الحد الأقصى لحجم الملف 50 ميغابايت."});
+    const conversationSnap=await admin.firestore().collection("conversations").doc(conversationId).get();
+    if(!conversationSnap.exists||!(conversationSnap.data().members||[]).includes(decoded.uid))return res.status(403).json({success:false,message:"غير مصرح برفع ملف إلى هذه المحادثة."});
+    const token=require("crypto").randomUUID();
+    const storagePath="conversations/"+conversationId+"/"+require("crypto").randomUUID();
+    const bucket=admin.storage().bucket("tareeq-al-layl.firebasestorage.app");
+    await bucket.file(storagePath).save(req.body,{resumable:false,metadata:{contentType:mimeType,metadata:{firebaseStorageDownloadTokens:token,uploadedBy:decoded.uid,conversationId,originalName:fileName}}});
+    const url="https://firebasestorage.googleapis.com/v0/b/"+bucket.name+"/o/"+encodeURIComponent(storagePath)+"?alt=media&token="+token;
+    res.json({success:true,attachment:{name:fileName,type:mimeType,size:req.body.length,url,storagePath}});
+  }catch(error){
+    console.error("Media upload error:",error.message);
+    res.status(500).json({success:false,message:"تعذر رفع الملف. تحقق من إعداد مساحة تخزين Firebase ثم حاول مرة أخرى."});
+  }
 });
 
 app.use(express.json({ limit: "32kb" }));
