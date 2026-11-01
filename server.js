@@ -336,6 +336,97 @@ io.on("connection", socket => {
 
 
 
+
+  // Group administration: all permissions are checked again on the server.
+  socket.on("renameGroup", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const name = String(data.name || "").trim().slice(0, 50);
+      if (!name) throw new Error("اكتب اسمًا صالحًا للمجموعة.");
+      const ref = conversationsRef.doc(conversationId);
+      const snap = await ref.get();
+      if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بتعديل هذه المجموعة.");
+      if (snap.data().createdBy !== socket.data.uid) throw new Error("منشئ المجموعة فقط يستطيع تعديل اسمها.");
+      await ref.update({ groupName: name, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      for (const uid of snap.data().members || []) {
+        const sessions = connectedUsers.get(uid);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("groupConversationUpdated", { conversationId });
+      }
+      if (typeof reply === "function") reply({ success: true, message: "تم تحديث اسم المجموعة." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تعديل اسم المجموعة." });
+    }
+  });
+
+  socket.on("removeGroupMember", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const targetUid = String(data.memberUid || "");
+      const ref = conversationsRef.doc(conversationId);
+      const result = await db.runTransaction(async transaction => {
+        const snap = await transaction.get(ref);
+        if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإدارة هذه المجموعة.");
+        const group = snap.data();
+        if (group.createdBy !== socket.data.uid) throw new Error("منشئ المجموعة فقط يستطيع إزالة الأعضاء.");
+        if (!targetUid || targetUid === group.createdBy) throw new Error("لا يمكن إزالة منشئ المجموعة.");
+        if (!(group.members || []).includes(targetUid)) throw new Error("هذا العضو لم يعد ضمن المجموعة.");
+        transaction.update(ref, { members: admin.firestore.FieldValue.arrayRemove(targetUid), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        return { members: group.members.filter(uid => uid !== targetUid) };
+      });
+      for (const uid of result.members) {
+        const sessions = connectedUsers.get(uid);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("groupConversationUpdated", { conversationId });
+      }
+      const removedSessions = connectedUsers.get(targetUid);
+      if (removedSessions) for (const client of removedSessions) if (client.connected) client.emit("directConversationDeleted", { conversationId });
+      if (typeof reply === "function") reply({ success: true, message: "تمت إزالة العضو من المجموعة." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذرت إزالة العضو." });
+    }
+  });
+
+  socket.on("leaveGroup", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const ref = conversationsRef.doc(conversationId);
+      const result = await db.runTransaction(async transaction => {
+        const snap = await transaction.get(ref);
+        if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("أنت لست عضوًا في هذه المجموعة.");
+        const group = snap.data();
+        if (group.createdBy === socket.data.uid) throw new Error("منشئ المجموعة لا يمكنه مغادرتها. يمكنك حذف المجموعة بدلًا من ذلك.");
+        transaction.update(ref, { members: admin.firestore.FieldValue.arrayRemove(socket.data.uid), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+        return { members: group.members.filter(uid => uid !== socket.data.uid) };
+      });
+      for (const uid of result.members) {
+        const sessions = connectedUsers.get(uid);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("groupConversationUpdated", { conversationId });
+      }
+      if (typeof reply === "function") reply({ success: true, message: "غادرت المجموعة بنجاح." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر مغادرة المجموعة." });
+    }
+  });
+
+  socket.on("deleteGroup", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const ref = conversationsRef.doc(conversationId);
+      const snap = await ref.get();
+      if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بحذف هذه المجموعة.");
+      const members = snap.data().members || [];
+      if (snap.data().createdBy !== socket.data.uid) throw new Error("منشئ المجموعة فقط يستطيع حذفها.");
+      await deleteConversationMessages(ref);
+      await ref.delete();
+      for (const uid of members) {
+        const sessions = connectedUsers.get(uid);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("directConversationDeleted", { conversationId });
+      }
+      if (typeof reply === "function") reply({ success: true, message: "تم حذف المجموعة وجميع رسائلها." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر حذف المجموعة." });
+    }
+  });
+
   socket.on("findUserByName", async (data = {}, reply) => {
     try {
       const name = String(data.name || "").trim();
