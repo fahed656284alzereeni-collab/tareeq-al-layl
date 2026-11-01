@@ -557,10 +557,14 @@ io.on("connection", socket => {
       if (!conversation.exists || !(conversation.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بفتح هذه المحادثة.");
       const snap = await ref.collection("messages").orderBy("createdAt", "asc").limit(100).get();
       const visibleDocs = snap.docs.filter(d => !(d.data().hiddenFor || []).includes(socket.data.uid));
+      const senderUids = [...new Set(visibleDocs.map(doc => doc.data().senderUid).filter(Boolean))];
+      const senderProfiles = senderUids.length ? await db.getAll(...senderUids.map(uid => usersRef.doc(uid))) : [];
+      const senderNames = new Map(senderProfiles.map(profile => [profile.id, String(profile.exists ? (profile.data().playerName || profile.data().displayName || "مستخدم") : "مستخدم")]));
+
       const messages = await Promise.all(visibleDocs.map(async d => {
         const data = d.data();
         const storagePath = data.storagePath;
-        const item = { id: d.id, ...data, createdAt: data.createdAt ? data.createdAt.toMillis() : 0 };
+        const item = { id: d.id, ...data, senderName: data.senderName || senderNames.get(data.senderUid) || "مستخدم", createdAt: data.createdAt ? data.createdAt.toMillis() : 0 };
         delete item.storagePath;
         if (data.type === "voice" && storagePath) {
           try { item.audioUrl = await createVoiceSignedUrl(storagePath); }
