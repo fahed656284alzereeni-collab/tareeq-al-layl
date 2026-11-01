@@ -242,6 +242,21 @@ body:has(.messageEditForm){overflow:hidden!important}
 #newChatOptions[hidden]{display:none!important}
 body:has(#newChatOptions:not([hidden])){overflow:hidden!important}
 
+/* عند فتح قائمة الدردشة الجديدة، أخفِ الصفحة الرئيسية بالكامل واترك شاشة الخيارات وحدها */
+body:has(#newChatOptions:not([hidden]))>header,
+body:has(#newChatOptions:not([hidden]))>main> :not(#newChatSection),
+body:has(#newChatOptions:not([hidden])) #newChatSection> :not(#newChatOptions),
+body:has(#newChatOptions:not([hidden]))>#status{
+  display:none!important;
+}
+body:has(#newChatOptions:not([hidden])) #newChatOptions{
+  position:fixed!important;
+  inset:0!important;
+  z-index:2147483647!important;
+  display:flex!important;
+  visibility:visible!important;
+}
+
 </style></head><body>
 <header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><a class="tabLink" href="chat.html" aria-current="page">الصفحة الرئيسية</a><a class="tabLink" href="settings.html">الإعدادات</a></nav></header>
 <main>
