@@ -1016,12 +1016,26 @@ io.on("connection", socket => {
     try {
       const otherUid = String(data.uid || "").trim();
       const conversationId = String(data.conversationId || "");
-      const conversationSnap = await conversationsRef.doc(conversationId).get();
-      const members = conversationSnap.exists ? (conversationSnap.data().members || []) : [];
-      if (!otherUid || otherUid === socket.data.uid || !members.includes(socket.data.uid) || !members.includes(otherUid)) throw new Error("بيانات إزالة الصداقة غير صالحة.");
+      if (!otherUid || otherUid === socket.data.uid) throw new Error("بيانات إزالة الصداقة غير صالحة.");
+
+      // The friends page does not have a conversationId. Verify the friendship
+      // itself there; when called from a conversation, also verify membership.
+      const myFriendRef = friendshipRef(socket.data.uid, otherUid);
+      const theirFriendRef = friendshipRef(otherUid, socket.data.uid);
+      const [myFriend, theirFriend] = await Promise.all([myFriendRef.get(), theirFriendRef.get()]);
+      if (conversationId) {
+        const conversationSnap = await conversationsRef.doc(conversationId).get();
+        const members = conversationSnap.exists ? (conversationSnap.data().members || []) : [];
+        if (!members.includes(socket.data.uid) || !members.includes(otherUid)) {
+          throw new Error("بيانات إزالة الصداقة غير صالحة.");
+        }
+      } else if (!myFriend.exists && !theirFriend.exists) {
+        throw new Error("هذا المستخدم ليس ضمن قائمة أصدقائك.");
+      }
+
       const batch = db.batch();
-      batch.delete(friendshipRef(socket.data.uid, otherUid));
-      batch.delete(friendshipRef(otherUid, socket.data.uid));
+      batch.delete(myFriendRef);
+      batch.delete(theirFriendRef);
       batch.delete(requestRef(socket.data.uid, otherUid));
       batch.delete(requestRef(otherUid, socket.data.uid));
       await batch.commit();
