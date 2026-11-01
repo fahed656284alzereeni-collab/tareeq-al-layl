@@ -1,7 +1,18 @@
 <!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>محادثات مِرسالو</title>
 <style>
-:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}*{box-sizing:border-box}body{margin:0;line-height:1.7}header{padding:15px 20px;background:#1b293b;display:flex;justify-content:space-between;align-items:center;gap:12px}h1{margin:0;color:#8bd8c5;font-size:1.5rem}main{max-width:760px;margin:auto;padding:18px}.panel{background:#1b293b;border:1px solid #34445a;border-radius:16px;padding:17px;margin-bottom:16px}label{display:block;font-weight:bold;margin:12px 0 5px}input,textarea,button{font:inherit;width:100%;padding:12px;border-radius:10px;margin:5px 0}input,textarea{background:#fff;color:#111;border:2px solid #718096}button{background:#167c68;color:white;border:0;font-weight:bold}button:focus,input:focus,textarea:focus{outline:3px solid #ffd166;outline-offset:3px}.secondary{background:#42536b}.conversation{display:block;text-align:right;background:#26384e;margin:8px 0}.chatHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.chatHeader h2{margin:0}.closeChat{width:auto;background:#42536b;margin:0 0 10px}.infoToggle{width:auto;background:#167c68;margin:0 0 10px}.infoPanel{background:#26384e;border:1px solid #42536b;border-radius:12px;padding:14px;margin:8px 0 14px}.infoPanel button{margin:8px 0}.infoMeta{padding:8px 0;border-bottom:1px solid #42536b}.infoActions{margin-top:12px}.messages{min-height:150px;max-height:48vh;overflow:auto;padding:8px;background:#101827;border-radius:12px}.msg{padding:10px;margin:8px 0;border-radius:12px;background:#26384e;overflow-wrap:anywhere}.mine{background:#145b50}.muted{color:#c3d0df}.tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.tabLink{display:inline-block;padding:9px 16px;border-radius:10px;background:#26384e;color:#f5f7fb;text-decoration:none;font-weight:bold}.tabLink[aria-current="page"]{background:#167c68}.tabLink:focus{outline:3px solid #ffd166;outline-offset:3px}#chatPanel{display:none}#status{padding:10px;background:#26384e;border-radius:10px}
+:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}*{box-sizing:border-box}body{margin:0;line-height:1.7}header{padding:15px 20px;background:#1b293b;display:flex;justify-content:space-between;align-items:center;gap:12px}h1{margin:0;color:#8bd8c5;font-size:1.5rem}main{max-width:760px;margin:auto;padding:18px}.panel{background:#1b293b;border:1px solid #34445a;border-radius:16px;padding:17px;margin-bottom:16px}label{display:block;font-weight:bold;margin:12px 0 5px}input,textarea,button{font:inherit;width:100%;padding:12px;border-radius:10px;margin:5px 0}input,textarea{background:#fff;color:#111;border:2px solid #718096}button{background:#167c68;color:white;border:0;font-weight:bold}button:focus,input:focus,textarea:focus{outline:3px solid #ffd166;outline-offset:3px}.secondary{background:#42536b}.conversation{display:block;text-align:right;background:#26384e;margin:8px 0}.chatHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.chatHeader h2{margin:0}.closeChat{width:auto;background:#42536b;margin:0 0 10px}.infoToggle{width:auto;background:#167c68;margin:0 0 10px}.infoPanel{background:#26384e;border:1px solid #42536b;border-radius:12px;padding:14px;margin:8px 0 14px}.infoPanel button{margin:8px 0}.infoMeta{padding:8px 0;border-bottom:1px solid #42536b}.infoActions{margin-top:12px}
+.groupInfoSection{border-top:1px solid #42536b;margin-top:16px;padding-top:12px}
+.groupInfoSection h4{margin:8px 0}
+.groupMemberRow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 2px;border-bottom:1px solid #42536b}
+.groupMemberRow button,.groupInfoSection button{width:auto;min-width:130px;min-height:44px;margin:5px 0}
+.groupInlinePanel{border:1px solid #718096;border-radius:12px;padding:12px;margin:10px 0;background:#1b293b}
+.groupInlinePanel[hidden]{display:none!important}
+.groupInlinePanel input,.groupInlinePanel textarea{width:100%}
+.groupInlinePanel .groupConfirmButtons{display:flex;flex-wrap:wrap;gap:8px}
+.groupInlinePanel .groupConfirmButtons button{flex:1}
+.groupDanger{background:#873f48}
+.messages{min-height:150px;max-height:48vh;overflow:auto;padding:8px;background:#101827;border-radius:12px}.msg{padding:10px;margin:8px 0;border-radius:12px;background:#26384e;overflow-wrap:anywhere}.mine{background:#145b50}.muted{color:#c3d0df}.tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.tabLink{display:inline-block;padding:9px 16px;border-radius:10px;background:#26384e;color:#f5f7fb;text-decoration:none;font-weight:bold}.tabLink[aria-current="page"]{background:#167c68}.tabLink:focus{outline:3px solid #ffd166;outline-offset:3px}#chatPanel{display:none}#status{padding:10px;background:#26384e;border-radius:10px}
 [hidden]{display:none!important}
 body.chat-open{background:#101827}
 body.chat-open header{padding:10px 16px}
@@ -249,7 +260,9 @@ function showMessageDeleteConfirmation(id,element,scope){
 }
 async function deleteMessageForMe(id,element){showMessageDeleteConfirmation(id,element,"me")}
 async function deleteMessageForEveryone(id,element){showMessageDeleteConfirmation(id,element,"everyone")}
-async function openConversation(c){currentId=c.id;currentConversationType=c.type==="group"?"group":"direct";currentOtherUid=c.otherUid||null;currentOtherName=c.displayName||c.email||"مستخدم";currentDetails=null;known.clear();messages.replaceChildren();document.getElementById("conversationListPanel").hidden=true;document.getElementById("mainNavigation").hidden=true;document.body.classList.add("chat-open");panel.style.display="block";document.getElementById("conversationInfo").hidden=true;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;document.getElementById("messageHint").textContent="يمكنك كتابة رسالة تصل إلى 4000 حرف.";document.getElementById("chatTitle").textContent=currentConversationType==="group"?"مجموعة: "+currentOtherName:"محادثة مع "+(c.displayName||c.email||"مستخدم");const r=await call("getConversationMessages",{conversationId:c.id});if(!r.success){say(r.message);return}r.messages.forEach(addMessage);refreshConversationInfo();document.getElementById("messageText").focus()}
+async function openConversation(c){currentId=c.id;currentConversationType=c.type==="group"?"group":"direct";currentOtherUid=c.otherUid||null;currentOtherName=c.type==="group"?(c.groupName||c.displayName||"مجموعة"):(c.displayName||c.email||"مستخدم");currentDetails=null;known.clear();messages.replaceChildren();document.getElementById("conversationListPanel").hidden=true;document.getElementById("mainNavigation").hidden=true;document.body.classList.add("chat-open");panel.style.display="block";document.getElementById("conversationInfo").hidden=true;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;document.getElementById("conversationInfoButton").setAttribute("aria-expanded","false");document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;document.getElementById("messageHint").textContent="يمكنك كتابة رسالة تصل إلى 4000 حرف.";document.getElementById("chatTitle").textContent=currentConversationType==="group"?"مجموعة: "+currentOtherName:"محادثة مع "+(c.displayName||c.email||"مستخدم");
+ document.getElementById("conversationInfoButton").textContent=currentConversationType==="group"?"معلومات المجموعة":"معلومات المحادثة";
+ document.getElementById("conversationInfoHeading").textContent=currentConversationType==="group"?"معلومات المجموعة":"معلومات المحادثة";const r=await call("getConversationMessages",{conversationId:c.id});if(!r.success){say(r.message);return}r.messages.forEach(addMessage);refreshConversationInfo();document.getElementById("messageText").focus()}
 async function loadConversations(){const requestSocket=socket;const r=await call("listConversations",{},30000);if(r.connectionLost||requestSocket!==socket||!socket?.connected)return;if(!r.success){list.textContent=r.message;return}latestConversations=r.conversations||[];if(typeof renderRecentGroupContacts==="function"&&!newGroupPanel.hidden)renderRecentGroupContacts();list.replaceChildren();if(!r.conversations.length){list.textContent="لا توجد محادثات بعد. ابحث عن اسم شخص لبدء محادثة.";return}r.conversations.forEach(c=>{const b=document.createElement("button");b.className="conversation";const preview=String(c.lastMessage||"").replace(/\s*\(تم التعديل\)\s*$/,"").replace(/^تم التعديل\.?$/,"");b.textContent=(c.type==="group"?"مجموعة: ":"")+(c.displayName||c.email||"مستخدم")+"، "+(preview||"ابدأ المحادثة")+(c.type==="group"&&c.memberNames?.length?"، "+c.memberNames.length+" أعضاء":"");b.addEventListener("click",()=>openConversation(c));list.append(b)})}
 async function startChatWithUser(user){say("جارٍ فتح المحادثة...");const started=await call("startDirectConversation",{targetUid:user.uid});if(!started.success){say(started.message);return}openConversation({...started.conversation,otherUid:user.uid});loadConversations()}
 let onlineUsers=[];
@@ -336,38 +349,104 @@ async function refreshConversationInfo(){
   const d=r.details;
   if(d.type==="group"){
     currentConversationType="group";currentOtherUid=null;currentOtherName=d.name;
+    document.getElementById("chatTitle").textContent="مجموعة: "+d.name;
+    document.getElementById("conversationInfoButton").textContent="معلومات المجموعة";
+    document.getElementById("conversationInfoHeading").textContent="معلومات المجموعة";
     content.replaceChildren();
-    const rows=[["اسم المجموعة",d.name],["عدد الأعضاء",String(d.members.length)],["عدد الرسائل",String(d.messageCount)],["تاريخ الإنشاء",formatInfoDate(d.createdAt)]];
+    const rows=[["اسم المجموعة",d.name],["عدد الأعضاء",String(d.members.length)],["عدد الرسائل",String(d.messageCount)],["تاريخ الإنشاء",formatInfoDate(d.createdAt)],["منشئ المجموعة",d.members.find(m=>m.uid===d.createdBy)?.name||"غير متوفر"]];
     rows.forEach(([label,value])=>{const row=document.createElement("p");row.className="infoMeta";row.textContent=label+": "+value;content.append(row)});
-    const heading=document.createElement("h4");heading.textContent="أعضاء المجموعة";content.append(heading);
-    d.members.forEach(member=>{const row=document.createElement("p");row.className="infoMeta";row.textContent=member.name+(member.online?"، متصل الآن":"، غير متصل")+(member.uid===d.createdBy?"، منشئ المجموعة":"");content.append(row)});
+    const membersSection=document.createElement("section");membersSection.className="groupInfoSection";
+    const membersHeading=document.createElement("h4");membersHeading.textContent="أعضاء المجموعة";membersSection.append(membersHeading);
+    d.members.forEach(member=>{
+      const row=document.createElement("div");row.className="groupMemberRow";
+      const name=document.createElement("span");name.textContent=member.name+(member.online?"، متصل الآن":"، غير متصل")+(member.uid===d.createdBy?"، منشئ المجموعة":"");
+      row.append(name);
+      if(d.isAdmin&&member.uid!==d.createdBy){
+        const remove=document.createElement("button");remove.type="button";remove.className="secondary";remove.textContent="إزالة العضو";
+        const confirm=document.createElement("div");confirm.className="groupInlinePanel";confirm.hidden=true;
+        const prompt=document.createElement("p");prompt.textContent="هل تريد إزالة "+member.name+" من المجموعة؟";
+        const buttons=document.createElement("div");buttons.className="groupConfirmButtons";
+        const yes=document.createElement("button");yes.type="button";yes.textContent="تأكيد الإزالة";
+        const no=document.createElement("button");no.type="button";no.className="secondary";no.textContent="إلغاء";
+        remove.addEventListener("click",()=>{confirm.hidden=!confirm.hidden;if(!confirm.hidden)yes.focus()});
+        no.addEventListener("click",()=>{confirm.hidden=true;remove.focus()});
+        yes.addEventListener("click",async()=>{yes.disabled=true;no.disabled=true;const result=await call("removeGroupMember",{conversationId:currentId,memberUid:member.uid});yes.disabled=false;no.disabled=false;if(!result.success){prompt.textContent=result.message||"تعذرت إزالة العضو.";return}await refreshConversationInfo();await loadConversations();document.getElementById("conversationActionStatus").textContent=result.message||"تمت إزالة العضو."});
+        buttons.append(yes,no);confirm.append(prompt,buttons);row.append(remove);membersSection.append(row,confirm);
+      }else membersSection.append(row);
+    });
+    content.append(membersSection);
+    const actions=document.createElement("section");actions.className="groupInfoSection";
+    const actionsHeading=document.createElement("h4");actionsHeading.textContent="إجراءات المجموعة";actions.append(actionsHeading);
+    const makeButton=(label,cls="secondary")=>{const button=document.createElement("button");button.type="button";button.className=cls;button.textContent=label;return button};
+    const makePanel=()=>{const panel=document.createElement("div");panel.className="groupInlinePanel";panel.hidden=true;return panel};
+    if(d.isAdmin){
+      const renameButton=makeButton("تعديل اسم المجموعة");
+      const renamePanel=makePanel();
+      const renameLabel=document.createElement("label");renameLabel.textContent="اسم المجموعة الجديد";
+      const renameInput=document.createElement("input");renameInput.type="text";renameInput.maxLength=50;renameInput.value=d.name;renameInput.setAttribute("aria-label","اسم المجموعة الجديد");
+      const renameButtons=document.createElement("div");renameButtons.className="groupConfirmButtons";
+      const saveName=makeButton("حفظ الاسم","");const cancelName=makeButton("إلغاء");
+      renameButton.addEventListener("click",()=>{renamePanel.hidden=!renamePanel.hidden;if(!renamePanel.hidden)renameInput.focus()});
+      cancelName.addEventListener("click",()=>{renamePanel.hidden=true;renameButton.focus()});
+      saveName.addEventListener("click",async()=>{const name=renameInput.value.trim();if(!name){renameInput.setCustomValidity("اكتب اسم المجموعة.");renameInput.reportValidity();return}saveName.disabled=true;cancelName.disabled=true;const result=await call("renameGroup",{conversationId:currentId,name});saveName.disabled=false;cancelName.disabled=false;if(!result.success){document.getElementById("conversationActionStatus").textContent=result.message||"تعذر تعديل الاسم.";return}renamePanel.hidden=true;await refreshConversationInfo();await loadConversations();document.getElementById("conversationActionStatus").textContent=result.message||"تم تحديث اسم المجموعة.";renameButton.focus()});
+      renameButtons.append(saveName,cancelName);renamePanel.append(renameLabel,renameInput,renameButtons);actions.append(renameButton,renamePanel);
+
+      const addButton=makeButton("إضافة أعضاء");
+      const addPanel=makePanel();
+      const addLabel=document.createElement("label");addLabel.textContent="ابحث عن أعضاء لإضافتهم";
+      const search=document.createElement("input");search.type="search";search.placeholder="اكتب اسم الشخص";search.setAttribute("aria-label","البحث عن أعضاء لإضافتهم");
+      const results=document.createElement("div");results.setAttribute("aria-live","polite");
+      const chosenText=document.createElement("p");chosenText.textContent="لم تختر أعضاء جددًا.";
+      const selected=new Map();let timer=null,requestId=0;
+      const updateChosen=()=>{chosenText.textContent=selected.size?"الأعضاء المختارون: "+[...selected.values()].map(u=>u.name).join("، "):"لم تختر أعضاء جددًا.";};
+      addButton.addEventListener("click",()=>{addPanel.hidden=!addPanel.hidden;if(!addPanel.hidden)search.focus()});
+      search.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(async()=>{const q=search.value.trim(),id=++requestId;results.replaceChildren();if(q.length<2){results.textContent="اكتب حرفين على الأقل للبحث.";return}const found=await call("searchUsers",{query:q},20000);if(id!==requestId)return;if(!found.success){results.textContent=found.message||"تعذر البحث.";return}const available=(found.users||[]).filter(u=>!d.members.some(m=>m.uid===u.uid));if(!available.length){results.textContent="لا توجد نتائج جديدة.";return}available.forEach(user=>{const pick=makeButton((selected.has(user.uid)?"إزالة ":"اختيار ")+user.name);pick.addEventListener("click",()=>{if(selected.has(user.uid))selected.delete(user.uid);else selected.set(user.uid,user);pick.textContent=(selected.has(user.uid)?"إزالة ":"اختيار ")+user.name;updateChosen()});results.append(pick)})},350)});
+      const addConfirm=makeButton("إضافة المحددين","");
+      addConfirm.disabled=true;selectedText.after(addConfirm);
+      const originalUpdate=updateChosen;
+      const updateAdd=()=>{originalUpdate();addConfirm.disabled=!selected.size};
+      search.addEventListener("input",()=>{});
+      addConfirm.addEventListener("click",async()=>{if(!selected.size)return;addConfirm.disabled=true;const result=await call("addGroupMembers",{conversationId:currentId,memberUids:[...selected.keys()]});if(!result.success){document.getElementById("conversationActionStatus").textContent=result.message||"تعذرت إضافة الأعضاء.";addConfirm.disabled=false;return}selected.clear();search.value="";results.replaceChildren();updateAdd();addPanel.hidden=true;await refreshConversationInfo();await loadConversations();document.getElementById("conversationActionStatus").textContent=result.message||"تمت إضافة الأعضاء."});
+      // Keep the selected list and add button synchronized.
+      const observer=()=>updateAdd();
+      const originalAppend=results.append.bind(results);
+      addPanel.append(addLabel,search,results,chosenText,addConfirm);actions.append(addButton,addPanel);
+      // Selection controls call updateAdd through a delegated click listener.
+      results.addEventListener("click",()=>updateAdd());
+    }else{
+      const leaveButton=makeButton("مغادرة المجموعة","groupDanger");
+      const leavePanel=makePanel();
+      const leaveText=document.createElement("p");leaveText.textContent="هل أنت متأكد من مغادرة هذه المجموعة؟ لن تظهر لك بعد ذلك في قائمة محادثاتك.";
+      const leaveButtons=document.createElement("div");leaveButtons.className="groupConfirmButtons";
+      const leaveYes=makeButton("نعم، غادر المجموعة","groupDanger");const leaveNo=makeButton("إلغاء");
+      leaveButton.addEventListener("click",()=>{leavePanel.hidden=!leavePanel.hidden;if(!leavePanel.hidden)leaveYes.focus()});
+      leaveNo.addEventListener("click",()=>{leavePanel.hidden=true;leaveButton.focus()});
+      leaveYes.addEventListener("click",async()=>{leaveYes.disabled=true;leaveNo.disabled=true;const result=await call("leaveGroup",{conversationId:currentId});leaveYes.disabled=false;leaveNo.disabled=false;if(!result.success){leaveText.textContent=result.message||"تعذرت مغادرة المجموعة.";return}document.getElementById("closeChat").click();await loadConversations();say(result.message||"غادرت المجموعة بنجاح.")});
+      leaveButtons.append(leaveYes,leaveNo);leavePanel.append(leaveText,leaveButtons);actions.append(leaveButton,leavePanel);
+    }
+    if(d.isAdmin){
+      const deleteButton=makeButton("حذف المجموعة نهائيًا","groupDanger");
+      const deletePanel=makePanel();
+      const deleteText=document.createElement("p");deleteText.textContent="سيؤدي هذا إلى حذف المجموعة وجميع رسائلها لدى جميع الأعضاء. لا يمكن التراجع عن هذا الإجراء.";
+      const deleteButtons=document.createElement("div");deleteButtons.className="groupConfirmButtons";
+      const deleteYes=makeButton("تأكيد حذف المجموعة","groupDanger");const deleteNo=makeButton("إلغاء");
+      deleteButton.addEventListener("click",()=>{deletePanel.hidden=!deletePanel.hidden;if(!deletePanel.hidden)deleteYes.focus()});
+      deleteNo.addEventListener("click",()=>{deletePanel.hidden=true;deleteButton.focus()});
+      deleteYes.addEventListener("click",async()=>{deleteYes.disabled=true;deleteNo.disabled=true;const result=await call("deleteGroup",{conversationId:currentId});deleteYes.disabled=false;deleteNo.disabled=false;if(!result.success){deleteText.textContent=result.message||"تعذر حذف المجموعة.";return}document.getElementById("closeChat").click();await loadConversations();say(result.message||"تم حذف المجموعة.")});
+      deleteButtons.append(deleteYes,deleteNo);deletePanel.append(deleteText,deleteButtons);actions.append(deleteButton,deletePanel);
+    }
+    content.append(actions);
     document.getElementById("friendAction").hidden=true;document.getElementById("removeFriendAction").hidden=true;
     document.getElementById("blockAction").hidden=true;document.getElementById("reportAction").hidden=true;
     document.getElementById("clearChatAction").hidden=true;document.getElementById("deleteChatAction").hidden=true;
     document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;
     document.getElementById("messageHint").textContent="يمكنك إرسال رسالة إلى جميع أعضاء المجموعة.";
-    if(d.isAdmin){
-      const addTitle=document.createElement("h4");addTitle.textContent="إضافة أعضاء";content.append(addTitle);
-      const input=document.createElement("input");input.type="search";input.id="groupAddSearch";input.placeholder="ابحث عن شخص لإضافته";input.setAttribute("aria-label","ابحث عن شخص لإضافته إلى المجموعة");content.append(input);
-      const results=document.createElement("div");results.id="groupAddResults";results.setAttribute("aria-live","polite");content.append(results);
-      const selected=document.createElement("p");selected.id="groupAddSelected";selected.textContent="لم تختر أعضاء جددًا.";content.append(selected);
-      const addButton=document.createElement("button");addButton.type="button";addButton.textContent="إضافة إلى المجموعة";addButton.disabled=true;content.append(addButton);
-      const chosen=new Map();let timer=null,searchId=0;
-      const update=()=>{selected.textContent=chosen.size?"الأشخاص المختارون: "+[...chosen.values()].map(x=>x.name).join("، "):"لم تختر أعضاء جددًا.";addButton.disabled=!chosen.size};
-      input.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(async()=>{
-        const q=input.value.trim(),id=++searchId;results.replaceChildren();if(q.length<2){results.textContent="اكتب حرفين على الأقل.";return}
-        const found=await call("searchUsers",{query:q},20000);if(id!==searchId)return;
-        if(!found.success){results.textContent=found.message||"تعذر البحث.";return}
-        const available=found.users.filter(u=>!d.members.some(m=>m.uid===u.uid));
-        if(!available.length){results.textContent="لا توجد نتائج جديدة.";return}
-        available.forEach(u=>{const b=document.createElement("button");b.type="button";b.className="conversation";b.textContent=(chosen.has(u.uid)?"إزالة ":"اختيار ")+u.name+(u.online?"، متصل":"، غير متصل");b.addEventListener("click",()=>{if(chosen.has(u.uid))chosen.delete(u.uid);else chosen.set(u.uid,u);b.textContent=(chosen.has(u.uid)?"إزالة ":"اختيار ")+u.name+(u.online?"، متصل":"، غير متصل");update()});results.append(b)});
-      },350)});
-      addButton.addEventListener("click",async()=>{addButton.disabled=true;const result=await call("addGroupMembers",{conversationId:currentId,memberUids:[...chosen.keys()]});if(!result.success){selected.textContent=result.message||"تعذرت إضافة الأعضاء.";update();return}selected.textContent=result.message;chosen.clear();results.replaceChildren();input.value="";await refreshConversationInfo();await loadConversations()});
-    }
     statusBox.textContent="";
     return;
   }
   currentConversationType="direct";currentOtherUid=d.uid;
+  document.getElementById("conversationInfoButton").textContent="معلومات المحادثة";
+  document.getElementById("conversationInfoHeading").textContent="معلومات المحادثة";
   content.replaceChildren();
   const rows=[
     ["اسم المستخدم",d.name],
