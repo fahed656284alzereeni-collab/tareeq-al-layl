@@ -212,6 +212,36 @@ body:has(.messageEditForm){overflow:hidden!important}
  visibility:visible!important;
 }
 
+
+/* شاشة بدء دردشة جديدة: عرض مستقل بكامل الشاشة مثل بقية النوافذ */
+#newChatOptions:not([hidden]){
+  position:fixed!important;
+  inset:0!important;
+  z-index:2147483647!important;
+  box-sizing:border-box!important;
+  width:100vw!important;
+  min-width:100vw!important;
+  height:100vh!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  margin:0!important;
+  padding:calc(28px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))!important;
+  border:0!important;
+  border-radius:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:flex-start!important;
+  align-items:stretch!important;
+  gap:14px!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  background:#101827!important;
+  color:#f5f7fb!important;
+  overscroll-behavior:contain!important;
+}
+#newChatOptions[hidden]{display:none!important}
+body:has(#newChatOptions:not([hidden])){overflow:hidden!important}
+
 </style></head><body>
 <header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><a class="tabLink" href="chat.html" aria-current="page">الصفحة الرئيسية</a><a class="tabLink" href="settings.html">الإعدادات</a></nav></header>
 <main>
