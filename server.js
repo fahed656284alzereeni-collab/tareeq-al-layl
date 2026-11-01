@@ -490,6 +490,7 @@ io.on("connection", socket => {
           uid: otherUid,
           name: String(profile.playerName || profile.displayName || "مستخدم"),
           online: Boolean(getConnectedSocket(otherUid)),
+          lastSeenAt: profile.lastSeenAt?.toMillis?.() || 0,
           isFriend: friendshipSnap.exists,
           pendingRequest: outgoingRequestSnap.exists,
           blockedByMe: myBlockSnap.exists,
@@ -1463,6 +1464,14 @@ io.on("connection", socket => {
   socket.on("disconnect", reason => {
     console.warn("Socket disconnected", { uid: socket.data.uid, reason });
     removeConnectedSocket(socket.data.uid, socket);
+    // Save last-seen only after the user's final active socket disconnects.
+    if (!connectedUsers.has(socket.data.uid)) {
+      db.collection("users").doc(socket.data.uid).set({
+        lastSeenAt: admin.firestore.FieldValue.serverTimestamp()
+      }, { merge: true }).catch(error => {
+        console.error("Failed to save last seen", { uid: socket.data.uid, error: error.message });
+      });
+    }
     io.emit("onlinePlayers", onlinePlayerList());
     leaveCurrentRoom(socket);
 
