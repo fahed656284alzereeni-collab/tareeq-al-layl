@@ -179,6 +179,24 @@ body:has(.conversationDeleteChoice) .conversationDeleteChoice,
 body:has(.conversationDeleteChoice) .conversationDeleteChoice *{visibility:visible!important}
 
 
+/* عرض محرر الرسالة كشاشة مستقلة وإخفاء بقية المحادثة */
+.messageEditForm{
+ position:fixed!important;inset:0!important;z-index:2147483647!important;
+ display:flex!important;flex-direction:column!important;justify-content:flex-start!important;align-items:stretch!important;
+ gap:14px!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-height:100dvh!important;
+ box-sizing:border-box!important;margin:0!important;padding:calc(28px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))!important;
+ overflow-y:auto!important;background:#101827!important;color:#f5f7fb!important;border:0!important;border-radius:0!important;
+}
+.messageEditForm label{font-size:1.2rem!important;color:#f5f7fb!important}
+.messageEditForm textarea{width:100%!important;min-height:180px!important;box-sizing:border-box!important;font-size:1.1rem!important}
+.messageEditForm button{width:100%!important;min-height:52px!important;flex-shrink:0!important}
+body:has(.messageEditForm) #chatPanel>.chatHeader,
+body:has(.messageEditForm) #chatPanel>.messages,
+body:has(.messageEditForm) #chatPanel>#composePanel{visibility:hidden!important}
+body:has(.messageEditForm) .messageEditForm,
+body:has(.messageEditForm) .messageEditForm *{visibility:visible!important}
+body:has(.messageEditForm){overflow:hidden!important}
+
 /* إصلاح ظهور قائمة خيارات الرسالة فوق حاوية الرسائل المخفية */
 .msg .messageActions:not([hidden]),
 .msg .messageActions:not([hidden]) *{
