@@ -107,6 +107,15 @@ body:has(#directChatPanel:not([hidden]))>main>#conversationListPanel{display:non
 body:has(#newGroupPanel:not([hidden]))>main>#onlineSection,
 body:has(#newGroupPanel:not([hidden]))>main>#conversationListPanel{display:none!important}
 body:has(#conversationInfo:not([hidden])) #chatPanel>.chatHeader~:not(#conversationInfo){display:none!important}
+
+/* عندما تظهر خطوة تأكيد داخل معلومات المحادثة، اعرض خطوة التأكيد وحدها. */
+#conversationInfo:has(.conversationDeleteChoice)>:not(.infoActions),
+#conversationInfo:has(#inlineUserActionChoice)>:not(.infoActions){display:none!important}
+.infoActions:has(.conversationDeleteChoice)>:not(.conversationDeleteChoice),
+.infoActions:has(#inlineUserActionChoice)>:not(#inlineUserActionChoice){display:none!important}
+#conversationInfo:has(.conversationDeleteChoice) .infoActions,
+#conversationInfo:has(#inlineUserActionChoice) .infoActions{display:block!important;margin:0!important}
+.conversationDeleteChoice{z-index:2147483647!important;background:#101827!important}
 </style></head><body>
 <header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><a class="tabLink" href="chat.html" aria-current="page">الصفحة الرئيسية</a><a class="tabLink" href="settings.html">الإعدادات</a></nav></header>
 <main>
