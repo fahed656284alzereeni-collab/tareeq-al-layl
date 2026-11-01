@@ -7,6 +7,7 @@ const fs = require("fs");
 
 const { Server } = require("socket.io");
 const admin = require("firebase-admin");
+const { createClient } = require("@supabase/supabase-js");
 
 // Prefer keyless Google Workload Identity Federation when Render configures ADC.
 // Otherwise support a Render Secret File or the legacy JSON environment variable.
@@ -36,6 +37,24 @@ try {
 }
 
 admin.initializeApp({ credential });
+
+// Supabase Storage is initialized lazily so the rest of Mersalo keeps working
+// while the private storage secret is being configured in Render.
+let mediaStorageClient = null;
+function getMediaStorage() {
+  const url = String(process.env.SUPABASE_URL || "").trim();
+  const secretKey = String(process.env.SUPABASE_SECRET_KEY || "").trim();
+  if (!url || !secretKey) {
+    throw new Error("Supabase private storage is not configured on the server.");
+  }
+  if (!mediaStorageClient) {
+    mediaStorageClient = createClient(url, secretKey, {
+      auth: { autoRefreshToken: false, persistSession: false }
+    });
+  }
+  return mediaStorageClient;
+}
+
 
 const app = express();
 
@@ -757,12 +776,17 @@ io.on("connection", socket => {
       if ((!text&&!attachment) || text.length > 4000) throw new Error("اكتب رسالة أو اختر ملفًا لإرساله.");
       if(attachment){
         const storagePath=String(attachment.storagePath||"");
-        if(!storagePath.startsWith("conversations/"+id+"/"))throw new Error("مسار الملف غير صالح لهذه المحادثة.");
-        const file=admin.storage().bucket("tareeq-al-layl.firebasestorage.app").file(storagePath);
-        const [exists]=await file.exists();
-        if(!exists)throw new Error("الملف المرفق غير موجود في مساحة التخزين.");
-        const [metadata]=await file.getMetadata();
-        if(metadata.metadata?.uploadedBy!==socket.data.uid||metadata.metadata?.conversationId!==id)throw new Error("غير مصرح بإرسال هذا الملف.");
+        const expectedPrefix="conversations/"+id+"/"+socket.data.uid+"/";
+        if(!storagePath.startsWith(expectedPrefix))throw new Error("مسار الملف غير صالح لهذه المحادثة أو هذا الحساب.");
+        const folder=storagePath.slice(0,storagePath.lastIndexOf("/"));
+        const objectName=storagePath.slice(storagePath.lastIndexOf("/")+1);
+        const storage=getMediaStorage().storage.from("conversation-media");
+        const {data:objects,error:listError}=await storage.list(folder,{limit:100,search:objectName});
+        if(listError)throw listError;
+        if(!(objects||[]).some(item=>item.name===objectName))throw new Error("الملف المرفق غير موجود في مساحة التخزين.");
+        const {data:signed,error:signedError}=await storage.createSignedUrl(storagePath,31536000);
+        if(signedError)throw signedError;
+        attachment.url=signed.signedUrl;
       }
       const ref = conversationsRef.doc(id);
       const conversation = await ref.get();
@@ -1008,15 +1032,19 @@ app.post("/api/upload-media",mediaUploadCors,express.raw({type:"application/octe
     if(req.body.length>50*1024*1024)return res.status(413).json({success:false,message:"الحد الأقصى لحجم الملف 50 ميغابايت."});
     const conversationSnap=await admin.firestore().collection("conversations").doc(conversationId).get();
     if(!conversationSnap.exists||!(conversationSnap.data().members||[]).includes(decoded.uid))return res.status(403).json({success:false,message:"غير مصرح برفع ملف إلى هذه المحادثة."});
-    const token=require("crypto").randomUUID();
-    const storagePath="conversations/"+conversationId+"/"+require("crypto").randomUUID();
-    const bucket=admin.storage().bucket("tareeq-al-layl.firebasestorage.app");
-    await bucket.file(storagePath).save(req.body,{resumable:false,metadata:{contentType:mimeType,metadata:{firebaseStorageDownloadTokens:token,uploadedBy:decoded.uid,conversationId,originalName:fileName}}});
-    const url="https://firebasestorage.googleapis.com/v0/b/"+bucket.name+"/o/"+encodeURIComponent(storagePath)+"?alt=media&token="+token;
-    res.json({success:true,attachment:{name:fileName,type:mimeType,size:req.body.length,url,storagePath}});
+    const storagePath="conversations/"+conversationId+"/"+decoded.uid+"/"+require("crypto").randomUUID();
+    const storage=getMediaStorage().storage.from("conversation-media");
+    const {error:uploadError}=await storage.upload(storagePath,req.body,{contentType:mimeType,upsert:false,cacheControl:"3600"});
+    if(uploadError)throw uploadError;
+    const {data:signed,error:signedError}=await storage.createSignedUrl(storagePath,31536000);
+    if(signedError)throw signedError;
+    res.json({success:true,attachment:{name:fileName,type:mimeType,size:req.body.length,url:signed.signedUrl,storagePath}});
   }catch(error){
     console.error("Media upload error:",error.message);
-    res.status(500).json({success:false,message:"تعذر رفع الملف. تحقق من إعداد مساحة تخزين Firebase ثم حاول مرة أخرى."});
+    const message=error.message==="Supabase private storage is not configured on the server."
+      ?"لم يكتمل إعداد مساحة التخزين الجديدة على الخادم بعد."
+      :"تعذر رفع الملف إلى مساحة تخزين مِرسالو. حاول مرة أخرى.";
+    res.status(500).json({success:false,message});
   }
 });
 
