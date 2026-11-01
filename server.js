@@ -1482,9 +1482,9 @@ app.post("/api/welcome-email", async (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-
-  res.json({ success: true });
-
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate");
+  res.set("Connection", "keep-alive");
+  res.status(200).json({ success: true, status: "ok", timestamp: Date.now() });
 });
 
 app.get("/login.html", (req, res) => {
