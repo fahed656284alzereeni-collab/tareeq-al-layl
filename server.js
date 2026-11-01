@@ -51,6 +51,8 @@ const io = new Server(server, {
 // A user may be connected from more than one device or browser tab.
 const connectedUsers = new Map();
 const friendRequestLimits = new Map();
+const globalVoiceCalls = new Map();
+function activeVoiceCallFor(uid) { for (const call of globalVoiceCalls.values()) if (call.callerUid === uid || call.calleeUid === uid) return call; return null; }
 // Cache user profiles briefly to avoid a Firestore read on every socket reconnect.
 const profileCache = new Map();
 const PROFILE_CACHE_TTL_MS = 30_000;
@@ -117,6 +119,69 @@ io.on("connection", socket => {
   const usersRef = admin.firestore().collection("users");
   const db = admin.firestore();
   const conversationsRef = db.collection("conversations");
+
+  // Voice-call signaling. Media never passes through this server; only WebRTC
+  // offers, answers, and ICE candidates are relayed between authenticated users.
+  const voiceCalls = globalVoiceCalls;
+  socket.on("voiceCall:start", async (data = {}, reply) => {
+    try {
+      const targetUid = String(data.targetUid || "");
+      const conversationId = String(data.conversationId || "");
+      if (!targetUid || targetUid === socket.data.uid || !conversationId) throw new Error("بيانات المكالمة غير مكتملة.");
+      const conversationSnap = await conversationsRef.doc(conversationId).get();
+      if (!conversationSnap.exists) throw new Error("المحادثة غير موجودة.");
+      const conversation = conversationSnap.data();
+      if (conversation.type === "group" || !(conversation.members || []).includes(socket.data.uid) || !(conversation.members || []).includes(targetUid)) {
+        throw new Error("المكالمات الصوتية متاحة في المحادثات الفردية فقط.");
+      }
+      if (!getConnectedSocket(targetUid)) throw new Error("هذا الشخص غير متصل الآن.");
+      if (activeVoiceCallFor(socket.data.uid) || activeVoiceCallFor(targetUid)) throw new Error("أحد الطرفين مشغول بمكالمة أخرى.");
+      const callId = require("crypto").randomUUID();
+      const call = { callId, callerUid: socket.data.uid, calleeUid: targetUid, conversationId, state: "ringing", createdAt: Date.now() };
+      voiceCalls.set(callId, call);
+      socket.data.voiceCallId = callId;
+      const caller = { uid: socket.data.uid, name: socket.data.playerName };
+      for (const client of connectedUsers.get(targetUid) || []) if (client.connected) client.emit("voiceCall:incoming", { callId, conversationId, caller });
+      if (typeof reply === "function") reply({ success: true, callId });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر بدء المكالمة." });
+    }
+  });
+
+  socket.on("voiceCall:accept", (data = {}, reply) => {
+    const call = voiceCalls.get(String(data.callId || ""));
+    if (!call || call.calleeUid !== socket.data.uid || call.state !== "ringing") {
+      if (typeof reply === "function") reply({ success: false, message: "انتهت صلاحية طلب المكالمة." });
+      return;
+    }
+    call.state = "active";
+    socket.data.voiceCallId = call.callId;
+    for (const client of connectedUsers.get(call.callerUid) || []) if (client.connected) client.emit("voiceCall:accepted", { callId: call.callId, answer: data.answer });
+    if (typeof reply === "function") reply({ success: true });
+  });
+
+  socket.on("voiceCall:signal", (data = {}) => {
+    const call = voiceCalls.get(String(data.callId || ""));
+    if (!call || call.state !== "active") return;
+    const peerUid = call.callerUid === socket.data.uid ? call.calleeUid : call.calleeUid === socket.data.uid ? call.callerUid : null;
+    if (!peerUid || !getConnectedSocket(peerUid)) return;
+    for (const client of connectedUsers.get(peerUid) || []) if (client.connected) client.emit("voiceCall:signal", { callId: call.callId, candidate: data.candidate });
+  });
+
+  socket.on("voiceCall:end", (data = {}) => {
+    const callId = String(data.callId || socket.data.voiceCallId || "");
+    const call = voiceCalls.get(callId);
+    if (!call || (call.callerUid !== socket.data.uid && call.calleeUid !== socket.data.uid)) return;
+    voiceCalls.delete(callId);
+    for (const uid of [call.callerUid, call.calleeUid]) {
+      const sessions = connectedUsers.get(uid);
+      if (sessions) for (const client of sessions) {
+        if (client.data.voiceCallId === callId) delete client.data.voiceCallId;
+        if (client !== socket && client.connected) client.emit("voiceCall:ended", { callId, reason: data.reason || "ended" });
+      }
+    }
+  });
+
 
   socket.on("startGroupConversation", async (data = {}, reply) => {
     try {
@@ -867,6 +932,15 @@ io.on("connection", socket => {
   socket.on("disconnect", reason => {
     console.warn("Socket disconnected", { uid: socket.data.uid, reason });
     removeConnectedSocket(socket.data.uid, socket);
+    const activeCall = activeVoiceCallFor(socket.data.uid);
+    if (activeCall && !connectedUsers.has(socket.data.uid)) {
+      globalVoiceCalls.delete(activeCall.callId);
+      const peerUid = activeCall.callerUid === socket.data.uid ? activeCall.calleeUid : activeCall.callerUid;
+      for (const client of connectedUsers.get(peerUid) || []) if (client.connected) {
+        delete client.data.voiceCallId;
+        client.emit("voiceCall:ended", { callId: activeCall.callId, reason: "disconnected" });
+      }
+    }
     // Save last-seen only after the user's final active socket disconnects.
     if (!connectedUsers.has(socket.data.uid)) {
       db.collection("users").doc(socket.data.uid).set({
