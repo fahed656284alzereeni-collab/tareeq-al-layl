@@ -565,7 +565,7 @@ io.on("connection", socket => {
           const latestVisible = latestMessages.docs.find(message => !(message.data().hiddenFor || []).includes(socket.data.uid));
           if (latestVisible) {
             const messageData = latestVisible.data();
-            lastMessage = String(messageData.text || (messageData.attachment ? "مرفق: " + (messageData.attachment.name || "ملف") : "")).slice(0, 120);
+            lastMessage = String(messageData.text || (messageData.attachment ? ((messageData.attachment.type || "").startsWith("video/") ? "فيديو" : "مرفق: " + (messageData.attachment.name || "ملف")) : "")).slice(0, 120);
           } else {
             lastMessage = "";
           }
@@ -810,7 +810,8 @@ io.on("connection", socket => {
         const [myBlock, theirBlock] = await Promise.all([blockedRef(socket.data.uid, otherUid).get(), blockedRef(otherUid, socket.data.uid).get()]);
         if (myBlock.exists || theirBlock.exists) throw new Error("لا يمكن إرسال الرسائل بسبب إعدادات الحظر بين الحسابين.");
       }
-      const message = { senderUid: socket.data.uid, senderName: socket.data.playerName, text, ...(attachment?{attachment}:{}), createdAt: admin.firestore.FieldValue.serverTimestamp() };
+      if (attachment && (attachment.type || "").startsWith("video/")) attachment.name = "فيديو";
+       const message = { senderUid: socket.data.uid, senderName: socket.data.playerName, text, ...(attachment?{attachment}:{}), createdAt: admin.firestore.FieldValue.serverTimestamp() };
       const messageRef = ref.collection("messages").doc();
       const batch = db.batch();
       batch.set(messageRef, message);
@@ -818,7 +819,7 @@ io.on("connection", socket => {
         batch.delete(usersRef.doc(member).collection("hiddenConversations").doc(id));
         batch.delete(usersRef.doc(member).collection("hiddenConversationContent").doc(id));
       }
-      batch.set(ref, { updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: (text||("مرفق: "+attachment.name)).slice(0,120) }, { merge: true });
+      batch.set(ref, { updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: (text||(attachment && (attachment.type || "").startsWith("video/") ? "فيديو" : ("مرفق: "+attachment.name))).slice(0,120) }, { merge: true });
       await batch.commit();
       const payload = { id: messageRef.id, senderUid: socket.data.uid, senderName: socket.data.playerName, text, ...(attachment?{attachment}:{}), createdAt: Date.now() };
       for (const member of conversation.data().members) {
