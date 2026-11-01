@@ -286,7 +286,7 @@ userSearchInput.addEventListener("input",()=>{
 
 const groupNameInput=document.getElementById("groupNameInput"),groupMemberSearch=document.getElementById("groupMemberSearch"),groupSearchResults=document.getElementById("groupSearchResults"),groupSelectedUsers=document.getElementById("groupSelectedUsers"),groupCreateStatus=document.getElementById("groupCreateStatus");
 const selectedGroupUsers=new Map();let groupSearchTimer=null,groupSearchRequest=0;
-function renderSelectedGroupUsers(){groupSelectedUsers.textContent=selectedGroupUsers.size?"الأعضاء المختارون: "+[...selectedGroupUsers.values()].map(u=>u.name).join("، "):"لم تختر أي أعضاء بعد."}
+function renderSelectedGroupUsers(){groupSelectedUsers.replaceChildren();if(!selectedGroupUsers.size){groupSelectedUsers.textContent="لم تختر أي أعضاء بعد.";return}const label=document.createElement("span");label.textContent="الأعضاء المختارون: ";groupSelectedUsers.append(label);selectedGroupUsers.forEach((user,uid)=>{const remove=document.createElement("button");remove.type="button";remove.className="secondary";remove.textContent="إزالة "+user.name;remove.addEventListener("click",()=>{selectedGroupUsers.delete(uid);renderSelectedGroupUsers()});groupSelectedUsers.append(remove)})}
 groupMemberSearch.addEventListener("input",()=>{clearTimeout(groupSearchTimer);groupSearchTimer=setTimeout(async()=>{
  const q=groupMemberSearch.value.trim(),request=++groupSearchRequest;groupSearchResults.replaceChildren();
  if(q.length<2){groupSearchResults.textContent="اكتب حرفين على الأقل للبحث.";return}
@@ -294,7 +294,7 @@ groupMemberSearch.addEventListener("input",()=>{clearTimeout(groupSearchTimer);g
  if(!result.success){groupSearchResults.textContent=result.message||"تعذر البحث.";return}
  const matches=result.users.filter(u=>!selectedGroupUsers.has(u.uid));
  if(!matches.length){groupSearchResults.textContent="لا توجد نتائج جديدة.";return}
- matches.forEach(user=>{const b=document.createElement("button");b.type="button";b.className="conversation";b.textContent="إضافة "+user.name+(user.online?"، متصل":"، غير متصل");b.addEventListener("click",()=>{selectedGroupUsers.set(user.uid,user);renderSelectedGroupUsers();b.remove();});groupSearchResults.append(b)});
+ matches.forEach(user=>{const b=document.createElement("button");b.type="button";b.className="conversation";b.textContent="إضافة "+user.name+(user.online?"، متصل":"، غير متصل");b.addEventListener("click",()=>{if(selectedGroupUsers.has(user.uid)){selectedGroupUsers.delete(user.uid);b.textContent="إضافة "+user.name+(user.online?"، متصل":"، غير متصل")}else{selectedGroupUsers.set(user.uid,user);b.textContent="تم اختيار "+user.name+"، اضغط للإزالة"}renderSelectedGroupUsers()});groupSearchResults.append(b)});
 },350)});
 document.getElementById("createGroupButton").addEventListener("click",async()=>{
  const name=groupNameInput.value.trim();if(!name){groupCreateStatus.textContent="اكتب اسم المجموعة أولًا.";groupNameInput.focus();return}
