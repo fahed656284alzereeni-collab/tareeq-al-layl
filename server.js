@@ -1559,11 +1559,15 @@ app.post("/api/delete-account", accountDeleteCors, async (req, res) => {
     // Find requests sent by this account, including requests created before this fix.
     for (let i = 0; i < allUsers.docs.length; i += 20) {
       const userChunk = allUsers.docs.slice(i, i + 20);
-      const outgoingSnapshots = await Promise.all(
-        userChunk.map(userDoc => userDoc.ref.collection("friendRequests").doc(uid).get())
-      );
+      const [outgoingSnapshots, reciprocalBlocks] = await Promise.all([
+        Promise.all(userChunk.map(userDoc => userDoc.ref.collection("friendRequests").doc(uid).get())),
+        Promise.all(userChunk.map(userDoc => userDoc.ref.collection("blockedUsers").doc(uid).get()))
+      ]);
       for (const request of outgoingSnapshots) {
         if (request.exists) refsToDelete.set(request.ref.path, request.ref);
+      }
+      for (const block of reciprocalBlocks) {
+        if (block.exists) refsToDelete.set(block.ref.path, block.ref);
       }
     }
     refsToDelete.set(userRef.path, userRef);
