@@ -148,21 +148,34 @@ io.on("connection", socket => {
     }
   });
 
+  socket.on("voiceCall:offer", (data = {}) => {
+    const call = voiceCalls.get(String(data.callId || ""));
+    const offer = data.offer;
+    if (!call || call.callerUid !== socket.data.uid || call.state !== "ringing" ||
+        !offer || offer.type !== "offer" || typeof offer.sdp !== "string" || offer.sdp.length > 30000) return;
+    call.offerReceived = true;
+    for (const client of connectedUsers.get(call.calleeUid) || []) {
+      if (client.connected) client.emit("voiceCall:offer", { callId: call.callId, offer });
+    }
+  });
+
   socket.on("voiceCall:accept", (data = {}, reply) => {
     const call = voiceCalls.get(String(data.callId || ""));
-    if (!call || call.calleeUid !== socket.data.uid || call.state !== "ringing") {
-      if (typeof reply === "function") reply({ success: false, message: "انتهت صلاحية طلب المكالمة." });
+    const answer = data.answer;
+    if (!call || call.calleeUid !== socket.data.uid || call.state !== "ringing" || !call.offerReceived ||
+        !answer || answer.type !== "answer" || typeof answer.sdp !== "string" || answer.sdp.length > 30000) {
+      if (typeof reply === "function") reply({ success: false, message: "انتهت صلاحية طلب المكالمة أو لم يصل عرض الاتصال بعد." });
       return;
     }
     call.state = "active";
     socket.data.voiceCallId = call.callId;
-    for (const client of connectedUsers.get(call.callerUid) || []) if (client.connected) client.emit("voiceCall:accepted", { callId: call.callId, answer: data.answer });
+    for (const client of connectedUsers.get(call.callerUid) || []) if (client.connected) client.emit("voiceCall:accepted", { callId: call.callId, answer });
     if (typeof reply === "function") reply({ success: true });
   });
 
   socket.on("voiceCall:signal", (data = {}) => {
     const call = voiceCalls.get(String(data.callId || ""));
-    if (!call || call.state !== "active") return;
+    if (!call || !["ringing", "active"].includes(call.state)) return;
     const peerUid = call.callerUid === socket.data.uid ? call.calleeUid : call.calleeUid === socket.data.uid ? call.callerUid : null;
     if (!peerUid || !getConnectedSocket(peerUid)) return;
     for (const client of connectedUsers.get(peerUid) || []) if (client.connected) client.emit("voiceCall:signal", { callId: call.callId, candidate: data.candidate });
