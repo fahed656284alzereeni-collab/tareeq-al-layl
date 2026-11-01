@@ -1068,14 +1068,16 @@ function readLocalVideoDuration(file){
     const objectUrl=URL.createObjectURL(file);
     let finished=false;
     const finish=value=>{if(finished)return;finished=true;video.removeAttribute("src");video.load();URL.revokeObjectURL(objectUrl);resolve(Number.isFinite(value)&&value>0?Math.floor(value):null)};
+    const readDuration=()=>{if(Number.isFinite(video.duration)&&video.duration>0)finish(video.duration)};
     video.preload="metadata";
     video.muted=true;
     video.playsInline=true;
-    video.addEventListener("loadedmetadata",()=>finish(video.duration),{once:true});
+    video.addEventListener("loadedmetadata",readDuration);
+    video.addEventListener("durationchange",readDuration);
     video.addEventListener("error",()=>finish(null),{once:true});
     video.src=objectUrl;
     video.load();
-    setTimeout(()=>finish(null),12000);
+    setTimeout(()=>finish(null),120000);
   });
 }
 async function uploadConversationAttachment(file){
