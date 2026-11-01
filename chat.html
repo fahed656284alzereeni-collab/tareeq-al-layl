@@ -93,6 +93,20 @@ body.chat-open #status{display:none}
 body:has(.groupInlinePanel:not([hidden])),body:has(.conversationDeleteChoice),body:has(.messageEditForm),
 body:has(#onlinePanel:not([hidden])),body:has(#newChatOptions:not([hidden])),body:has(#directChatPanel:not([hidden])),
 body:has(#newGroupPanel:not([hidden])),body:has(#conversationInfo:not([hidden])){overflow:hidden!important}
+
+/* عزل الشاشة المفتوحة: لا نُظهر أي أقسام أخرى خلف الصفحة الفرعية. */
+body:has(#chatPanel:not([hidden]))>header{display:none!important}
+body:has(#chatPanel:not([hidden]))>main>#onlineSection,
+body:has(#chatPanel:not([hidden]))>main>#newChatSection{display:none!important}
+body:has(#onlinePanel:not([hidden]))>main>#newChatSection,
+body:has(#onlinePanel:not([hidden]))>main>#conversationListPanel{display:none!important}
+body:has(#newChatOptions:not([hidden]))>main>#onlineSection,
+body:has(#newChatOptions:not([hidden]))>main>#conversationListPanel{display:none!important}
+body:has(#directChatPanel:not([hidden]))>main>#onlineSection,
+body:has(#directChatPanel:not([hidden]))>main>#conversationListPanel{display:none!important}
+body:has(#newGroupPanel:not([hidden]))>main>#onlineSection,
+body:has(#newGroupPanel:not([hidden]))>main>#conversationListPanel{display:none!important}
+body:has(#conversationInfo:not([hidden])) #chatPanel>.chatHeader~:not(#conversationInfo){display:none!important}
 </style></head><body>
 <header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><a class="tabLink" href="chat.html" aria-current="page">الصفحة الرئيسية</a><a class="tabLink" href="settings.html">الإعدادات</a></nav></header>
 <main>
