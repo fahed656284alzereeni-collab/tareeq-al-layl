@@ -361,6 +361,9 @@ async function refreshConversationInfo(){
   const d=r.details;
   if(d.type==="group"){
     currentConversationType="group";currentOtherUid=null;currentOtherName=d.name;
+    // Group conversations must never expose individual-user actions.
+    ["friendAction","removeFriendAction","blockAction","reportAction","clearChatAction","deleteChatAction"].forEach(id=>{document.getElementById(id).hidden=true});
+    document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;
     document.getElementById("chatTitle").textContent="مجموعة: "+d.name;
     document.getElementById("conversationInfoButton").textContent="معلومات المجموعة";
     document.getElementById("conversationInfoHeading").textContent="معلومات المجموعة";
@@ -403,7 +406,7 @@ async function refreshConversationInfo(){
       saveName.addEventListener("click",async()=>{const name=renameInput.value.trim();if(!name){renameInput.setCustomValidity("اكتب اسم المجموعة.");renameInput.reportValidity();return}saveName.disabled=true;cancelName.disabled=true;const result=await call("renameGroup",{conversationId:currentId,name});saveName.disabled=false;cancelName.disabled=false;if(!result.success){document.getElementById("conversationActionStatus").textContent=result.message||"تعذر تعديل الاسم.";return}renamePanel.hidden=true;await refreshConversationInfo();await loadConversations();document.getElementById("conversationActionStatus").textContent=result.message||"تم تحديث اسم المجموعة.";renameButton.focus()});
       renameButtons.append(saveName,cancelName);renamePanel.append(renameLabel,renameInput,renameButtons);actions.append(renameButton,renamePanel);
 
-      const addButton=makeButton("إضافة أعضاء");
+      const addButton=makeButton("إضافة عضو");
       const addPanel=makePanel();
       const addLabel=document.createElement("label");addLabel.textContent="ابحث عن أعضاء لإضافتهم";
       const search=document.createElement("input");search.type="search";search.placeholder="اكتب اسم الشخص";search.setAttribute("aria-label","البحث عن أعضاء لإضافتهم");
@@ -412,9 +415,9 @@ async function refreshConversationInfo(){
       const selected=new Map();let timer=null,requestId=0;
       const updateChosen=()=>{chosenText.textContent=selected.size?"الأعضاء المختارون: "+[...selected.values()].map(u=>u.name).join("، "):"لم تختر أعضاء جددًا.";};
       addButton.addEventListener("click",()=>{addPanel.hidden=!addPanel.hidden;if(!addPanel.hidden)search.focus()});
-      search.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(async()=>{const q=search.value.trim(),id=++requestId;results.replaceChildren();if(q.length<2){results.textContent="اكتب حرفين على الأقل للبحث.";return}const found=await call("searchUsers",{query:q},20000);if(id!==requestId)return;if(!found.success){results.textContent=found.message||"تعذر البحث.";return}const available=(found.users||[]).filter(u=>!d.members.some(m=>m.uid===u.uid));if(!available.length){results.textContent="لا توجد نتائج جديدة.";return}available.forEach(user=>{const pick=makeButton((selected.has(user.uid)?"إزالة ":"اختيار ")+user.name);pick.addEventListener("click",()=>{if(selected.has(user.uid))selected.delete(user.uid);else selected.set(user.uid,user);pick.textContent=(selected.has(user.uid)?"إزالة ":"اختيار ")+user.name;updateChosen()});results.append(pick)})},350)});
+      search.addEventListener("input",()=>{clearTimeout(timer);timer=setTimeout(async()=>{const q=search.value.trim(),id=++requestId;results.replaceChildren();if(q.length<2){results.textContent="اكتب حرفين على الأقل للبحث.";return}const found=await call("searchUsers",{query:q},20000);if(id!==requestId)return;if(!found.success){results.textContent=found.message||"تعذر البحث.";return}const available=(found.users||[]).filter(u=>!d.members.some(m=>m.uid===u.uid));if(!available.length){results.textContent="لا توجد نتائج جديدة.";return}available.forEach(user=>{const pick=makeButton((selected.has(user.uid)?"إزالة ":"اختيار ")+user.name);pick.addEventListener("click",()=>{if(selected.has(user.uid))selected.delete(user.uid);else selected.set(user.uid,user);pick.textContent=(selected.has(user.uid)?"إزالة ":"اختيار ")+user.name;updateAdd()});results.append(pick)})},350)});
       const addConfirm=makeButton("إضافة المحددين","");
-      addConfirm.disabled=true;selectedText.after(addConfirm);
+      addConfirm.disabled=true;chosenText.after(addConfirm);
       const originalUpdate=updateChosen;
       const updateAdd=()=>{originalUpdate();addConfirm.disabled=!selected.size};
       search.addEventListener("input",()=>{});
