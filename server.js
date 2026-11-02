@@ -282,9 +282,11 @@ io.on("connection", socket => {
       const ref = conversationsRef.doc();
       const now = admin.firestore.FieldValue.serverTimestamp();
       await ref.set({ type: "group", groupName: name, createdBy: socket.data.uid, members, groupPermissions: { editInfo: "admins", addMembers: "admins" }, createdAt: now, updatedAt: now, lastMessage: "تم إنشاء المجموعة" });
-      await Promise.all(memberUids.map(uid=>createUserNotification(uid,{type:"groupInvite",title:"إضافة إلى مجموعة",body:socket.data.playerName+" أضافك إلى مجموعة "+name,url:"chat.html?conversationId="+encodeURIComponent(ref.id),tag:"group-"+ref.id})));
       const payload = { id: ref.id, type: "group", groupName: name, displayName: name, members, createdBy: socket.data.uid, lastMessage: "تم إنشاء المجموعة" };
+      // Confirm creation immediately after the conversation is safely stored.
+      // Notifications are best-effort background work and must not block opening the group.
       if (typeof reply === "function") reply({ success: true, conversation: payload });
+      void Promise.allSettled(memberUids.map(uid=>createUserNotification(uid,{type:"groupInvite",title:"إضافة إلى مجموعة",body:socket.data.playerName+" أضافك إلى مجموعة "+name,url:"chat.html?conversationId="+encodeURIComponent(ref.id),tag:"group-"+ref.id})));
       for (const uid of members) {
         const sessions = connectedUsers.get(uid);
         if (sessions) for (const client of sessions) if (client.connected) client.emit("groupConversationUpdated", { conversationId: ref.id });
