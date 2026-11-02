@@ -1157,9 +1157,12 @@ async function uploadConversationAttachment(file){
     const attachment={...result.attachment};
     if((attachment.type||file.type||"").startsWith("video/")){
       attachment.name="فيديو";
-      // Keep metadata reading out of the critical send path.
-      const quickDuration=await Promise.race([durationPromise,new Promise(resolve=>setTimeout(()=>resolve(null),250))]);
-      if(quickDuration)attachment.durationSeconds=quickDuration;
+      // Prefer duration extracted by the server from the uploaded MP4/MOV bytes.
+      // Browser metadata remains a fallback for formats the server parser does not recognize.
+      if(!Number(attachment.durationSeconds)){
+        const quickDuration=await Promise.race([durationPromise,new Promise(resolve=>setTimeout(()=>resolve(null),250))]);
+        if(quickDuration)attachment.durationSeconds=quickDuration;
+      }
     }
     const sent=await call("sendDirectMessage",{conversationId:currentId,text:"",attachment},30000);
     if(!sent.success)throw new Error(sent.message||"تم رفع الملف لكن تعذر إرساله داخل المحادثة.");
