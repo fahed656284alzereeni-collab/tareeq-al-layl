@@ -831,27 +831,47 @@ async function refreshConversationInfo(){
     d.members.forEach(member=>{
       const row=document.createElement("div");row.className="groupMemberRow";
       const name=document.createElement("button");name.type="button";name.className="secondary";name.textContent=member.name;
-      name.setAttribute("aria-label",member.name);
+      const isOwner=member.uid===d.createdBy;
+      const roleLabel=isOwner?"مالك المجموعة":member.isModerator?"مشرف":"عضو";
+      name.setAttribute("aria-label",member.name+"، "+roleLabel);
       name.disabled=member.uid===auth.currentUser?.uid;
+      const role=document.createElement("span");role.className="muted";role.textContent=roleLabel;role.setAttribute("aria-hidden","true");
       if(!name.disabled)name.addEventListener("click",()=>{
         selectedMemberTrigger=name;memberActionHeading.textContent="خيارات العضو: "+member.name;memberActionButtons.replaceChildren();memberActionStatus.textContent="";
         const makeMemberAction=(label,handler,cls="secondary")=>{const b=document.createElement("button");b.type="button";b.className=cls;b.textContent=label;b.addEventListener("click",handler);memberActionButtons.append(b);return b};
-        const canRemove=(d.isAdmin||d.isModerator)&&member.uid!==d.createdBy;
-        if(canRemove)makeMemberAction("إزالة العضو",async()=>{
-          memberActionStatus.textContent="جارٍ إزالة العضو...";
-          const result=await call("removeGroupMember",{conversationId:currentId,memberUid:member.uid});
-          if(!result.success){memberActionStatus.textContent=result.message||"تعذرت إزالة العضو.";return}
-          memberActionPanel.hidden=true;await refreshConversationInfo();await loadConversations();document.getElementById("conversationActionStatus").textContent=result.message||"تمت إزالة العضو.";
+        const confirmMemberAction=(heading,confirmLabel,handler,cls="groupDanger")=>{
+          memberActionHeading.textContent=heading;
+          memberActionButtons.replaceChildren();
+          memberActionStatus.textContent="يرجى تأكيد العملية قبل تنفيذها.";
+          const confirm=makeMemberAction(confirmLabel,async()=>{
+            confirm.disabled=true;cancel.disabled=true;memberActionStatus.textContent="جارٍ تنفيذ العملية...";
+            await handler();
+          },cls);
+          const cancel=makeMemberAction("إلغاء",()=>{
+            memberActionHeading.textContent="خيارات العضو: "+member.name;memberActionButtons.replaceChildren();memberActionStatus.textContent="";
+            const rebuild=new Event("click");name.dispatchEvent(rebuild);
+          },"secondary");
+        };
+        const canRemove=(d.isAdmin||d.isModerator)&&!isOwner;
+        if(canRemove)makeMemberAction("إزالة العضو",()=>{
+          confirmMemberAction("تأكيد إزالة "+member.name,"تأكيد الإزالة",async()=>{
+            const result=await call("removeGroupMember",{conversationId:currentId,memberUid:member.uid});
+            if(!result.success){memberActionStatus.textContent=result.message||"تعذرت إزالة العضو.";return}
+            memberActionPanel.hidden=true;await refreshConversationInfo();await loadConversations();document.getElementById("conversationActionStatus").textContent=result.message||"تمت إزالة العضو.";
+          });
         },"groupDanger");
-        if(d.isAdmin&&member.uid!==d.createdBy)makeMemberAction(member.isModerator?"إلغاء تعيينه مشرفًا":"تعيينه مشرفًا",async()=>{
-          const result=await call("setGroupModerator",{conversationId:currentId,memberUid:member.uid,makeModerator:!member.isModerator});
-          if(!result.success){memberActionStatus.textContent=result.message||"تعذر تحديث صلاحية العضو.";return}
-          memberActionPanel.hidden=true;await refreshConversationInfo();await loadConversations();document.getElementById("conversationActionStatus").textContent=result.message||"تم تحديث صلاحية العضو.";
+        if(d.isAdmin&&!isOwner)makeMemberAction(member.isModerator?"إلغاء تعيينه مشرفًا":"تعيينه مشرفًا",()=>{
+          const makingModerator=!member.isModerator;
+          confirmMemberAction(makingModerator?"تأكيد تعيين "+member.name+" مشرفًا":"تأكيد إلغاء إشراف "+member.name,makingModerator?"تأكيد تعيين المشرف":"تأكيد إلغاء الإشراف",async()=>{
+            const result=await call("setGroupModerator",{conversationId:currentId,memberUid:member.uid,makeModerator:makingModerator});
+            if(!result.success){memberActionStatus.textContent=result.message||"تعذر تحديث صلاحية العضو.";return}
+            memberActionPanel.hidden=true;await refreshConversationInfo();await loadConversations();document.getElementById("conversationActionStatus").textContent=result.message||"تم تحديث صلاحية العضو.";
+          },"secondary");
         });
         if(member.uid!==auth.currentUser?.uid)makeMemberAction("مراسلته على الخاص",()=>startChatWithUser({uid:member.uid,name:member.name}));
         memberActionPanel.hidden=false;memberActionCancel.focus();
       });
-      row.append(name);membersSection.append(row);
+      row.append(name,role);membersSection.append(row);
     });
     content.append(membersSection,memberActionPanel);
     const actions=document.createElement("section");actions.className="groupInfoSection";
