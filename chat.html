@@ -518,7 +518,7 @@ function addMessage(m){
     const knownDuration=isVideo?formatVideoDuration(savedDuration):"";
     open.textContent=isImage?"عرض الصورة: "+item.name:isVideo?(knownDuration?"▶ فيديو · "+knownDuration:"▶ فيديو"):isAudioItem?"▶ تشغيل الرسالة الصوتية":"فتح الملف: "+item.name;
     open.setAttribute("aria-label",isVideo?(knownDuration?"فيديو، المدة "+knownDuration:"فيديو"):isAudio?"رسالة صوتية، اضغط للاستماع":open.textContent);
-    open.addEventListener("click",()=>openAttachmentViewer(itemIndex));
+    if(!isAudio)open.addEventListener("click",()=>openAttachmentViewer(itemIndex));
     if(isImage){const preview=document.createElement("img");preview.src=item.url;preview.alt="معاينة الصورة: "+item.name;preview.loading="lazy";preview.className="attachmentPreview";open.prepend(preview)}
     if(isVideo){
       videoAttachmentRow=document.createElement("div");videoAttachmentRow.className="videoMessageRow";
@@ -560,7 +560,7 @@ function addMessage(m){
         },{once:true});
         durationReadTimeout=setTimeout(checkDuration,500);
       }
-    }else content.append(document.createTextNode(" "),open);
+    }else if(isAudio){const audioPlayer=document.createElement("audio");audioPlayer.src=item.url;audioPlayer.controls=true;audioPlayer.preload="metadata";audioPlayer.setAttribute("aria-label","تشغيل الرسالة الصوتية");audioPlayer.style.cssText="display:block;width:100%;max-width:320px;margin:8px 0";content.append(document.createTextNode(" "),audioPlayer)}else content.append(document.createTextNode(" "),open);
   }
   // اجعل الرسالة نفسها عنصرًا قابلًا للتعديل لدى VoiceOver؛ لا يحتاج المستخدم إلى الانتقال إلى عنصر منفصل.
   div.append(content);
