@@ -67,9 +67,20 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <h2>الإعدادات</h2><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
 <div class="setting"><label for="largeText" aria-hidden="true">تكبير النصوص</label><input id="largeText" type="checkbox" aria-label="تكبير النصوص"></div>
 <div class="setting"><label for="strongFocus" aria-hidden="true">إبراز العنصر المحدد بوضوح</label><input id="strongFocus" type="checkbox" aria-label="إبراز العنصر المحدد بوضوح"></div>
-<p id="settingsStatus" role="status" aria-live="polite">يتم حفظ التغييرات على هذا الجهاز تلقائيًا.</p><button class="action" type="button" data-open-section="panel-notifications">الإشعارات</button><button class="action" type="button" data-open-section="panel-friend-requests">طلبات الصداقة</button><button class="action" type="button" data-open-section="panel-account-options">إدارة الحساب</button><button class="action" type="button" data-navigate="terms.html">حول مِرسالو</button>
+<p id="settingsStatus" role="status" aria-live="polite">يتم حفظ التغييرات على هذا الجهاز تلقائيًا.</p><button class="action" type="button" data-open-section="panel-notifications">الإشعارات</button><button class="action" type="button" data-open-section="panel-friend-requests">طلبات الصداقة</button><button class="action" type="button" data-open-section="panel-account-options">إدارة الحساب</button><button class="action" type="button" id="openAdmin" data-open-section="panel-admin" hidden>إدارة مِرسالو - المطوّر</button><button class="action" type="button" data-navigate="terms.html">حول مِرسالو</button>
 </section>
 
+
+<section class="panel section-screen" id="panel-admin" hidden>
+<button class="section-back" type="button">رجوع إلى الإعدادات</button>
+<h2 tabindex="-1">إدارة مِرسالو</h2>
+<p class="muted">لوحة المطوّر الخاصة. جميع إجراءات الإدارة تُراجع صلاحيتها على الخادم.</p>
+<div id="adminStatus" class="requestStatus" role="status" aria-live="polite">جارٍ التحقق من صلاحيات المطوّر...</div>
+<div id="adminStats" aria-label="إحصائيات الموقع"></div>
+<h3>بلاغات المستخدمين</h3>
+<div id="adminReports" aria-live="polite">جارٍ تحميل البلاغات...</div>
+<button class="action secondary" type="button" id="refreshAdmin">تحديث لوحة الإدارة</button>
+</section>
 
 <section class="panel section-screen" id="panel-notifications" hidden>
 <button class="section-back" type="button">رجوع إلى الإعدادات</button>
@@ -117,6 +128,7 @@ function showSection(id){document.querySelectorAll(".section-screen").forEach(se
 const requestedSection=new URLSearchParams(location.search).get("section");
 if(requestedSection==="friend-requests")showSection("panel-friend-requests");
 document.querySelectorAll("[data-open-section]").forEach(button=>button.addEventListener("click",()=>showSection(button.dataset.openSection)));
+openAdmin.addEventListener("click",()=>{if(!openAdmin.hidden)loadAdminDashboard()});
 document.querySelectorAll(".section-back").forEach(button=>button.addEventListener("click",()=>showSection("panel-settings")));
 function applySettings(){document.body.classList.toggle("large-text",largeText.checked);document.body.classList.toggle("strong-focus",strongFocus.checked);localStorage.setItem("mersalo-large-text",String(largeText.checked));localStorage.setItem("mersalo-strong-focus",String(strongFocus.checked))}
 largeText.checked=localStorage.getItem("mersalo-large-text")==="true";strongFocus.checked=localStorage.getItem("mersalo-strong-focus")==="true";applySettings();largeText.addEventListener("change",applySettings);strongFocus.addEventListener("change",applySettings);
@@ -171,6 +183,59 @@ const notificationsList=document.getElementById("notificationsList");
 const enablePush=document.getElementById("enablePush");
 const disablePush=document.getElementById("disablePush");
 const apiBase="https://tareeq-al-layl-server.onrender.com";
+const adminStatus=document.getElementById("adminStatus"),adminStats=document.getElementById("adminStats"),adminReports=document.getElementById("adminReports");
+const openAdmin=document.getElementById("openAdmin");
+async function adminRequest(path,method="GET",body){
+  if(!auth.currentUser)throw new Error("سجّل الدخول أولًا.");
+  const token=await auth.currentUser.getIdToken();
+  const response=await fetch(apiBase+path,{method,headers:{Authorization:"Bearer "+token,...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.success)throw new Error(result.message||"تعذر تنفيذ طلب الإدارة.");
+  return result;
+}
+function addAdminStat(label,value){
+  const card=document.createElement("article");card.className="requestCard";
+  const title=document.createElement("h3");title.textContent=label;
+  const number=document.createElement("p");number.textContent=String(value);number.setAttribute("aria-label",label+": "+value);
+  card.append(title,number);adminStats.append(card);
+}
+async function loadAdminDashboard(){
+  adminStatus.textContent="جارٍ تحميل بيانات لوحة الإدارة...";
+  adminStats.replaceChildren();adminReports.textContent="جارٍ تحميل البلاغات...";
+  try{
+    const [dashboard,reportData]=await Promise.all([adminRequest("/api/admin/dashboard"),adminRequest("/api/admin/reports")]);
+    addAdminStat("إجمالي الحسابات",dashboard.stats.users);
+    addAdminStat("إجمالي المحادثات",dashboard.stats.conversations);
+    addAdminStat("المستخدمون المتصلون",dashboard.stats.online);
+    addAdminStat("البلاغات الجديدة",dashboard.stats.pendingReports);
+    adminReports.replaceChildren();
+    if(!reportData.reports.length)adminReports.textContent="لا توجد بلاغات حتى الآن.";
+    for(const report of reportData.reports){
+      const card=document.createElement("article");card.className="requestCard";
+      const title=document.createElement("h3");title.textContent="بلاغ ضد: "+report.reportedName;
+      const reporter=document.createElement("p");reporter.textContent="مقدّم البلاغ: "+report.reporterName;
+      const reason=document.createElement("p");reason.textContent="السبب: "+report.reason;
+      const details=document.createElement("p");details.textContent="التفاصيل: "+(report.details||"لا توجد تفاصيل إضافية.");
+      const status=document.createElement("p");status.textContent="الحالة: "+(report.status==="new"?"جديد": "تمت المراجعة");
+      card.append(title,reporter,reason,details,status);
+      if(report.status==="new"){
+        const warn=document.createElement("button");warn.type="button";warn.className="action danger";warn.textContent="إرسال تحذير لهذا الحساب";
+        warn.addEventListener("click",()=>{
+          const reasonText=report.reason+(report.details?" - "+report.details:"");
+          warn.disabled=true;adminStatus.textContent="جارٍ إرسال التحذير...";
+          adminRequest("/api/admin/warn","POST",{uid:report.reportedUid,reason:reasonText,reportId:report.id}).then(result=>{
+            adminStatus.textContent=result.message;loadAdminDashboard();
+          }).catch(error=>{adminStatus.textContent=error.message;warn.disabled=false});
+        });
+        card.append(warn);
+      }
+      adminReports.append(card);
+    }
+    adminStatus.textContent="تم تحميل لوحة الإدارة بنجاح.";
+  }catch(error){adminStatus.textContent=error.message;adminReports.textContent="تعذر تحميل بيانات الإدارة."}
+}
+document.getElementById("refreshAdmin").addEventListener("click",loadAdminDashboard);
+
 async function apiRequest(path,method="GET",body){
   if(!auth.currentUser)throw new Error("سجّل الدخول أولًا.");
   const token=await auth.currentUser.getIdToken();
@@ -287,6 +352,7 @@ onAuthStateChanged(auth,async user=>{
   if(!user){location.replace("login.html");return}
   try{
     activeUser=user;const token=await user.getIdToken();
+    openAdmin.hidden=String(user.email||"").toLowerCase()!=="fahed656284alzereeni@gmail.com";
     loadNotifications();refreshPushStatus();
     socket=io("https://tareeq-al-layl-server.onrender.com",{auth:{token},timeout:60000,transports:["polling","websocket"],reconnection:true,reconnectionAttempts:Infinity,reconnectionDelay:1000,reconnectionDelayMax:5000});
     socket.on("connect",loadFriendRequests);
