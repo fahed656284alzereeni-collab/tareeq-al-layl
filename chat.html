@@ -744,8 +744,8 @@ function decorateConfirmPanel(box,headingText){
   const body=document.createElement("div");body.className="mersaloConfirmBody";
   while(box.firstChild)body.append(box.firstChild);
   card.append(icon,heading,body);box.append(card);
-  box.setAttribute("aria-labelledby",heading.id||"");
   if(!heading.id)heading.id="mersalo-confirm-heading-"+Math.random().toString(36).slice(2);
+  box.setAttribute("aria-labelledby",heading.id);
 }
 function showMessageDeleteConfirmation(id,element,scope){
   const actions=element.querySelector(".messageActions");
