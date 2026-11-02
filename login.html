@@ -38,11 +38,19 @@ onAuthStateChanged(auth,async user=>{
  }catch(e){checking=false;button.disabled=false;const code=e.code||e.message||"unknown";say(code==="profile-timeout"?"تأخر الاتصال بملف حسابك. تحقق من اتصال الإنترنت ثم أعد المحاولة.":"تعذر قراءة ملف الحساب. رمز الخطأ: "+code)}
 });
 form.addEventListener("submit",async e=>{
- e.preventDefault();prepareLoginAudio();const playerName=nameInput.value.trim();
+ e.preventDefault();const playerName=nameInput.value.trim();
  if(playerName.length<2){say("اكتب اسمًا من حرفين على الأقل.");nameInput.focus();return}
- if(!currentUser||!profileRef)return;
+ if(!currentUser||!profileRef){say("تعذر التحقق من حسابك. أعد تسجيل الدخول.");return}
  const save=form.querySelector("button");save.disabled=true;say("جارٍ حفظ اسمك...");
- try{await setDoc(profileRef,{uid:currentUser.uid,email:currentUser.email||"",displayName:playerName,playerName,photoURL:currentUser.photoURL||"",createdAt:serverTimestamp(),lastLoginAt:serverTimestamp()},{merge:true});say("تم إنشاء حسابك. جارٍ إرسال رسالة الترحيب إلى بريدك...");try{const token=await currentUser.getIdToken();const emailResponse=await fetch("https://tareeq-al-layl-server.onrender.com/api/welcome-email",{method:"POST",headers:{Authorization:"Bearer "+token}});const emailResult=await emailResponse.json();say(emailResult.success?"تم إنشاء حسابك وإرسال رسالة الترحيب إلى بريدك. جارٍ فتح مِرسالو.":"تم إنشاء حسابك، لكن تعذّر إرسال رسالة الترحيب حاليًا. جارٍ فتح مِرسالو.");}catch(emailError){say("تم إنشاء حسابك. تعذّر تأكيد إرسال رسالة الترحيب حاليًا. جارٍ فتح مِرسالو.");}location.replace("chat.html")}
- catch(e){save.disabled=false;say("تعذر حفظ الاسم. رمز الخطأ: "+(e.code||"unknown"))}
+ try{
+  await setDoc(profileRef,{uid:currentUser.uid,email:currentUser.email||"",displayName:playerName,playerName,photoURL:currentUser.photoURL||"",createdAt:serverTimestamp(),lastLoginAt:serverTimestamp()},{merge:true});
+  // Welcome email is best-effort and must never delay opening the app after the profile is saved.
+  currentUser.getIdToken().then(token=>fetch("https://tareeq-al-layl-server.onrender.com/api/welcome-email",{method:"POST",headers:{Authorization:"Bearer "+token},keepalive:true})).catch(()=>{});
+  say("تم حفظ اسمك بنجاح. جارٍ فتح مِرسالو.");
+  location.replace("chat.html");
+ }catch(e){
+  save.disabled=false;
+  say("تعذر حفظ الاسم. رمز الخطأ: "+(e.code||"unknown"));
+ }
 });
 </script></body></html>
