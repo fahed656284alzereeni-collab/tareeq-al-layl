@@ -715,6 +715,7 @@ io.on("connection", socket => {
     }
   });
 
+  socket.on("markMessageDelivered", async (data = {}) => { try { const conversationId=String(data.conversationId||""),messageId=String(data.messageId||""); if(!conversationId||!messageId)return; const conversation=await conversationsRef.doc(conversationId).get(); if(!conversation.exists||!(conversation.data().members||[]).includes(socket.data.uid))return; const messageRef=conversationsRef.doc(conversationId).collection("messages").doc(messageId); const message=await messageRef.get(); if(!message.exists||message.data().senderUid===socket.data.uid)return; const deliveredAt=Date.now(); await messageRef.set({deliveredTo:{[socket.data.uid]:admin.firestore.FieldValue.serverTimestamp()}},{merge:true}); const receipt={conversationId,messageId,recipientUid:socket.data.uid,deliveredAt}; const sessions=connectedUsers.get(message.data().senderUid); if(sessions)for(const client of sessions)if(client.connected)client.emit("messageDeliveryReceipt",receipt); } catch(error){console.warn("Message delivery receipt failed",error.message)} });
   socket.on("getConversationMessages", async (data = {}, reply) => {
     try {
       const id = String(data.conversationId || "");
@@ -729,7 +730,7 @@ io.on("connection", socket => {
 
       const messages = visibleDocs.map(d => {
         const data = d.data();
-        return { id: d.id, ...data, senderName: data.senderName || senderNames.get(data.senderUid) || "مستخدم", createdAt: data.createdAt ? data.createdAt.toMillis() : 0 };
+        return { id: d.id, ...data, senderName: data.senderName || senderNames.get(data.senderUid) || "مستخدم", deliveredTo: data.deliveredTo || {}, createdAt: data.createdAt ? data.createdAt.toMillis() : 0 };
       });
       if (typeof reply === "function") reply({ success: true, messages });
     } catch (error) {
@@ -1047,7 +1048,10 @@ io.on("connection", socket => {
         if (myBlock.exists || theirBlock.exists) throw new Error("لا يمكن إرسال الرسائل بسبب إعدادات الحظر بين الحسابين.");
       }
       if (attachment && (attachment.type || "").startsWith("video/")) attachment.name = "فيديو";
-       const message = { senderUid: socket.data.uid, senderName: socket.data.playerName, text, ...(attachment?{attachment}:{}), createdAt: admin.firestore.FieldValue.serverTimestamp() };
+       const replyToInput=data.replyTo&&typeof data.replyTo==="object"?data.replyTo:null;
+      let replyTo=null;
+      if(replyToInput?.id){const replySnap=await ref.collection("messages").doc(String(replyToInput.id)).get();if(replySnap.exists){const original=replySnap.data();replyTo={id:replySnap.id,senderUid:String(original.senderUid||""),senderName:String(original.senderName||"مستخدم"),text:String(original.text||"").slice(0,500),attachment:original.attachment?{name:String(original.attachment.name||"مرفق"),type:String(original.attachment.type||"")}:null};}}
+      const message = { senderUid: socket.data.uid, senderName: socket.data.playerName, text, ...(attachment?{attachment}:{}), ...(replyTo?{replyTo}:{}), deliveredTo: {}, createdAt: admin.firestore.FieldValue.serverTimestamp() };
       const messageRef = ref.collection("messages").doc();
       const batch = db.batch();
       batch.set(messageRef, message);
@@ -1059,7 +1063,7 @@ io.on("connection", socket => {
       await batch.commit();
       const notificationBody = text || (attachment ? (String(attachment.type||"").startsWith("video/") ? "أرسل فيديو" : "أرسل مرفقًا") : "أرسل رسالة");
       await Promise.all((conversationData.members||[]).filter(uid=>uid!==socket.data.uid).map(uid=>createUserNotification(uid,{type:"message",title:isGroup?(conversationData.groupName||"مجموعة جديدة"):socket.data.playerName,body:notificationBody,url:"chat.html?conversationId="+encodeURIComponent(id),tag:"message-"+id})));
-      const payload = { id: messageRef.id, senderUid: socket.data.uid, senderName: socket.data.playerName, text, ...(attachment?{attachment}:{}), createdAt: Date.now() };
+      const payload = { id: messageRef.id, senderUid: socket.data.uid, senderName: socket.data.playerName, text, ...(attachment?{attachment}:{}), ...(replyTo?{replyTo}:{}), deliveredTo: {}, createdAt: Date.now() };
       for (const member of conversation.data().members) {
         const sessions = connectedUsers.get(member);
         if (sessions) for (const client of sessions) if (client.connected) client.emit("directMessageReceived", { conversationId:id, message:payload });
