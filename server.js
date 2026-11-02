@@ -1375,6 +1375,8 @@ async function authenticatedUid(req) {
 
 
 app.options("/api/push/:action", pushCors);
+app.options("/api/notifications", pushCors);
+app.options("/api/notifications/:id/read", pushCors);
 app.get("/api/push/public-key", pushCors, (req,res) => {
   const key=String(process.env.VAPID_PUBLIC_KEY||"").trim();
   if(!key||!ensurePushConfigured()) return res.status(503).json({success:false,message:"Push notifications are not configured."});
