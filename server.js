@@ -281,7 +281,7 @@ io.on("connection", socket => {
       const members = [socket.data.uid, ...memberUids];
       const ref = conversationsRef.doc();
       const now = admin.firestore.FieldValue.serverTimestamp();
-      await ref.set({ type: "group", groupName: name, createdBy: socket.data.uid, members, createdAt: now, updatedAt: now, lastMessage: "تم إنشاء المجموعة" });
+      await ref.set({ type: "group", groupName: name, createdBy: socket.data.uid, members, groupPermissions: { editInfo: "admins", addMembers: "admins" }, createdAt: now, updatedAt: now, lastMessage: "تم إنشاء المجموعة" });
       await Promise.all(memberUids.map(uid=>createUserNotification(uid,{type:"groupInvite",title:"إضافة إلى مجموعة",body:socket.data.playerName+" أضافك إلى مجموعة "+name,url:"chat.html?conversationId="+encodeURIComponent(ref.id),tag:"group-"+ref.id})));
       const payload = { id: ref.id, type: "group", groupName: name, displayName: name, members, createdBy: socket.data.uid, lastMessage: "تم إنشاء المجموعة" };
       if (typeof reply === "function") reply({ success: true, conversation: payload });
@@ -301,7 +301,10 @@ io.on("connection", socket => {
       const ref = conversationsRef.doc(conversationId);
       const snap = await ref.get();
       if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإدارة هذه المجموعة.");
-      if (snap.data().createdBy !== socket.data.uid) throw new Error("منشئ المجموعة فقط يستطيع إضافة أعضاء.");
+      const group = snap.data();
+      const permissions = group.groupPermissions || {};
+      const canAdd = permissions.addMembers === "members" || group.createdBy === socket.data.uid || (group.moderatorUids || []).includes(socket.data.uid);
+      if (!canAdd) throw new Error("إضافة الأعضاء متاحة للمشرفين فقط.");
       const currentMembers = snap.data().members || [];
       const newUids = requested.filter(uid => uid && !currentMembers.includes(uid)).slice(0, 49);
       if (!newUids.length) throw new Error("اختر أشخاصًا جددًا لإضافتهم.");
@@ -335,7 +338,9 @@ io.on("connection", socket => {
       const snap = await ref.get();
       if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بتعديل هذه المجموعة.");
       const group = snap.data();
-      if (group.createdBy !== socket.data.uid && !(group.moderatorUids || []).includes(socket.data.uid)) throw new Error("منشئ المجموعة أو أحد مشرفيها فقط يستطيع تعديل اسمها.");
+      const permissions = group.groupPermissions || {};
+      const canEdit = permissions.editInfo === "members" || group.createdBy === socket.data.uid || (group.moderatorUids || []).includes(socket.data.uid);
+      if (!canEdit) throw new Error("تعديل معلومات المجموعة متاح للمشرفين فقط.");
       await ref.update({ groupName: name, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
       for (const uid of snap.data().members || []) {
         const sessions = connectedUsers.get(uid);
@@ -344,6 +349,28 @@ io.on("connection", socket => {
       if (typeof reply === "function") reply({ success: true, message: "تم تحديث اسم المجموعة." });
     } catch (error) {
       if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تعديل اسم المجموعة." });
+    }
+  });
+
+  socket.on("updateGroupPermissions", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const editInfo = data.editInfo === "members" ? "members" : data.editInfo === "admins" ? "admins" : "";
+      const addMembers = data.addMembers === "members" ? "members" : data.addMembers === "admins" ? "admins" : "";
+      if (!editInfo || !addMembers) throw new Error("إعدادات الأذونات غير صالحة.");
+      const ref = conversationsRef.doc(conversationId);
+      const snap = await ref.get();
+      if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإدارة هذه المجموعة.");
+      const group = snap.data();
+      if (group.createdBy !== socket.data.uid && !(group.moderatorUids || []).includes(socket.data.uid)) throw new Error("المالك والمشرفون فقط يستطيعون تحديد أذونات المجموعة.");
+      await ref.update({ groupPermissions: { editInfo, addMembers }, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      for (const uid of group.members || []) {
+        const sessions = connectedUsers.get(uid);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("groupConversationUpdated", { conversationId });
+      }
+      if (typeof reply === "function") reply({ success: true, message: "تم حفظ أذونات المجموعة." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تحديث أذونات المجموعة." });
     }
   });
 
@@ -479,6 +506,7 @@ io.on("connection", socket => {
         if (typeof reply === "function") reply({ success: true, details: {
           type: "group", name: String(conversationData.groupName || "مجموعة"),
           members, createdBy: conversationData.createdBy || "", isAdmin: conversationData.createdBy === socket.data.uid, isModerator: (conversationData.moderatorUids || []).includes(socket.data.uid),
+          permissions: { editInfo: conversationData.groupPermissions?.editInfo === "members" ? "members" : "admins", addMembers: conversationData.groupPermissions?.addMembers === "members" ? "members" : "admins" },
           messageCount: countSnap.data().count || 0,
           createdAt: conversationData.createdAt?.toMillis?.() || 0,
           updatedAt: conversationData.updatedAt?.toMillis?.() || 0
