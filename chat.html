@@ -546,7 +546,10 @@ function handleVoiceCallEvents(){
     pendingVoiceCall={...data,offer:pendingVoiceCall?.callId===data.callId?pendingVoiceCall.offer:null};
     if(currentConversationType!=="direct"||data.conversationId!==currentId){
       await openConversation({id:data.conversationId,type:"direct",otherUid:data.caller?.uid||null,displayName:data.caller?.name||"مستخدم"});
-      return;
+      if(currentId!==data.conversationId){
+        voiceStatus.textContent="وصلت مكالمة واردة، لكن تعذر فتح المحادثة. أعد فتح مِرسالو وحاول مرة أخرى.";
+        return;
+      }
     }
     voicePanel.hidden=false;voiceStatus.textContent="مكالمة صوتية واردة من "+(data.caller?.name||"مستخدم")+". جارٍ تجهيز الاتصال.";
     acceptVoiceCallButton.hidden=false;acceptVoiceCallButton.disabled=!pendingVoiceCall.offer;rejectVoiceCallButton.hidden=false;startVoiceCallButton.hidden=true;
