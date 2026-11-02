@@ -128,7 +128,7 @@ import{getFirestore,doc,getDoc,setDoc}from"https://www.gstatic.com/firebasejs/11
 const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 const largeText=document.getElementById("largeText"),strongFocus=document.getElementById("strongFocus");
-function showSection(id){document.querySelectorAll(".section-screen").forEach(section=>{const active=section.id===id;section.classList.toggle("active",active);section.hidden=!active});document.body.classList.toggle("section-open",id!=="panel-settings");const heading=document.querySelector("#"+id+" h2");if(heading)heading.focus();}
+function showSection(id){document.querySelectorAll(".section-screen").forEach(section=>{const active=section.id===id;section.classList.toggle("active",active);section.hidden=!active});document.body.classList.toggle("section-open",id!=="panel-settings");const heading=document.querySelector("#"+id+" h2");if(heading)heading.focus();if(id==="panel-admin")loadAdminDashboard();}
 const requestedSection=new URLSearchParams(location.search).get("section");
 if(requestedSection==="friend-requests")showSection("panel-friend-requests");
 document.querySelectorAll("[data-open-section]").forEach(button=>button.addEventListener("click",()=>showSection(button.dataset.openSection)));
@@ -189,7 +189,6 @@ const disablePush=document.getElementById("disablePush");
 const apiBase="https://tareeq-al-layl-server.onrender.com";
 const adminStatus=document.getElementById("adminStatus"),adminStats=document.getElementById("adminStats"),adminReports=document.getElementById("adminReports");
 const openAdmin=document.getElementById("openAdmin");
-openAdmin.addEventListener("click",()=>{if(!openAdmin.hidden)loadAdminDashboard()});
 async function adminRequest(path,method="GET",body){
   if(!auth.currentUser)throw new Error("سجّل الدخول أولًا.");
   const token=await auth.currentUser.getIdToken();
