@@ -33,6 +33,7 @@ button.action,.link{display:block;width:100%;padding:13px;border:0;border-radius
 #deleteConfirm[hidden]{display:none!important}#deleteConfirm{position:fixed;inset:0;z-index:2147483000;width:100vw;height:100vh;height:100dvh;overflow-y:auto;background:#101827;padding:24px 18px;display:flex;flex-direction:column;justify-content:center}#deleteConfirm .confirmCard{width:100%;max-width:560px;margin:auto;background:#1b293b;border:1px solid #34445a;border-radius:18px;padding:22px}#deleteConfirm input{width:100%;padding:14px;border-radius:10px;font:inherit;margin-top:8px}#deleteConfirm button{width:100%;min-height:54px;margin:6px 0}.muted{color:#c3d0df}.requestCard{background:#26384e;border:1px solid #42536b;border-radius:12px;padding:14px;margin:12px 0}.requestActions{display:grid;grid-template-columns:1fr 1fr;gap:8px}.requestActions button{margin:0;min-height:48px}.requestActions .danger{background:#9d3542!important}.requestStatus{padding:10px;border-radius:8px;background:#26384e} .warning{color:#ffd7dc;background:#452a35;border-radius:10px;padding:12px}
 #avatar{width:112px;height:112px;border-radius:50%;background:#30465d;color:#8bd8c5;display:flex;align-items:center;justify-content:center;margin:12px auto;font-size:42px;font-weight:bold}
 h3{margin-bottom:4px;color:#f5f7fb}
+ .notificationActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.notificationActions button{flex:1;min-width:130px}
 </style>
 </head>
 <body>
@@ -62,6 +63,7 @@ h3{margin-bottom:4px;color:#f5f7fb}
 <button id="disablePush" class="action secondary" type="button">إيقاف الإشعارات على هذا الجهاز</button>
 <p class="muted">على iPhone: أضف مِرسالو إلى الشاشة الرئيسية وافتحه من الأيقونة أولًا، ثم فعّل الإشعارات. يتطلب ذلك iOS 16.4 أو أحدث.</p>
 <h3 tabindex="-1">آخر الإشعارات</h3>
+<button id="deleteAllNotifications" class="action groupDanger" type="button">حذف جميع الإشعارات</button>
 <div id="notificationsList" aria-live="polite">جارٍ تحميل الإشعارات...</div>
 </section>
 
@@ -171,21 +173,37 @@ async function loadNotifications(){
   try{
     const result=await apiRequest("/api/notifications");
     notificationsList.replaceChildren();
+    const deleteAllButton=document.getElementById("deleteAllNotifications");
+    if(deleteAllButton)deleteAllButton.hidden=!result.notifications.length;
     if(!result.notifications.length){notificationsList.textContent="لا توجد إشعارات حتى الآن.";return}
     for(const item of result.notifications){
       const card=document.createElement("article");card.className="requestCard";
       const title=document.createElement("h3");title.textContent=item.title||"إشعار";
       const body=document.createElement("p");body.textContent=item.body||"";
       const state=document.createElement("p");state.textContent=item.read?"مقروء":"غير مقروء";
+      const actions=document.createElement("div");actions.className="notificationActions";
       const open=document.createElement("button");open.type="button";open.className="action";open.textContent="فتح الإشعار";
       open.addEventListener("click",async()=>{
         if(!item.read)await apiRequest("/api/notifications/"+encodeURIComponent(item.id)+"/read","PATCH",{}).catch(()=>{});
         location.href=item.url||"chat.html";
       });
-      card.append(title,body,state,open);notificationsList.append(card);
+      const remove=document.createElement("button");remove.type="button";remove.className="action groupDanger";remove.textContent="حذف الإشعار";
+      remove.addEventListener("click",async()=>{
+        if(!window.confirm("هل أنت متأكد من حذف هذا الإشعار؟ لا يمكن التراجع عن الحذف."))return;
+        remove.disabled=true;
+        try{await apiRequest("/api/notifications/"+encodeURIComponent(item.id),"DELETE");await loadNotifications()}
+        catch(error){remove.disabled=false;window.alert(error.message||"تعذر حذف الإشعار.")}
+      });
+      actions.append(open,remove);card.append(title,body,state,actions);notificationsList.append(card);
     }
   }catch(error){notificationsList.textContent=error.message||"تعذر تحميل الإشعارات."}
 }
+document.getElementById("deleteAllNotifications").addEventListener("click",async()=>{
+  if(!window.confirm("هل أنت متأكد من حذف جميع الإشعارات؟ لا يمكن التراجع عن هذا الإجراء."))return;
+  const button=document.getElementById("deleteAllNotifications");button.disabled=true;
+  try{await apiRequest("/api/notifications","DELETE");await loadNotifications()}
+  catch(error){window.alert(error.message||"تعذر حذف الإشعارات.");button.disabled=false}
+});
 async function refreshPushStatus(){
   if(!("serviceWorker" in navigator)||!("PushManager" in window)){pushStatus.textContent="هذا المتصفح لا يدعم إشعارات الويب.";return}
   try{
