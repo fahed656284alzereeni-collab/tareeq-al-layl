@@ -114,8 +114,10 @@ document.getElementById("confirmLogout").addEventListener("click",async()=>{cons
 
 
 function loadFriendRequests(){
-  if(!socket||!socket.connected){requestsList.textContent="الاتصال بالخادم غير متاح حاليًا. ستظهر الطلبات عند عودة الاتصال.";return}
-  socket.emit("getFriendData",result=>{
+  if(!socket||!socket.connected){requestsList.textContent="جارٍ الاتصال بالخادم لتحميل طلبات الصداقة...";return}
+  requestsList.textContent="جارٍ تحميل طلبات الصداقة...";
+  socket.timeout(15000).emit("getFriendData",(error,result)=>{
+    if(error){requestsList.textContent="تأخر رد الخادم أثناء تحميل طلبات الصداقة. اسحب لتحديث الصفحة أو حاول بعد قليل.";return}
     if(!result?.success){requestsList.textContent=result?.message||"تعذر تحميل طلبات الصداقة.";return}
     requestsList.replaceChildren();
     const requests=Array.isArray(result.requests)?result.requests:[];
@@ -128,10 +130,11 @@ function loadFriendRequests(){
       const accept=document.createElement("button");accept.type="button";accept.textContent="موافقة";
       const reject=document.createElement("button");reject.type="button";reject.textContent="رفض";reject.className="danger";
       async function respond(accepted){
-        if(requestBusy)return;
+        if(requestBusy||!socket?.connected)return;
         requestBusy=true;accept.disabled=true;reject.disabled=true;requestsStatus.textContent="جارٍ تنفيذ طلبك...";
-        socket.emit("respondFriendRequest",{fromUid:request.uid,accept:accepted},response=>{
+        socket.timeout(15000).emit("respondFriendRequest",{fromUid:request.uid,accept:accepted},(error,response)=>{
           requestBusy=false;
+          if(error){requestsStatus.textContent="تأخر رد الخادم. تحقق من الاتصال وحاول مرة أخرى.";accept.disabled=false;reject.disabled=false;return}
           requestsStatus.textContent=response?.message||(response?.success?"تم تنفيذ الطلب.":"تعذر تنفيذ الطلب.");
           if(response?.success)loadFriendRequests();
           else{accept.disabled=false;reject.disabled=false}
@@ -228,14 +231,14 @@ onAuthStateChanged(auth,async user=>{
   try{
     activeUser=user;const token=await user.getIdToken();
     loadNotifications();refreshPushStatus();
-    socket=io("https://tareeq-al-layl-server.onrender.com",{auth:{token},reconnection:true,reconnectionAttempts:Infinity,reconnectionDelay:1000,reconnectionDelayMax:5000});
+    socket=io("https://tareeq-al-layl-server.onrender.com",{auth:{token},timeout:60000,transports:["polling","websocket"],reconnection:true,reconnectionAttempts:Infinity,reconnectionDelay:1000,reconnectionDelayMax:5000});
     socket.on("connect",loadFriendRequests);
     socket.on("friendRequestReceived",data=>{
       requestsStatus.textContent="وصلك طلب صداقة جديد من "+(data?.fromName||"مستخدم")+".";
       loadFriendRequests();
     });
     socket.on("disconnect",()=>{requestsStatus.textContent="انقطع الاتصال مؤقتًا؛ ستتم إعادة تحميل الطلبات عند عودته."});
-    socket.on("connect_error",()=>{requestsList.textContent="تعذر الاتصال بالخادم لتحميل طلبات الصداقة."});
+    socket.on("connect_error",error=>{requestsList.textContent="تعذر الاتصال بالخادم لتحميل طلبات الصداقة. جارٍ إعادة المحاولة تلقائيًا.";requestsStatus.textContent="تفاصيل الاتصال: "+(error?.message||"تعذر الاتصال")});
   }catch(error){requestsList.textContent="تعذر تهيئة الاتصال لتحميل طلبات الصداقة."}
 });
 
