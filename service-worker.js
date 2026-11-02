@@ -8,9 +8,15 @@ self.addEventListener("push", event => {
     badge: "/icon.svg",
     tag: String(data.tag || "mersalo-notification"),
     data: { url: String(data.url || "/") },
-    renotify: true
+    renotify: true,
+    requireInteraction: data.type === "incomingCall",
+    vibrate: data.type === "incomingCall" ? [250, 150, 250, 150, 450] : [120]
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil((async () => {
+    const windows = await clients.matchAll({ type: "window", includeUncontrolled: true });
+    if (windows.some(client => client.visibilityState === "visible")) return;
+    await self.registration.showNotification(title, options);
+  })());
 });
 self.addEventListener("notificationclick", event => {
   event.notification.close();
