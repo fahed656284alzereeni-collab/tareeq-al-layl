@@ -1173,16 +1173,24 @@ async function uploadConversationAttachment(file){
   }catch(error){status.textContent=error.message||"حدث خطأ أثناء مشاركة الملف."}
   finally{document.getElementById("choosePhotosVideos").disabled=false;document.getElementById("chooseFiles").disabled=false}
 }
+async function returnToConversationBeforeUpload(selectedCount){
+  // Close the full-screen picker panel and restore the actual conversation first.
+  mediaSharePanel.hidden=true;
+  const heading=document.getElementById("chatTitle");
+  if(heading)heading.focus();
+  const uploadStatus=document.getElementById("attachmentUploadStatus");
+  uploadStatus.textContent=selectedCount===1
+    ?"تم اختيار الملف. جارٍ إرساله من داخل المحادثة."
+    :"تم اختيار "+selectedCount+" ملفات. جارٍ إرسالها من داخل المحادثة.";
+  // Give iOS Safari a paint cycle so the conversation is visible before network upload starts.
+  await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
+}
 for(const inputId of ["photosVideosInput","filesInput"]){
   document.getElementById(inputId).addEventListener("change",async event=>{
     const selected=Array.from(event.target.files||[]);
     event.target.value="";
     if(!selected.length)return;
-    // Return to the conversation immediately after the picker confirms the selection.
-    mediaSharePanel.hidden=true;
-    document.getElementById("chatTitle").focus();
-    const uploadStatus=document.getElementById("attachmentUploadStatus");
-    uploadStatus.textContent=selected.length===1?"تم اختيار الملف. جارٍ إرساله من داخل المحادثة.":"تم اختيار "+selected.length+" ملفات. جارٍ إرسالها من داخل المحادثة.";
+    await returnToConversationBeforeUpload(selected.length);
     for(const file of selected)await uploadConversationAttachment(file);
   });
 }
