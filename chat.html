@@ -844,14 +844,10 @@ async function refreshConversationInfo(){
           memberActionButtons.replaceChildren();
           memberActionStatus.textContent="يرجى تأكيد العملية قبل تنفيذها.";
           const confirm=makeMemberAction(confirmLabel,async()=>{
-            confirm.disabled=true;cancel.disabled=true;memberActionStatus.textContent="جارٍ تنفيذ العملية...";
+            confirm.disabled=true;memberActionCancel.disabled=true;memberActionStatus.textContent="جارٍ تنفيذ العملية...";
             await handler();
-            if(!memberActionPanel.hidden&&memberActionStatus.textContent!==""){confirm.disabled=false;cancel.disabled=false}
+            if(!memberActionPanel.hidden&&memberActionStatus.textContent!==""){confirm.disabled=false;memberActionCancel.disabled=false}
           },cls);
-          const cancel=makeMemberAction("إلغاء",()=>{
-            memberActionHeading.textContent="خيارات العضو: "+member.name;memberActionButtons.replaceChildren();memberActionStatus.textContent="";
-            const rebuild=new Event("click");name.dispatchEvent(rebuild);
-          },"secondary");
         };
         const canRemove=(d.isAdmin||d.isModerator)&&!isOwner;
         if(canRemove)makeMemberAction("إزالة العضو",()=>{
