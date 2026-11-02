@@ -292,6 +292,30 @@ io.on("connection", socket => {
     }
   });
 
+  socket.on("setGroupModerator", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const targetUid = String(data.memberUid || "");
+      const makeModerator = data.makeModerator === true;
+      const ref = conversationsRef.doc(conversationId);
+      const snap = await ref.get();
+      if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإدارة هذه المجموعة.");
+      const group = snap.data();
+      if (group.createdBy !== socket.data.uid) throw new Error("منشئ المجموعة فقط يستطيع تعيين المشرفين.");
+      if (!targetUid || targetUid === group.createdBy || !(group.members || []).includes(targetUid)) throw new Error("العضو المحدد غير صالح.");
+      const moderators = new Set(group.moderatorUids || []);
+      if (makeModerator) moderators.add(targetUid); else moderators.delete(targetUid);
+      await ref.update({ moderatorUids: [...moderators], updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      for (const uid of group.members || []) {
+        const sessions = connectedUsers.get(uid);
+        if (sessions) for (const client of sessions) if (client.connected) client.emit("groupConversationUpdated", { conversationId });
+      }
+      if (typeof reply === "function") reply({ success: true, message: makeModerator ? "تم تعيين العضو مشرفًا." : "تم إلغاء صلاحية الإشراف." });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر تحديث صلاحية المشرف." });
+    }
+  });
+
   socket.on("removeGroupMember", async (data = {}, reply) => {
     try {
       const conversationId = String(data.conversationId || "");
@@ -301,7 +325,8 @@ io.on("connection", socket => {
         const snap = await transaction.get(ref);
         if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإدارة هذه المجموعة.");
         const group = snap.data();
-        if (group.createdBy !== socket.data.uid) throw new Error("منشئ المجموعة فقط يستطيع إزالة الأعضاء.");
+        if (group.createdBy !== socket.data.uid && !(group.moderatorUids || []).includes(socket.data.uid)) throw new Error("غير مصرح لك بإزالة أعضاء هذه المجموعة.");
+        if ((group.moderatorUids || []).includes(socket.data.uid) && (group.moderatorUids || []).includes(targetUid)) throw new Error("لا يستطيع المشرف إزالة مشرف آخر.");
         if (!targetUid || targetUid === group.createdBy) throw new Error("لا يمكن إزالة منشئ المجموعة.");
         if (!(group.members || []).includes(targetUid)) throw new Error("هذا العضو لم يعد ضمن المجموعة.");
         transaction.update(ref, { members: admin.firestore.FieldValue.arrayRemove(targetUid), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
@@ -393,12 +418,13 @@ io.on("connection", socket => {
         const members = profiles.map(profile => ({
           uid: profile.id,
           name: String(profile.exists ? (profile.data().playerName || profile.data().displayName || "مستخدم") : "مستخدم"),
-          online: Boolean(getConnectedSocket(profile.id))
+          online: Boolean(getConnectedSocket(profile.id)),
+          isModerator: (conversationData.moderatorUids || []).includes(profile.id)
         }));
         const countSnap = await conversationRef.collection("messages").count().get();
         if (typeof reply === "function") reply({ success: true, details: {
           type: "group", name: String(conversationData.groupName || "مجموعة"),
-          members, createdBy: conversationData.createdBy || "", isAdmin: conversationData.createdBy === socket.data.uid,
+          members, createdBy: conversationData.createdBy || "", isAdmin: conversationData.createdBy === socket.data.uid, isModerator: (conversationData.moderatorUids || []).includes(socket.data.uid),
           messageCount: countSnap.data().count || 0,
           createdAt: conversationData.createdAt?.toMillis?.() || 0,
           updatedAt: conversationData.updatedAt?.toMillis?.() || 0
