@@ -836,7 +836,7 @@ async function refreshConversationInfo(){
       if(!name.disabled)name.addEventListener("click",()=>{
         selectedMemberTrigger=name;memberActionHeading.textContent="خيارات العضو: "+member.name;memberActionButtons.replaceChildren();memberActionStatus.textContent="";
         const makeMemberAction=(label,handler,cls="secondary")=>{const b=document.createElement("button");b.type="button";b.className=cls;b.textContent=label;b.addEventListener("click",handler);memberActionButtons.append(b);return b};
-        const canRemove=(d.isAdmin||d.isModerator)&&member.uid!==d.createdBy&&(!d.isModerator||!member.isModerator);
+        const canRemove=(d.isAdmin||d.isModerator)&&member.uid!==d.createdBy;
         if(canRemove)makeMemberAction("إزالة العضو",async()=>{
           memberActionStatus.textContent="جارٍ إزالة العضو...";
           const result=await call("removeGroupMember",{conversationId:currentId,memberUid:member.uid});
@@ -858,7 +858,7 @@ async function refreshConversationInfo(){
     const actionsHeading=document.createElement("h4");actionsHeading.textContent="إجراءات المجموعة";actions.append(actionsHeading);
     const makeButton=(label,cls="secondary")=>{const button=document.createElement("button");button.type="button";button.className=cls;button.textContent=label;return button};
     const makePanel=()=>{const panel=document.createElement("div");panel.className="groupInlinePanel";panel.hidden=true;return panel};
-    if(d.isAdmin){
+    if(d.isAdmin||d.isModerator){
       const renameButton=makeButton("تعديل اسم المجموعة");
       const renamePanel=makePanel();
       const renameLabel=document.createElement("label");renameLabel.textContent="اسم المجموعة الجديد";
