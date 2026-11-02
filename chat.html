@@ -512,11 +512,11 @@ function addMessage(m){
     const open=document.createElement("button");
     open.type="button";open.className="attachmentOpen"+(isVideo?" videoAttachmentButton":"");
     const isImage=item.type.startsWith("image/");
-     const isAudio=item.type.startsWith("audio/");
+     const isAudioItem=item.type.startsWith("audio/");
     const savedDuration=Number(m.attachment.durationSeconds)||Number(knownVideoDurations.get(String(m.id||"")));
     const formatVideoDuration=value=>{const total=Math.floor(Number(value));if(!Number.isFinite(total)||total<=0)return "";return Math.floor(total/60)+":"+String(total%60).padStart(2,"0")};
     const knownDuration=isVideo?formatVideoDuration(savedDuration):"";
-    open.textContent=isImage?"عرض الصورة: "+item.name:isVideo?(knownDuration?"▶ فيديو · "+knownDuration:"▶ فيديو"):isAudio?"▶ تشغيل الرسالة الصوتية":"فتح الملف: "+item.name;
+    open.textContent=isImage?"عرض الصورة: "+item.name:isVideo?(knownDuration?"▶ فيديو · "+knownDuration:"▶ فيديو"):isAudioItem?"▶ تشغيل الرسالة الصوتية":"فتح الملف: "+item.name;
     open.setAttribute("aria-label",isVideo?(knownDuration?"فيديو، المدة "+knownDuration:"فيديو"):isAudio?"رسالة صوتية، اضغط للاستماع":open.textContent);
     open.addEventListener("click",()=>openAttachmentViewer(itemIndex));
     if(isImage){const preview=document.createElement("img");preview.src=item.url;preview.alt="معاينة الصورة: "+item.name;preview.loading="lazy";preview.className="attachmentPreview";open.prepend(preview)}
