@@ -846,6 +846,7 @@ async function refreshConversationInfo(){
           const confirm=makeMemberAction(confirmLabel,async()=>{
             confirm.disabled=true;cancel.disabled=true;memberActionStatus.textContent="جارٍ تنفيذ العملية...";
             await handler();
+            if(!memberActionPanel.hidden&&memberActionStatus.textContent!==""){confirm.disabled=false;cancel.disabled=false}
           },cls);
           const cancel=makeMemberAction("إلغاء",()=>{
             memberActionHeading.textContent="خيارات العضو: "+member.name;memberActionButtons.replaceChildren();memberActionStatus.textContent="";
