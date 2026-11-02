@@ -1055,6 +1055,61 @@ function mediaUploadCors(req,res,next){
   if(req.method==="OPTIONS")return res.sendStatus(204);
   next();
 }
+// Read the duration from ISO-BMFF/QuickTime video metadata (MP4/MOV).
+// This runs on the uploaded bytes, so it does not depend on browser metadata APIs.
+function readMp4DurationSeconds(buffer) {
+  if (!Buffer.isBuffer(buffer) || buffer.length < 16) return null;
+  const readBoxes = (start, end, wanted) => {
+    let offset = start;
+    while (offset + 8 <= end) {
+      let size = buffer.readUInt32BE(offset);
+      const type = buffer.toString("ascii", offset + 4, offset + 8);
+      let headerSize = 8;
+      if (size === 1) {
+        if (offset + 16 > end) return null;
+        const largeSize = buffer.readBigUInt64BE(offset + 8);
+        if (largeSize > BigInt(Number.MAX_SAFE_INTEGER)) return null;
+        size = Number(largeSize);
+        headerSize = 16;
+      } else if (size === 0) {
+        size = end - offset;
+      }
+      if (size < headerSize || offset + size > end) return null;
+      const payloadStart = offset + headerSize;
+      const boxEnd = offset + size;
+      if (type === wanted) return { start: payloadStart, end: boxEnd };
+      if (type === "moov" && wanted === "mvhd") {
+        const found = readBoxes(payloadStart, boxEnd, wanted);
+        if (found) return found;
+      }
+      offset = boxEnd;
+    }
+    return null;
+  };
+  const mvhd = readBoxes(0, buffer.length, "mvhd");
+  if (!mvhd || mvhd.start + 20 > mvhd.end) return null;
+  const version = buffer[mvhd.start];
+  let timescaleOffset;
+  let durationOffset;
+  if (version === 0) {
+    timescaleOffset = mvhd.start + 12;
+    durationOffset = mvhd.start + 16;
+    if (durationOffset + 4 > mvhd.end) return null;
+    const timescale = buffer.readUInt32BE(timescaleOffset);
+    const duration = buffer.readUInt32BE(durationOffset);
+    return timescale > 0 && duration > 0 ? duration / timescale : null;
+  }
+  if (version === 1) {
+    timescaleOffset = mvhd.start + 20;
+    durationOffset = mvhd.start + 24;
+    if (durationOffset + 8 > mvhd.end) return null;
+    const timescale = buffer.readUInt32BE(timescaleOffset);
+    const duration = buffer.readBigUInt64BE(durationOffset);
+    return timescale > 0 && duration > 0n ? Number(duration) / timescale : null;
+  }
+  return null;
+}
+
 app.options("/api/upload-media",mediaUploadCors);
 app.post("/api/upload-media",mediaUploadCors,express.raw({type:"application/octet-stream",limit:"50mb"}),async(req,res)=>{
   try{
@@ -1075,7 +1130,7 @@ app.post("/api/upload-media",mediaUploadCors,express.raw({type:"application/octe
     if(uploadError)throw uploadError;
     const {data:signed,error:signedError}=await storage.createSignedUrl(storagePath,31536000);
     if(signedError)throw signedError;
-    res.json({success:true,attachment:{name:fileName,type:mimeType,size:req.body.length,url:signed.signedUrl,storagePath}});
+    const durationSeconds=mimeType.startsWith("video/")?readMp4DurationSeconds(req.body):null;\n    res.json({success:true,attachment:{name:fileName,type:mimeType,size:req.body.length,url:signed.signedUrl,storagePath,...(Number.isFinite(durationSeconds)&&durationSeconds>0?{durationSeconds:Math.round(durationSeconds)}:{})}});
   }catch(error){
     console.error("Media upload error:",error.message);
     const message=error.message==="Supabase private storage is not configured on the server."
