@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><link rel="manifest" href="/manifest.webmanifest">
 <title>الإعدادات - مِرسالو</title>
 <style>
 :root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}
@@ -48,8 +48,21 @@ h3{margin-bottom:4px;color:#f5f7fb}
 <h2>الإعدادات</h2><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
 <div class="setting"><label for="largeText" aria-hidden="true">تكبير النصوص</label><input id="largeText" type="checkbox" aria-label="تكبير النصوص"></div>
 <div class="setting"><label for="strongFocus" aria-hidden="true">إبراز العنصر المحدد بوضوح</label><input id="strongFocus" type="checkbox" aria-label="إبراز العنصر المحدد بوضوح"></div>
-<p id="settingsStatus" role="status" aria-live="polite">يتم حفظ التغييرات على هذا الجهاز تلقائيًا.</p><button class="action" type="button" data-open-section="panel-friend-requests">طلبات الصداقة</button><button class="action" type="button" data-open-section="panel-account-options">إدارة الحساب</button>
+<p id="settingsStatus" role="status" aria-live="polite">يتم حفظ التغييرات على هذا الجهاز تلقائيًا.</p><button class="action" type="button" data-open-section="panel-notifications">الإشعارات</button><button class="action" type="button" data-open-section="panel-friend-requests">طلبات الصداقة</button><button class="action" type="button" data-open-section="panel-account-options">إدارة الحساب</button>
 <button class="link secondary" type="button" data-navigate="chat.html">العودة إلى المحادثات</button>
+</section>
+
+
+<section class="panel section-screen" id="panel-notifications" hidden>
+<button class="section-back" type="button">رجوع إلى الإعدادات</button>
+<h2 tabindex="-1">الإشعارات</h2>
+<p class="muted">ستظهر هنا إشعارات الرسائل وطلبات الصداقة وإضافتك إلى المجموعات.</p>
+<p id="pushStatus" role="status" aria-live="polite">جارٍ التحقق من حالة الإشعارات...</p>
+<button id="enablePush" class="action" type="button">تفعيل الإشعارات على هذا الجهاز</button>
+<button id="disablePush" class="action secondary" type="button">إيقاف الإشعارات على هذا الجهاز</button>
+<p class="muted">على iPhone: أضف مِرسالو إلى الشاشة الرئيسية وافتحه من الأيقونة أولًا، ثم فعّل الإشعارات. يتطلب ذلك iOS 16.4 أو أحدث.</p>
+<h3 tabindex="-1">آخر الإشعارات</h3>
+<div id="notificationsList" aria-live="polite">جارٍ تحميل الإشعارات...</div>
 </section>
 
 <section class="panel section-screen" id="panel-friend-requests" hidden>
@@ -129,10 +142,91 @@ function loadFriendRequests(){
     });
   });
 }
+
+const pushStatus=document.getElementById("pushStatus");
+const notificationsList=document.getElementById("notificationsList");
+const enablePush=document.getElementById("enablePush");
+const disablePush=document.getElementById("disablePush");
+const apiBase="https://tareeq-al-layl-server.onrender.com";
+async function apiRequest(path,method="GET",body){
+  if(!auth.currentUser)throw new Error("سجّل الدخول أولًا.");
+  const token=await auth.currentUser.getIdToken();
+  const response=await fetch(apiBase+path,{method,headers:{Authorization:"Bearer "+token,...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.success)throw new Error(result.message||"تعذر إكمال الطلب.");
+  return result;
+}
+function decodeVapidKey(value){
+  const padding="=".repeat((4-value.length%4)%4);
+  const raw=atob((value+padding).replace(/-/g,"+").replace(/_/g,"/"));
+  return Uint8Array.from(raw,char=>char.charCodeAt(0));
+}
+async function loadNotifications(){
+  if(!auth.currentUser)return;
+  notificationsList.textContent="جارٍ تحميل الإشعارات...";
+  try{
+    const result=await apiRequest("/api/notifications");
+    notificationsList.replaceChildren();
+    if(!result.notifications.length){notificationsList.textContent="لا توجد إشعارات حتى الآن.";return}
+    for(const item of result.notifications){
+      const card=document.createElement("article");card.className="requestCard";
+      const title=document.createElement("h3");title.textContent=item.title||"إشعار";
+      const body=document.createElement("p");body.textContent=item.body||"";
+      const state=document.createElement("p");state.textContent=item.read?"مقروء":"غير مقروء";
+      const open=document.createElement("button");open.type="button";open.className="action";open.textContent="فتح الإشعار";
+      open.addEventListener("click",async()=>{
+        if(!item.read)await apiRequest("/api/notifications/"+encodeURIComponent(item.id)+"/read","PATCH",{}).catch(()=>{});
+        location.href=item.url||"chat.html";
+      });
+      card.append(title,body,state,open);notificationsList.append(card);
+    }
+  }catch(error){notificationsList.textContent=error.message||"تعذر تحميل الإشعارات."}
+}
+async function refreshPushStatus(){
+  if(!("serviceWorker" in navigator)||!("PushManager" in window)){pushStatus.textContent="هذا المتصفح لا يدعم إشعارات الويب.";return}
+  try{
+    const registration=await navigator.serviceWorker.getRegistration("/");
+    const subscription=registration?await registration.pushManager.getSubscription():null;
+    pushStatus.textContent=subscription?"الإشعارات مفعّلة على هذا الجهاز.":"الإشعارات غير مفعّلة على هذا الجهاز.";
+  }catch(error){pushStatus.textContent="تعذر التحقق من حالة الإشعارات."}
+}
+enablePush.addEventListener("click",async()=>{
+  enablePush.disabled=true;pushStatus.textContent="جارٍ تفعيل الإشعارات...";
+  try{
+    const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+    if(isIOS&&!isStandalone)throw new Error("على iPhone، أضف مِرسالو إلى الشاشة الرئيسية وافتحه من الأيقونة، ثم أعد المحاولة.");
+    if(!("Notification" in window)||!("serviceWorker" in navigator)||!("PushManager" in window))throw new Error("المتصفح لا يدعم الإشعارات.");
+    const permission=await Notification.requestPermission();
+    if(permission!=="granted")throw new Error("لم يتم منح إذن الإشعارات. يمكنك السماح بها من إعدادات المتصفح.");
+    const keyResult=await fetch(apiBase+"/api/push/public-key");
+    const keyData=await keyResult.json();
+    if(!keyResult.ok||!keyData.publicKey)throw new Error("خدمة الإشعارات لم تكتمل تهيئتها على الخادم بعد.");
+    const registration=await navigator.serviceWorker.register("/service-worker.js",{scope:"/"});
+    await navigator.serviceWorker.ready;
+    let subscription=await registration.pushManager.getSubscription();
+    if(!subscription)subscription=await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:decodeVapidKey(keyData.publicKey)});
+    await apiRequest("/api/push/subscribe","POST",{subscription:subscription.toJSON()});
+    pushStatus.textContent="تم تفعيل الإشعارات على هذا الجهاز بنجاح.";
+  }catch(error){pushStatus.textContent=error.message||"تعذر تفعيل الإشعارات."}
+  finally{enablePush.disabled=false;await refreshPushStatus()}
+});
+disablePush.addEventListener("click",async()=>{
+  disablePush.disabled=true;pushStatus.textContent="جارٍ إيقاف الإشعارات...";
+  try{
+    const registration=await navigator.serviceWorker.getRegistration("/");
+    const subscription=registration?await registration.pushManager.getSubscription():null;
+    if(subscription){await apiRequest("/api/push/unsubscribe","POST",{endpoint:subscription.endpoint});await subscription.unsubscribe()}
+    pushStatus.textContent="تم إيقاف الإشعارات على هذا الجهاز.";
+  }catch(error){pushStatus.textContent=error.message||"تعذر إيقاف الإشعارات."}
+  finally{disablePush.disabled=false;await refreshPushStatus()}
+});
+
 onAuthStateChanged(auth,async user=>{
   if(!user){location.replace("login.html");return}
   try{
     activeUser=user;const token=await user.getIdToken();
+    loadNotifications();refreshPushStatus();
     socket=io("https://tareeq-al-layl-server.onrender.com",{auth:{token},reconnection:true,reconnectionAttempts:Infinity,reconnectionDelay:1000,reconnectionDelayMax:5000});
     socket.on("connect",loadFriendRequests);
     socket.on("friendRequestReceived",data=>{
