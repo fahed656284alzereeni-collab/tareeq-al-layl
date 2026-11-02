@@ -952,8 +952,18 @@ async function refreshConversationInfo(){
       const permissionLabel=value=>value==="members"?"جميع الأعضاء":"المشرفون فقط";
       const editPermissionButton=document.createElement("button");editPermissionButton.type="button";editPermissionButton.className="secondary";
       const addPermissionButton=document.createElement("button");addPermissionButton.type="button";addPermissionButton.className="secondary";
-      const closePermissions=document.createElement("button");closePermissions.type="button";closePermissions.className="panelBack";closePermissions.textContent="رجوع إلى معلومات المجموعة";
-      const refreshPermissionLabels=()=>{editPermissionButton.textContent="تعديل معلومات المجموعة: "+permissionLabel(permissions.editInfo);addPermissionButton.textContent="إضافة أعضاء: "+permissionLabel(permissions.addMembers)};
+      const closePermissions=document.createElement("button");closePermissions.type="button";closePermissions.className="panelBack";closePermissions.textContent="رجوع إلى معلومات المجموعة";closePermissions.setAttribute("aria-label","رجوع إلى معلومات المجموعة");
+      permissionsPanel.setAttribute("role","region");permissionsPanel.setAttribute("aria-labelledby","groupPermissionsTitle");
+      permissionsTitle.id="groupPermissionsTitle";
+      permissionButtons.setAttribute("role","group");permissionButtons.setAttribute("aria-label","أذونات المجموعة");
+      const refreshPermissionLabels=()=>{
+        editPermissionButton.textContent="تعديل معلومات المجموعة: "+permissionLabel(permissions.editInfo);
+        addPermissionButton.textContent="إضافة أعضاء: "+permissionLabel(permissions.addMembers);
+        editPermissionButton.setAttribute("aria-label","صلاحية تعديل معلومات المجموعة. الوضع الحالي: "+permissionLabel(permissions.editInfo)+". اضغط للتبديل.");
+        addPermissionButton.setAttribute("aria-label","صلاحية إضافة أعضاء. الوضع الحالي: "+permissionLabel(permissions.addMembers)+". اضغط للتبديل.");
+        editPermissionButton.setAttribute("aria-pressed",String(permissions.editInfo==="members"));
+        addPermissionButton.setAttribute("aria-pressed",String(permissions.addMembers==="members"));
+      };
       const savePermission=async(key)=>{
         const next=permissions[key]==="members"?"admins":"members";
         const previous=permissions[key];permissions[key]=next;
@@ -969,9 +979,10 @@ async function refreshConversationInfo(){
       addPermissionButton.addEventListener("click",()=>savePermission("addMembers"));
       closePermissions.addEventListener("click",()=>{permissionsPanel.hidden=true;permissionsSection.querySelector("button")?.focus()});
       permissionButtons.append(editPermissionButton,addPermissionButton);
-      permissionsPanel.append(permissionsTitle,permissionsNote,permissionButtons,permissionsStatus,closePermissions);
-      const openPermissions= document.createElement("button");openPermissions.type="button";openPermissions.textContent="إدارة أذونات المجموعة";
-      openPermissions.addEventListener("click",()=>{permissionsPanel.hidden=false;editPermissionButton.focus()});
+      permissionsPanel.append(closePermissions,permissionsTitle,permissionsNote,permissionButtons,permissionsStatus);
+      const openPermissions= document.createElement("button");openPermissions.type="button";openPermissions.textContent="إدارة أذونات المجموعة";openPermissions.setAttribute("aria-haspopup","dialog");openPermissions.setAttribute("aria-expanded","false");
+      openPermissions.addEventListener("click",()=>{permissionsPanel.hidden=false;openPermissions.setAttribute("aria-expanded","true");permissionsTitle.setAttribute("tabindex","-1");permissionsTitle.focus()});
+      closePermissions.addEventListener("click",()=>{permissionsPanel.hidden=true;openPermissions.setAttribute("aria-expanded","false");openPermissions.focus()});
       permissionsSection.append(permissionsHeading,permissionsNote,openPermissions,permissionsPanel);
       content.append(permissionsSection);
     }
