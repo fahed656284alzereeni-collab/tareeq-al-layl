@@ -526,20 +526,32 @@ function addMessage(m){
       metadataVideo.setAttribute("aria-hidden","true");metadataVideo.tabIndex=-1;
       metadataVideo.style.cssText="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;overflow:hidden";
       videoAttachmentRow.append(metadataVideo);
-      const updateDuration=()=>{if(knownDuration)return;const duration=formatVideoDuration(metadataVideo.duration);if(!duration)return;updateVideoMessageDuration(m.id,metadataVideo.duration);metadataVideo.removeAttribute("src");metadataVideo.load()};
+      let durationWasRead=!!knownDuration;
+      let durationReadTimeout=null;
+      const updateDuration=()=>{
+        if(durationWasRead)return;
+        const seconds=Number(metadataVideo.duration);
+        const duration=formatVideoDuration(seconds);
+        if(!duration)return;
+        durationWasRead=true;
+        if(durationReadTimeout)clearTimeout(durationReadTimeout);
+        updateVideoMessageDuration(m.id,seconds);
+        metadataVideo.pause();
+        metadataVideo.removeAttribute("src");
+        metadataVideo.load();
+      };
       if(!knownDuration){
         metadataVideo.addEventListener("loadedmetadata",updateDuration);
         metadataVideo.addEventListener("durationchange",updateDuration);
-        metadataVideo.addEventListener("loadeddata",updateDuration);
-        metadataVideo.addEventListener("canplay",updateDuration);
-        let durationChecks=0;
-        const checkDuration=()=>{
-          if(knownDuration||open.textContent.includes(" · ")||!metadataVideo.isConnected)return;
-          updateDuration();
-          if(!open.textContent.includes(" · ")&&durationChecks++<80)setTimeout(checkDuration,250);
-        };
-        metadataVideo.addEventListener("error",()=>{if(!open.textContent.includes(" · "))open.setAttribute("aria-label","فيديو، المدة غير متاحة");},{once:true});
-        setTimeout(checkDuration,250);
+        metadataVideo.addEventListener("error",()=>{
+          if(durationReadTimeout)clearTimeout(durationReadTimeout);
+          if(!durationWasRead)open.setAttribute("aria-label","فيديو، تعذر قراءة المدة");
+        },{once:true});
+        durationReadTimeout=setTimeout(()=>{
+          if(!durationWasRead&&metadataVideo.isConnected){
+            open.setAttribute("aria-label","فيديو، لم تُقرأ المدة بعد");
+          }
+        },30000);
       }
     }else content.append(document.createTextNode(" "),open);
   }
@@ -619,6 +631,7 @@ function addMessage(m){
       const messageId=String(div.dataset.messageId||"");
       const attachmentItem=attachmentItems.find(item=>item.messageId===messageId);
       if(attachmentItem?.url){
+        // Start metadata loading only after the message and video element are attached to the document.
         metadataVideo.src=attachmentItem.url;
         metadataVideo.load();
       }
