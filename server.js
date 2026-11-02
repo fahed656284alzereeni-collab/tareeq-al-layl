@@ -1510,8 +1510,34 @@ app.post("/api/admin/account-name",pushCors,express.json({limit:"32kb"}),async(r
     profileCache.delete(uid);
     for(const client of connectedUsers.get(uid)||[])client.data.playerName=name;
     io.emit("onlinePlayers",onlinePlayerList());
-    await admin.firestore().collection("adminActions").add({type:"rename-account",targetUid:uid,newName:name,adminUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp()});
-    res.json({success:true,message:"تم تغيير اسم الحساب بنجاح.",name});
+
+    // Update historical messages and saved reply names so old conversations
+    // display the moderated profile name instead of the previous one.
+    const db=admin.firestore();
+    const [sentMessages,repliesToUser]=await Promise.all([
+      db.collectionGroup("messages").where("senderUid","==",uid).get(),
+      db.collectionGroup("messages").where("replyTo.senderUid","==",uid).get()
+    ]);
+    const messageUpdates=new Map();
+    for(const doc of sentMessages.docs)messageUpdates.set(doc.ref.path,{ref:doc.ref,sent:true,replied:false});
+    for(const doc of repliesToUser.docs){
+      const item=messageUpdates.get(doc.ref.path)||{ref:doc.ref,sent:false,replied:false};
+      item.replied=true;messageUpdates.set(doc.ref.path,item);
+    }
+    const updates=[...messageUpdates.values()];
+    for(let i=0;i<updates.length;i+=450){
+      const batch=db.batch();
+      for(const item of updates.slice(i,i+450)){
+        const fields={};
+        if(item.sent)fields.senderName=name;
+        if(item.replied)fields["replyTo.senderName"]=name;
+        batch.update(item.ref,fields);
+      }
+      await batch.commit();
+    }
+    await db.collection("adminActions").add({type:"rename-account",targetUid:uid,newName:name,updatedHistoricalMessages:sentMessages.size,updatedReplyNames:repliesToUser.size,adminUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+    io.emit("accountNameUpdated",{uid,name});
+    res.json({success:true,message:"تم تغيير الاسم وتحديثه في الرسائل والمحادثات السابقة.",name,updatedMessages:sentMessages.size});
   }catch(error){sendAdminError(res,error);}
 });
 
