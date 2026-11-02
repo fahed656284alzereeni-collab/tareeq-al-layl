@@ -540,6 +540,9 @@ function addMessage(m){
         };
         metadataVideo.addEventListener("error",()=>{if(!open.textContent.includes(" · "))open.setAttribute("aria-label","فيديو، المدة غير متاحة");},{once:true});
         setTimeout(checkDuration,250);
+        // Load the remote video URL so the metadata element can actually read its duration.
+        metadataVideo.src=item.url;
+        metadataVideo.load();
       }
     }else content.append(document.createTextNode(" "),open);
   }
