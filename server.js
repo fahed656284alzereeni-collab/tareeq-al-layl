@@ -880,6 +880,37 @@ io.on("connection", socket => {
     }
   });
 
+  socket.on("getScheduledMessages", async (data = {}, reply) => {
+    try {
+      const snapshot = await scheduledMessagesRef.where("senderUid", "==", socket.data.uid).get();
+      const now = Date.now();
+      const pending = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), sendAt: doc.data().sendAt?.toMillis?.() || 0 })).filter(item => item.sendAt > now).sort((a, b) => a.sendAt - b.sendAt);
+      const ids = [...new Set(pending.map(item => item.conversationId).filter(Boolean))];
+      const snaps = ids.length ? await db.getAll(...ids.map(id => conversationsRef.doc(id))) : [];
+      const names = new Map(snaps.map(snap => [snap.id, snap.exists ? String(snap.data().name || snap.data().groupName || "محادثة") : "محادثة"]));
+      if (typeof reply === "function") reply({ success: true, messages: pending.map(item => ({ id: item.id, text: String(item.text || ""), sendAt: item.sendAt, conversationName: names.get(item.conversationId) || "محادثة" })) });
+    } catch (error) { if (typeof reply === "function") reply({ success: false, message: "تعذر تحميل الرسائل المجدولة." }); }
+  });
+
+  socket.on("cancelScheduledMessage", async (data = {}, reply) => {
+    try {
+      const id = String(data.scheduledId || "").trim();
+      if (!id) throw new Error("الرسالة المجدولة غير محددة.");
+      const ref = scheduledMessagesRef.doc(id);
+      const cancelled = await db.runTransaction(async transaction => {
+        const snap = await transaction.get(ref);
+        if (!snap.exists) return false;
+        const item = snap.data();
+        if (item.senderUid !== socket.data.uid) throw new Error("لا يمكنك إلغاء رسالة مجدولة لشخص آخر.");
+        if ((item.sendAt?.toMillis?.() || 0) <= Date.now()) throw new Error("حان موعد الإرسال أو بدأت عملية الإرسال بالفعل.");
+        transaction.delete(ref);
+        return true;
+      });
+      if (!cancelled) throw new Error("الرسالة المجدولة لم تعد موجودة.");
+      if (typeof reply === "function") reply({ success: true });
+    } catch (error) { if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر إلغاء الجدولة." }); }
+  });
+
   socket.on("scheduleDirectMessage", async (data = {}, reply) => {
     try {
       const conversationId = String(data.conversationId || "");
