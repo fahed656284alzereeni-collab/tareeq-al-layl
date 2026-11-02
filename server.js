@@ -1568,8 +1568,9 @@ app.post("/api/admin/account-action",pushCors,express.json({limit:"32kb"}),async
 // Public community posts and AdSense configuration.
 app.get("/api/public-posts",pushCors,async(req,res)=>{
   try{
-    const snap=await admin.firestore().collection("publicPosts").where("status","==","approved").orderBy("createdAt","desc").limit(100).get();
-    res.json({success:true,posts:snap.docs.map(d=>{const v=d.data();return{id:d.id,title:String(v.title||""),body:String(v.body||""),authorName:String(v.authorName||"مستخدم"),createdAt:v.createdAt?.toDate?.().toISOString?.()||null};})});
+    const snap=await admin.firestore().collection("publicPosts").where("status","==","approved").get();
+    const posts=snap.docs.map(d=>{const v=d.data();return{id:d.id,title:String(v.title||""),body:String(v.body||""),authorName:String(v.authorName||"مستخدم"),createdAt:v.createdAt?.toDate?.().toISOString?.()||null,sortAt:v.createdAt?.toMillis?.()||0};}).sort((a,b)=>b.sortAt-a.sortAt).slice(0,100).map(({sortAt,...post})=>post);
+    res.json({success:true,posts});
   }catch(error){console.error("Public posts load error:",error.message);res.status(500).json({success:false,message:"تعذر تحميل المنشورات العامة."});}
 });
 app.post("/api/public-posts",pushCors,async(req,res)=>{
@@ -1598,8 +1599,9 @@ app.get("/api/public-ads",pushCors,async(req,res)=>{
 app.get("/api/admin/public-posts",pushCors,async(req,res)=>{
   try{
     await requireMersaloAdmin(req);
-    const snap=await admin.firestore().collection("publicPosts").where("status","==","pending").orderBy("createdAt","asc").limit(100).get();
-    res.json({success:true,posts:snap.docs.map(d=>({id:d.id,...d.data(),createdAt:d.data().createdAt?.toDate?.().toISOString?.()||null}))});
+    const snap=await admin.firestore().collection("publicPosts").where("status","==","pending").get();
+    const posts=snap.docs.map(d=>({id:d.id,...d.data(),createdAt:d.data().createdAt?.toDate?.().toISOString?.()||null,sortAt:d.data().createdAt?.toMillis?.()||0})).sort((a,b)=>a.sortAt-b.sortAt).slice(0,100).map(({sortAt,...post})=>post);
+    res.json({success:true,posts});
   }catch(error){sendAdminError(res,error);}
 });
 app.patch("/api/admin/public-posts/:id",pushCors,async(req,res)=>{
