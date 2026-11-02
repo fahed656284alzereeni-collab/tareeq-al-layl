@@ -1172,7 +1172,7 @@ async function uploadConversationAttachment(file){
       updateVideoMessageDuration(sent.message.id,durationSeconds);
       if(socket?.connected)socket.emit("saveVideoDuration",{conversationId:currentId,messageId:sent.message.id,durationSeconds});
     }).catch(()=>{});
-    await loadConversations();status.textContent=isVideoFile?"تم إرسال الفيديو بنجاح.":"تم إرسال الملف بنجاح: "+file.name;playMessageSound("sent");
+    await loadConversations();const successText=isVideoFile?"تم إرسال الفيديو بنجاح.":"تم إرسال الملف بنجاح: "+file.name;status.textContent=successText;playMessageSound("sent");setTimeout(()=>{if(status.textContent===successText)status.textContent="";},3500);
   }catch(error){status.textContent=error.message||"حدث خطأ أثناء مشاركة الملف."}
   finally{document.getElementById("choosePhotosVideos").disabled=false;document.getElementById("chooseFiles").disabled=false}
 }
