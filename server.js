@@ -1479,14 +1479,12 @@ app.post("/api/admin/warn",pushCors,express.json({limit:"32kb"}),async(req,res)=
 app.get("/api/admin/accounts",pushCors,async(req,res)=>{
   try {
     await requireMersaloAdmin(req);
-    const query=String(req.query.q||"").trim().toLowerCase();
-    if(query.length<2)return res.status(400).json({success:false,message:"اكتب حرفين على الأقل للبحث عن الحساب."});
-    const snap=await admin.firestore().collection("users").limit(1000).get();
-    const matches=snap.docs.filter(doc=>{
-      const v=doc.data();
-      const fields=[doc.id,v.playerName,v.displayName,v.email].map(x=>String(x||"").toLowerCase());
-      return fields.some(value=>value.includes(query));
-    }).slice(0,30);
+    const snap=await admin.firestore().collection("users").get();
+    const matches=snap.docs.sort((a,b)=>{
+      const aName=String(a.data().playerName||a.data().displayName||"مستخدم");
+      const bName=String(b.data().playerName||b.data().displayName||"مستخدم");
+      return aName.localeCompare(bName,"ar");
+    });
     const accounts=await Promise.all(matches.map(async doc=>{
       const v=doc.data();
       let authUser=null;
