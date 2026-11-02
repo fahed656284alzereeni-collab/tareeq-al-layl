@@ -780,6 +780,30 @@ io.on("connection", socket => {
     }
   });
 
+  socket.on("saveVideoDuration", async (data = {}, reply) => {
+    try {
+      const conversationId=String(data.conversationId||"");
+      const messageId=String(data.messageId||"");
+      const durationSeconds=Math.floor(Number(data.durationSeconds));
+      if(!conversationId||!messageId||!Number.isFinite(durationSeconds)||durationSeconds<1||durationSeconds>86400)throw new Error("مدة الفيديو غير صالحة.");
+      const conversation=await conversationsRef.doc(conversationId).get();
+      if(!conversation.exists||!(conversation.data().members||[]).includes(socket.data.uid))throw new Error("غير مصرح بتحديث هذه الرسالة.");
+      const messageRef=conversationsRef.doc(conversationId).collection("messages").doc(messageId);
+      const messageSnap=await messageRef.get();
+      if(!messageSnap.exists||messageSnap.data().senderUid!==socket.data.uid)throw new Error("لا يمكن تحديث مدة هذا الفيديو.");
+      const attachment=messageSnap.data().attachment;
+      if(!attachment||(attachment.type||"").indexOf("video/")!==0)throw new Error("الرسالة ليست فيديو.");
+      await messageRef.update({"attachment.durationSeconds":durationSeconds});
+      for(const member of conversation.data().members||[]){
+        const sessions=connectedUsers.get(member);
+        if(sessions)for(const client of sessions)if(client.connected)client.emit("videoDurationUpdated",{conversationId,messageId,durationSeconds});
+      }
+      if(typeof reply==="function")reply({success:true});
+    }catch(error){
+      if(typeof reply==="function")reply({success:false,message:error.message||"تعذر حفظ مدة الفيديو."});
+    }
+  });
+
   socket.on("sendDirectMessage", async (data = {}, reply) => {
     try {
       const id = String(data.conversationId || "");
