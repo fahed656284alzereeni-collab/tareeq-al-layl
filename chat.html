@@ -505,8 +505,8 @@ async function createVoicePeer(callId){
 }
 async function addQueuedIce(){if(!voicePeer||!voicePeer.remoteDescription)return;for(const candidate of queuedIce.splice(0)){try{await voicePeer.addIceCandidate(candidate)}catch(error){console.warn("Unable to add queued ICE candidate",error)}}}
 startVoiceCallButton.addEventListener("click",async()=>{
-  if(!socket?.connected||!currentId||currentConversationType!=="direct"||!currentOtherUid)return;
-  startVoiceCallButton.disabled=true;startCallRingtone();voiceStatus.textContent="جارٍ الاتصال بـ"+currentOtherName+"...";
+  if(!socket?.connected||!currentId||currentConversationType!=="direct"||!currentOtherUid||activeVoiceCallId||pendingVoiceCall||voiceStream)return;
+  startVoiceCallButton.disabled=true;startVoiceCallButton.hidden=true;startCallRingtone();voiceStatus.textContent="جارٍ الاتصال بـ"+currentOtherName+"...";
   try{
     voiceStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
     const pc=await createVoicePeer("pending");
@@ -518,7 +518,7 @@ startVoiceCallButton.addEventListener("click",async()=>{
     voiceStatus.textContent="جارٍ الاتصال بـ"+currentOtherName+"...";
     endVoiceCallButton.hidden=false;
   }catch(error){resetVoiceCall(error.message||"تعذر بدء المكالمة. تحقق من إذن الميكروفون.");}
-  finally{startVoiceCallButton.disabled=false}
+  finally{startVoiceCallButton.disabled=false;if(!activeVoiceCallId&&!pendingVoiceCall&&!voiceStream)startVoiceCallButton.hidden=currentConversationType!=="direct"||!currentOtherUid}
 });
 acceptVoiceCallButton.addEventListener("click",async()=>{
   if(!pendingVoiceCall)return;
