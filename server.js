@@ -194,6 +194,16 @@ io.on("connection", socket => {
   // Voice-call signaling. Media never passes through this server; only WebRTC
   // offers, answers, and ICE candidates are relayed between authenticated users.
   const voiceCalls = globalVoiceCalls;
+  socket.on("voiceCall:resume", () => {
+    for (const call of voiceCalls.values()) {
+      if (call.calleeUid !== socket.data.uid || call.state !== "ringing") continue;
+      socket.data.voiceCallId = call.callId;
+      socket.emit("voiceCall:incoming", { callId: call.callId, conversationId: call.conversationId, caller: { uid: call.callerUid, name: call.callerName || "مستخدم" } });
+      if (call.offer) socket.emit("voiceCall:offer", { callId: call.callId, offer: call.offer });
+      for (const queued of call.pendingCandidates.splice(0)) if (queued.fromUid === call.callerUid) socket.emit("voiceCall:signal", { callId: call.callId, candidate: queued.candidate });
+    }
+  });
+
   socket.on("voiceCall:start", async (data = {}, reply) => {
     try {
       const targetUid = String(data.targetUid || "");
@@ -205,14 +215,16 @@ io.on("connection", socket => {
       if (conversation.type === "group" || !(conversation.members || []).includes(socket.data.uid) || !(conversation.members || []).includes(targetUid)) {
         throw new Error("المكالمات الصوتية متاحة في المحادثات الفردية فقط.");
       }
-      if (!getConnectedSocket(targetUid)) throw new Error("هذا الشخص غير متصل الآن.");
       if (activeVoiceCallFor(socket.data.uid) || activeVoiceCallFor(targetUid)) throw new Error("أحد الطرفين مشغول بمكالمة أخرى.");
       const callId = require("crypto").randomUUID();
-      const call = { callId, callerUid: socket.data.uid, calleeUid: targetUid, conversationId, state: "ringing", createdAt: Date.now() };
+      const call = { callId, callerUid: socket.data.uid, calleeUid: targetUid, conversationId, state: "ringing", createdAt: Date.now(), pendingCandidates: [] };
       voiceCalls.set(callId, call);
       socket.data.voiceCallId = callId;
       const caller = { uid: socket.data.uid, name: socket.data.playerName };
-      for (const client of connectedUsers.get(targetUid) || []) if (client.connected) client.emit("voiceCall:incoming", { callId, conversationId, caller });
+      const incoming = { callId, conversationId, caller };
+      for (const client of connectedUsers.get(targetUid) || []) if (client.connected) client.emit("voiceCall:incoming", incoming);
+      if (!getConnectedSocket(targetUid)) void createUserNotification(targetUid,{type:"incomingCall",title:"مكالمة واردة من "+socket.data.playerName,body:"لديك مكالمة صوتية واردة. اضغط لفتح مِرسالو والرد.",url:"chat.html?incomingCall=1",tag:"incoming-call-"+callId});
+      call.timeout = setTimeout(() => { if (voiceCalls.get(callId) !== call || call.state !== "ringing") return; voiceCalls.delete(callId); for (const client of connectedUsers.get(call.callerUid) || []) { if (client.data.voiceCallId===callId) delete client.data.voiceCallId; if(client.connected)client.emit("voiceCall:ended",{callId,reason:"no-answer"}); } for (const client of connectedUsers.get(call.calleeUid) || []) if(client.data.voiceCallId===callId)delete client.data.voiceCallId; },45000);
       if (typeof reply === "function") reply({ success: true, callId });
     } catch (error) {
       if (typeof reply === "function") reply({ success: false, message: error.message || "تعذر بدء المكالمة." });
@@ -225,6 +237,7 @@ io.on("connection", socket => {
     if (!call || call.callerUid !== socket.data.uid || call.state !== "ringing" ||
         !offer || offer.type !== "offer" || typeof offer.sdp !== "string" || offer.sdp.length > 30000) return;
     call.offerReceived = true;
+    call.offer = offer;
     for (const client of connectedUsers.get(call.calleeUid) || []) {
       if (client.connected) client.emit("voiceCall:offer", { callId: call.callId, offer });
     }
@@ -239,6 +252,7 @@ io.on("connection", socket => {
       return;
     }
     call.state = "active";
+    if(call.timeout)clearTimeout(call.timeout);
     socket.data.voiceCallId = call.callId;
     for (const client of connectedUsers.get(call.callerUid) || []) if (client.connected) client.emit("voiceCall:accepted", { callId: call.callId, answer });
     if (typeof reply === "function") reply({ success: true });
@@ -248,8 +262,11 @@ io.on("connection", socket => {
     const call = voiceCalls.get(String(data.callId || ""));
     if (!call || !["ringing", "active"].includes(call.state)) return;
     const peerUid = call.callerUid === socket.data.uid ? call.calleeUid : call.calleeUid === socket.data.uid ? call.callerUid : null;
-    if (!peerUid || !getConnectedSocket(peerUid)) return;
-    for (const client of connectedUsers.get(peerUid) || []) if (client.connected) client.emit("voiceCall:signal", { callId: call.callId, candidate: data.candidate });
+    if (!peerUid) return;
+    const peer = connectedUsers.get(peerUid);
+    const recipients = peer ? [...peer].filter(client => client.connected) : [];
+    if (!recipients.length) { if (call.pendingCandidates.length < 100) call.pendingCandidates.push({ fromUid: socket.data.uid, candidate: data.candidate }); return; }
+    for (const client of recipients) client.emit("voiceCall:signal", { callId: call.callId, candidate: data.candidate });
   });
 
   socket.on("voiceCall:end", (data = {}) => {
@@ -257,6 +274,7 @@ io.on("connection", socket => {
     const call = voiceCalls.get(callId);
     if (!call || (call.callerUid !== socket.data.uid && call.calleeUid !== socket.data.uid)) return;
     voiceCalls.delete(callId);
+    if(call.timeout)clearTimeout(call.timeout);
     for (const uid of [call.callerUid, call.calleeUid]) {
       const sessions = connectedUsers.get(uid);
       if (sessions) for (const client of sessions) {
