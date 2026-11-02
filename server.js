@@ -8,6 +8,8 @@ const fs = require("fs");
 const { Server } = require("socket.io");
 const admin = require("firebase-admin");
 const { createClient } = require("@supabase/supabase-js");
+const webpush = require("web-push");
+const crypto = require("crypto");
 
 // Prefer keyless Google Workload Identity Federation when Render configures ADC.
 // Otherwise support a Render Secret File or the legacy JSON environment variable.
@@ -280,6 +282,7 @@ io.on("connection", socket => {
       const ref = conversationsRef.doc();
       const now = admin.firestore.FieldValue.serverTimestamp();
       await ref.set({ type: "group", groupName: name, createdBy: socket.data.uid, members, createdAt: now, updatedAt: now, lastMessage: "تم إنشاء المجموعة" });
+      await Promise.all(memberUids.map(uid=>createUserNotification(uid,{type:"groupInvite",title:"إضافة إلى مجموعة",body:socket.data.playerName+" أضافك إلى مجموعة "+name,url:"chat.html?conversationId="+encodeURIComponent(ref.id),tag:"group-"+ref.id})));
       const payload = { id: ref.id, type: "group", groupName: name, displayName: name, members, createdBy: socket.data.uid, lastMessage: "تم إنشاء المجموعة" };
       if (typeof reply === "function") reply({ success: true, conversation: payload });
       for (const uid of members) {
@@ -308,6 +311,7 @@ io.on("connection", socket => {
       const checks = await Promise.all(newUids.flatMap(uid => [blockedRef(socket.data.uid, uid).get(), blockedRef(uid, socket.data.uid).get()]));
       if (checks.some(s => s.exists)) throw new Error("لا يمكن إضافة أحد المستخدمين بسبب إعدادات الحظر.");
       await ref.update({ members: admin.firestore.FieldValue.arrayUnion(...newUids), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      await Promise.all(newUids.map(uid=>createUserNotification(uid,{type:"groupInvite",title:"إضافة إلى مجموعة",body:socket.data.playerName+" أضافك إلى مجموعة "+String(snap.data().groupName||"محادثة جماعية"),url:"chat.html?conversationId="+encodeURIComponent(conversationId),tag:"group-"+conversationId})));
       for (const uid of [...currentMembers, ...newUids]) {
         const sessions = connectedUsers.get(uid);
         if (sessions) for (const client of sessions) if (client.connected) client.emit("groupConversationUpdated", { conversationId });
@@ -1005,6 +1009,8 @@ io.on("connection", socket => {
       }
       batch.set(ref, { updatedAt: admin.firestore.FieldValue.serverTimestamp(), lastMessage: (text||(attachment && (attachment.type || "").startsWith("video/") ? "فيديو" : ("مرفق: "+attachment.name))).slice(0,120) }, { merge: true });
       await batch.commit();
+      const notificationBody = text || (attachment ? (String(attachment.type||"").startsWith("video/") ? "أرسل فيديو" : "أرسل مرفقًا") : "أرسل رسالة");
+      await Promise.all((conversationData.members||[]).filter(uid=>uid!==socket.data.uid).map(uid=>createUserNotification(uid,{type:"message",title:isGroup?(conversationData.groupName||"مجموعة جديدة"):socket.data.playerName,body:notificationBody,url:"chat.html?conversationId="+encodeURIComponent(id),tag:"message-"+id})));
       const payload = { id: messageRef.id, senderUid: socket.data.uid, senderName: socket.data.playerName, text, ...(attachment?{attachment}:{}), createdAt: Date.now() };
       for (const member of conversation.data().members) {
         const sessions = connectedUsers.get(member);
@@ -1042,6 +1048,7 @@ io.on("connection", socket => {
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       });
       friendRequestLimits.set(socket.data.uid, now);
+      await createUserNotification(targetUid,{type:"friendRequest",title:"طلب صداقة جديد",body:socket.data.playerName+" أرسل إليك طلب صداقة.",url:"settings.html?section=friend-requests",tag:"friend-request-"+socket.data.uid});
       const targetSockets = connectedUsers.get(targetUid);
       const targets = targetSockets ? [...targetSockets].filter(client => client.connected) : [];
       for (const target of targets) {
@@ -1301,6 +1308,113 @@ app.post("/api/upload-media",mediaUploadCors,express.raw({type:"application/octe
 });
 
 app.use(express.json({ limit: "32kb" }));
+
+
+let pushConfigured = false;
+function ensurePushConfigured() {
+  if (pushConfigured) return true;
+  const publicKey = String(process.env.VAPID_PUBLIC_KEY || "").trim();
+  const privateKey = String(process.env.VAPID_PRIVATE_KEY || "").trim();
+  const subject = String(process.env.VAPID_SUBJECT || "").trim();
+  if (!publicKey || !privateKey || !subject) return false;
+  webpush.setVapidDetails(subject, publicKey, privateKey);
+  pushConfigured = true;
+  return true;
+}
+async function createUserNotification(uid, item) {
+  try {
+    const db = admin.firestore();
+    const ref = db.collection("users").doc(uid).collection("notifications").doc();
+    await ref.set({
+      type: String(item.type || "general").slice(0, 40),
+      title: String(item.title || "إشعار جديد").slice(0, 100),
+      body: String(item.body || "").slice(0, 240),
+      url: String(item.url || "chat.html").slice(0, 500),
+      read: false,
+      createdAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+    if (!ensurePushConfigured()) return;
+    const subscriptions = await db.collection("users").doc(uid).collection("pushSubscriptions").get();
+    const payload = JSON.stringify({
+      title: String(item.title || "إشعار جديد").slice(0, 100),
+      body: String(item.body || "").slice(0, 180),
+      url: String(item.url || "chat.html").slice(0, 500),
+      tag: String(item.tag || item.type || "mersalo").slice(0, 80)
+    });
+    await Promise.all(subscriptions.docs.map(async doc => {
+      try {
+        await webpush.sendNotification(doc.data(), payload);
+      } catch (error) {
+        if (error.statusCode === 404 || error.statusCode === 410) {
+          await doc.ref.delete().catch(() => {});
+        } else {
+          console.error("Push delivery failed:", error.statusCode || error.message);
+        }
+      }
+    }));
+  } catch (error) {
+    console.error("Notification creation failed:", error.message);
+  }
+}
+function pushCors(req, res, next) {
+  const origin = req.headers.origin;
+  if (origin && origin !== "https://mersalo.onrender.com") return res.status(403).json({success:false,message:"Origin not allowed."});
+  if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
+  res.setHeader("Vary", "Origin");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+}
+async function authenticatedUid(req) {
+  const match = String(req.headers.authorization || "").match(/^Bearer (.+)$/i);
+  if (!match) throw new Error("AUTH_REQUIRED");
+  const decoded = await admin.auth().verifyIdToken(match[1]);
+  return decoded.uid;
+}
+
+
+app.options("/api/push/:action", pushCors);
+app.get("/api/push/public-key", pushCors, (req,res) => {
+  const key=String(process.env.VAPID_PUBLIC_KEY||"").trim();
+  if(!key||!ensurePushConfigured()) return res.status(503).json({success:false,message:"Push notifications are not configured."});
+  res.json({success:true,publicKey:key});
+});
+app.post("/api/push/subscribe", pushCors, async (req,res) => {
+  try {
+    const uid=await authenticatedUid(req);
+    const sub=req.body&&req.body.subscription;
+    if(!sub||typeof sub.endpoint!=="string"||!sub.endpoint.startsWith("https://")||!sub.keys||typeof sub.keys.p256dh!=="string"||typeof sub.keys.auth!=="string") return res.status(400).json({success:false,message:"Invalid subscription."});
+    const key=crypto.createHash("sha256").update(sub.endpoint).digest("hex");
+    await admin.firestore().collection("users").doc(uid).collection("pushSubscriptions").doc(key).set({endpoint:sub.endpoint,keys:sub.keys,updatedAt:admin.firestore.FieldValue.serverTimestamp()});
+    res.json({success:true});
+  } catch(error) { res.status(error.message==="AUTH_REQUIRED"?401:500).json({success:false,message:"Unable to save push subscription."}); }
+});
+app.post("/api/push/unsubscribe", pushCors, async (req,res) => {
+  try {
+    const uid=await authenticatedUid(req);
+    const endpoint=String(req.body&&req.body.endpoint||"");
+    if(!endpoint.startsWith("https://")) return res.status(400).json({success:false,message:"Invalid endpoint."});
+    const key=crypto.createHash("sha256").update(endpoint).digest("hex");
+    await admin.firestore().collection("users").doc(uid).collection("pushSubscriptions").doc(key).delete();
+    res.json({success:true});
+  } catch(error) { res.status(error.message==="AUTH_REQUIRED"?401:500).json({success:false,message:"Unable to remove push subscription."}); }
+});
+app.get("/api/notifications", pushCors, async (req,res) => {
+  try {
+    const uid=await authenticatedUid(req);
+    const snap=await admin.firestore().collection("users").doc(uid).collection("notifications").orderBy("createdAt","desc").limit(50).get();
+    res.json({success:true,notifications:snap.docs.map(doc=>({id:doc.id,...doc.data(),createdAt:doc.data().createdAt&&doc.data().createdAt.toDate?doc.data().createdAt.toDate().toISOString():null}))});
+  } catch(error) { res.status(error.message==="AUTH_REQUIRED"?401:500).json({success:false,message:"Unable to load notifications."}); }
+});
+app.patch("/api/notifications/:id/read", pushCors, async (req,res) => {
+  try {
+    const uid=await authenticatedUid(req);
+    const ref=admin.firestore().collection("users").doc(uid).collection("notifications").doc(String(req.params.id));
+    await ref.set({read:true}, {merge:true});
+    res.json({success:true});
+  } catch(error) { res.status(error.message==="AUTH_REQUIRED"?401:500).json({success:false,message:"Unable to update notification."}); }
+});
 
 
 
