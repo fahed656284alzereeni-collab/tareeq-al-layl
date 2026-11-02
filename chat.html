@@ -543,15 +543,20 @@ function addMessage(m){
       if(!knownDuration){
         metadataVideo.addEventListener("loadedmetadata",updateDuration);
         metadataVideo.addEventListener("durationchange",updateDuration);
+        metadataVideo.addEventListener("loadeddata",updateDuration);
+        metadataVideo.addEventListener("canplay",updateDuration);
+        let durationChecks=0;
+        const checkDuration=()=>{
+          if(durationWasRead||!metadataVideo.isConnected)return;
+          updateDuration();
+          if(!durationWasRead&&durationChecks++<60)durationReadTimeout=setTimeout(checkDuration,500);
+          else if(!durationWasRead)open.setAttribute("aria-label","فيديو، تعذر قراءة المدة");
+        };
         metadataVideo.addEventListener("error",()=>{
           if(durationReadTimeout)clearTimeout(durationReadTimeout);
           if(!durationWasRead)open.setAttribute("aria-label","فيديو، تعذر قراءة المدة");
         },{once:true});
-        durationReadTimeout=setTimeout(()=>{
-          if(!durationWasRead&&metadataVideo.isConnected){
-            open.setAttribute("aria-label","فيديو، لم تُقرأ المدة بعد");
-          }
-        },30000);
+        durationReadTimeout=setTimeout(checkDuration,500);
       }
     }else content.append(document.createTextNode(" "),open);
   }
