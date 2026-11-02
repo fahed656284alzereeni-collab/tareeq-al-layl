@@ -92,6 +92,11 @@ let socket=null,requestBusy=false,activeUser=null;\nconst deleteAccount=document
 function closeDeleteConfirm(){deleteConfirm.hidden=true;document.body.classList.remove("confirm-open");deleteAccount.focus();}
 deleteAccount.addEventListener("click",()=>{deleteWord.value="";deleteConfirm.hidden=false;document.body.classList.add("confirm-open");document.getElementById("deleteConfirmTitle").focus()});
 document.getElementById("cancelDelete").addEventListener("click",closeDeleteConfirm);
+const logoutConfirm=document.getElementById("logoutConfirm");
+document.getElementById("logout").addEventListener("click",()=>{logoutConfirm.hidden=false;document.body.classList.add("confirm-open");document.getElementById("logoutConfirmTitle").focus()});
+document.getElementById("cancelLogout").addEventListener("click",()=>{logoutConfirm.hidden=true;document.body.classList.remove("confirm-open");document.getElementById("logout").focus()});
+document.getElementById("confirmLogout").addEventListener("click",async()=>{const button=document.getElementById("confirmLogout"),status=document.getElementById("logoutStatus");button.disabled=true;status.textContent="جارٍ تسجيل الخروج...";try{await signOut(auth);location.replace("login.html")}catch(error){button.disabled=false;status.textContent="تعذر تسجيل الخروج. حاول مرة أخرى."}});
+
 
 function loadFriendRequests(){
   if(!socket||!socket.connected){requestsList.textContent="الاتصال بالخادم غير متاح حاليًا. ستظهر الطلبات عند عودة الاتصال.";return}
@@ -138,7 +143,7 @@ onAuthStateChanged(auth,async user=>{
   }catch(error){requestsList.textContent="تعذر تهيئة الاتصال لتحميل طلبات الصداقة."}
 });
 
-document.getElementById("confirmDelete").addEventListener("click",async()=>{const confirmButton=document.getElementById("confirmDelete"),status=document.getElementById("logoutStatus");if(!activeUser)return;if(deleteWord.value.trim()!=="حذف"){status.textContent="لم يتم التأكيد. اكتب كلمة حذف كما هي.";deleteWord.focus();return}confirmButton.disabled=true;deleteAccountButton.disabled=true;status.textContent="جارٍ حذف الحساب. يرجى عدم إغلاق الصفحة...";try{const token=await activeUser.getIdToken(true);const response=await fetch("https://tareeq-al-layl-server.onrender.com/api/delete-account",{method:"POST",headers:{Authorization:"Bearer "+token}});const result=await response.json().catch(()=>({}));if(!response.ok||!result.success)throw new Error(result.message||"تعذر حذف الحساب. حاول مرة أخرى.");await signOut(auth);location.replace("login.html")}catch(error){status.textContent="لم يكتمل حذف الحساب: "+(error.message||"خطأ غير معروف");confirmButton.disabled=false;deleteAccountButton.disabled=false}});
+document.getElementById("confirmDelete").addEventListener("click",async()=>{const confirmButton=document.getElementById("confirmDelete"),status=document.getElementById("logoutStatus");if(!activeUser)return;if(deleteWord.value.trim()!=="حذف"){status.textContent="لم يتم التأكيد. اكتب كلمة حذف كما هي.";deleteWord.focus();return}confirmButton.disabled=true;deleteAccount.disabled=true;status.textContent="جارٍ حذف الحساب. يرجى عدم إغلاق الصفحة...";try{const token=await activeUser.getIdToken(true);const response=await fetch("https://tareeq-al-layl-server.onrender.com/api/delete-account",{method:"POST",headers:{Authorization:"Bearer "+token}});const result=await response.json().catch(()=>({}));if(!response.ok||!result.success)throw new Error(result.message||"تعذر حذف الحساب. حاول مرة أخرى.");await signOut(auth);location.replace("login.html")}catch(error){status.textContent="لم يكتمل حذف الحساب: "+(error.message||"خطأ غير معروف");confirmButton.disabled=false;deleteAccountButton.disabled=false}});
 
 </script>
 </body></html>
