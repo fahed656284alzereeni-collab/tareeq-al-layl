@@ -1462,7 +1462,7 @@ app.get("/api/admin/reports",pushCors,async(req,res)=>{
     res.json({success:true,reports:snap.docs.map(d=>{const v=d.data();return{id:d.id,reportedUid:v.reportedUid,reportedName:names.get(v.reportedUid)||"مستخدم",reporterName:names.get(v.reporterUid)||"مستخدم",reason:String(v.reason||""),details:String(v.details||""),status:String(v.status||"new")};})});
   } catch(error) { sendAdminError(res,error); }
 });
-app.post("/api/admin/warn",pushCors,async(req,res)=>{
+app.post("/api/admin/warn",pushCors,express.json({limit:"32kb"}),async(req,res)=>{
   try {
     const actor=await requireMersaloAdmin(req);
     const uid=String(req.body?.uid||"").trim(),reason=String(req.body?.reason||"").trim().slice(0,500),reportId=String(req.body?.reportId||"").trim();
