@@ -462,7 +462,9 @@ function handleVoiceCallEvents(){
     catch(error){voiceStatus.textContent="تعذر إنشاء الاتصال الصوتي.";socket.emit("voiceCall:end",{callId:data.callId,reason:"failed"});resetVoiceCall("تعذر إنشاء الاتصال الصوتي.")}
   });
   socket.on("voiceCall:signal",async data=>{
-    if(!voicePeer||activeVoiceCallId!==data.callId||!data.candidate)return;
+    if(!data.candidate)return;
+    if(pendingVoiceCall?.callId===data.callId&&(!voicePeer||activeVoiceCallId!==data.callId)){queuedIce.push(data.candidate);return}
+    if(!voicePeer||activeVoiceCallId!==data.callId)return;
     if(!voicePeer.remoteDescription){queuedIce.push(data.candidate);return}
     try{await voicePeer.addIceCandidate(data.candidate)}catch(error){console.warn("Unable to add ICE candidate",error)}
   });
@@ -715,7 +717,7 @@ async function openConversation(c){
   document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;document.getElementById("scheduleMessageButton").disabled=false;document.getElementById("openScheduledMessages").disabled=false;document.getElementById("messageHint").hidden=true;document.getElementById("messageText").removeAttribute("aria-describedby");
   document.getElementById("chatTitle").textContent=currentConversationType==="group"?"مجموعة: "+currentOtherName:"محادثة مع "+currentOtherName;say("جارٍ تحميل المحادثة...");
   document.getElementById("conversationInfoButton").textContent=currentConversationType==="group"?"معلومات المجموعة":"معلومات المحادثة";
-  const waitingCall=pendingVoiceCall;resetVoiceCall();voicePanel.hidden=true;document.getElementById("openVoiceCallPanel").hidden=currentConversationType!=="direct";if(currentConversationType==="direct"&&waitingCall?.conversationId===currentId){pendingVoiceCall=waitingCall;voicePanel.hidden=false;voiceStatus.textContent="مكالمة صوتية واردة من "+(waitingCall.caller?.name||"مستخدم")+".";acceptVoiceCallButton.hidden=false;acceptVoiceCallButton.disabled=!waitingCall.offer;rejectVoiceCallButton.hidden=false;startVoiceCallButton.hidden=true;}
+  const waitingCall=pendingVoiceCall;const waitingIce=waitingCall?queuedIce.slice():[];resetVoiceCall();voicePanel.hidden=true;document.getElementById("openVoiceCallPanel").hidden=currentConversationType!=="direct";if(currentConversationType==="direct"&&waitingCall?.conversationId===currentId){pendingVoiceCall=waitingCall;queuedIce.push(...waitingIce);voicePanel.hidden=false;voiceStatus.textContent="مكالمة صوتية واردة من "+(waitingCall.caller?.name||"مستخدم")+".";acceptVoiceCallButton.hidden=false;acceptVoiceCallButton.disabled=!waitingCall.offer;rejectVoiceCallButton.hidden=false;startVoiceCallButton.hidden=true;}
   document.getElementById("conversationInfoHeading").textContent=currentConversationType==="group"?"معلومات المجموعة":"معلومات المحادثة";
   const r=await call("getConversationMessages",{conversationId:c.id},30000);
   if(!r.success){say(r.message||"تعذر تحميل رسائل المحادثة.");return}
