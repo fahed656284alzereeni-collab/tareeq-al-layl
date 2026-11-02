@@ -303,6 +303,69 @@ body:has(#newChatOptions:not([hidden])) #newChatOptions{
 .attachmentViewerControls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 body:has(#attachmentViewer:not([hidden])){overflow:hidden!important}
 body:has(#attachmentViewer:not([hidden])) #chatPanel>*:not(#attachmentViewer){visibility:hidden!important}
+
+/* عرض شاشتي المحادثة الفردية وإنشاء المجموعة بملء الشاشة */
+body:has(#directChatPanel:not([hidden])),
+body:has(#newGroupPanel:not([hidden])){
+  overflow:hidden!important;
+}
+body:has(#directChatPanel:not([hidden]))>header,
+body:has(#newGroupPanel:not([hidden]))>header,
+body:has(#directChatPanel:not([hidden]))>main> :not(#newChatSection),
+body:has(#newGroupPanel:not([hidden]))>main> :not(#newChatSection),
+body:has(#directChatPanel:not([hidden])) #newChatSection> :not(#directChatPanel),
+body:has(#newGroupPanel:not([hidden])) #newChatSection> :not(#newGroupPanel),
+body:has(#directChatPanel:not([hidden]))>#status,
+body:has(#newGroupPanel:not([hidden]))>#status{
+  display:none!important;
+}
+body:has(#directChatPanel:not([hidden])) #newChatSection,
+body:has(#newGroupPanel:not([hidden])) #newChatSection{
+  position:static!important;
+  width:100%!important;
+  max-width:none!important;
+  min-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+#directChatPanel:not([hidden]),
+#newGroupPanel:not([hidden]){
+  position:fixed!important;
+  inset:0!important;
+  z-index:2147483647!important;
+  box-sizing:border-box!important;
+  width:100vw!important;
+  max-width:none!important;
+  min-width:100vw!important;
+  height:100vh!important;
+  height:100dvh!important;
+  max-height:100dvh!important;
+  margin:0!important;
+  padding:calc(28px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))!important;
+  border:0!important;
+  border-radius:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  justify-content:flex-start!important;
+  gap:14px!important;
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  background:#101827!important;
+  color:#f5f7fb!important;
+}
+#directChatPanel[hidden],
+#newGroupPanel[hidden]{display:none!important}
+#directChatPanel input,
+#newGroupPanel input{width:100%!important;max-width:100%!important;box-sizing:border-box!important;flex-shrink:0!important}
+#directChatPanel button,
+#newGroupPanel button{min-height:52px!important;flex-shrink:0!important}
+
 </style><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#101827">
 </head><body>
