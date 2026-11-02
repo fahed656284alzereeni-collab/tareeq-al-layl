@@ -784,7 +784,7 @@ async function openConversation(c){
   document.getElementById("directChatPanel").hidden=true;
   document.getElementById("newChatOptions").hidden=true;
   document.getElementById("onlinePanel").hidden=true;
-  document.getElementById("conversationListPanel").hidden=true;document.getElementById("mainNavigation").hidden=true;document.body.classList.add("chat-open");panel.hidden=false;panel.style.display="block";
+  document.getElementById("conversationListPanel").hidden=true;document.getElementById("mainNavigation").hidden=true;document.getElementById("closeChat").hidden=false;document.getElementById("closeChat").textContent="رجوع إلى الواجهة الرئيسية";document.body.classList.add("chat-open");panel.hidden=false;panel.style.display="block";
   document.getElementById("conversationInfo").hidden=true;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;
   document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;document.getElementById("scheduleMessageButton").disabled=false;document.getElementById("openScheduledMessages").disabled=false;document.getElementById("messageHint").hidden=true;document.getElementById("messageText").removeAttribute("aria-describedby");
   document.getElementById("chatTitle").textContent=currentConversationType==="group"?"مجموعة: "+currentOtherName:"محادثة مع "+currentOtherName;say("جارٍ تحميل المحادثة...");
