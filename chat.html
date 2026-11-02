@@ -1207,13 +1207,20 @@ async function refreshMicrophonePermission(){
 }
 refreshMicrophonePermission();
 function resetVoiceMessageRecorder(){if(voiceRecordingStream){voiceRecordingStream.getTracks().forEach(track=>track.stop());voiceRecordingStream=null}voiceRecorder=null;voiceRecordingChunks=[];voiceRecordingConversationId=null;voiceRecordingCancelled=false;voiceMessageButton.disabled=!currentId;voiceMessageButton.setAttribute("aria-pressed","false");voiceMessageButton.textContent="تسجيل رسالة صوتية";document.getElementById("cancelVoiceRecording").hidden=true}
-voiceMessageButton.addEventListener("click",async()=>{
- if(voiceRecorder&&voiceRecorder.state==="recording"){voiceMessageButton.disabled=true;voiceMessageButton.textContent="جارٍ تجهيز الرسالة الصوتية...";voiceRecorder.stop();return}
- if(!currentId||!auth.currentUser)return;
- if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==="undefined"){document.getElementById("attachmentUploadStatus").textContent="تسجيل الصوت غير مدعوم في هذا المتصفح. جرّب أحدث إصدار من Safari.";return}
- voiceMessageButton.disabled=true;const permissionState=await refreshMicrophonePermission();
-  voiceMessageButton.textContent=permissionState==="granted"?"جارٍ تشغيل الميكروفون...":"بانتظار إذن الميكروفون...";
- try{
+function showMicrophonePermissionDialog(){
+ const existing=document.getElementById("microphonePermissionDialog");if(existing){existing.querySelector("button")?.focus();return}
+ const box=document.createElement("section");box.id="microphonePermissionDialog";box.setAttribute("role","dialog");box.setAttribute("aria-modal","true");box.setAttribute("aria-labelledby","microphonePermissionTitle");
+ box.style.cssText="position:fixed;inset:0;z-index:20000;background:#101827;color:#f5f7fb;padding: max(28px,env(safe-area-inset-top)) 22px max(24px,env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:16px;overflow:auto";
+ const title=document.createElement("h2");title.id="microphonePermissionTitle";title.textContent="السماح لمِرسالو باستخدام الميكروفون";
+ const note=document.createElement("p");note.textContent="يحتاج مِرسالو إلى إذن الميكروفون لتسجيل الرسائل الصوتية. اضغط السماح للمتابعة. قد تظهر رسالة إذن من iPhone إذا لم تكن قد سمحت للموقع من قبل.";
+ const allow=document.createElement("button");allow.type="button";allow.textContent="السماح بالميكروفون";
+ const cancel=document.createElement("button");cancel.type="button";cancel.className="secondary";cancel.textContent="إلغاء";
+ cancel.addEventListener("click",()=>{box.remove();voiceMessageButton.focus()});
+ allow.addEventListener("click",()=>{box.remove();startVoiceMessageRecording()});
+ box.append(title,note,allow,cancel);document.body.append(box);allow.focus();
+}
+async function startVoiceMessageRecording(){
+ voiceMessageButton.disabled=true;voiceMessageButton.textContent="جارٍ تشغيل الميكروفون...";
   voiceRecordingStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},video:false});
   const types=["audio/mp4","audio/webm;codecs=opus","audio/webm"],mimeType=types.find(type=>MediaRecorder.isTypeSupported?.(type))||"";
   voiceRecorder=new MediaRecorder(voiceRecordingStream,mimeType?{mimeType}:undefined);voiceRecordingChunks=[];voiceRecordingConversationId=currentId;voiceRecordingCancelled=false;
@@ -1230,6 +1237,13 @@ voiceMessageButton.addEventListener("click",async()=>{
   });
   voiceRecorder.start();voiceMessageButton.disabled=false;voiceMessageButton.setAttribute("aria-pressed","true");voiceMessageButton.textContent="إيقاف التسجيل وإرسال الصوت";document.getElementById("cancelVoiceRecording").hidden=false;document.getElementById("attachmentUploadStatus").textContent="التسجيل جارٍ. اضغط الزر مرة ثانية لإيقاف التسجيل وإرساله.";say("بدأ تسجيل الرسالة الصوتية. اضغط زر إيقاف التسجيل وإرسال الصوت عند الانتهاء.");
  }catch(error){resetVoiceMessageRecorder();document.getElementById("attachmentUploadStatus").textContent=error.name==="NotAllowedError"?"لم يُسمح بالوصول إلى الميكروفون. راجع إذن الميكروفون للمتصفح.":"تعذر بدء التسجيل: "+(error.message||"تحقق من إذن الميكروفون.")}
+}
+voiceMessageButton.addEventListener("click",()=>{
+ if(voiceRecorder&&voiceRecorder.state==="recording"){voiceMessageButton.disabled=true;voiceMessageButton.textContent="جارٍ تجهيز الرسالة الصوتية...";voiceRecorder.stop();return}
+ if(!currentId||!auth.currentUser)return;
+ if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==="undefined"){document.getElementById("attachmentUploadStatus").textContent="تسجيل الصوت غير مدعوم في هذا المتصفح. جرّب أحدث إصدار من Safari.";return}
+ if(microphonePermissionState==="granted")startVoiceMessageRecording();
+ else showMicrophonePermissionDialog();
 });
 document.getElementById("cancelVoiceRecording").addEventListener("click",()=>{if(!voiceRecorder||voiceRecorder.state!=="recording")return;voiceRecordingCancelled=true;voiceMessageButton.disabled=true;document.getElementById("cancelVoiceRecording").hidden=true;voiceRecorder.stop()});
 
