@@ -1130,7 +1130,8 @@ app.post("/api/upload-media",mediaUploadCors,express.raw({type:"application/octe
     if(uploadError)throw uploadError;
     const {data:signed,error:signedError}=await storage.createSignedUrl(storagePath,31536000);
     if(signedError)throw signedError;
-    const durationSeconds=mimeType.startsWith("video/")?readMp4DurationSeconds(req.body):null;\n    res.json({success:true,attachment:{name:fileName,type:mimeType,size:req.body.length,url:signed.signedUrl,storagePath,...(Number.isFinite(durationSeconds)&&durationSeconds>0?{durationSeconds:Math.round(durationSeconds)}:{})}});
+    const durationSeconds=mimeType.startsWith("video/")?readMp4DurationSeconds(req.body):null;
+    res.json({success:true,attachment:{name:fileName,type:mimeType,size:req.body.length,url:signed.signedUrl,storagePath,...(Number.isFinite(durationSeconds)&&durationSeconds>0?{durationSeconds:Math.round(durationSeconds)}:{})}});
   }catch(error){
     console.error("Media upload error:",error.message);
     const message=error.message==="Supabase private storage is not configured on the server."
