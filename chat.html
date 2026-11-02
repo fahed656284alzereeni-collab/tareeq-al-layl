@@ -415,7 +415,7 @@ body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 <button id="acceptVoiceCall" type="button" hidden>قبول المكالمة</button>
 <button id="rejectVoiceCall" type="button" class="secondary" hidden>رفض المكالمة</button>
 <button id="endVoiceCall" type="button" class="secondary" hidden>إنهاء المكالمة</button>
-<audio id="remoteCallAudio" autoplay playsinline></audio>
+<audio id="remoteCallAudio" autoplay playsinline webkit-playsinline></audio><button id="enableCallAudio" type="button" class="secondary" hidden>تشغيل صوت المكالمة</button>
 </section><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
 <div id="composePanel"><h2>إرسال رسالة</h2><div id="replyPreview" class="infoPanel" hidden><p id="replyPreviewText"></p><button id="cancelReply" type="button" class="secondary">إلغاء الرد</button></div><button id="openMediaShare" type="button" class="secondary">مشاركة الملفات والوسائط</button><p id="attachmentUploadStatus" role="status" aria-live="polite"></p><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button><button id="scheduleMessageButton" type="button" class="secondary" disabled>جدولة الرسالة</button><button id="openScheduledMessages" type="button" class="secondary" disabled>الرسائل المجدولة</button></form></div><section id="scheduledMessagePanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessageHeading"><h3 id="scheduledMessageHeading" tabindex="-1">جدولة الرسالة</h3><p>اختر التاريخ والوقت الذي تريد إرسال الرسالة فيه.</p><label for="scheduledMessageDate">موعد الإرسال</label><input id="scheduledMessageDate" type="datetime-local" required aria-label="تاريخ ووقت إرسال الرسالة"><p id="scheduledMessageStatus" role="status" aria-live="polite"></p><div class="groupConfirmButtons"><button id="confirmScheduledMessage" type="button">تأكيد الجدولة</button><button id="cancelScheduledMessage" type="button" class="secondary">إلغاء</button></div></section><section id="scheduledMessagesPanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessagesHeading"><button id="closeScheduledMessages" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 id="scheduledMessagesHeading" tabindex="-1">الرسائل المجدولة</h3><p id="scheduledMessagesStatus" role="status" aria-live="polite">جارٍ تحميل الرسائل المجدولة...</p><div id="scheduledMessagesList" aria-live="polite"></div></section><section id="mediaSharePanel" class="mediaSharePanel" aria-labelledby="mediaShareHeading" hidden>
 <button id="closeMediaShare" type="button" class="panelBack">رجوع إلى المحادثة</button>
@@ -490,7 +490,7 @@ function resetVoiceCall(message){
   stopCallRingtone();
   if(voicePeer){voicePeer.onicecandidate=null;voicePeer.ontrack=null;voicePeer.close();voicePeer=null}
   if(voiceStream){voiceStream.getTracks().forEach(track=>track.stop());voiceStream=null}
-  remoteCallAudio.srcObject=null;activeVoiceCallId=null;pendingVoiceCall=null;queuedIce=[];queuedCallerIce=[];voiceSignalingReady=false;
+  remoteCallAudio.pause();remoteCallAudio.srcObject=null;remoteCallAudio.muted=false;remoteCallAudio.volume=1;document.getElementById("enableCallAudio").hidden=true;activeVoiceCallId=null;pendingVoiceCall=null;queuedIce=[];queuedCallerIce=[];voiceSignalingReady=false;
   acceptVoiceCallButton.hidden=true;rejectVoiceCallButton.hidden=true;endVoiceCallButton.hidden=true;
   startVoiceCallButton.hidden=currentConversationType!=="direct"||!currentOtherUid;
   voiceStatus.textContent=message||"لا توجد مكالمة نشطة.";
@@ -499,7 +499,7 @@ async function createVoicePeer(callId){
   const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]});
   voicePeer=pc;activeVoiceCallId=callId==="pending"?null:callId;voiceSignalingReady=false;
   pc.onicecandidate=event=>{if(!event.candidate)return;if(activeVoiceCallId&&voiceSignalingReady&&socket?.connected)socket.emit("voiceCall:signal",{callId:activeVoiceCallId,candidate:event.candidate});else queuedCallerIce.push(event.candidate)};
-  pc.ontrack=event=>{remoteCallAudio.srcObject=event.streams[0];remoteCallAudio.play().catch(()=>{voiceStatus.textContent="اضغط تشغيل الصوت للسماح بسماع المكالمة."})};
+  pc.ontrack=event=>{const remoteStream=event.streams&&event.streams[0]?event.streams[0]:new MediaStream([event.track]);remoteCallAudio.srcObject=remoteStream;remoteCallAudio.autoplay=true;remoteCallAudio.playsInline=true;remoteCallAudio.muted=false;remoteCallAudio.volume=1;event.track.enabled=true;remoteCallAudio.play().then(()=>{document.getElementById("enableCallAudio").hidden=true;voiceStatus.textContent="المكالمة الصوتية متصلة."}).catch(error=>{console.warn("Remote call audio autoplay was blocked",error);document.getElementById("enableCallAudio").hidden=false;voiceStatus.textContent="تم الاتصال. اضغط زر تشغيل صوت المكالمة لسماع الطرف الآخر."})};
   pc.onconnectionstatechange=()=>{if(pc.connectionState==="connected")voiceStatus.textContent="المكالمة الصوتية متصلة.";else if(["failed","disconnected"].includes(pc.connectionState))voiceStatus.textContent="الاتصال الصوتي غير مستقر؛ جارٍ محاولة الاستعادة."};
   return pc;
 }
@@ -520,6 +520,7 @@ startVoiceCallButton.addEventListener("click",async()=>{
   }catch(error){resetVoiceCall(error.message||"تعذر بدء المكالمة. تحقق من إذن الميكروفون.");}
   finally{startVoiceCallButton.disabled=false;if(!activeVoiceCallId&&!pendingVoiceCall&&!voiceStream)startVoiceCallButton.hidden=currentConversationType!=="direct"||!currentOtherUid}
 });
+document.getElementById("enableCallAudio").addEventListener("click",async()=>{try{remoteCallAudio.muted=false;remoteCallAudio.volume=1;await remoteCallAudio.play();document.getElementById("enableCallAudio").hidden=true;voiceStatus.textContent="تم تفعيل صوت المكالمة."}catch(error){voiceStatus.textContent="تعذر تشغيل الصوت. تأكد من مستوى صوت الهاتف وأعد المحاولة.";console.warn("Unable to start remote call audio",error)}});
 acceptVoiceCallButton.addEventListener("click",async()=>{
   if(!pendingVoiceCall)return;
   acceptVoiceCallButton.disabled=true;
