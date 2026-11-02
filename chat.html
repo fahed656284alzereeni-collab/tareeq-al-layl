@@ -1221,6 +1221,7 @@ function showMicrophonePermissionDialog(){
 }
 async function startVoiceMessageRecording(){
  voiceMessageButton.disabled=true;voiceMessageButton.textContent="جارٍ تشغيل الميكروفون...";
+ try{
   voiceRecordingStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},video:false});
   const types=["audio/mp4","audio/webm;codecs=opus","audio/webm"],mimeType=types.find(type=>MediaRecorder.isTypeSupported?.(type))||"";
   voiceRecorder=new MediaRecorder(voiceRecordingStream,mimeType?{mimeType}:undefined);voiceRecordingChunks=[];voiceRecordingConversationId=currentId;voiceRecordingCancelled=false;
