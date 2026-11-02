@@ -34,6 +34,23 @@ button.action,.link{display:block;width:100%;padding:13px;border:0;border-radius
 #avatar{width:112px;height:112px;border-radius:50%;background:#30465d;color:#8bd8c5;display:flex;align-items:center;justify-content:center;margin:12px auto;font-size:42px;font-weight:bold}
 h3{margin-bottom:4px;color:#f5f7fb}
  .notificationActions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}.notificationActions button{flex:1;min-width:130px}
+
+/* نافذة تأكيد موحدة لحذف الإشعارات والحساب، واضحة مع VoiceOver. */
+.mersaloConfirmOverlay{position:fixed!important;inset:0!important;z-index:2147483647!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-height:100dvh!important;padding:calc(22px + env(safe-area-inset-top)) 18px calc(22px + env(safe-area-inset-bottom))!important;background:radial-gradient(ellipse at top,#263d55 0%,#111c2b 58%,#0b1420 100%)!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow-y:auto!important}
+.mersaloConfirmCard{width:100%;max-width:520px;margin:auto;padding:26px 22px 22px;border:1px solid #52677f;border-radius:24px;background:linear-gradient(160deg,#26394f 0%,#19283a 72%);box-shadow:0 22px 70px #0009;text-align:center}
+.mersaloConfirmIcon{width:58px;height:58px;margin:0 auto 14px;border-radius:19px;display:grid;place-items:center;background:#633c48;color:#ffe1e5;font-size:30px;font-weight:bold;border:1px solid #a65b68}
+.mersaloConfirmCard h2{margin:0 0 12px;color:#f6f8fc;font-size:1.25rem}
+.mersaloConfirmCard p{color:#d4deea;line-height:1.8;text-align:right}
+.mersaloConfirmCard button{width:100%;min-height:52px;margin:6px 0;border-radius:13px}
+.mersaloConfirmCard button.danger,.mersaloConfirmCard button.groupDanger{background:linear-gradient(110deg,#a94352,#7e303e)!important}
+.mersaloConfirmCard button.secondary{background:#425873!important}
+#deleteConfirm,#logoutConfirm{background:radial-gradient(ellipse at top,#263d55 0%,#111c2b 58%,#0b1420 100%)!important;padding:calc(22px + env(safe-area-inset-top)) 18px calc(22px + env(safe-area-inset-bottom))!important}
+#deleteConfirm .confirmCard,#logoutConfirm .confirmCard{max-width:520px;border:1px solid #52677f;border-radius:24px;background:linear-gradient(160deg,#26394f 0%,#19283a 72%);box-shadow:0 22px 70px #0009;padding:26px 22px;text-align:center}
+#deleteConfirm .confirmCard h2,#logoutConfirm .confirmCard h2{color:#f6f8fc}
+#deleteConfirm .confirmCard h2:before{content:"!";display:grid;place-items:center;width:58px;height:58px;margin:0 auto 14px;border-radius:19px;background:#633c48;color:#ffe1e5;border:1px solid #a65b68}
+#deleteConfirm .confirmCard p,#logoutConfirm .confirmCard p{text-align:right;line-height:1.8}
+#deleteConfirm .confirmCard button,#logoutConfirm .confirmCard button{border-radius:13px}
+body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 </style>
 </head>
 <body>
@@ -167,6 +184,23 @@ function decodeVapidKey(value){
   const raw=atob((value+padding).replace(/-/g,"+").replace(/_/g,"/"));
   return Uint8Array.from(raw,char=>char.charCodeAt(0));
 }
+function showDeleteConfirmation(titleText,messageText,confirmText,onConfirm){
+  const overlay=document.createElement("section");overlay.className="mersaloConfirmOverlay";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-labelledby","mersaloDeleteTitle");
+  const card=document.createElement("div");card.className="mersaloConfirmCard";
+  const icon=document.createElement("div");icon.className="mersaloConfirmIcon";icon.setAttribute("aria-hidden","true");icon.textContent="!";
+  const title=document.createElement("h2");title.id="mersaloDeleteTitle";title.tabIndex=-1;title.textContent=titleText;
+  const message=document.createElement("p");message.textContent=messageText;
+  const confirm=document.createElement("button");confirm.type="button";confirm.className="action danger";confirm.textContent=confirmText;
+  const cancel=document.createElement("button");cancel.type="button";cancel.className="action secondary";cancel.textContent="إلغاء";
+  const close=()=>{overlay.remove();document.body.classList.remove("confirm-open")};
+  cancel.addEventListener("click",()=>{close();});
+  confirm.addEventListener("click",async()=>{
+    confirm.disabled=true;cancel.disabled=true;confirm.textContent="جارٍ التنفيذ...";
+    try{await onConfirm();close()}
+    catch(error){message.textContent=error.message||"تعذر تنفيذ الحذف. حاول مرة أخرى.";confirm.disabled=false;cancel.disabled=false;confirm.textContent=confirmText}
+  });
+  card.append(icon,title,message,confirm,cancel);overlay.append(card);document.body.append(overlay);document.body.classList.add("confirm-open");title.focus();
+}
 async function loadNotifications(){
   if(!auth.currentUser)return;
   notificationsList.textContent="جارٍ تحميل الإشعارات...";
@@ -188,27 +222,26 @@ async function loadNotifications(){
         location.href=item.url||"chat.html";
       });
       const remove=document.createElement("button");remove.type="button";remove.className="action groupDanger";remove.textContent="حذف الإشعار";
-      remove.addEventListener("click",async()=>{
-        if(!window.confirm("هل أنت متأكد من حذف هذا الإشعار؟ لا يمكن التراجع عن الحذف."))return;
-        remove.disabled=true;
-        try{
+      remove.addEventListener("click",()=>{
+        showDeleteConfirmation("حذف الإشعار","هل أنت متأكد من حذف إشعار "+(item.title||"هذا الإشعار")+"؟ لا يمكن التراجع عن الحذف.","نعم، احذف الإشعار",async()=>{
           await apiRequest("/api/notifications/"+encodeURIComponent(item.id),"DELETE");
           card.remove();
           if(!notificationsList.querySelector(".requestCard")){
             notificationsList.textContent="لا توجد إشعارات حتى الآن.";
             document.getElementById("deleteAllNotifications").hidden=true;
           }
-        }catch(error){remove.disabled=false;window.alert(error.message||"تعذر حذف الإشعار.")}
+        });
       });
       actions.append(open,remove);card.append(title,body,state,actions);notificationsList.append(card);
     }
   }catch(error){notificationsList.textContent=error.message||"تعذر تحميل الإشعارات."}
 }
-document.getElementById("deleteAllNotifications").addEventListener("click",async()=>{
-  if(!window.confirm("هل أنت متأكد من حذف جميع الإشعارات؟ لا يمكن التراجع عن هذا الإجراء."))return;
-  const button=document.getElementById("deleteAllNotifications");button.disabled=true;
-  try{await apiRequest("/api/notifications","DELETE");await loadNotifications()}
-  catch(error){window.alert(error.message||"تعذر حذف الإشعارات.");button.disabled=false}
+document.getElementById("deleteAllNotifications").addEventListener("click",()=>{
+  showDeleteConfirmation("حذف جميع الإشعارات","سيتم حذف جميع الإشعارات من حسابك نهائيًا. هل تريد المتابعة؟ لا يمكن التراجع عن هذا الإجراء.","نعم، احذف الجميع",async()=>{
+    const button=document.getElementById("deleteAllNotifications");button.disabled=true;
+    try{await apiRequest("/api/notifications","DELETE");await loadNotifications()}
+    catch(error){button.disabled=false;throw error}
+  });
 });
 async function refreshPushStatus(){
   if(!("serviceWorker" in navigator)||!("PushManager" in window)){pushStatus.textContent="هذا المتصفح لا يدعم إشعارات الويب.";return}
