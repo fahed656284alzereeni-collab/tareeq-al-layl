@@ -1223,6 +1223,7 @@ async function startVoiceMessageRecording(){
  voiceMessageButton.disabled=true;voiceMessageButton.textContent="جارٍ تشغيل الميكروفون...";
  try{
   voiceRecordingStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false},video:false});
+  microphonePermissionState="granted";
   const types=["audio/mp4","audio/webm;codecs=opus","audio/webm"],mimeType=types.find(type=>MediaRecorder.isTypeSupported?.(type))||"";
   voiceRecorder=new MediaRecorder(voiceRecordingStream,mimeType?{mimeType}:undefined);voiceRecordingChunks=[];voiceRecordingConversationId=currentId;voiceRecordingCancelled=false;
   voiceRecorder.addEventListener("dataavailable",event=>{if(event.data?.size)voiceRecordingChunks.push(event.data)});
@@ -1243,8 +1244,8 @@ voiceMessageButton.addEventListener("click",()=>{
  if(voiceRecorder&&voiceRecorder.state==="recording"){voiceMessageButton.disabled=true;voiceMessageButton.textContent="جارٍ تجهيز الرسالة الصوتية...";voiceRecorder.stop();return}
  if(!currentId||!auth.currentUser)return;
  if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==="undefined"){document.getElementById("attachmentUploadStatus").textContent="تسجيل الصوت غير مدعوم في هذا المتصفح. جرّب أحدث إصدار من Safari.";return}
- if(microphonePermissionState==="granted")startVoiceMessageRecording();
- else showMicrophonePermissionDialog();
+ // Ask the browser directly. If microphone access was already granted, recording starts without another permission prompt.
+ startVoiceMessageRecording();
 });
 document.getElementById("cancelVoiceRecording").addEventListener("click",()=>{if(!voiceRecorder||voiceRecorder.state!=="recording")return;voiceRecordingCancelled=true;voiceMessageButton.disabled=true;document.getElementById("cancelVoiceRecording").hidden=true;voiceRecorder.stop()});
 
