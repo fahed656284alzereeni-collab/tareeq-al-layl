@@ -223,7 +223,7 @@ io.on("connection", socket => {
       const caller = { uid: socket.data.uid, name: socket.data.playerName };
       const incoming = { callId, conversationId, caller };
       for (const client of connectedUsers.get(targetUid) || []) if (client.connected) client.emit("voiceCall:incoming", incoming);
-      if (!getConnectedSocket(targetUid)) void createUserNotification(targetUid,{type:"incomingCall",title:"مكالمة واردة من "+socket.data.playerName,body:"لديك مكالمة صوتية واردة. اضغط لفتح مِرسالو والرد.",url:"chat.html?incomingCall=1",tag:"incoming-call-"+callId});
+      void createUserNotification(targetUid,{type:"incomingCall",title:"مكالمة واردة من "+socket.data.playerName,body:"لديك مكالمة صوتية واردة. اضغط لفتح مِرسالو والرد.",url:"chat.html?incomingCall=1",tag:"incoming-call-"+callId});
       call.timeout = setTimeout(() => { if (voiceCalls.get(callId) !== call || call.state !== "ringing") return; voiceCalls.delete(callId); for (const client of connectedUsers.get(call.callerUid) || []) { if (client.data.voiceCallId===callId) delete client.data.voiceCallId; if(client.connected)client.emit("voiceCall:ended",{callId,reason:"no-answer"}); } for (const client of connectedUsers.get(call.calleeUid) || []) if(client.data.voiceCallId===callId)delete client.data.voiceCallId; },45000);
       if (typeof reply === "function") reply({ success: true, callId });
     } catch (error) {
