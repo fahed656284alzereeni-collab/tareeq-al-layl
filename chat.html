@@ -303,7 +303,9 @@ body:has(#newChatOptions:not([hidden])) #newChatOptions{
 .attachmentViewerControls{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 body:has(#attachmentViewer:not([hidden])){overflow:hidden!important}
 body:has(#attachmentViewer:not([hidden])) #chatPanel>*:not(#attachmentViewer){visibility:hidden!important}
-</style></head><body>
+</style><link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#101827">
+</head><body>
 <header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><button class="tabLink" type="button" data-navigate="chat.html" aria-current="page">الصفحة الرئيسية</button><button class="tabLink" type="button" data-navigate="settings.html">الإعدادات</button></nav></header>
 <main>
 <section class="panel" id="onlineSection"><h2>الأشخاص المتصلون</h2><p class="muted">تظهر هنا الحسابات المتصلة بمِرسالو حاليًا. ابحث عن الاسم لبدء محادثة.</p>
