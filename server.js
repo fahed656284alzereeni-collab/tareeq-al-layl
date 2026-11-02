@@ -280,7 +280,8 @@ io.on("connection", socket => {
       const ref = conversationsRef.doc(conversationId);
       const snap = await ref.get();
       if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بتعديل هذه المجموعة.");
-      if (snap.data().createdBy !== socket.data.uid) throw new Error("منشئ المجموعة فقط يستطيع تعديل اسمها.");
+      const group = snap.data();
+      if (group.createdBy !== socket.data.uid && !(group.moderatorUids || []).includes(socket.data.uid)) throw new Error("منشئ المجموعة أو أحد مشرفيها فقط يستطيع تعديل اسمها.");
       await ref.update({ groupName: name, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
       for (const uid of snap.data().members || []) {
         const sessions = connectedUsers.get(uid);
@@ -326,7 +327,6 @@ io.on("connection", socket => {
         if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإدارة هذه المجموعة.");
         const group = snap.data();
         if (group.createdBy !== socket.data.uid && !(group.moderatorUids || []).includes(socket.data.uid)) throw new Error("غير مصرح لك بإزالة أعضاء هذه المجموعة.");
-        if ((group.moderatorUids || []).includes(socket.data.uid) && (group.moderatorUids || []).includes(targetUid)) throw new Error("لا يستطيع المشرف إزالة مشرف آخر.");
         if (!targetUid || targetUid === group.createdBy) throw new Error("لا يمكن إزالة منشئ المجموعة.");
         if (!(group.members || []).includes(targetUid)) throw new Error("هذا العضو لم يعد ضمن المجموعة.");
         transaction.update(ref, { members: admin.firestore.FieldValue.arrayRemove(targetUid), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
