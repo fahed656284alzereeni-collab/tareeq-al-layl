@@ -939,11 +939,49 @@ async function refreshConversationInfo(){
       row.append(name,role);membersSection.append(row);
     });
     content.append(membersSection,memberActionPanel);
+    const canManagePermissions=d.isAdmin||d.isModerator;
+    const permissions=d.permissions||{editInfo:"admins",addMembers:"admins"};
+    if(canManagePermissions){
+      const permissionsSection=document.createElement("section");permissionsSection.className="groupInfoSection";
+      const permissionsHeading=document.createElement("h4");permissionsHeading.textContent="أذونات المجموعة";
+      const permissionsNote=document.createElement("p");permissionsNote.textContent="المالك والمشرفون يستطيعون تحديد من يملك صلاحية تعديل معلومات المجموعة وإضافة أعضاء.";
+      const permissionsPanel=document.createElement("div");permissionsPanel.className="groupInlinePanel";permissionsPanel.hidden=true;
+      const permissionsTitle=document.createElement("h3");permissionsTitle.textContent="إدارة أذونات المجموعة";
+      const permissionsStatus=document.createElement("p");permissionsStatus.setAttribute("role","status");permissionsStatus.setAttribute("aria-live","polite");
+      const permissionButtons=document.createElement("div");permissionButtons.className="groupConfirmButtons";
+      const permissionLabel=value=>value==="members"?"جميع الأعضاء":"المشرفون فقط";
+      const editPermissionButton=document.createElement("button");editPermissionButton.type="button";editPermissionButton.className="secondary";
+      const addPermissionButton=document.createElement("button");addPermissionButton.type="button";addPermissionButton.className="secondary";
+      const closePermissions=document.createElement("button");closePermissions.type="button";closePermissions.className="panelBack";closePermissions.textContent="رجوع إلى معلومات المجموعة";
+      const refreshPermissionLabels=()=>{editPermissionButton.textContent="تعديل معلومات المجموعة: "+permissionLabel(permissions.editInfo);addPermissionButton.textContent="إضافة أعضاء: "+permissionLabel(permissions.addMembers)};
+      const savePermission=async(key)=>{
+        const next=permissions[key]==="members"?"admins":"members";
+        const previous=permissions[key];permissions[key]=next;
+        refreshPermissionLabels();permissionsStatus.textContent="جارٍ حفظ الإذن...";
+        editPermissionButton.disabled=true;addPermissionButton.disabled=true;
+        const result=await call("updateGroupPermissions",{conversationId:currentId,editInfo:permissions.editInfo,addMembers:permissions.addMembers});
+        editPermissionButton.disabled=false;addPermissionButton.disabled=false;
+        if(!result.success){permissions[key]=previous;refreshPermissionLabels();permissionsStatus.textContent=result.message||"تعذر حفظ الإذن.";return}
+        permissionsStatus.textContent=result.message||"تم حفظ الإذن.";
+        await refreshConversationInfo();
+      };
+      editPermissionButton.addEventListener("click",()=>savePermission("editInfo"));
+      addPermissionButton.addEventListener("click",()=>savePermission("addMembers"));
+      closePermissions.addEventListener("click",()=>{permissionsPanel.hidden=true;permissionsSection.querySelector("button")?.focus()});
+      permissionButtons.append(editPermissionButton,addPermissionButton);
+      permissionsPanel.append(permissionsTitle,permissionsNote,permissionButtons,permissionsStatus,closePermissions);
+      const openPermissions= document.createElement("button");openPermissions.type="button";openPermissions.textContent="إدارة أذونات المجموعة";
+      openPermissions.addEventListener("click",()=>{permissionsPanel.hidden=false;editPermissionButton.focus()});
+      permissionsSection.append(permissionsHeading,permissionsNote,openPermissions,permissionsPanel);
+      content.append(permissionsSection);
+    }
+    const canEditGroupInfo=permissions.editInfo==="members"||d.isAdmin||d.isModerator;
+    const canAddGroupMembers=permissions.addMembers==="members"||d.isAdmin||d.isModerator;
     const actions=document.createElement("section");actions.className="groupInfoSection";
     const actionsHeading=document.createElement("h4");actionsHeading.textContent="إجراءات المجموعة";actions.append(actionsHeading);
     const makeButton=(label,cls="secondary")=>{const button=document.createElement("button");button.type="button";button.className=cls;button.textContent=label;return button};
     const makePanel=()=>{const panel=document.createElement("div");panel.className="groupInlinePanel";panel.hidden=true;return panel};
-    if(d.isAdmin||d.isModerator){
+    if(canEditGroupInfo){
       const renameButton=makeButton("تعديل اسم المجموعة");
       const renamePanel=makePanel();
       const renameLabel=document.createElement("label");renameLabel.textContent="اسم المجموعة الجديد";
@@ -955,6 +993,8 @@ async function refreshConversationInfo(){
       saveName.addEventListener("click",async()=>{const name=renameInput.value.trim();if(!name){renameInput.setCustomValidity("اكتب اسم المجموعة.");renameInput.reportValidity();return}saveName.disabled=true;cancelName.disabled=true;const result=await call("renameGroup",{conversationId:currentId,name});saveName.disabled=false;cancelName.disabled=false;if(!result.success){document.getElementById("conversationActionStatus").textContent=result.message||"تعذر تعديل الاسم.";return}renamePanel.hidden=true;await refreshConversationInfo();await loadConversations();document.getElementById("conversationActionStatus").textContent=result.message||"تم تحديث اسم المجموعة.";renameButton.focus()});
       renameButtons.append(saveName,cancelName);renamePanel.append(renameLabel,renameInput,renameButtons);actions.append(renameButton,renamePanel);
 
+    }
+    if(canAddGroupMembers){
       const addButton=makeButton("إضافة عضو");
       const addPanel=makePanel();
       const recentHeading=document.createElement("h4");recentHeading.textContent="أشخاص تواصلت معهم";
@@ -988,7 +1028,8 @@ async function refreshConversationInfo(){
       addPanel.append(recentHeading,recentResults,addLabel,search,results,chosenText,addConfirm,addCancel);actions.append(addButton,addPanel);
       // Selection controls call updateAdd through a delegated click listener.
       results.addEventListener("click",()=>updateAdd());
-    }else{
+    }
+    if(!d.isAdmin&&!d.isModerator){
       const leaveButton=makeButton("مغادرة المجموعة","groupDanger");
       const leavePanel=makePanel();
       const leaveText=document.createElement("p");leaveText.textContent="هل أنت متأكد من مغادرة هذه المجموعة؟ لن تظهر لك بعد ذلك في قائمة محادثاتك.";
