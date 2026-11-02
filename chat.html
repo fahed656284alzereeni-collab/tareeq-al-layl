@@ -540,9 +540,6 @@ function addMessage(m){
         };
         metadataVideo.addEventListener("error",()=>{if(!open.textContent.includes(" · "))open.setAttribute("aria-label","فيديو، المدة غير متاحة");},{once:true});
         setTimeout(checkDuration,250);
-        // Load the remote video URL so the metadata element can actually read its duration.
-        metadataVideo.src=item.url;
-        metadataVideo.load();
       }
     }else content.append(document.createTextNode(" "),open);
   }
@@ -621,9 +618,10 @@ function addMessage(m){
     if(metadataVideo){
       const messageId=String(div.dataset.messageId||"");
       const attachmentItem=attachmentItems.find(item=>item.messageId===messageId);
-      metadataVideo.src=attachmentItem?.url||"";
-      metadataVideo.load();
-      setTimeout(()=>{if(metadataVideo.isConnected&&Number.isFinite(metadataVideo.duration)&&metadataVideo.duration>0){const duration=Math.floor(metadataVideo.duration);updateVideoMessageDuration(messageId,duration);}},500);
+      if(attachmentItem?.url){
+        metadataVideo.src=attachmentItem.url;
+        metadataVideo.load();
+      }
     }
   }
   messages.scrollTop=messages.scrollHeight;
