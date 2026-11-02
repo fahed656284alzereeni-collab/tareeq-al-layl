@@ -191,8 +191,14 @@ async function loadNotifications(){
       remove.addEventListener("click",async()=>{
         if(!window.confirm("هل أنت متأكد من حذف هذا الإشعار؟ لا يمكن التراجع عن الحذف."))return;
         remove.disabled=true;
-        try{await apiRequest("/api/notifications/"+encodeURIComponent(item.id),"DELETE");await loadNotifications()}
-        catch(error){remove.disabled=false;window.alert(error.message||"تعذر حذف الإشعار.")}
+        try{
+          await apiRequest("/api/notifications/"+encodeURIComponent(item.id),"DELETE");
+          card.remove();
+          if(!notificationsList.querySelector(".requestCard")){
+            notificationsList.textContent="لا توجد إشعارات حتى الآن.";
+            document.getElementById("deleteAllNotifications").hidden=true;
+          }
+        }catch(error){remove.disabled=false;window.alert(error.message||"تعذر حذف الإشعار.")}
       });
       actions.append(open,remove);card.append(title,body,state,actions);notificationsList.append(card);
     }
