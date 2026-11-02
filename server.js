@@ -1425,6 +1425,56 @@ async function authenticatedUid(req) {
   const decoded = await admin.auth().verifyIdToken(match[1]);
   return decoded.uid;
 }
+const MERSALO_ADMIN_EMAIL = "fahed656284alzereeni@gmail.com";
+async function requireMersaloAdmin(req) {
+  const match = String(req.headers.authorization || "").match(/^Bearer (.+)$/i);
+  if (!match) { const e=new Error("AUTH_REQUIRED"); e.status=401; throw e; }
+  const decoded=await admin.auth().verifyIdToken(match[1]);
+  if(String(decoded.email||"").toLowerCase()!==MERSALO_ADMIN_EMAIL || decoded.email_verified!==true) {
+    const e=new Error("غير مصرح لك باستخدام لوحة إدارة مِرسالو."); e.status=403; throw e;
+  }
+  return decoded;
+}
+function sendAdminError(res,error) {
+  const status=error.status||500;
+  res.status(status).json({success:false,message:status===500?"تعذر تنفيذ طلب الإدارة. حاول مرة أخرى.":error.message});
+}
+app.options("/api/admin/:action",pushCors);
+app.get("/api/admin/dashboard",pushCors,async(req,res)=>{
+  try {
+    await requireMersaloAdmin(req);
+    const db=admin.firestore();
+    const [users,conversations,reports]=await Promise.all([
+      db.collection("users").count().get(),
+      db.collection("conversations").count().get(),
+      db.collection("userReports").where("status","==","new").count().get()
+    ]);
+    res.json({success:true,stats:{users:users.data().count,conversations:conversations.data().count,pendingReports:reports.data().count,online:connectedUsers.size}});
+  } catch(error) { sendAdminError(res,error); }
+});
+app.get("/api/admin/reports",pushCors,async(req,res)=>{
+  try {
+    await requireMersaloAdmin(req);
+    const snap=await admin.firestore().collection("userReports").orderBy("createdAt","desc").limit(100).get();
+    const uids=[...new Set(snap.docs.flatMap(d=>[d.data().reportedUid,d.data().reporterUid]).filter(Boolean))];
+    const profiles=uids.length?await admin.firestore().getAll(...uids.map(uid=>admin.firestore().collection("users").doc(uid))):[];
+    const names=new Map(profiles.map(p=>[p.id,p.exists?String(p.data().playerName||p.data().displayName||"مستخدم"):"حساب غير موجود"]));
+    res.json({success:true,reports:snap.docs.map(d=>{const v=d.data();return{id:d.id,reportedUid:v.reportedUid,reportedName:names.get(v.reportedUid)||"مستخدم",reporterName:names.get(v.reporterUid)||"مستخدم",reason:String(v.reason||""),details:String(v.details||""),status:String(v.status||"new")};})});
+  } catch(error) { sendAdminError(res,error); }
+});
+app.post("/api/admin/warn",pushCors,async(req,res)=>{
+  try {
+    const actor=await requireMersaloAdmin(req);
+    const uid=String(req.body?.uid||"").trim(),reason=String(req.body?.reason||"").trim().slice(0,500),reportId=String(req.body?.reportId||"").trim();
+    if(!uid||!reason)return res.status(400).json({success:false,message:"حدد الحساب وسبب التحذير."});
+    const target=await admin.firestore().collection("users").doc(uid).get();
+    if(!target.exists)return res.status(404).json({success:false,message:"الحساب غير موجود."});
+    await createUserNotification(uid,{type:"accountWarning",title:"تحذير من إدارة مِرسالو",body:"تم توجيه تحذير إلى حسابك. السبب: "+reason,url:"settings.html"});
+    await admin.firestore().collection("adminActions").add({type:"warning",targetUid:uid,reason,reportId:reportId||null,adminUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+    if(reportId)await admin.firestore().collection("userReports").doc(reportId).set({status:"reviewed",reviewedBy:actor.uid,reviewedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+    res.json({success:true,message:"تم إرسال التحذير وتسجيل الإجراء."});
+  } catch(error) { sendAdminError(res,error); }
+});
 
 
 app.options("/api/push/:action", pushCors);
