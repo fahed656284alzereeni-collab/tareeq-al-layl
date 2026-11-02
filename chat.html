@@ -677,7 +677,7 @@ function addMessage(m){
   cancelOptions.type="button";
   cancelOptions.className="secondary";
   cancelOptions.dataset.action="cancel-message-options";
-  cancelOptions.textContent="إلغاء والعودة إلى المحادثة";
+  cancelOptions.textContent="إلغاء والرجوع إلى المحادثة";
   cancelOptions.addEventListener("click",()=>{
     actions.hidden=true;
     
@@ -964,7 +964,7 @@ async function refreshConversationInfo(){
       const chosenText=document.createElement("p");chosenText.textContent="لم تختر أعضاء جددًا.";
       const selected=new Map();let timer=null,requestId=0;
       const addConfirm=makeButton("إضافة المحددين","");
-      const addCancel=makeButton("إلغاء والعودة إلى معلومات المجموعة","secondary");
+      const addCancel=makeButton("إلغاء والرجوع إلى معلومات المجموعة","secondary");
       const updateAdd=()=>{chosenText.textContent=selected.size?"الأعضاء المختارون: "+[...selected.values()].map(u=>u.name).join("، "):"لم تختر أعضاء جددًا.";addConfirm.disabled=!selected.size;};
       addCancel.addEventListener("click",()=>{
         clearTimeout(timer);requestId++;
