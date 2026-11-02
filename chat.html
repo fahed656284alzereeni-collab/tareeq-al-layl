@@ -667,7 +667,7 @@ function addMessage(m){
   }
   // اجعل الرسالة نفسها عنصرًا قابلًا للتعديل لدى VoiceOver؛ لا يحتاج المستخدم إلى الانتقال إلى عنصر منفصل.
   div.append(content);
-  const meta=document.createElement("div");meta.className="messageMeta";const time=document.createElement("span");const sentAt=Number(m.createdAt)||Date.now();time.textContent="وقت الإرسال: "+new Date(sentAt).toLocaleTimeString("ar-JO",{hour:"2-digit",minute:"2-digit"});meta.append(time);const receipt=document.createElement("span");receipt.className="messageReceipt";if(mine){const delivered=!!(m.deliveredTo&&Object.keys(m.deliveredTo).length);receipt.textContent=delivered?"تم الاستلام":"تم الإرسال";receipt.setAttribute("aria-label",receipt.textContent);meta.append(receipt)}div.append(meta);
+  const meta=document.createElement("div");meta.className="messageMeta";const time=document.createElement("span");const sentAt=Number(m.createdAt)||Date.now();time.textContent="وقت الإرسال: "+new Date(sentAt).toLocaleTimeString("ar-JO",{hour:"2-digit",minute:"2-digit"});meta.append(time);const receipt=document.createElement("span");receipt.className="messageReceipt";if(String(m.senderUid||"")===String(auth.currentUser?.uid||"")){const delivered=!!(m.deliveredTo&&Object.keys(m.deliveredTo).length);receipt.textContent=delivered?"تم الاستلام":"تم الإرسال";receipt.setAttribute("aria-label",receipt.textContent);meta.append(receipt)}div.append(meta);
   const actions=document.createElement("div");
   actions.className="messageActions";actions.hidden=true;
   const currentUid=String(auth.currentUser?.uid||"");
@@ -1401,9 +1401,10 @@ async function uploadConversationAttachment(file){
         if(quickDuration)attachment.durationSeconds=quickDuration;
       }
     }
-    const sent=await call("sendDirectMessage",{conversationId:currentId,text:"",attachment},30000);
+    const sent=await call("sendDirectMessage",{conversationId:currentId,text:"",attachment,...(replyingToMessage?{replyTo:replyingToMessage}:{})},30000);
     if(!sent.success)throw new Error(sent.message||"تم رفع الملف لكن تعذر إرساله داخل المحادثة.");
     addMessage(sent.message);
+    if(replyingToMessage){replyingToMessage=null;document.getElementById("replyPreview").hidden=true}
     if(isVideoFile)durationPromise.then(durationSeconds=>{
       if(!durationSeconds)return;
       updateVideoMessageDuration(sent.message.id,durationSeconds);
