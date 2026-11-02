@@ -331,7 +331,7 @@ body:has(#attachmentViewer:not([hidden])) #chatPanel>*:not(#attachmentViewer){vi
 <button id="endVoiceCall" type="button" class="secondary" hidden>إنهاء المكالمة</button>
 <audio id="remoteCallAudio" autoplay playsinline></audio>
 </section><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
-<div id="composePanel"><h2>إرسال رسالة</h2><button id="openMediaShare" type="button" class="secondary">مشاركة الملفات والوسائط</button><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button></form></div><section id="mediaSharePanel" class="mediaSharePanel" aria-labelledby="mediaShareHeading" hidden>
+<div id="composePanel"><h2>إرسال رسالة</h2><button id="openMediaShare" type="button" class="secondary">مشاركة الملفات والوسائط</button><p id="attachmentUploadStatus" role="status" aria-live="polite"></p><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button></form></div><section id="mediaSharePanel" class="mediaSharePanel" aria-labelledby="mediaShareHeading" hidden>
 <button id="closeMediaShare" type="button" class="panelBack">رجوع إلى المحادثة</button>
 <h3 id="mediaShareHeading" tabindex="-1">مشاركة الملفات والوسائط</h3>
 <p class="muted">اختر نوع المحتوى الذي تريد مشاركته. الحد الأقصى 50 ميغابايت لكل ملف.</p>
@@ -1141,7 +1141,7 @@ function readLocalVideoDuration(file){
   });
 }
 async function uploadConversationAttachment(file){
-  const status=document.getElementById("mediaUploadStatus");
+  const status=document.getElementById("attachmentUploadStatus");
   if(!currentId||!auth.currentUser){status.textContent="افتح محادثة أولًا ثم حاول مرة أخرى.";return}
   if(file.size>50*1024*1024){status.textContent="الملف أكبر من الحد المسموح، وهو 50 ميغابايت.";return}
   if(!file.size){status.textContent="الملف فارغ ولا يمكن إرساله.";return}
@@ -1175,7 +1175,14 @@ async function uploadConversationAttachment(file){
 }
 for(const inputId of ["photosVideosInput","filesInput"]){
   document.getElementById(inputId).addEventListener("change",async event=>{
-    const selected=Array.from(event.target.files||[]);event.target.value="";
+    const selected=Array.from(event.target.files||[]);
+    event.target.value="";
+    if(!selected.length)return;
+    // Return to the conversation immediately after the picker confirms the selection.
+    mediaSharePanel.hidden=true;
+    document.getElementById("chatTitle").focus();
+    const uploadStatus=document.getElementById("attachmentUploadStatus");
+    uploadStatus.textContent=selected.length===1?"تم اختيار الملف. جارٍ إرساله من داخل المحادثة.":"تم اختيار "+selected.length+" ملفات. جارٍ إرسالها من داخل المحادثة.";
     for(const file of selected)await uploadConversationAttachment(file);
   });
 }
