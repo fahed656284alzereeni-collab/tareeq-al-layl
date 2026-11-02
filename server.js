@@ -1387,7 +1387,8 @@ async function createUserNotification(uid, item) {
       title: String(item.title || "إشعار جديد").slice(0, 100),
       body: String(item.body || "").slice(0, 180),
       url: String(item.url || "chat.html").slice(0, 500),
-      tag: String(item.tag || item.type || "mersalo").slice(0, 80)
+      tag: String(item.tag || item.type || "mersalo").slice(0, 80),
+      type: String(item.type || "general").slice(0, 40)
     });
     await Promise.all(subscriptions.docs.map(async doc => {
       try {
