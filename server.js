@@ -1414,7 +1414,7 @@ function pushCors(req, res, next) {
   if (origin && origin !== "https://mersalo.onrender.com") return res.status(403).json({success:false,message:"Origin not allowed."});
   if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
@@ -1634,6 +1634,9 @@ app.put("/api/admin/monetization",pushCors,async(req,res)=>{
   }catch(error){sendAdminError(res,error);}
 });
 
+app.options("/api/public-posts",pushCors);
+app.options("/api/public-ads",pushCors);
+app.options("/api/admin/*",pushCors);
 app.options("/api/push/:action", pushCors);
 app.options("/api/notifications", pushCors);
 app.options("/api/notifications/:id", pushCors);
