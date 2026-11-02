@@ -1024,6 +1024,7 @@ document.getElementById("backToConversation").addEventListener("click",()=>{cons
 document.getElementById("conversationInfoButton").addEventListener("click",async()=>{
   const info=document.getElementById("conversationInfo"),opening=info.hidden;
   info.hidden=!opening;
+  document.getElementById("closeChat").hidden=opening;
   document.getElementById("messages").hidden=opening;
   document.getElementById("composePanel").hidden=opening;
   
