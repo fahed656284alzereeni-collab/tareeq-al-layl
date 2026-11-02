@@ -88,7 +88,8 @@ document.querySelectorAll(".section-back").forEach(button=>button.addEventListen
 function applySettings(){document.body.classList.toggle("large-text",largeText.checked);document.body.classList.toggle("strong-focus",strongFocus.checked);localStorage.setItem("mersalo-large-text",String(largeText.checked));localStorage.setItem("mersalo-strong-focus",String(strongFocus.checked))}
 largeText.checked=localStorage.getItem("mersalo-large-text")==="true";strongFocus.checked=localStorage.getItem("mersalo-strong-focus")==="true";applySettings();largeText.addEventListener("change",applySettings);strongFocus.addEventListener("change",applySettings);
 const requestsList=document.getElementById("friendRequestsList"),requestsStatus=document.getElementById("friendRequestsStatus");
-let socket=null,requestBusy=false,activeUser=null;\nconst deleteAccount=document.getElementById("deleteAccount"),deleteConfirm=document.getElementById("deleteConfirm"),deleteWord=document.getElementById("deleteWord");
+let socket=null,requestBusy=false,activeUser=null;
+const deleteAccount=document.getElementById("deleteAccount"),deleteConfirm=document.getElementById("deleteConfirm"),deleteWord=document.getElementById("deleteWord");
 function closeDeleteConfirm(){deleteConfirm.hidden=true;document.body.classList.remove("confirm-open");deleteAccount.focus();}
 deleteAccount.addEventListener("click",()=>{deleteWord.value="";deleteConfirm.hidden=false;document.body.classList.add("confirm-open");document.getElementById("deleteConfirmTitle").focus()});
 document.getElementById("cancelDelete").addEventListener("click",closeDeleteConfirm);
