@@ -73,9 +73,10 @@ body.chat-open #status{display:none}
 .mediaSharePanel{position:fixed!important;inset:0!important;z-index:2147483600!important;width:100vw!important;height:100dvh!important;max-height:100dvh!important;margin:0!important;padding:calc(28px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))!important;border:0!important;border-radius:0!important;background:#101827!important;overflow-y:auto!important;display:flex!important;flex-direction:column!important;gap:14px!important}
 .mediaSharePanel[hidden]{display:none!important}
 .mediaSharePanel button{width:100%;min-height:54px;margin:4px 0}
+body:has(.mediaSharePanel:not([hidden])) #chatPanel>#closeChat,
 body:has(.mediaSharePanel:not([hidden])) #chatPanel>.chatHeader,
 body:has(.mediaSharePanel:not([hidden])) #chatPanel>.messages,
-body:has(.mediaSharePanel:not([hidden])) #chatPanel>#composePanel{visibility:hidden!important}
+body:has(.mediaSharePanel:not([hidden])) #chatPanel>#composePanel{display:none!important;visibility:hidden!important}
 body:has(.mediaSharePanel:not([hidden])){overflow:hidden!important}
 
 @media(min-width:600px){
