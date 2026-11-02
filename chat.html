@@ -792,7 +792,25 @@ async function openConversation(c){
  }catch(error){console.error("openConversation failed",error);say("تعذر فتح المحادثة: "+(error?.message||"خطأ غير معروف")+". حاول مرة أخرى.");}
 }
 async function loadConversations(){const requestSocket=socket;const r=await call("listConversations",{},30000);if(r.connectionLost||requestSocket!==socket||!socket?.connected)return;if(!r.success){list.textContent=r.message;return}latestConversations=r.conversations||[];if(typeof renderRecentGroupContacts==="function"&&!newGroupPanel.hidden)renderRecentGroupContacts();list.replaceChildren();if(!r.conversations.length){list.textContent="لا توجد محادثات بعد. ابحث عن اسم شخص لبدء محادثة.";return}r.conversations.forEach(c=>{const b=document.createElement("button");b.type="button";b.className="conversation";const preview=String(c.lastMessage||"").replace(/\s*\(تم التعديل\)\s*$/,"").replace(/^تم التعديل\.?$/,"").replace(/^أنت:\s*أرسل مرفقًا\.?$/u,"").replace(/^أرسل مرفقًا\.?$/u,"");b.textContent=(c.type==="group"?"مجموعة: ":"")+(c.displayName||c.email||"مستخدم")+"، "+(preview||"ابدأ المحادثة")+(c.type==="group"&&c.memberNames?.length?"، "+c.memberNames.length+" أعضاء":"");b.addEventListener("click",async(event)=>{event.preventDefault();event.stopPropagation();try{await openConversation(c)}catch(error){console.error("Conversation click failed",error);say("تعذر فتح المحادثة. حاول مرة أخرى.")}});list.append(b)})}
-async function startChatWithUser(user){say("جارٍ فتح المحادثة...");const started=await call("startDirectConversation",{targetUid:user.uid});if(!started.success){say(started.message);return}openConversation({...started.conversation,otherUid:user.uid});loadConversations()}
+async function startChatWithUser(user){
+ if(!user?.uid||user.uid===auth.currentUser?.uid){say("لا يمكن فتح محادثة مع هذا الحساب.");return}
+ const selectedButton=Array.from(onlineList.querySelectorAll("button")).find(button=>button.textContent.includes(user.name));
+ if(selectedButton)selectedButton.disabled=true;
+ say("جارٍ فتح المحادثة مع "+(user.name||"المستخدم")+"...");
+ try{
+  if(!socket?.connected)throw new Error("الاتصال بالخادم غير متاح حاليًا. حاول مرة أخرى.");
+  const started=await call("startDirectConversation",{targetUid:user.uid},30000);
+  if(!started?.success)throw new Error(started?.message||"تعذر بدء المحادثة.");
+  if(!started.conversation?.id)throw new Error("لم يصل رقم المحادثة من الخادم.");
+  // Close the full-screen online-people panel before showing the conversation.
+  onlinePanel.hidden=true;
+  await openConversation({...started.conversation,type:"direct",otherUid:user.uid,displayName:started.conversation.displayName||user.name});
+  await loadConversations();
+ }catch(error){
+  if(selectedButton)selectedButton.disabled=false;
+  say(error?.message||"تعذر فتح المحادثة. حاول مرة أخرى.");
+ }
+}
 let onlineUsers=[];
 const onlinePanel=document.getElementById("onlinePanel"),onlineList=document.getElementById("onlineList"),onlineSearch=document.getElementById("onlineSearch");
 function renderOnlineUsers(){const term=onlineSearch.value.trim().toLocaleLowerCase("ar");onlineList.replaceChildren();const matches=onlineUsers.filter(user=>String(user.name||"").toLocaleLowerCase("ar").includes(term));if(!matches.length){onlineList.textContent=term?"لا يوجد شخص متصل بهذا الاسم.":"لا يوجد أشخاص آخرون متصلون حاليًا.";return}matches.forEach(user=>{const b=document.createElement("button");b.type="button";b.className="conversation";b.textContent=user.uid===auth.currentUser?.uid?user.name+"، أنت، متصل الآن":user.name+"، متصل الآن";if(user.uid===auth.currentUser?.uid){b.disabled=true;b.setAttribute("aria-label",user.name+"، هذا حسابك، متصل الآن");}else b.addEventListener("click",()=>startChatWithUser(user));onlineList.append(b)})}
