@@ -886,9 +886,30 @@ io.on("connection", socket => {
       const now = Date.now();
       const pending = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), sendAt: doc.data().sendAt?.toMillis?.() || 0 })).filter(item => item.sendAt > now).sort((a, b) => a.sendAt - b.sendAt);
       const ids = [...new Set(pending.map(item => item.conversationId).filter(Boolean))];
-      const snaps = ids.length ? await db.getAll(...ids.map(id => conversationsRef.doc(id))) : [];
-      const names = new Map(snaps.map(snap => [snap.id, snap.exists ? String(snap.data().name || snap.data().groupName || "محادثة") : "محادثة"]));
-      if (typeof reply === "function") reply({ success: true, messages: pending.map(item => ({ id: item.id, text: String(item.text || ""), sendAt: item.sendAt, conversationName: names.get(item.conversationId) || "محادثة" })) });
+      const conversationSnaps = ids.length ? await db.getAll(...ids.map(id => conversationsRef.doc(id))) : [];
+      const directUserIds = new Set();
+      const conversations = new Map();
+      for (const snap of conversationSnaps) {
+        if (!snap.exists) continue;
+        const conversation = snap.data();
+        conversations.set(snap.id, conversation);
+        if (conversation.type !== "group") {
+          const otherUid = (conversation.members || []).find(uid => uid !== socket.data.uid);
+          if (otherUid) directUserIds.add(otherUid);
+        }
+      }
+      const profileSnaps = directUserIds.size ? await db.getAll(...[...directUserIds].map(uid => usersRef.doc(uid))) : [];
+      const profileNames = new Map(profileSnaps.map(profile => [profile.id, String(profile.exists ? (profile.data().playerName || profile.data().displayName || "مستخدم") : "مستخدم")]));
+      const names = new Map();
+      for (const [id, conversation] of conversations) {
+        if (conversation.type === "group") {
+          names.set(id, String(conversation.groupName || conversation.name || "مجموعة"));
+        } else {
+          const otherUid = (conversation.members || []).find(uid => uid !== socket.data.uid);
+          names.set(id, otherUid ? (profileNames.get(otherUid) || "مستخدم") : "مستخدم");
+        }
+      }
+      if (typeof reply === "function") reply({ success: true, messages: pending.map(item => ({ id: item.id, text: String(item.text || ""), sendAt: item.sendAt, conversationName: names.get(item.conversationId) || "مستخدم" })) });
     } catch (error) { if (typeof reply === "function") reply({ success: false, message: "تعذر تحميل الرسائل المجدولة." }); }
   });
 
