@@ -217,7 +217,7 @@ io.on("connection", socket => {
       }
       if (activeVoiceCallFor(socket.data.uid) || activeVoiceCallFor(targetUid)) throw new Error("أحد الطرفين مشغول بمكالمة أخرى.");
       const callId = require("crypto").randomUUID();
-      const call = { callId, callerUid: socket.data.uid, calleeUid: targetUid, conversationId, state: "ringing", createdAt: Date.now(), pendingCandidates: [] };
+      const call = { callId, callerUid: socket.data.uid, callerName: socket.data.playerName, calleeUid: targetUid, conversationId, state: "ringing", createdAt: Date.now(), pendingCandidates: [] };
       voiceCalls.set(callId, call);
       socket.data.voiceCallId = callId;
       const caller = { uid: socket.data.uid, name: socket.data.playerName };
