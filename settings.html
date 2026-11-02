@@ -287,6 +287,42 @@ async function loadAdminAccounts(){
         else action("إيقاف الحساب","suspend","danger");
         action("إنهاء جلسات الحساب","revoke-sessions","secondary");
       }
+      const renameButton=document.createElement("button");
+      renameButton.type="button";renameButton.className="action secondary";
+      renameButton.textContent="تغيير اسم الحساب";
+      renameButton.setAttribute("aria-label","تغيير اسم الحساب "+account.name);
+      renameButton.addEventListener("click",()=>{
+        const overlay=document.createElement("section");
+        overlay.className="mersaloConfirmOverlay";
+        overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");
+        overlay.setAttribute("aria-labelledby","renameAccountTitle");
+        const form=document.createElement("div");form.className="mersaloConfirmCard";
+        const title=document.createElement("h2");title.id="renameAccountTitle";title.tabIndex=-1;title.textContent="تغيير اسم الحساب";
+        const message=document.createElement("p");message.textContent="الاسم الحالي: "+account.name+". اكتب الاسم الجديد الذي سيظهر للآخرين في مِرسالو.";
+        const label=document.createElement("label");label.textContent="الاسم الجديد";label.htmlFor="adminNewAccountName";
+        const input=document.createElement("input");input.id="adminNewAccountName";input.type="text";input.value=account.name;input.maxLength=40;input.autocomplete="off";input.setAttribute("aria-label","الاسم الجديد للحساب");
+        input.style.cssText="width:100%;padding:14px;border-radius:10px;font:inherit;margin:8px 0 14px;background:#fff;color:#111";
+        const continueButton=document.createElement("button");continueButton.type="button";continueButton.className="action";continueButton.textContent="متابعة";
+        const cancelButton=document.createElement("button");cancelButton.type="button";cancelButton.className="action secondary";cancelButton.textContent="إلغاء";
+        const closeRename=()=>{overlay.remove();document.body.classList.remove("confirm-open");renameButton.focus()};
+        cancelButton.addEventListener("click",closeRename);
+        continueButton.addEventListener("click",()=>{
+          const newName=input.value.trim().replace(/\\s+/g," ");
+          if(newName.length<2){message.textContent="اكتب اسمًا مكوّنًا من حرفين على الأقل.";input.focus();return}
+          if(newName===account.name){message.textContent="الاسم الجديد مطابق للاسم الحالي.";input.focus();return}
+          closeRename();
+          showDeleteConfirmation("تأكيد تغيير اسم الحساب","هل أنت متأكد من تغيير اسم "+account.name+" إلى "+newName+"؟ سيظهر الاسم الجديد للمستخدمين في مِرسالو.","نعم، غيّر الاسم",async()=>{
+            renameButton.disabled=true;adminAccountsStatus.textContent="جارٍ تحديث اسم الحساب...";
+            try{
+              const result=await adminRequest("/api/admin/account-name","POST",{uid:account.uid,name:newName});
+              adminAccountsStatus.textContent=result.message;await loadAdminAccounts();
+            }catch(error){renameButton.disabled=false;throw error}
+          });
+        });
+        form.append(title,message,label,input,continueButton,cancelButton);
+        overlay.append(form);document.body.append(overlay);document.body.classList.add("confirm-open");input.focus();
+      });
+      actions.append(renameButton);
       adminAccounts.append(card);
     }
   }catch(error){adminAccountsStatus.textContent=error.message||"تعذر تحميل الحسابات."}
