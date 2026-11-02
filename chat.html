@@ -1222,8 +1222,9 @@ function showMicrophonePermissionDialog(){
 async function startVoiceMessageRecording(){
  voiceMessageButton.disabled=true;voiceMessageButton.textContent="جارٍ تشغيل الميكروفون...";
  try{
-  voiceRecordingStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:{ideal:48000},channelCount:{ideal:1}},video:false});
+  voiceRecordingStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,sampleRate:{ideal:48000},channelCount:1},video:false});
   microphonePermissionState="granted";
+  await Promise.all(voiceRecordingStream.getAudioTracks().map(track=>typeof track.applyConstraints==="function"?track.applyConstraints({echoCancellation:true,noiseSuppression:true,channelCount:1}).catch(()=>{}):Promise.resolve()));
   const types=["audio/mp4","audio/webm;codecs=opus","audio/webm"],mimeType=types.find(type=>MediaRecorder.isTypeSupported?.(type))||"";
   voiceRecorder=new MediaRecorder(voiceRecordingStream,{...(mimeType?{mimeType}:{}),audioBitsPerSecond:128000});voiceRecordingChunks=[];voiceRecordingConversationId=currentId;voiceRecordingCancelled=false;
   voiceRecorder.addEventListener("dataavailable",event=>{if(event.data?.size)voiceRecordingChunks.push(event.data)});
