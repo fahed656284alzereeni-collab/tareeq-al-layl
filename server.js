@@ -128,6 +128,56 @@ io.use(async (socket, next) => {
   }
 });
 
+// Deliver scheduled text messages from Firestore, even when the sender closes the app.
+const scheduledMessagesRef = admin.firestore().collection("scheduledMessages");
+let scheduledWorkerRunning = false;
+async function processScheduledMessages() {
+  if (scheduledWorkerRunning) return;
+  scheduledWorkerRunning = true;
+  try {
+    const db = admin.firestore();
+    const due = await scheduledMessagesRef.orderBy("sendAt", "asc").limit(50).get();
+    for (const scheduledDoc of due.docs) {
+      const result = await db.runTransaction(async transaction => {
+        const fresh = await transaction.get(scheduledDoc.ref);
+        if (!fresh.exists) return null;
+        const scheduled = fresh.data();
+        const sendAt = scheduled.sendAt?.toMillis?.() || 0;
+        if (!sendAt || sendAt > Date.now()) return null;
+        const conversationRef = db.collection("conversations").doc(String(scheduled.conversationId || ""));
+        const conversationSnap = await transaction.get(conversationRef);
+        if (!conversationSnap.exists || !(conversationSnap.data().members || []).includes(scheduled.senderUid)) {
+          transaction.delete(scheduledDoc.ref);
+          return null;
+        }
+        const conversation = conversationSnap.data();
+        const messageRef = conversationRef.collection("messages").doc();
+        const createdAt = admin.firestore.Timestamp.now();
+        const message = { senderUid: scheduled.senderUid, senderName: scheduled.senderName || "مستخدم", text: String(scheduled.text || ""), createdAt };
+        transaction.set(messageRef, message);
+        transaction.update(conversationRef, { updatedAt: createdAt, lastMessage: message.text.slice(0, 120) });
+        for (const memberUid of conversation.members || []) {
+          transaction.delete(db.collection("users").doc(memberUid).collection("hiddenConversations").doc(conversationRef.id));
+          transaction.delete(db.collection("users").doc(memberUid).collection("hiddenConversationContent").doc(conversationRef.id));
+        }
+        transaction.delete(scheduledDoc.ref);
+        return { conversationId: conversationRef.id, members: conversation.members || [], message: { id: messageRef.id, senderUid: message.senderUid, senderName: message.senderName, text: message.text, createdAt: Date.now() } };
+      });
+      if (result) {
+        for (const memberUid of result.members) {
+          for (const client of connectedUsers.get(memberUid) || []) if (client.connected) client.emit("directMessageReceived", { conversationId: result.conversationId, message: result.message });
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Scheduled message worker error:", error.message);
+  } finally {
+    scheduledWorkerRunning = false;
+  }
+}
+setInterval(processScheduledMessages, 15000);
+processScheduledMessages();
+
 io.on("connection", socket => {
   console.info("Socket connected", { uid: socket.data.uid, transport: socket.conn.transport.name });
   socket.conn.on("upgrade", transport => console.info("Socket transport upgraded", { uid: socket.data.uid, transport: transport.name }));
@@ -827,6 +877,37 @@ io.on("connection", socket => {
       if(typeof reply==="function")reply({success:true});
     }catch(error){
       if(typeof reply==="function")reply({success:false,message:error.message||"تعذر حفظ مدة الفيديو."});
+    }
+  });
+
+  socket.on("scheduleDirectMessage", async (data = {}, reply) => {
+    try {
+      const conversationId = String(data.conversationId || "");
+      const text = String(data.text || "").trim();
+      const sendAt = Number(data.sendAt);
+      if (!conversationId || !text || text.length > 4000) throw new Error("اكتب رسالة لا تتجاوز 4000 حرف.");
+      if (!Number.isFinite(sendAt) || sendAt < Date.now() + 30000 || sendAt > Date.now() + 90 * 24 * 60 * 60 * 1000) throw new Error("موعد الإرسال يجب أن يكون بعد نصف دقيقة وحتى 90 يومًا.");
+      const conversationSnap = await conversationsRef.doc(conversationId).get();
+      if (!conversationSnap.exists || !(conversationSnap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بجدولة رسالة في هذه المحادثة.");
+      const conversation = conversationSnap.data();
+      if (conversation.type !== "group") {
+        const otherUid = (conversation.members || []).find(uid => uid !== socket.data.uid);
+        if (!otherUid) throw new Error("تعذر تحديد الطرف الآخر.");
+        const [myBlock, theirBlock] = await Promise.all([blockedRef(socket.data.uid, otherUid).get(), blockedRef(otherUid, socket.data.uid).get()]);
+        if (myBlock.exists || theirBlock.exists) throw new Error("لا يمكن جدولة الرسائل بسبب إعدادات الحظر بين الحسابين.");
+      }
+      const scheduledRef = scheduledMessagesRef.doc();
+      await scheduledRef.set({
+        conversationId,
+        senderUid: socket.data.uid,
+        senderName: socket.data.playerName,
+        text,
+        sendAt: admin.firestore.Timestamp.fromMillis(sendAt),
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      if (typeof reply === "function") reply({ success: true, scheduledId: scheduledRef.id, sendAt });
+    } catch (error) {
+      if (typeof reply === "function") reply({ success: false, message: error.message || "تعذرت جدولة الرسالة." });
     }
   });
 
