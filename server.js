@@ -1494,6 +1494,27 @@ app.get("/api/admin/accounts",pushCors,async(req,res)=>{
     res.json({success:true,accounts});
   } catch(error) { sendAdminError(res,error); }
 });
+app.post("/api/admin/account-name",pushCors,express.json({limit:"32kb"}),async(req,res)=>{
+  try{
+    const actor=await requireMersaloAdmin(req);
+    const uid=String(req.body?.uid||"").trim();
+    const name=String(req.body?.name||"").trim().replace(/\\s+/g," ").slice(0,40);
+    if(!uid)return res.status(400).json({success:false,message:"حدد الحساب الذي تريد تغيير اسمه."});
+    if(name.length<2)return res.status(400).json({success:false,message:"يجب أن يتكون الاسم من حرفين على الأقل."});
+    if(/[<>]/.test(name))return res.status(400).json({success:false,message:"الاسم يحتوي على رموز غير مسموح بها."});
+    const userRef=admin.firestore().collection("users").doc(uid);
+    const userSnap=await userRef.get();
+    if(!userSnap.exists)return res.status(404).json({success:false,message:"الحساب غير موجود."});
+    await admin.auth().updateUser(uid,{displayName:name});
+    await userRef.set({playerName:name,displayName:name,adminNameUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),adminNameUpdatedBy:actor.uid},{merge:true});
+    profileCache.delete(uid);
+    for(const client of connectedUsers.get(uid)||[])client.data.playerName=name;
+    io.emit("onlinePlayers",onlinePlayerList());
+    await admin.firestore().collection("adminActions").add({type:"rename-account",targetUid:uid,newName:name,adminUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+    res.json({success:true,message:"تم تغيير اسم الحساب بنجاح.",name});
+  }catch(error){sendAdminError(res,error);}
+});
+
 app.post("/api/admin/account-action",pushCors,express.json({limit:"32kb"}),async(req,res)=>{
   try{
     const actor=await requireMersaloAdmin(req);
