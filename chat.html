@@ -953,7 +953,7 @@ async function refreshConversationInfo(){
       const editPermissionButton=document.createElement("button");editPermissionButton.type="button";editPermissionButton.className="secondary";
       const addPermissionButton=document.createElement("button");addPermissionButton.type="button";addPermissionButton.className="secondary";
       const closePermissions=document.createElement("button");closePermissions.type="button";closePermissions.className="panelBack";closePermissions.textContent="رجوع إلى معلومات المجموعة";closePermissions.setAttribute("aria-label","رجوع إلى معلومات المجموعة");
-      permissionsPanel.setAttribute("role","region");permissionsPanel.setAttribute("aria-labelledby","groupPermissionsTitle");
+      permissionsPanel.setAttribute("role","dialog");permissionsPanel.setAttribute("aria-modal","true");permissionsPanel.setAttribute("aria-labelledby","groupPermissionsTitle");
       permissionsTitle.id="groupPermissionsTitle";
       permissionButtons.setAttribute("role","group");permissionButtons.setAttribute("aria-label","أذونات المجموعة");
       const refreshPermissionLabels=()=>{
@@ -977,7 +977,6 @@ async function refreshConversationInfo(){
       };
       editPermissionButton.addEventListener("click",()=>savePermission("editInfo"));
       addPermissionButton.addEventListener("click",()=>savePermission("addMembers"));
-      closePermissions.addEventListener("click",()=>{permissionsPanel.hidden=true;permissionsSection.querySelector("button")?.focus()});
       permissionButtons.append(editPermissionButton,addPermissionButton);
       permissionsPanel.append(closePermissions,permissionsTitle,permissionsNote,permissionButtons,permissionsStatus);
       const openPermissions= document.createElement("button");openPermissions.type="button";openPermissions.textContent="إدارة أذونات المجموعة";openPermissions.setAttribute("aria-haspopup","dialog");openPermissions.setAttribute("aria-expanded","false");
