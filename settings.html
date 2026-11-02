@@ -77,7 +77,6 @@ function applySettings(){document.body.classList.toggle("large-text",largeText.c
 largeText.checked=localStorage.getItem("mersalo-large-text")==="true";strongFocus.checked=localStorage.getItem("mersalo-strong-focus")==="true";applySettings();largeText.addEventListener("change",applySettings);strongFocus.addEventListener("change",applySettings);
 const requestsList=document.getElementById("friendRequestsList"),requestsStatus=document.getElementById("friendRequestsStatus");
 let socket=null,requestBusy=false,activeUser=null;\nconst deleteAccount=document.getElementById("deleteAccount"),deleteConfirm=document.getElementById("deleteConfirm"),deleteWord=document.getElementById("deleteWord");
-let activeUser=null;
 function closeDeleteConfirm(){deleteConfirm.hidden=true;document.body.classList.remove("confirm-open");deleteAccount.focus();}
 deleteAccount.addEventListener("click",()=>{deleteWord.value="";deleteConfirm.hidden=false;document.body.classList.add("confirm-open");document.getElementById("deleteConfirmTitle").focus()});
 document.getElementById("cancelDelete").addEventListener("click",closeDeleteConfirm);
