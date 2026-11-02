@@ -331,7 +331,7 @@ body:has(#attachmentViewer:not([hidden])) #chatPanel>*:not(#attachmentViewer){vi
 <button id="endVoiceCall" type="button" class="secondary" hidden>إنهاء المكالمة</button>
 <audio id="remoteCallAudio" autoplay playsinline></audio>
 </section><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
-<div id="composePanel"><h2>إرسال رسالة</h2><button id="openMediaShare" type="button" class="secondary">مشاركة الملفات والوسائط</button><p id="attachmentUploadStatus" role="status" aria-live="polite"></p><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button><button id="voiceMessageButton" type="button" class="secondary" disabled aria-pressed="false">تسجيل رسالة صوتية</button><button id="cancelVoiceRecording" type="button" class="secondary" hidden>إلغاء التسجيل</button></form></div><section id="mediaSharePanel" class="mediaSharePanel" aria-labelledby="mediaShareHeading" hidden>
+<div id="composePanel"><h2>إرسال رسالة</h2><button id="openMediaShare" type="button" class="secondary">مشاركة الملفات والوسائط</button><p id="attachmentUploadStatus" role="status" aria-live="polite"></p><p id="voiceDiagnosticStatus" role="status" aria-live="polite"></p><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button><button id="voiceMessageButton" type="button" class="secondary" disabled aria-pressed="false">تسجيل رسالة صوتية</button><button id="cancelVoiceRecording" type="button" class="secondary" hidden>إلغاء التسجيل</button></form></div><section id="mediaSharePanel" class="mediaSharePanel" aria-labelledby="mediaShareHeading" hidden>
 <button id="closeMediaShare" type="button" class="panelBack">رجوع إلى المحادثة</button>
 <h3 id="mediaShareHeading" tabindex="-1">مشاركة الملفات والوسائط</h3>
 <p class="muted">اختر نوع المحتوى الذي تريد مشاركته. الحد الأقصى 50 ميغابايت لكل ملف.</p>
@@ -1193,7 +1193,7 @@ async function returnToConversationBeforeUpload(selectedCount){
   await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
 }
 
-let voiceRecorder=null,voiceRecordingStream=null,voiceRecordingChunks=[],voiceRecordingConversationId=null,voiceRecordingCancelled=false;
+let voiceRecorder=null,voiceRecordingStream=null,voiceRecordingChunks=[],voiceRecordingConversationId=null,voiceRecordingCancelled=false,voiceRecordingStartedAt=0,voiceRecordingTrackSettings=null;
 const voiceMessageButton=document.getElementById("voiceMessageButton");
 let microphonePermissionState="unknown",microphonePermissionStatus=null;
 async function refreshMicrophonePermission(){
@@ -1230,15 +1230,18 @@ async function startVoiceMessageRecording(){
   voiceRecorder.addEventListener("dataavailable",event=>{if(event.data?.size)voiceRecordingChunks.push(event.data)});
   voiceRecorder.addEventListener("stop",async()=>{
    const wasCancelled=voiceRecordingCancelled;
-   const type=voiceRecorder?.mimeType||mimeType||"audio/mp4",extension=type.includes("mp4")?"m4a":"webm",blob=new Blob(voiceRecordingChunks,{type}),target=voiceRecordingConversationId;
+   const actualMimeType=voiceRecorder?.mimeType||mimeType||"غير محدد",type=actualMimeType==="غير محدد"?"audio/mp4":actualMimeType,extension=type.includes("mp4")?"m4a":"webm",blob=new Blob(voiceRecordingChunks,{type}),target=voiceRecordingConversationId;
+   const recordingSeconds=voiceRecordingStartedAt?Math.max(0,Math.round((Date.now()-voiceRecordingStartedAt)/1000)):0;
+   const diagnosticText="فحص التسجيل الصوتي — المتصفح: Chrome على iPhone. صيغة المسجل: "+actualMimeType+". نوع الملف الناتج: "+(blob.type||"غير محدد")+". حجم التسجيل: "+blob.size+" بايت. مدة التسجيل: "+recordingSeconds+" ثانية. إعدادات الميكروفون: "+JSON.stringify(voiceRecordingTrackSettings||{});
    if(voiceRecordingStream){voiceRecordingStream.getTracks().forEach(track=>track.stop());voiceRecordingStream=null}
+   voiceRecordingStartedAt=0;voiceRecordingTrackSettings=null;
    voiceRecorder=null;voiceRecordingChunks=[];voiceRecordingConversationId=null;voiceRecordingCancelled=false;voiceMessageButton.disabled=!currentId;voiceMessageButton.setAttribute("aria-pressed","false");voiceMessageButton.textContent="تسجيل رسالة صوتية";document.getElementById("cancelVoiceRecording").hidden=true;
    if(wasCancelled){document.getElementById("attachmentUploadStatus").textContent="تم إلغاء التسجيل.";return}
    if(!blob.size){document.getElementById("attachmentUploadStatus").textContent="لم يتم تسجيل صوت. حاول مرة أخرى.";return}
    if(currentId!==target){document.getElementById("attachmentUploadStatus").textContent="تغيّرت المحادثة قبل إرسال التسجيل؛ لم يتم إرساله.";return}
-   await uploadConversationAttachment(new File([blob],"voice-message."+extension,{type,lastModified:Date.now()}));
+   await uploadConversationAttachment(new File([blob],"voice-message."+extension,{type,lastModified:Date.now()}));\n   document.getElementById("voiceDiagnosticStatus").textContent=diagnosticText;
   });
-  voiceRecorder.start();voiceMessageButton.disabled=false;voiceMessageButton.setAttribute("aria-pressed","true");voiceMessageButton.textContent="إيقاف التسجيل وإرسال الصوت";document.getElementById("cancelVoiceRecording").hidden=false;document.getElementById("attachmentUploadStatus").textContent="التسجيل جارٍ. اضغط الزر مرة ثانية لإيقاف التسجيل وإرساله.";say("بدأ تسجيل الرسالة الصوتية. اضغط زر إيقاف التسجيل وإرسال الصوت عند الانتهاء.");
+  voiceRecorder.start();voiceRecordingStartedAt=Date.now();document.getElementById("voiceDiagnosticStatus").textContent="سيظهر تقرير فحص جودة التسجيل هنا بعد إرسال الرسالة الصوتية.";voiceMessageButton.disabled=false;voiceMessageButton.setAttribute("aria-pressed","true");voiceMessageButton.textContent="إيقاف التسجيل وإرسال الصوت";document.getElementById("cancelVoiceRecording").hidden=false;document.getElementById("attachmentUploadStatus").textContent="التسجيل جارٍ. اضغط الزر مرة ثانية لإيقاف التسجيل وإرساله.";say("بدأ تسجيل الرسالة الصوتية. اضغط زر إيقاف التسجيل وإرسال الصوت عند الانتهاء.");
  }catch(error){resetVoiceMessageRecorder();document.getElementById("attachmentUploadStatus").textContent=error.name==="NotAllowedError"?"لم يُسمح بالوصول إلى الميكروفون. راجع إذن الميكروفون للمتصفح.":"تعذر بدء التسجيل: "+(error.message||"تحقق من إذن الميكروفون.")}
 }
 voiceMessageButton.addEventListener("click",()=>{
