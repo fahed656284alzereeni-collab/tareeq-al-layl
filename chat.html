@@ -331,7 +331,7 @@ body:has(#attachmentViewer:not([hidden])) #chatPanel>*:not(#attachmentViewer){vi
 <button id="endVoiceCall" type="button" class="secondary" hidden>إنهاء المكالمة</button>
 <audio id="remoteCallAudio" autoplay playsinline></audio>
 </section><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
-<div id="composePanel"><h2>إرسال رسالة</h2><button id="openMediaShare" type="button" class="secondary">مشاركة الملفات والوسائط</button><p id="attachmentUploadStatus" role="status" aria-live="polite"></p><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button><button id="voiceMessageButton" type="button" class="secondary" disabled aria-pressed="false">تسجيل رسالة صوتية</button></form></div><section id="mediaSharePanel" class="mediaSharePanel" aria-labelledby="mediaShareHeading" hidden>
+<div id="composePanel"><h2>إرسال رسالة</h2><button id="openMediaShare" type="button" class="secondary">مشاركة الملفات والوسائط</button><p id="attachmentUploadStatus" role="status" aria-live="polite"></p><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button><button id="voiceMessageButton" type="button" class="secondary" disabled aria-pressed="false">تسجيل رسالة صوتية</button><button id="cancelVoiceRecording" type="button" class="secondary" hidden>إلغاء التسجيل</button></form></div><section id="mediaSharePanel" class="mediaSharePanel" aria-labelledby="mediaShareHeading" hidden>
 <button id="closeMediaShare" type="button" class="panelBack">رجوع إلى المحادثة</button>
 <h3 id="mediaShareHeading" tabindex="-1">مشاركة الملفات والوسائط</h3>
 <p class="muted">اختر نوع المحتوى الذي تريد مشاركته. الحد الأقصى 50 ميغابايت لكل ملف.</p>
@@ -1193,9 +1193,9 @@ async function returnToConversationBeforeUpload(selectedCount){
   await new Promise(resolve=>requestAnimationFrame(()=>resolve()));
 }
 
-let voiceRecorder=null,voiceRecordingStream=null,voiceRecordingChunks=[],voiceRecordingConversationId=null;
+let voiceRecorder=null,voiceRecordingStream=null,voiceRecordingChunks=[],voiceRecordingConversationId=null,voiceRecordingCancelled=false;
 const voiceMessageButton=document.getElementById("voiceMessageButton");
-function resetVoiceMessageRecorder(){if(voiceRecordingStream){voiceRecordingStream.getTracks().forEach(track=>track.stop());voiceRecordingStream=null}voiceRecorder=null;voiceRecordingChunks=[];voiceRecordingConversationId=null;voiceMessageButton.disabled=!currentId;voiceMessageButton.setAttribute("aria-pressed","false");voiceMessageButton.textContent="تسجيل رسالة صوتية"}
+function resetVoiceMessageRecorder(){if(voiceRecordingStream){voiceRecordingStream.getTracks().forEach(track=>track.stop());voiceRecordingStream=null}voiceRecorder=null;voiceRecordingChunks=[];voiceRecordingConversationId=null;voiceRecordingCancelled=false;voiceMessageButton.disabled=!currentId;voiceMessageButton.setAttribute("aria-pressed","false");voiceMessageButton.textContent="تسجيل رسالة صوتية";document.getElementById("cancelVoiceRecording").hidden=true}
 voiceMessageButton.addEventListener("click",async()=>{
  if(voiceRecorder&&voiceRecorder.state==="recording"){voiceMessageButton.disabled=true;voiceMessageButton.textContent="جارٍ تجهيز الرسالة الصوتية...";voiceRecorder.stop();return}
  if(!currentId||!auth.currentUser)return;
@@ -1204,19 +1204,22 @@ voiceMessageButton.addEventListener("click",async()=>{
  try{
   voiceRecordingStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
   const types=["audio/mp4","audio/webm;codecs=opus","audio/webm"],mimeType=types.find(type=>MediaRecorder.isTypeSupported?.(type))||"";
-  voiceRecorder=new MediaRecorder(voiceRecordingStream,mimeType?{mimeType}:undefined);voiceRecordingChunks=[];voiceRecordingConversationId=currentId;
+  voiceRecorder=new MediaRecorder(voiceRecordingStream,mimeType?{mimeType}:undefined);voiceRecordingChunks=[];voiceRecordingConversationId=currentId;voiceRecordingCancelled=false;
   voiceRecorder.addEventListener("dataavailable",event=>{if(event.data?.size)voiceRecordingChunks.push(event.data)});
   voiceRecorder.addEventListener("stop",async()=>{
+   const wasCancelled=voiceRecordingCancelled;
    const type=voiceRecorder?.mimeType||mimeType||"audio/mp4",extension=type.includes("mp4")?"m4a":"webm",blob=new Blob(voiceRecordingChunks,{type}),target=voiceRecordingConversationId;
    if(voiceRecordingStream){voiceRecordingStream.getTracks().forEach(track=>track.stop());voiceRecordingStream=null}
-   voiceRecorder=null;voiceRecordingChunks=[];voiceRecordingConversationId=null;voiceMessageButton.disabled=!currentId;voiceMessageButton.setAttribute("aria-pressed","false");voiceMessageButton.textContent="تسجيل رسالة صوتية";
+   voiceRecorder=null;voiceRecordingChunks=[];voiceRecordingConversationId=null;voiceRecordingCancelled=false;voiceMessageButton.disabled=!currentId;voiceMessageButton.setAttribute("aria-pressed","false");voiceMessageButton.textContent="تسجيل رسالة صوتية";document.getElementById("cancelVoiceRecording").hidden=true;
+   if(wasCancelled){document.getElementById("attachmentUploadStatus").textContent="تم إلغاء التسجيل.";return}
    if(!blob.size){document.getElementById("attachmentUploadStatus").textContent="لم يتم تسجيل صوت. حاول مرة أخرى.";return}
    if(currentId!==target){document.getElementById("attachmentUploadStatus").textContent="تغيّرت المحادثة قبل إرسال التسجيل؛ لم يتم إرساله.";return}
    await uploadConversationAttachment(new File([blob],"voice-message."+extension,{type,lastModified:Date.now()}));
   });
-  voiceRecorder.start();voiceMessageButton.disabled=false;voiceMessageButton.setAttribute("aria-pressed","true");voiceMessageButton.textContent="إيقاف التسجيل وإرسال الصوت";document.getElementById("attachmentUploadStatus").textContent="التسجيل جارٍ. اضغط الزر مرة ثانية لإيقاف التسجيل وإرساله.";say("بدأ تسجيل الرسالة الصوتية. اضغط زر إيقاف التسجيل وإرسال الصوت عند الانتهاء.");
+  voiceRecorder.start();voiceMessageButton.disabled=false;voiceMessageButton.setAttribute("aria-pressed","true");voiceMessageButton.textContent="إيقاف التسجيل وإرسال الصوت";document.getElementById("cancelVoiceRecording").hidden=false;document.getElementById("attachmentUploadStatus").textContent="التسجيل جارٍ. اضغط الزر مرة ثانية لإيقاف التسجيل وإرساله.";say("بدأ تسجيل الرسالة الصوتية. اضغط زر إيقاف التسجيل وإرسال الصوت عند الانتهاء.");
  }catch(error){resetVoiceMessageRecorder();document.getElementById("attachmentUploadStatus").textContent=error.name==="NotAllowedError"?"لم يُسمح بالوصول إلى الميكروفون. راجع إذن الميكروفون للمتصفح.":"تعذر بدء التسجيل: "+(error.message||"تحقق من إذن الميكروفون.")}
 });
+document.getElementById("cancelVoiceRecording").addEventListener("click",()=>{if(!voiceRecorder||voiceRecorder.state!=="recording")return;voiceRecordingCancelled=true;voiceMessageButton.disabled=true;document.getElementById("cancelVoiceRecording").hidden=true;voiceRecorder.stop()});
 
 for(const inputId of ["photosVideosInput","filesInput"]){
   document.getElementById(inputId).addEventListener("change",async event=>{
