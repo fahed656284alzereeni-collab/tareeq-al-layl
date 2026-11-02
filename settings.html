@@ -262,12 +262,21 @@ async function loadAdminAccounts(){
       const action=(label,value,style)=>{
         const button=document.createElement("button");button.type="button";button.className="action "+(style||"");button.textContent=label;
         if(isOwnAccount){button.disabled=true;button.setAttribute("aria-label",label+"، غير متاح على حسابك");}
-        button.addEventListener("click",async()=>{
-          button.disabled=true;adminAccountsStatus.textContent="جارٍ تنفيذ الإجراء...";
-          try{
-            const result=await adminRequest("/api/admin/account-action","POST",{uid:account.uid,action:value});
-            adminAccountsStatus.textContent=result.message;await loadAdminAccounts();
-          }catch(error){adminAccountsStatus.textContent=error.message;button.disabled=false}
+        button.addEventListener("click",()=>{
+          const actionTitle=value==="suspend"?"تأكيد إيقاف الحساب":value==="restore"?"تأكيد إعادة تفعيل الحساب":"تأكيد إنهاء جلسات الحساب";
+          const actionMessage=value==="suspend"
+            ?"هل أنت متأكد من إيقاف حساب "+account.name+"؟ لن يتمكن صاحبه من استخدام الحساب حتى تعيد تفعيله."
+            :value==="restore"
+              ?"هل تريد إعادة تفعيل حساب "+account.name+" والسماح لصاحبه باستخدامه مجددًا؟"
+              :"هل أنت متأكد من إنهاء جميع جلسات حساب "+account.name+"؟ سيتم تسجيل خروجه من الأجهزة والجلسات الحالية.";
+          const confirmLabel=value==="suspend"?"نعم، أوقف الحساب":value==="restore"?"نعم، أعد تفعيل الحساب":"نعم، أنهِ الجلسات";
+          showDeleteConfirmation(actionTitle,actionMessage,confirmLabel,async()=>{
+            button.disabled=true;adminAccountsStatus.textContent="جارٍ تنفيذ الإجراء...";
+            try{
+              const result=await adminRequest("/api/admin/account-action","POST",{uid:account.uid,action:value});
+              adminAccountsStatus.textContent=result.message;await loadAdminAccounts();
+            }catch(error){button.disabled=false;throw error}
+          });
         });
         actions.append(button);
       };
