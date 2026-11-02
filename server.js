@@ -1361,7 +1361,7 @@ function pushCors(req, res, next) {
   if (origin && origin !== "https://mersalo.onrender.com") return res.status(403).json({success:false,message:"Origin not allowed."});
   if (origin) res.setHeader("Access-Control-Allow-Origin", origin);
   res.setHeader("Vary", "Origin");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Authorization, Content-Type");
   if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
@@ -1416,6 +1416,33 @@ app.patch("/api/notifications/:id/read", pushCors, async (req,res) => {
     await ref.set({read:true}, {merge:true});
     res.json({success:true});
   } catch(error) { res.status(error.message==="AUTH_REQUIRED"?401:500).json({success:false,message:"Unable to update notification."}); }
+});
+app.delete("/api/notifications/:id", pushCors, async (req,res) => {
+  try {
+    const uid=await authenticatedUid(req);
+    const ref=admin.firestore().collection("users").doc(uid).collection("notifications").doc(String(req.params.id));
+    const snap=await ref.get();
+    if(!snap.exists)return res.status(404).json({success:false,message:"الإشعار غير موجود."});
+    await ref.delete();
+    res.json({success:true});
+  } catch(error) { res.status(error.message==="AUTH_REQUIRED"?401:500).json({success:false,message:"تعذر حذف الإشعار."}); }
+});
+app.delete("/api/notifications", pushCors, async (req,res) => {
+  try {
+    const uid=await authenticatedUid(req);
+    const collection=admin.firestore().collection("users").doc(uid).collection("notifications");
+    let deleted=0;
+    while(true){
+      const snap=await collection.limit(450).get();
+      if(snap.empty)break;
+      const batch=admin.firestore().batch();
+      for(const doc of snap.docs)batch.delete(doc.ref);
+      await batch.commit();
+      deleted+=snap.size;
+      if(snap.size<450)break;
+    }
+    res.json({success:true,deleted});
+  } catch(error) { res.status(error.message==="AUTH_REQUIRED"?401:500).json({success:false,message:"تعذر حذف الإشعارات."}); }
 });
 
 
