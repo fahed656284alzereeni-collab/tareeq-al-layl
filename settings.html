@@ -78,10 +78,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <div id="adminStatus" class="requestStatus" role="status" aria-live="polite">جارٍ التحقق من صلاحيات المطوّر...</div>
 <div id="adminStats" aria-label="إحصائيات الموقع"></div>
 <h3>التحكم بالحسابات</h3>
-<p class="muted">ابحث باسم المستخدم أو البريد أو معرّف الحساب. يمكنك إيقاف الحساب أو إعادة تفعيله أو إنهاء جلساته.</p>
-<label for="adminAccountSearch">البحث عن حساب</label>
-<input id="adminAccountSearch" type="search" autocomplete="off" placeholder="الاسم أو البريد أو معرّف الحساب">
-<button class="action" type="button" id="searchAdminAccounts">بحث عن الحسابات</button>
+<p class="muted">تظهر جميع الحسابات هنا مباشرة. بجانب كل حساب ستجد الإجراءات المتاحة له.</p>
 <div id="adminAccountsStatus" role="status" aria-live="polite"></div>
 <div id="adminAccounts" aria-live="polite"></div>
 <h3>بلاغات المستخدمين</h3>
@@ -212,6 +209,7 @@ async function loadAdminDashboard(){
   adminStats.replaceChildren();adminReports.textContent="جارٍ تحميل البلاغات...";
   try{
     const [dashboard,reportData]=await Promise.all([adminRequest("/api/admin/dashboard"),adminRequest("/api/admin/reports")]);
+    await loadAdminAccounts();
     addAdminStat("إجمالي الحسابات",dashboard.stats.users);
     addAdminStat("إجمالي المحادثات",dashboard.stats.conversations);
     addAdminStat("المستخدمون المتصلون",dashboard.stats.online);
@@ -243,35 +241,48 @@ async function loadAdminDashboard(){
   }catch(error){adminStatus.textContent=error.message;adminReports.textContent="تعذر تحميل بيانات الإدارة."}
 }
 
-const adminAccountSearch=document.getElementById("adminAccountSearch");
 const adminAccounts=document.getElementById("adminAccounts");
 const adminAccountsStatus=document.getElementById("adminAccountsStatus");
-async function searchAdminAccounts(){
-  const q=adminAccountSearch.value.trim();
-  if(q.length<2){adminAccountsStatus.textContent="اكتب حرفين على الأقل.";adminAccountSearch.focus();return}
-  adminAccountsStatus.textContent="جارٍ البحث عن الحسابات...";
+async function loadAdminAccounts(){
+  adminAccountsStatus.textContent="جارٍ تحميل جميع الحسابات...";
   adminAccounts.replaceChildren();
   try{
-    const data=await adminRequest("/api/admin/accounts?q="+encodeURIComponent(q));
-    if(!data.accounts.length){adminAccountsStatus.textContent="لم يتم العثور على حسابات مطابقة.";return}
-    adminAccountsStatus.textContent="عدد النتائج: "+data.accounts.length;
+    const data=await adminRequest("/api/admin/accounts");
+    if(!data.accounts.length){adminAccountsStatus.textContent="لا توجد حسابات مسجلة.";return}
+    adminAccountsStatus.textContent="إجمالي الحسابات المعروضة: "+data.accounts.length;
     for(const account of data.accounts){
       const card=document.createElement("article");card.className="requestCard";
       const heading=document.createElement("h3");heading.textContent=account.name;
       const email=document.createElement("p");email.textContent="البريد: "+(account.email||"غير متوفر");
       const uid=document.createElement("p");uid.textContent="معرّف الحساب: "+account.uid;
       const state=document.createElement("p");state.textContent=account.disabled?"حالة الحساب: موقوف":"حالة الحساب: نشط";
-      card.append(heading,email,uid,state);
-      const action=(label,value,style)=>{const button=document.createElement("button");button.type="button";button.className="action "+(style||"");button.textContent=label;button.addEventListener("click",async()=>{button.disabled=true;adminAccountsStatus.textContent="جارٍ تنفيذ الإجراء...";try{const result=await adminRequest("/api/admin/account-action","POST",{uid:account.uid,action:value});adminAccountsStatus.textContent=result.message;await searchAdminAccounts()}catch(error){adminAccountsStatus.textContent=error.message;button.disabled=false}});card.append(button)};
-      if(account.disabled)action("إعادة تفعيل الحساب","restore");
-      else action("إيقاف الحساب","suspend","danger");
-      action("إنهاء جلسات الحساب","revoke-sessions","secondary");
+      const actionsTitle=document.createElement("h4");actionsTitle.textContent="إجراءات الحساب";
+      const actions=document.createElement("div");actions.className="account-actions";
+      card.append(heading,email,uid,state,actionsTitle,actions);
+      const isOwnAccount=account.uid===auth.currentUser?.uid;
+      const action=(label,value,style)=>{
+        const button=document.createElement("button");button.type="button";button.className="action "+(style||"");button.textContent=label;
+        if(isOwnAccount){button.disabled=true;button.setAttribute("aria-label",label+"، غير متاح على حسابك");}
+        button.addEventListener("click",async()=>{
+          button.disabled=true;adminAccountsStatus.textContent="جارٍ تنفيذ الإجراء...";
+          try{
+            const result=await adminRequest("/api/admin/account-action","POST",{uid:account.uid,action:value});
+            adminAccountsStatus.textContent=result.message;await loadAdminAccounts();
+          }catch(error){adminAccountsStatus.textContent=error.message;button.disabled=false}
+        });
+        actions.append(button);
+      };
+      if(isOwnAccount){
+        const note=document.createElement("p");note.textContent="هذا حساب المطوّر؛ الإجراءات عليه معطّلة للحماية.";actions.append(note);
+      }else{
+        if(account.disabled)action("إعادة تفعيل الحساب","restore");
+        else action("إيقاف الحساب","suspend","danger");
+        action("إنهاء جلسات الحساب","revoke-sessions","secondary");
+      }
       adminAccounts.append(card);
     }
-  }catch(error){adminAccountsStatus.textContent=error.message||"تعذر البحث عن الحسابات."}
+  }catch(error){adminAccountsStatus.textContent=error.message||"تعذر تحميل الحسابات."}
 }
-document.getElementById("searchAdminAccounts").addEventListener("click",searchAdminAccounts);
-adminAccountSearch.addEventListener("keydown",event=>{if(event.key==="Enter")searchAdminAccounts()});
 
 document.getElementById("refreshAdmin").addEventListener("click",loadAdminDashboard);
 
