@@ -385,6 +385,7 @@ body:has(#newGroupPanel:not([hidden])) #newChatSection{
 .mersaloConfirmBody input,.mersaloConfirmBody textarea,.mersaloConfirmBody select{width:100%;max-width:100%;min-height:48px;padding:12px;border-radius:11px}
 body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 @media(min-width:600px){.mersaloConfirmBody .groupConfirmButtons{display:flex;gap:10px}.mersaloConfirmBody .groupConfirmButtons button{flex:1}}
+.groupPermissionChoice{display:flex!important;align-items:center!important;gap:12px!important;width:100%!important;min-height:58px!important;padding:10px 12px!important;border:1px solid #718096!important;border-radius:10px!important;background:#1b293b!important;font-weight:bold!important;cursor:pointer!important}.groupPermissionChoice .groupPermissionCheckbox{appearance:auto!important;-webkit-appearance:checkbox!important;width:26px!important;height:26px!important;min-width:26px!important;flex:0 0 26px!important;margin:0!important;padding:0!important;accent-color:#167c68!important}.groupPermissionChoice span{flex:1!important}.groupPermissionChoice:focus-within{outline:3px solid #ffd166!important;outline-offset:3px!important}
 </style><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#101827">
 </head><body>
@@ -948,24 +949,28 @@ async function refreshConversationInfo(){
       const permissionsPanel=document.createElement("div");permissionsPanel.className="groupInlinePanel";permissionsPanel.hidden=true;
       const permissionsTitle=document.createElement("h3");permissionsTitle.id="groupPermissionsTitle";permissionsTitle.textContent="إدارة أذونات المجموعة";
       const permissionsStatus=document.createElement("p");permissionsStatus.setAttribute("role","status");permissionsStatus.setAttribute("aria-live","assertive");permissionsStatus.setAttribute("aria-atomic","true");
-      const permissionButtons=document.createElement("div");permissionButtons.className="groupConfirmButtons";permissionButtons.setAttribute("role","group");permissionButtons.setAttribute("aria-label","اختيار أذونات المجموعة");
-      const permissionLabel=value=>value==="members"?"جميع الأعضاء":"المشرفون فقط";
-      const editPermissionButton=document.createElement("button");editPermissionButton.type="button";editPermissionButton.className="secondary";editPermissionButton.setAttribute("aria-describedby","groupPermissionsHelp");
-      const addPermissionButton=document.createElement("button");addPermissionButton.type="button";addPermissionButton.className="secondary";addPermissionButton.setAttribute("aria-describedby","groupPermissionsHelp");
-      const permissionsHelp=document.createElement("p");permissionsHelp.id="groupPermissionsHelp";permissionsHelp.textContent="اضغط على الزر لتغيير الإذن بين المشرفين فقط وجميع الأعضاء. يتم حفظ التغيير مباشرة.";
+      const permissionButtons=document.createElement("div");permissionButtons.className="groupConfirmButtons";permissionButtons.setAttribute("role","group");permissionButtons.setAttribute("aria-label","أذونات المجموعة");
+      const makePermissionChoice=(key,labelText)=>{
+        const wrapper=document.createElement("label");wrapper.className="groupPermissionChoice";
+        const checkbox=document.createElement("input");checkbox.type="checkbox";checkbox.className="groupPermissionCheckbox";
+        checkbox.checked=permissions[key]==="members";
+        const text=document.createElement("span");text.textContent=labelText+" — السماح لجميع الأعضاء";
+        checkbox.setAttribute("aria-label",labelText+"؛ محدد يعني السماح لجميع الأعضاء، وغير محدد يعني المشرفين فقط.");
+        checkbox.addEventListener("change",()=>{void savePermission(key,checkbox.checked)});
+        wrapper.append(checkbox,text);return {wrapper,checkbox};
+      };
+      const editChoice=makePermissionChoice("editInfo","تعديل معلومات المجموعة");
+      const addChoice=makePermissionChoice("addMembers","إضافة أعضاء");
+      const editPermissionButton=editChoice.checkbox,addPermissionButton=addChoice.checkbox;
       const closePermissions=document.createElement("button");closePermissions.type="button";closePermissions.className="panelBack";closePermissions.textContent="رجوع إلى معلومات المجموعة";closePermissions.setAttribute("aria-label","رجوع إلى معلومات المجموعة");
       const refreshPermissionLabels=()=>{
-        editPermissionButton.textContent="تعديل معلومات المجموعة: "+permissionLabel(permissions.editInfo);
-        addPermissionButton.textContent="إضافة أعضاء: "+permissionLabel(permissions.addMembers);
-        editPermissionButton.setAttribute("aria-label","تعديل معلومات المجموعة. الإذن المحدد حاليًا: "+permissionLabel(permissions.editInfo)+". اضغط لتغييره.");
-        addPermissionButton.setAttribute("aria-label","إضافة أعضاء. الإذن المحدد حاليًا: "+permissionLabel(permissions.addMembers)+". اضغط لتغييره.");
-        editPermissionButton.setAttribute("aria-pressed",String(permissions.editInfo==="members"));
-        addPermissionButton.setAttribute("aria-pressed",String(permissions.addMembers==="members"));
+        editPermissionButton.checked=permissions.editInfo==="members";
+        addPermissionButton.checked=permissions.addMembers==="members";
       };
-      const savePermission=async(key)=>{
+      const savePermission=async(key,allowAllMembers)=>{
         if(editPermissionButton.disabled||addPermissionButton.disabled)return;
-        const previous=permissions[key];permissions[key]=previous==="members"?"admins":"members";
-        refreshPermissionLabels();permissionsStatus.textContent="جارٍ حفظ "+(key==="editInfo"?"إذن تعديل معلومات المجموعة":"إذن إضافة الأعضاء")+"...";
+        const previous=permissions[key];permissions[key]=allowAllMembers?"members":"admins";
+        permissionsStatus.textContent="جارٍ حفظ "+(key==="editInfo"?"إذن تعديل معلومات المجموعة":"إذن إضافة الأعضاء")+"...";
         editPermissionButton.disabled=true;addPermissionButton.disabled=true;
         try{
           const result=await call("updateGroupPermissions",{conversationId:currentId,editInfo:permissions.editInfo,addMembers:permissions.addMembers});
@@ -978,10 +983,10 @@ async function refreshConversationInfo(){
           editPermissionButton.disabled=false;addPermissionButton.disabled=false;
         }
       };
-      editPermissionButton.addEventListener("click",()=>{void savePermission("editInfo")});
-      addPermissionButton.addEventListener("click",()=>{void savePermission("addMembers")});
-      permissionButtons.append(editPermissionButton,addPermissionButton);
-      permissionsPanel.append(closePermissions,permissionsTitle,permissionsNote,permissionsHelp,permissionButtons,permissionsStatus);
+      const permissionsHelp=document.createElement("p");permissionsHelp.textContent="حدد مربع الاختيار للسماح لجميع الأعضاء. ألغِ التحديد لجعل الصلاحية للمشرفين فقط.";
+      const closePermissionsButton=closePermissions;
+      permissionsPanel.append(closePermissionsButton,permissionsTitle,permissionsNote,permissionsHelp,permissionButtons,permissionsStatus);
+      permissionButtons.append(editChoice.wrapper,addChoice.wrapper);
       const openPermissions=document.createElement("button");openPermissions.type="button";openPermissions.textContent="إدارة أذونات المجموعة";openPermissions.setAttribute("aria-expanded","false");openPermissions.setAttribute("aria-controls","groupPermissionsTitle");
       openPermissions.addEventListener("click",()=>{permissionsPanel.hidden=false;openPermissions.setAttribute("aria-expanded","true");permissionsTitle.setAttribute("tabindex","-1");permissionsTitle.focus()});
       closePermissions.addEventListener("click",()=>{permissionsPanel.hidden=true;openPermissions.setAttribute("aria-expanded","false");openPermissions.focus()});
