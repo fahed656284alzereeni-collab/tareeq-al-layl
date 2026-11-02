@@ -5,7 +5,7 @@
 <title>الإعدادات - مِرسالو</title>
 <style>
 :root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}
-*{box-sizing:border-box}body{margin:0;line-height:1.8}body>header{display:none!important}body>main{max-width:none!important;margin:0!important;padding:0!important}body.section-open{overflow:hidden}body.section-open>header{display:none}body.section-open>main{max-width:none;margin:0;padding:0}body.section-open .section-screen:not(.active){display:none!important}.section-screen.active{position:fixed!important;inset:0!important;z-index:2147483000!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;margin:0!important;padding:24px 18px!important;border:0!important;border-radius:0!important;overflow-y:auto!important;background:#101827!important;display:block!important}.section-screen .section-back{display:block;width:100%;padding:14px;margin:0 0 20px;border:0;border-radius:10px;background:#42536b;color:#fff;font:inherit;font-weight:bold}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;line-height:1.8}body>header{display:none!important}body>main{max-width:none!important;margin:0!important;padding:0!important}body.section-open{overflow:hidden}body.section-open>header{display:none}body.section-open>main{max-width:none;margin:0;padding:0}body.section-open .section-screen:not(.active){display:none!important}.section-screen.active{position:fixed!important;inset:0!important;z-index:2147483000!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;margin:0!important;padding:24px 18px!important;border:0!important;border-radius:0!important;overflow-y:auto!important;background:#101827!important;display:block!important}.section-screen .section-back{display:block;width:100%;padding:14px;margin:0 0 20px;border:0;border-radius:10px;background:#42536b;color:#fff;font:inherit;font-weight:bold}
 header{padding:15px 20px;background:#1b293b;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 h1{color:#8bd8c5;margin:0;font-size:1.5rem}
 nav.mainNav{display:flex;gap:8px;flex-wrap:wrap}
@@ -128,7 +128,7 @@ function showSection(id){document.querySelectorAll(".section-screen").forEach(se
 const requestedSection=new URLSearchParams(location.search).get("section");
 if(requestedSection==="friend-requests")showSection("panel-friend-requests");
 document.querySelectorAll("[data-open-section]").forEach(button=>button.addEventListener("click",()=>showSection(button.dataset.openSection)));
-openAdmin.addEventListener("click",()=>{if(!openAdmin.hidden)loadAdminDashboard()});
+
 document.querySelectorAll(".section-back").forEach(button=>button.addEventListener("click",()=>showSection("panel-settings")));
 function applySettings(){document.body.classList.toggle("large-text",largeText.checked);document.body.classList.toggle("strong-focus",strongFocus.checked);localStorage.setItem("mersalo-large-text",String(largeText.checked));localStorage.setItem("mersalo-strong-focus",String(strongFocus.checked))}
 largeText.checked=localStorage.getItem("mersalo-large-text")==="true";strongFocus.checked=localStorage.getItem("mersalo-strong-focus")==="true";applySettings();largeText.addEventListener("change",applySettings);strongFocus.addEventListener("change",applySettings);
@@ -185,6 +185,7 @@ const disablePush=document.getElementById("disablePush");
 const apiBase="https://tareeq-al-layl-server.onrender.com";
 const adminStatus=document.getElementById("adminStatus"),adminStats=document.getElementById("adminStats"),adminReports=document.getElementById("adminReports");
 const openAdmin=document.getElementById("openAdmin");
+openAdmin.addEventListener("click",()=>{if(!openAdmin.hidden)loadAdminDashboard()});
 async function adminRequest(path,method="GET",body){
   if(!auth.currentUser)throw new Error("سجّل الدخول أولًا.");
   const token=await auth.currentUser.getIdToken();
