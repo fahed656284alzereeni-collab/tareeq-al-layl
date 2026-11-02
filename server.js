@@ -1476,9 +1476,52 @@ app.post("/api/admin/warn",pushCors,express.json({limit:"32kb"}),async(req,res)=
   } catch(error) { sendAdminError(res,error); }
 });
 
+app.get("/api/admin/accounts",pushCors,async(req,res)=>{
+  try {
+    await requireMersaloAdmin(req);
+    const query=String(req.query.q||"").trim().toLowerCase();
+    if(query.length<2)return res.status(400).json({success:false,message:"اكتب حرفين على الأقل للبحث عن الحساب."});
+    const snap=await admin.firestore().collection("users").limit(1000).get();
+    const matches=snap.docs.filter(doc=>{
+      const v=doc.data();
+      const fields=[doc.id,v.playerName,v.displayName,v.email].map(x=>String(x||"").toLowerCase());
+      return fields.some(value=>value.includes(query));
+    }).slice(0,30);
+    const accounts=await Promise.all(matches.map(async doc=>{
+      const v=doc.data();
+      let authUser=null;
+      try{authUser=await admin.auth().getUser(doc.id)}catch(_){}
+      return{uid:doc.id,name:String(v.playerName||v.displayName||"مستخدم"),email:String(v.email||authUser?.email||""),disabled:!!authUser?.disabled};
+    }));
+    res.json({success:true,accounts});
+  } catch(error) { sendAdminError(res,error); }
+});
+app.post("/api/admin/account-action",pushCors,express.json({limit:"32kb"}),async(req,res)=>{
+  try{
+    const actor=await requireMersaloAdmin(req);
+    const uid=String(req.body?.uid||"").trim(),action=String(req.body?.action||"");
+    if(!uid||uid===actor.uid)return res.status(400).json({success:false,message:"لا يمكن تنفيذ الإجراء على حسابك أو دون تحديد حساب."});
+    if(!["suspend","restore","revoke-sessions"].includes(action))return res.status(400).json({success:false,message:"الإجراء المطلوب غير معروف."});
+    const authUser=await admin.auth().getUser(uid);
+    if(action==="suspend")await admin.auth().updateUser(uid,{disabled:true});
+    if(action==="restore")await admin.auth().updateUser(uid,{disabled:false});
+    await admin.auth().revokeRefreshTokens(uid);
+    if(action==="suspend"||action==="restore"){
+      await admin.firestore().collection("users").doc(uid).set({accountSuspended:action==="suspend",accountStatus:action==="suspend"?"suspended":"active",accountStatusUpdatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+    }
+    if(action==="suspend"){
+      for(const client of connectedUsers.get(uid)||[])client.disconnect(true);
+    }
+    await admin.firestore().collection("adminActions").add({type:action,targetUid:uid,adminUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+    const messages={suspend:"تم إيقاف الحساب وإنهاء اتصالاته الحالية.",restore:"تمت إعادة تفعيل الحساب.", "revoke-sessions":"تم تسجيل خروج الحساب من الجلسات الحالية. سيحتاج إلى تسجيل الدخول مجددًا."};
+    res.json({success:true,message:messages[action],account:{uid,disabled:action==="suspend"?true:action==="restore"?false:!!authUser.disabled}});
+  }catch(error){sendAdminError(res,error);}
+});
+
 
 app.options("/api/push/:action", pushCors);
 app.options("/api/notifications", pushCors);
+app.options("/api/notifications/:id", pushCors);
 app.options("/api/notifications/:id/read", pushCors);
 app.get("/api/push/public-key", pushCors, (req,res) => {
   const key=String(process.env.VAPID_PUBLIC_KEY||"").trim();
