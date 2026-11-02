@@ -367,6 +367,22 @@ body:has(#newGroupPanel:not([hidden])) #newChatSection{
 #directChatPanel button,
 #newGroupPanel button{min-height:52px!important;flex-shrink:0!important}
 
+
+/* نوافذ تأكيد موحدة وأنيقة، مع إبقاء التركيز واضحًا لقارئ الشاشة. */
+.mersaloConfirmOverlay{position:fixed!important;inset:0!important;z-index:2147483647!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-height:100dvh!important;margin:0!important;padding:calc(22px + env(safe-area-inset-top)) 18px calc(22px + env(safe-area-inset-bottom))!important;border:0!important;border-radius:0!important;background:radial-gradient(ellipse at top,#263d55 0%,#111c2b 58%,#0b1420 100%)!important;color:#f5f7fb!important;display:flex!important;align-items:center!important;justify-content:center!important;overflow-y:auto!important;overscroll-behavior:contain!important}
+.mersaloConfirmCard{width:100%;max-width:520px;margin:auto;padding:26px 22px 22px;border:1px solid #52677f;border-radius:24px;background:linear-gradient(160deg,#26394f 0%,#19283a 72%);box-shadow:0 22px 70px #0009;display:flex;flex-direction:column;gap:14px;text-align:center}
+.mersaloConfirmIcon{width:58px;height:58px;margin:0 auto;border-radius:19px;display:grid;place-items:center;background:#633c48;color:#ffe1e5;font-size:30px;font-weight:bold;border:1px solid #a65b68}
+.mersaloConfirmCard h2,.mersaloConfirmCard h3{margin:0;color:#f6f8fc;font-size:1.25rem;line-height:1.5}
+.mersaloConfirmBody{color:#d4deea;line-height:1.8;text-align:right}
+.mersaloConfirmBody p{margin:0 0 12px}
+.mersaloConfirmBody button{width:100%!important;min-height:52px!important;margin:6px 0!important;border-radius:13px!important}
+.mersaloConfirmBody button.groupDanger,.mersaloConfirmBody button:not(.secondary){background:linear-gradient(110deg,#a94352,#7e303e)!important}
+.mersaloConfirmBody button.secondary{background:#425873!important}
+.mersaloConfirmBody button:disabled{opacity:.6}
+.mersaloConfirmBody label{display:block;margin:12px 0 6px}
+.mersaloConfirmBody input,.mersaloConfirmBody textarea,.mersaloConfirmBody select{width:100%;max-width:100%;min-height:48px;padding:12px;border-radius:11px}
+body:has(.mersaloConfirmOverlay){overflow:hidden!important}
+@media(min-width:600px){.mersaloConfirmBody .groupConfirmButtons{display:flex;gap:10px}.mersaloConfirmBody .groupConfirmButtons button{flex:1}}
 </style><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#101827">
 </head><body>
@@ -717,6 +733,20 @@ function showMessageEditor(message,element,content,actions,optionsButton){
     optionsButton.focus();
   });
 }
+function decorateConfirmPanel(box,headingText){
+  box.classList.add("mersaloConfirmOverlay");
+  box.setAttribute("role","dialog");box.setAttribute("aria-modal","true");
+  const card=document.createElement("div");card.className="mersaloConfirmCard";
+  const icon=document.createElement("div");icon.className="mersaloConfirmIcon";icon.setAttribute("aria-hidden","true");icon.textContent="!";
+  let heading=box.querySelector("h3,h2");
+  if(heading){heading.remove();heading.className="mersaloConfirmHeading"}
+  else{heading=document.createElement("h2");heading.textContent=headingText}
+  const body=document.createElement("div");body.className="mersaloConfirmBody";
+  while(box.firstChild)body.append(box.firstChild);
+  card.append(icon,heading,body);box.append(card);
+  box.setAttribute("aria-labelledby",heading.id||"");
+  if(!heading.id)heading.id="mersalo-confirm-heading-"+Math.random().toString(36).slice(2);
+}
 function showMessageDeleteConfirmation(id,element,scope){
   const actions=element.querySelector(".messageActions");
   const previous=actions.querySelector(".messageDeleteConfirmation");
@@ -738,7 +768,7 @@ function showMessageDeleteConfirmation(id,element,scope){
     if(!result.success){note.textContent=result.message||"تعذر حذف الرسالة. حاول مرة أخرى.";yes.disabled=false;no.disabled=false;return}
     known.delete(id);removeAttachmentForMessage(id);removeMessageFromView(element);await loadConversations();restoreConnectionStatus();
   });
-  box.append(note,yes,no);actions.append(box);note.tabIndex=-1;note.focus();
+  box.append(note,yes,no);decorateConfirmPanel(box,"تأكيد حذف الرسالة");actions.append(box);box.querySelector("h2,h3")?.focus();
 }
 async function deleteMessageForMe(id,element){showMessageDeleteConfirmation(id,element,"me")}
 async function deleteMessageForEveryone(id,element){showMessageDeleteConfirmation(id,element,"everyone")}
@@ -965,7 +995,7 @@ async function refreshConversationInfo(){
       leaveButton.addEventListener("click",()=>{leavePanel.hidden=!leavePanel.hidden;if(!leavePanel.hidden)leaveYes.focus()});
       leaveNo.addEventListener("click",()=>{leavePanel.hidden=true;leaveButton.focus()});
       leaveYes.addEventListener("click",async()=>{leaveYes.disabled=true;leaveNo.disabled=true;const result=await call("leaveGroup",{conversationId:currentId});leaveYes.disabled=false;leaveNo.disabled=false;if(!result.success){leaveText.textContent=result.message||"تعذرت مغادرة المجموعة.";return}document.getElementById("closeChat").click();await loadConversations();say(result.message||"غادرت المجموعة بنجاح.")});
-      leaveButtons.append(leaveYes,leaveNo);leavePanel.append(leaveText,leaveButtons);actions.append(leaveButton,leavePanel);
+      leaveButtons.append(leaveYes,leaveNo);leavePanel.append(leaveText,leaveButtons);decorateConfirmPanel(leavePanel,"تأكيد مغادرة المجموعة");actions.append(leaveButton,leavePanel);
     }
     if(d.isAdmin){
       const deleteButton=makeButton("حذف المجموعة نهائيًا","groupDanger");
@@ -976,7 +1006,7 @@ async function refreshConversationInfo(){
       deleteButton.addEventListener("click",()=>{deletePanel.hidden=!deletePanel.hidden;if(!deletePanel.hidden)deleteYes.focus()});
       deleteNo.addEventListener("click",()=>{deletePanel.hidden=true;deleteButton.focus()});
       deleteYes.addEventListener("click",async()=>{deleteYes.disabled=true;deleteNo.disabled=true;const result=await call("deleteGroup",{conversationId:currentId});deleteYes.disabled=false;deleteNo.disabled=false;if(!result.success){deleteText.textContent=result.message||"تعذر حذف المجموعة.";return}document.getElementById("closeChat").click();await loadConversations();say(result.message||"تم حذف المجموعة.")});
-      deleteButtons.append(deleteYes,deleteNo);deletePanel.append(deleteText,deleteButtons);actions.append(deleteButton,deletePanel);
+      deleteButtons.append(deleteYes,deleteNo);deletePanel.append(deleteText,deleteButtons);decorateConfirmPanel(deletePanel,"تأكيد حذف المجموعة نهائيًا");actions.append(deleteButton,deletePanel);
     }
     content.append(actions);
     document.getElementById("friendAction").hidden=true;document.getElementById("removeFriendAction").hidden=true;
@@ -1100,8 +1130,8 @@ function showInlineActionChoice(kind){
     box.append(title,hint,reasonLabel,reason,detailsLabel,details,confirmButton,cancelButton);
     document.body.append(box);title.focus();return;
   }
-  box.append(title,hint,confirmButton,cancelButton);
-  document.body.append(box);title.focus();
+  box.append(title,hint,confirmButton,cancelButton);decorateConfirmPanel(box);
+  document.body.append(box);box.querySelector("h2,h3")?.focus();
 }
 document.getElementById("blockAction").addEventListener("click",()=>{if(currentOtherUid&&currentId&&currentDetails)showInlineActionChoice("block")});
 document.getElementById("removeFriendAction").addEventListener("click",()=>{if(currentOtherUid&&currentId)showInlineActionChoice("removeFriend")});
@@ -1170,9 +1200,9 @@ function showConversationDeleteChoice(kind){
     document.getElementById("messageText").value="";document.getElementById("messageText").disabled=true;document.getElementById("sendButton").disabled=true;document.getElementById("scheduleMessageButton").disabled=true;document.getElementById("openScheduledMessages").disabled=true;
     await loadConversations();document.getElementById("conversationHeading").focus();restoreConnectionStatus();
   });
-  box.append(title,hint,group,confirmButton,cancelButton);
+  box.append(title,hint,group,confirmButton,cancelButton);decorateConfirmPanel(box);
   trigger.insertAdjacentElement("afterend",box);
-  title.focus();
+  box.querySelector("h2,h3")?.focus();
 }
 document.getElementById("clearChatAction").addEventListener("click",()=>{if(currentId)showConversationDeleteChoice("clear")});
 document.getElementById("deleteChatAction").addEventListener("click",()=>{if(currentId)showConversationDeleteChoice("delete")});
