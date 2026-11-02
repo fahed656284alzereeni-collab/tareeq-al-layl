@@ -779,6 +779,11 @@ async function openConversation(c){
  if(!c||!c.id){say("تعذر فتح المحادثة: رقم المحادثة غير متوفر.");return}
  try{
   currentId=c.id;currentConversationType=c.type==="group"?"group":"direct";currentOtherUid=c.otherUid||null;currentOtherName=c.type==="group"?(c.groupName||c.displayName||"مجموعة"):(c.displayName||c.email||"مستخدم");currentDetails=null;known.clear();attachmentItems.splice(0,attachmentItems.length);activeAttachmentIndex=-1;messages.replaceChildren();
+  // Close every full-screen launcher before displaying the conversation.
+  document.getElementById("newGroupPanel").hidden=true;
+  document.getElementById("directChatPanel").hidden=true;
+  document.getElementById("newChatOptions").hidden=true;
+  document.getElementById("onlinePanel").hidden=true;
   document.getElementById("conversationListPanel").hidden=true;document.getElementById("mainNavigation").hidden=true;document.body.classList.add("chat-open");panel.hidden=false;panel.style.display="block";
   document.getElementById("conversationInfo").hidden=true;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;
   document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;document.getElementById("scheduleMessageButton").disabled=false;document.getElementById("openScheduledMessages").disabled=false;document.getElementById("messageHint").hidden=true;document.getElementById("messageText").removeAttribute("aria-describedby");
