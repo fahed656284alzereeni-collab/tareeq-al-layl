@@ -830,9 +830,10 @@ async function refreshConversationInfo(){
     memberActionPanel.append(memberActionHeading,memberActionButtons,memberActionStatus,memberActionCancel);
     d.members.forEach(member=>{
       const row=document.createElement("div");row.className="groupMemberRow";
-      const name=document.createElement("button");name.type="button";name.className="secondary";name.textContent=member.name+(member.online?"، متصل الآن":"، غير متصل")+(member.uid===d.createdBy?"، منشئ المجموعة":"")+(member.isModerator?"، مشرف":"");
-      name.setAttribute("aria-label","خيارات العضو "+member.name);
-      name.addEventListener("click",()=>{
+      const name=document.createElement("button");name.type="button";name.className="secondary";name.textContent=member.name;
+      name.setAttribute("aria-label",member.name);
+      name.disabled=member.uid===auth.currentUser?.uid;
+      if(!name.disabled)name.addEventListener("click",()=>{
         selectedMemberTrigger=name;memberActionHeading.textContent="خيارات العضو: "+member.name;memberActionButtons.replaceChildren();memberActionStatus.textContent="";
         const makeMemberAction=(label,handler,cls="secondary")=>{const b=document.createElement("button");b.type="button";b.className=cls;b.textContent=label;b.addEventListener("click",handler);memberActionButtons.append(b);return b};
         const canRemove=(d.isAdmin||d.isModerator)&&member.uid!==d.createdBy&&(!d.isModerator||!member.isModerator);
