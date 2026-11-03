@@ -413,6 +413,43 @@ async function loadAdminAccounts(){
         overlay.append(form);document.body.append(overlay);document.body.classList.add("confirm-open");input.focus();
       });
       actions.append(renameButton);
+      const bioButton=document.createElement("button");
+      bioButton.type="button";bioButton.className="action secondary";
+      bioButton.textContent="تعديل نبذة المستخدم";
+      bioButton.setAttribute("aria-label","تعديل نبذة المستخدم "+account.name);
+      bioButton.addEventListener("click",()=>{
+        const overlay=document.createElement("section");
+        overlay.className="mersaloConfirmOverlay";
+        overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");
+        overlay.setAttribute("aria-labelledby","editAccountBioTitle");
+        const form=document.createElement("div");form.className="mersaloConfirmCard";
+        const title=document.createElement("h2");title.id="editAccountBioTitle";title.tabIndex=-1;title.textContent="تعديل نبذة المستخدم";
+        const message=document.createElement("p");message.textContent="اكتب النبذة التي تريد إظهارها في ملف "+account.name+". يمكنك ترك الحقل فارغًا لمسح النبذة.";
+        const label=document.createElement("label");label.textContent="نبذة المستخدم";label.htmlFor="adminAccountBio";
+        const input=document.createElement("textarea");input.id="adminAccountBio";input.value=account.bio||"";input.maxLength=200;input.rows=5;
+        input.setAttribute("aria-label","نبذة المستخدم، 200 حرف كحد أقصى");
+        input.style.cssText="width:100%;padding:14px;border-radius:10px;font:inherit;margin:8px 0 14px;background:#fff;color:#111;min-height:130px";
+        const count=document.createElement("p");count.textContent=input.value.length+" من 200 حرف";input.addEventListener("input",()=>count.textContent=input.value.length+" من 200 حرف");
+        const saveButton=document.createElement("button");saveButton.type="button";saveButton.className="action";saveButton.textContent="حفظ النبذة";
+        const cancelButton=document.createElement("button");cancelButton.type="button";cancelButton.className="action secondary";cancelButton.textContent="إلغاء";
+        const closeBio=()=>{overlay.remove();document.body.classList.remove("confirm-open");bioButton.focus()};
+        cancelButton.addEventListener("click",closeBio);
+        saveButton.addEventListener("click",()=>{
+          const bio=input.value.trim();
+          if(bio===(account.bio||"")){message.textContent="لم يتم إجراء أي تغيير على النبذة.";input.focus();return}
+          closeBio();
+          showDeleteConfirmation("تأكيد تعديل النبذة","سيتم تحديث النبذة الظاهرة في حساب "+account.name+".","نعم، احفظ النبذة",async()=>{
+            saveButton.disabled=true;adminAccountsStatus.textContent="جارٍ تحديث نبذة المستخدم...";
+            try{
+              const result=await adminRequest("/api/admin/account-control","POST",{uid:account.uid,action:"update-bio",bio});
+              adminAccountsStatus.textContent=result.message;await loadAdminAccounts();
+            }catch(error){saveButton.disabled=false;throw error}
+          });
+        });
+        form.append(title,message,label,input,count,saveButton,cancelButton);
+        overlay.append(form);document.body.append(overlay);document.body.classList.add("confirm-open");title.focus();
+      });
+      actions.append(bioButton);
       adminAccounts.append(card);
       adminAccountCards.push({card,search:(account.name+" "+account.email+" "+account.uid).toLocaleLowerCase()});
     }
