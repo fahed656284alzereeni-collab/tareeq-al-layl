@@ -572,6 +572,13 @@ io.on("connection", socket => {
     }
   });
 
+async function assertGroupConversationAvailable(conversation){
+ if(conversation?.type!=="group")return;
+ const until=conversation.adminGroupSuspendedUntil?.toMillis?.()||0;
+ if(conversation.adminGroupSuspended===true)throw new Error("تم إيقاف هذه المجموعة من الإدارة.");
+ if(until>0&&until<=Date.now())await conversationsRef.doc(String(conversation.id||"")).set({adminGroupSuspendedUntil:admin.firestore.FieldValue.delete()},{merge:true});
+ else if(until>Date.now())throw new Error("هذه المجموعة معلّقة مؤقتًا حتى انتهاء مدة التعليق.");
+}
 async function assertAdminMessagingAllowed(uid){
   const snap=await admin.firestore().collection("users").doc(uid).get();
   if(snap.exists&&snap.data().messagingRestricted===true)throw new Error("تم تقييد إرسال الرسائل لهذا الحساب.");
@@ -754,7 +761,7 @@ async function assertAdminMessagingAllowed(uid){
       const allOtherUids = [...new Set(snap.docs.flatMap(item => (item.data().members || []).filter(uid => uid !== socket.data.uid)))];
       const profileSnapshots = allOtherUids.length ? await db.getAll(...allOtherUids.map(uid => usersRef.doc(uid))) : [];
       const profilesByUid = new Map(profileSnapshots.map(profile => [profile.id, profile.exists ? profile.data() : {}]));
-      const conversations = await Promise.all(snap.docs.filter(item => !hiddenIds.has(item.id)).map(async item => {
+      const conversations = await Promise.all(snap.docs.filter(item => !hiddenIds.has(item.id) && !(item.data().type==="group" && (item.data().adminGroupSuspended===true || (item.data().adminGroupSuspendedUntil?.toMillis?.()||0)>Date.now()))).map(async item => {
         const data = item.data();
         const members = data.members || [];
         const otherUid = members.find(uid => uid !== socket.data.uid);
@@ -798,6 +805,7 @@ async function assertAdminMessagingAllowed(uid){
       const ref = conversationsRef.doc(id);
       const conversation = await ref.get();
       if (!conversation.exists || !(conversation.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بفتح هذه المحادثة.");
+      await assertGroupConversationAvailable({...conversation.data(),id});
       const snap = await ref.collection("messages").orderBy("createdAt", "asc").limit(100).get();
       const visibleDocs = snap.docs.filter(d => !(d.data().hiddenFor || []).includes(socket.data.uid));
       const senderUids = [...new Set(visibleDocs.map(doc => doc.data().senderUid).filter(Boolean))];
@@ -1128,6 +1136,7 @@ async function assertAdminMessagingAllowed(uid){
       const ref = conversationsRef.doc(id);
       const conversation = await ref.get();
       if (!conversation.exists || !(conversation.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بإرسال رسالة هنا.");
+      await assertGroupConversationAvailable(conversation.data());
       const conversationData = conversation.data();
       const isGroup = conversationData.type === "group";
       if (!isGroup) {
@@ -1647,6 +1656,37 @@ app.get("/api/admin/audit-log",pushCors,async(req,res)=>{
   }catch(error){sendAdminError(res,error);}
 });
 
+app.get("/api/admin/groups",pushCors,async(req,res)=>{
+ try{
+  await requireMersaloAdmin(req);
+  const snap=await admin.firestore().collection("conversations").where("type","==","group").get();
+  const groups=snap.docs.map(doc=>{const v=doc.data();return{id:doc.id,name:String(v.groupName||"مجموعة"),suspended:v.adminGroupSuspended===true,suspendedUntil:v.adminGroupSuspendedUntil?.toMillis?.()||0};}).sort((a,b)=>a.name.localeCompare(b.name,"ar"));
+  res.json({success:true,groups});
+ }catch(error){sendAdminError(res,error);}
+});
+app.post("/api/admin/group-control",pushCors,express.json({limit:"32kb"}),async(req,res)=>{
+ try{
+  const actor=await requireMersaloAdmin(req),id=String(req.body?.conversationId||"").trim(),action=String(req.body?.action||"");
+  if(!id||!["suspend","restore","timed-suspend","delete"].includes(action))return res.status(400).json({success:false,message:"بيانات الإجراء غير صالحة."});
+  const db=admin.firestore(),ref=db.collection("conversations").doc(id),snap=await ref.get();
+  if(!snap.exists||snap.data().type!=="group")return res.status(404).json({success:false,message:"المجموعة غير موجودة."});
+  const members=Array.isArray(snap.data().members)?snap.data().members:[];
+  if(action==="delete"){
+   await deleteConversationMessages(ref);await ref.delete();
+   for(const uid of members){for(const client of connectedUsers.get(uid)||[])if(client.connected)client.emit("directConversationDeleted",{conversationId:id});}
+  }else if(action==="restore"){
+   await ref.set({adminGroupSuspended:false,adminGroupSuspendedUntil:admin.firestore.FieldValue.delete(),adminGroupStatusUpdatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+  }else if(action==="suspend"){
+   await ref.set({adminGroupSuspended:true,adminGroupSuspendedUntil:admin.firestore.FieldValue.delete(),adminGroupStatusUpdatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+  }else{
+   const hours=Number(req.body?.hours);
+   if(!Number.isInteger(hours)||hours<1||hours>8760)return res.status(400).json({success:false,message:"المدة يجب أن تكون من ساعة إلى 365 يومًا."});
+   await ref.set({adminGroupSuspended:false,adminGroupSuspendedUntil:admin.firestore.Timestamp.fromMillis(Date.now()+hours*3600000),adminGroupStatusUpdatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+  }
+  await db.collection("adminActions").add({type:"group-"+action,conversationId:id,groupName:String(snap.data().groupName||"مجموعة"),adminUid:actor.uid,hours:action==="timed-suspend"?Number(req.body.hours):null,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+  res.json({success:true,message:action==="delete"?"تم حذف المجموعة ورسائلها نهائيًا.":action==="restore"?"تمت إعادة تفعيل المجموعة.":action==="suspend"?"تم إيقاف المجموعة.":"تم تعليق المجموعة مؤقتًا."});
+ }catch(error){sendAdminError(res,error);}
+});
 app.get("/api/admin/accounts",pushCors,async(req,res)=>{
   try {
     await requireMersaloAdmin(req);
