@@ -6,6 +6,7 @@ const state={queue:[],busy:false,lastAction:"فتح الصفحة"};
 const clean=(v,n=700)=>String(v==null?"":v).replace(/Bearer\s+[^\s]+/gi,"Bearer [محجوب]").replace(/(token|password|authorization|secret|api[-_]?key)\s*[:=]\s*[^\s&,]+/gi,"$1=[محجوب]").slice(0,n);
 try{state.queue=JSON.parse(localStorage.getItem(KEY)||"[]");if(!Array.isArray(state.queue))state.queue=[]}catch(_){state.queue=[]}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(state.queue.slice(-MAX)))}catch(_){}}
+window.mersaloDiagnostic=function(type,message,details){record(type,message,details||{})};
 function authUser(){try{return window.firebase&&firebase.auth&&firebase.auth().currentUser}catch(_){return null}}
 function record(type,message,details){
  const item={type:clean(type,40),message:clean(message||"حدث خطأ غير معروف"),page:clean(location.pathname,180),action:state.lastAction,details:details||{},at:new Date().toISOString()};
