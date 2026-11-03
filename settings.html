@@ -78,11 +78,13 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <div id="adminStatus" class="requestStatus" role="status" aria-live="polite">جارٍ التحقق من صلاحيات المطوّر...</div>
 <div id="adminStats" aria-label="إحصائيات الموقع"></div>
 <h3>التحكم بالحسابات</h3>
+<label for="adminAccountSearch">البحث عن حساب بالاسم أو البريد أو المعرّف</label><input id="adminAccountSearch" type="search" placeholder="اكتب كلمة البحث" autocomplete="off" aria-label="البحث عن حساب بالاسم أو البريد أو المعرّف">
 <p class="muted">تظهر جميع الحسابات هنا مباشرة. بجانب كل حساب ستجد الإجراءات المتاحة له.</p>
 <div id="adminAccountsStatus" role="status" aria-live="polite"></div>
 <div id="adminAccounts" aria-live="polite"></div>
 <h3>بلاغات المستخدمين</h3>
 <div id="adminReports" aria-live="polite">جارٍ تحميل البلاغات...</div>
+<h3>سجل إجراءات الإدارة</h3><p class="muted">آخر الإجراءات التي نفذتها الإدارة، مع اسم الحساب والوقت.</p><div id="adminAuditStatus" role="status" aria-live="polite"></div><div id="adminAuditLog" aria-live="polite"></div>
 <button class="action secondary" type="button" id="refreshAdmin">تحديث لوحة الإدارة</button>
 </section>
 
@@ -215,6 +217,25 @@ function addAdminStat(label,value){
   const number=document.createElement("p");number.textContent=String(value);number.setAttribute("aria-label",label+": "+value);
   card.append(title,number);adminStats.append(card);
 }
+async function loadAdminAuditLog(){
+  const status=document.getElementById("adminAuditStatus"),list=document.getElementById("adminAuditLog");
+  status.textContent="جارٍ تحميل سجل الإجراءات...";list.replaceChildren();
+  try{
+    const data=await adminRequest("/api/admin/audit-log");
+    if(!data.actions.length){status.textContent="لا توجد إجراءات مسجلة حتى الآن.";return}
+    status.textContent="عدد الإجراءات المعروضة: "+data.actions.length;
+    for(const item of data.actions){
+      const card=document.createElement("article");card.className="requestCard";
+      const title=document.createElement("h3");title.textContent=item.label;
+      const target=document.createElement("p");target.textContent="الحساب المتأثر: "+(item.targetName||item.targetUid||"غير محدد");
+      const actor=document.createElement("p");actor.textContent="منفّذ الإجراء: "+(item.adminEmail||"المطوّر");
+      const details=document.createElement("p");details.textContent="التفاصيل: "+(item.reason||item.newName||"—");
+      const time=document.createElement("p");time.textContent="الوقت: "+(item.createdAt?new Date(item.createdAt).toLocaleString("ar-JO"):"غير متوفر");
+      card.append(title,target,actor,details,time);list.append(card);
+    }
+  }catch(error){status.textContent=error.message||"تعذر تحميل سجل الإجراءات."}
+}
+
 async function loadAdminDashboard(){
   adminStatus.textContent="جارٍ تحميل بيانات لوحة الإدارة...";
   adminStats.replaceChildren();
@@ -222,7 +243,8 @@ async function loadAdminDashboard(){
   const jobs=await Promise.allSettled([
     adminRequest("/api/admin/dashboard"),
     adminRequest("/api/admin/reports"),
-    loadAdminAccounts()
+    loadAdminAccounts(),
+    loadAdminAuditLog()
   ]);
   let failures=0;
   const dashboard=jobs[0],reports=jobs[1];
@@ -263,9 +285,12 @@ async function loadAdminDashboard(){
 
 const adminAccounts=document.getElementById("adminAccounts");
 const adminAccountsStatus=document.getElementById("adminAccountsStatus");
+const adminAccountSearch=document.getElementById("adminAccountSearch");
+let adminAccountCards=[];
+adminAccountSearch.addEventListener("input",()=>{const query=adminAccountSearch.value.trim().toLocaleLowerCase();let visible=0;for(const item of adminAccountCards){const match=!query||item.search.includes(query);item.card.hidden=!match;if(match)visible++;}adminAccountsStatus.textContent="الحسابات المطابقة: "+visible+" من "+adminAccountCards.length;});
 async function loadAdminAccounts(){
   adminAccountsStatus.textContent="جارٍ تحميل جميع الحسابات...";
-  adminAccounts.replaceChildren();
+  adminAccounts.replaceChildren();adminAccountCards=[];
   try{
     const data=await adminRequest("/api/admin/accounts");
     if(!data.accounts.length){adminAccountsStatus.textContent="لا توجد حسابات مسجلة.";return}
@@ -345,7 +370,9 @@ async function loadAdminAccounts(){
       });
       actions.append(renameButton);
       adminAccounts.append(card);
+      adminAccountCards.push({card,search:(account.name+" "+account.email+" "+account.uid).toLocaleLowerCase()});
     }
+    adminAccountSearch.dispatchEvent(new Event("input"));
   }catch(error){adminAccountsStatus.textContent=error.message||"تعذر تحميل الحسابات."}
 }
 
