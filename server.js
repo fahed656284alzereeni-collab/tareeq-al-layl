@@ -119,6 +119,13 @@ io.use(async (socket, next) => {
       profileCache.set(decoded.uid, { data: profileData, expiresAt: Date.now() + PROFILE_CACHE_TTL_MS });
       if (profileCache.size > 1000) profileCache.delete(profileCache.keys().next().value);
     }
+    if(profileData.suspendedUntil?.toMillis?.() && profileData.suspendedUntil.toMillis()<=Date.now()){
+      await admin.auth().updateUser(decoded.uid,{disabled:false});
+      await admin.firestore().collection("users").doc(decoded.uid).set({accountSuspended:false,accountStatus:"active",suspendedUntil:admin.firestore.FieldValue.delete(),accountStatusUpdatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+      profileData={...profileData,accountSuspended:false};
+      profileCache.delete(decoded.uid);
+    }
+    if(profileData.accountSuspended===true)return next(new Error("ACCOUNT_SUSPENDED"));
     const playerName = String(profileData.playerName || profileData.displayName || decoded.name || profileData.email || decoded.email || "مستخدم").trim().slice(0, 40);
     socket.data.uid = decoded.uid;
     socket.data.playerName = playerName;
@@ -519,6 +526,10 @@ io.on("connection", socket => {
     }
   });
 
+async function assertAdminMessagingAllowed(uid){
+  const snap=await admin.firestore().collection("users").doc(uid).get();
+  if(snap.exists&&snap.data().messagingRestricted===true)throw new Error("تم تقييد إرسال الرسائل لهذا الحساب.");
+}
   const blockedRef = (uid, otherUid) => usersRef.doc(uid).collection("blockedUsers").doc(otherUid);
 
   socket.on("getConversationDetails", async (data = {}, reply) => {
@@ -1016,6 +1027,7 @@ io.on("connection", socket => {
 
   socket.on("scheduleDirectMessage", async (data = {}, reply) => {
     try {
+      await assertAdminMessagingAllowed(socket.data.uid);
       const conversationId = String(data.conversationId || "");
       const text = String(data.text || "").trim();
       const sendAt = Number(data.sendAt);
@@ -1047,6 +1059,7 @@ io.on("connection", socket => {
 
   socket.on("sendDirectMessage", async (data = {}, reply) => {
     try {
+      await assertAdminMessagingAllowed(socket.data.uid);
       const id = String(data.conversationId || "");
       const attachment=data.attachment&&typeof data.attachment==="object"?data.attachment:null;
       const text = String(data.text || "").trim();
@@ -1533,7 +1546,12 @@ app.get("/api/admin/accounts",pushCors,async(req,res)=>{
       const v=doc.data();
       let authUser=null;
       try{authUser=await admin.auth().getUser(doc.id)}catch(_){}
-      return{uid:doc.id,name:String(v.playerName||v.displayName||"مستخدم"),email:String(v.email||authUser?.email||""),disabled:!!authUser?.disabled};
+      const [friends,conversations,warnings]=await Promise.all([
+        admin.firestore().collection("users").doc(doc.id).collection("friends").count().get().catch(()=>null),
+        admin.firestore().collection("conversations").where("members","array-contains",doc.id).count().get().catch(()=>null),
+        admin.firestore().collection("adminActions").where("targetUid","==",doc.id).where("type","==","warning").count().get().catch(()=>null)
+      ]);
+      return{uid:doc.id,name:String(v.playerName||v.displayName||"مستخدم"),email:String(v.email||authUser?.email||""),disabled:!!authUser?.disabled,restricted:v.messagingRestricted===true,bio:String(v.bio||"").slice(0,200),createdAt:authUser?.metadata?.creationTime?Date.parse(authUser.metadata.creationTime):0,lastSeenAt:v.lastSeenAt?.toMillis?.()||0,friendCount:friends?.data().count||0,conversationCount:conversations?.data().count||0,warningCount:warnings?.data().count||0};
     }));
     res.json({success:true,accounts});
   } catch(error) { sendAdminError(res,error); }
@@ -1590,6 +1608,42 @@ app.post("/api/admin/account-name",pushCors,express.json({limit:"32kb"}),async(r
       name,
       authProfileUpdated
     });
+  }catch(error){sendAdminError(res,error);}
+});
+app.post("/api/admin/account-control",pushCors,express.json({limit:"32kb"}),async(req,res)=>{
+  try{
+    const actor=await requireMersaloAdmin(req),uid=String(req.body?.uid||"").trim(),action=String(req.body?.action||""),reason=String(req.body?.reason||"").trim().slice(0,500);
+    if(!uid||uid===actor.uid)return res.status(400).json({success:false,message:"لا يمكن تنفيذ الإجراء على حسابك."});
+    const db=admin.firestore(),ref=db.collection("users").doc(uid),snap=await ref.get();
+    if(!snap.exists)return res.status(404).json({success:false,message:"الحساب غير موجود."});
+    if(action==="restrict-messaging"||action==="unrestrict-messaging"){
+      const restricted=action==="restrict-messaging";
+      await ref.set({messagingRestricted:restricted,messagingRestrictionReason:restricted?reason:"",messagingRestrictedAt:restricted?admin.firestore.FieldValue.serverTimestamp():null},{merge:true});
+      if(restricted)for(const client of connectedUsers.get(uid)||[])client.emit("accountMessagingRestricted",{message:"تم تقييد إرسال الرسائل لهذا الحساب."});
+      await db.collection("adminActions").add({type:action,targetUid:uid,adminUid:actor.uid,reason,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+      return res.json({success:true,message:restricted?"تم تقييد المراسلة.":"تم إلغاء تقييد المراسلة."});
+    }
+    if(action==="warning"){
+      if(!reason)return res.status(400).json({success:false,message:"سبب الإنذار مطلوب."});
+      await db.collection("adminActions").add({type:"warning",targetUid:uid,adminUid:actor.uid,reason,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+      return res.json({success:true,message:"تم تسجيل الإنذار على الحساب."});
+    }
+    if(action==="clear-bio"){
+      await ref.set({bio:""},{merge:true});
+      return res.json({success:true,message:"تم مسح النبذة الشخصية."});
+    }
+    if(action==="timed-suspend"){
+      const hours=Number(req.body?.hours);
+      if(![1,24,168,720].includes(hours)||!reason)return res.status(400).json({success:false,message:"مدة الإيقاف أو السبب غير صالح."});
+      const until=Date.now()+hours*3600000;
+      await admin.auth().updateUser(uid,{disabled:true});
+      await admin.auth().revokeRefreshTokens(uid);
+      await ref.set({accountSuspended:true,accountStatus:"suspended",suspendedUntil:admin.firestore.Timestamp.fromMillis(until),accountSuspensionReason:reason,accountStatusUpdatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+      for(const client of connectedUsers.get(uid)||[])client.disconnect(true);
+      await db.collection("adminActions").add({type:"timed-suspend",targetUid:uid,adminUid:actor.uid,reason,hours,suspendedUntil:admin.firestore.Timestamp.fromMillis(until),createdAt:admin.firestore.FieldValue.serverTimestamp()});
+      return res.json({success:true,message:"تم إيقاف الحساب مؤقتًا. ستتم إعادة تفعيله عند انتهاء المدة."});
+    }
+    return res.status(400).json({success:false,message:"الإجراء غير معروف."});
   }catch(error){sendAdminError(res,error);}
 });
 app.post("/api/admin/account-action",pushCors,express.json({limit:"32kb"}),async(req,res)=>{
