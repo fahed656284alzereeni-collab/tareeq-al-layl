@@ -15,7 +15,7 @@
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,doc,getDoc,setDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
-const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
+const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"mersalo-auth-staging.onrender.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app),provider=new GoogleAuthProvider();
 // Wake the free Render instance while Firebase restores the saved login session.
 // This runs in parallel and never blocks sign-in or account loading.
