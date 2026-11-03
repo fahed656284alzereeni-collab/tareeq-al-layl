@@ -1672,7 +1672,20 @@ app.post("/api/admin/group-control",pushCors,express.json({limit:"32kb"}),async(
   if(!snap.exists||snap.data().type!=="group")return res.status(404).json({success:false,message:"المجموعة غير موجودة."});
   const members=Array.isArray(snap.data().members)?snap.data().members:[];
   if(action==="delete"){
-   await deleteConversationMessages(ref);await ref.delete();
+   // Delete messages in bounded batches from this HTTP admin route.
+   // The socket-scoped deleteConversationMessages helper is not accessible here.
+   const messagesRef=ref.collection("messages");
+   let deletedMessages=0;
+   while(true){
+    const messageBatch=await messagesRef.limit(450).get();
+    if(messageBatch.empty)break;
+    const batch=db.batch();
+    for(const message of messageBatch.docs)batch.delete(message.ref);
+    await batch.commit();
+    deletedMessages+=messageBatch.size;
+    if(messageBatch.size<450)break;
+   }
+   await ref.delete();
    for(const uid of members){for(const client of connectedUsers.get(uid)||[])if(client.connected)client.emit("directConversationDeleted",{conversationId:id});}
   }else if(action==="restore"){
    await ref.set({adminGroupSuspended:false,adminGroupSuspendedUntil:admin.firestore.FieldValue.delete(),adminGroupStatusUpdatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
