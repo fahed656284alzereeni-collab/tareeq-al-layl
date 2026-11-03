@@ -200,10 +200,18 @@ const openAdmin=document.getElementById("openAdmin");
 async function adminRequest(path,method="GET",body){
   if(!auth.currentUser)throw new Error("سجّل الدخول أولًا.");
   const token=await auth.currentUser.getIdToken();
-  const response=await fetch(apiBase+path,{method,headers:{Authorization:"Bearer "+token,...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
-  const result=await response.json().catch(()=>({}));
-  if(!response.ok||!result.success)throw new Error(result.message||"تعذر تنفيذ طلب الإدارة.");
-  return result;
+  const controller=new AbortController();
+  const timeout=setTimeout(()=>controller.abort(),25000);
+  try{
+    const response=await fetch(apiBase+path,{method,signal:controller.signal,headers:{Authorization:"Bearer "+token,...(body?{"Content-Type":"application/json"}:{})},...(body?{body:JSON.stringify(body)}:{})});
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok||!result.success)throw new Error(result.message||"تعذر تنفيذ طلب الإدارة. رمز الاستجابة: "+response.status);
+    return result;
+  }catch(error){
+    if(error.name==="AbortError")throw new Error("انتهت مهلة الاتصال بالخادم. اضغط تحديث وحاول مرة أخرى.");
+    if(error instanceof TypeError)throw new Error("تعذر الاتصال بالخادم. تحقق من الاتصال بالإنترنت ثم حاول مجددًا.");
+    throw error;
+  }finally{clearTimeout(timeout);}
 }
 function addAdminStat(label,value){
   const card=document.createElement("article");card.className="requestCard";
@@ -275,41 +283,51 @@ async function loadAdminPublicPosts(){
  }
 async function loadAdminDashboard(){
   adminStatus.textContent="جارٍ تحميل بيانات لوحة الإدارة...";
-  loadAdminPublicPosts();
-  loadPublishedAdminPosts();
-  adminStats.replaceChildren();adminReports.textContent="جارٍ تحميل البلاغات...";
-  try{
-    const [dashboard,reportData]=await Promise.all([adminRequest("/api/admin/dashboard"),adminRequest("/api/admin/reports")]);
-    await loadAdminAccounts();
-    addAdminStat("إجمالي الحسابات",dashboard.stats.users);
-    addAdminStat("إجمالي المحادثات",dashboard.stats.conversations);
-    addAdminStat("المستخدمون المتصلون",dashboard.stats.online);
-    addAdminStat("البلاغات الجديدة",dashboard.stats.pendingReports);
+  adminStats.replaceChildren();
+  adminReports.textContent="جارٍ تحميل البلاغات...";
+  const jobs=await Promise.allSettled([
+    adminRequest("/api/admin/dashboard"),
+    adminRequest("/api/admin/reports"),
+    loadAdminAccounts(),
+    loadAdminPublicPosts(),
+    loadPublishedAdminPosts()
+  ]);
+  let failures=0;
+  const dashboard=jobs[0],reports=jobs[1];
+  if(dashboard.status==="fulfilled"){
+    const stats=dashboard.value.stats||{};
+    addAdminStat("إجمالي الحسابات",stats.users??0);
+    addAdminStat("إجمالي المحادثات",stats.conversations??0);
+    addAdminStat("المستخدمون المتصلون",stats.online??0);
+    addAdminStat("البلاغات الجديدة",stats.pendingReports??0);
+  }else{failures++;adminStats.textContent=dashboard.reason?.message||"تعذر تحميل الإحصائيات.";}
+  if(reports.status==="fulfilled"){
     adminReports.replaceChildren();
-    if(!reportData.reports.length)adminReports.textContent="لا توجد بلاغات حتى الآن.";
-    for(const report of reportData.reports){
+    const items=Array.isArray(reports.value.reports)?reports.value.reports:[];
+    if(!items.length)adminReports.textContent="لا توجد بلاغات حتى الآن.";
+    for(const report of items){
       const card=document.createElement("article");card.className="requestCard";
-      const title=document.createElement("h3");title.textContent="بلاغ ضد: "+report.reportedName;
-      const reporter=document.createElement("p");reporter.textContent="مقدّم البلاغ: "+report.reporterName;
-      const reason=document.createElement("p");reason.textContent="السبب: "+report.reason;
+      const title=document.createElement("h3");title.textContent="بلاغ ضد: "+(report.reportedName||"مستخدم");
+      const reporter=document.createElement("p");reporter.textContent="مقدّم البلاغ: "+(report.reporterName||"مستخدم");
+      const reason=document.createElement("p");reason.textContent="السبب: "+(report.reason||"غير محدد");
       const details=document.createElement("p");details.textContent="التفاصيل: "+(report.details||"لا توجد تفاصيل إضافية.");
-      const status=document.createElement("p");status.textContent="الحالة: "+(report.status==="new"?"جديد": "تمت المراجعة");
-      card.append(title,reporter,reason,details,status);
+      const state=document.createElement("p");state.textContent="الحالة: "+(report.status==="new"?"جديد":"تمت المراجعة");
+      card.append(title,reporter,reason,details,state);
       if(report.status==="new"){
         const warn=document.createElement("button");warn.type="button";warn.className="action danger";warn.textContent="إرسال تحذير لهذا الحساب";
-        warn.addEventListener("click",()=>{
-          const reasonText=report.reason+(report.details?" - "+report.details:"");
+        warn.addEventListener("click",async()=>{
+          const reasonText=(report.reason||"")+((report.details)?" - "+report.details:"");
           warn.disabled=true;adminStatus.textContent="جارٍ إرسال التحذير...";
-          adminRequest("/api/admin/warn","POST",{uid:report.reportedUid,reason:reasonText,reportId:report.id}).then(result=>{
-            adminStatus.textContent=result.message;loadAdminDashboard();
-          }).catch(error=>{adminStatus.textContent=error.message;warn.disabled=false});
+          try{const result=await adminRequest("/api/admin/warn","POST",{uid:report.reportedUid,reason:reasonText,reportId:report.id});adminStatus.textContent=result.message;await loadAdminDashboard();}
+          catch(error){adminStatus.textContent=error.message||"تعذر إرسال التحذير.";warn.disabled=false;}
         });
         card.append(warn);
       }
       adminReports.append(card);
     }
-    adminStatus.textContent="تم تحميل لوحة الإدارة بنجاح.";
-  }catch(error){adminStatus.textContent=error.message;adminReports.textContent="تعذر تحميل بيانات الإدارة."}
+  }else{failures++;adminReports.textContent=reports.reason?.message||"تعذر تحميل البلاغات.";}
+  for(const job of jobs.slice(2))if(job.status==="rejected")failures++;
+  adminStatus.textContent=failures?"اكتمل تحميل لوحة الإدارة مع وجود أقسام تعذر تحميلها. استخدم زر تحديث لوحة الإدارة لإعادة المحاولة.":"تم تحميل لوحة الإدارة بنجاح.";
 }
 
 const adminAccounts=document.getElementById("adminAccounts");
