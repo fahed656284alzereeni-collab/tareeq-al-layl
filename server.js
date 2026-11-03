@@ -1618,61 +1618,6 @@ app.get("/api/public-ads",pushCors,async(req,res)=>{
     res.json({success:true,enabled:valid,clientId:valid?String(v.clientId):"",slotId:valid?String(v.slotId):""});
   }catch(error){res.json({success:true,enabled:false,clientId:"",slotId:""});}
 });
-app.get("/api/admin/public-posts",pushCors,async(req,res)=>{
-  try{
-    await requireMersaloAdmin(req);
-    const status=String(req.query.status||"pending");
-    if(!["pending","approved"].includes(status))return res.status(400).json({success:false,message:"حالة المنشورات المطلوبة غير صالحة."});
-    const snap=await admin.firestore().collection("publicPosts").where("status","==",status).get();
-    const posts=snap.docs.map(d=>({id:d.id,...d.data(),createdAt:d.data().createdAt?.toDate?.().toISOString?.()||null,sortAt:d.data().createdAt?.toMillis?.()||0})).sort((a,b)=>b.sortAt-a.sortAt).slice(0,100).map(({sortAt,...post})=>post);
-    res.json({success:true,posts});
-  }catch(error){sendAdminError(res,error);}
-});
-app.patch("/api/admin/public-posts/:id",pushCors,async(req,res)=>{
-  try{
-    const actor=await requireMersaloAdmin(req),id=String(req.params.id||"").trim(),action=String(req.body?.action||"");
-    if(!id||!["approve","reject","hide","edit","delete"].includes(action))return res.status(400).json({success:false,message:"طلب غير صالح."});
-    const ref=admin.firestore().collection("publicPosts").doc(id),snap=await ref.get();
-    if(!snap.exists)return res.status(404).json({success:false,message:"المنشور غير موجود."});
-    if(action==="delete"){
-      await ref.delete();
-      await admin.firestore().collection("adminActions").add({type:"delete-public-post",postId:id,adminUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp()});
-      return res.json({success:true,message:"تم حذف المنشور نهائيًا."});
-    }
-    if(action==="edit"){
-      const title=String(req.body?.title||"").trim().slice(0,100),body=String(req.body?.body||"").trim().slice(0,2500);
-      if(title.length<3||body.length<20)return res.status(400).json({success:false,message:"العنوان يجب ألا يقل عن 3 أحرف، ونص المنشور عن 20 حرفًا."});
-      await ref.update({title,body,editedBy:actor.uid,editedAt:admin.firestore.FieldValue.serverTimestamp()});
-      await admin.firestore().collection("adminActions").add({type:"edit-public-post",postId:id,adminUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp()});
-      return res.json({success:true,message:"تم حفظ تعديلات المنشور."});
-    }
-    const nextStatus=action==="approve"?"approved":action==="hide"?"hidden":"rejected";
-    await ref.set({status:nextStatus,reviewedBy:actor.uid,reviewedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
-    res.json({success:true,message:action==="approve"?"تم نشر المنشور للعامة.":action==="hide"?"تم إخفاء المنشور من المجتمع.":"تم رفض المنشور."});
-  }catch(error){sendAdminError(res,error);}
-});
-app.get("/api/admin/monetization",pushCors,async(req,res)=>{
-  try{
-    await requireMersaloAdmin(req);
-    const snap=await admin.firestore().collection("siteSettings").doc("monetization").get();
-    const v=snap.exists?snap.data():{};
-    res.json({success:true,settings:{adsEnabled:!!v.adsEnabled,clientId:String(v.clientId||""),slotId:String(v.slotId||""),analyticsId:String(v.analyticsId||""),searchVerification:String(v.searchVerification||"")}});
-  }catch(error){sendAdminError(res,error);}
-});
-app.put("/api/admin/monetization",pushCors,async(req,res)=>{
-  try{
-    const actor=await requireMersaloAdmin(req);
-    const clientId=String(req.body?.clientId||"").trim(),slotId=String(req.body?.slotId||"").trim(),adsEnabled=!!req.body?.adsEnabled,analyticsId=String(req.body?.analyticsId||"").trim(),searchVerification=String(req.body?.searchVerification||"").trim();
-    if(clientId&&!/^ca-pub-[0-9]{10,25}$/.test(clientId))return res.status(400).json({success:false,message:"معرّف الناشر غير صحيح. يجب أن يبدأ بـ ca-pub-."});
-    if(slotId&&!/^[0-9]{5,25}$/.test(slotId))return res.status(400).json({success:false,message:"رقم مساحة الإعلان غير صحيح."});
-    if(adsEnabled&&(!clientId||!slotId))return res.status(400).json({success:false,message:"أدخل معرّف الناشر ورقم مساحة الإعلان قبل التفعيل."});
-    if(analyticsId&&!/^G-[A-Z0-9]{4,20}$/.test(analyticsId))return res.status(400).json({success:false,message:"معرّف Google Analytics غير صحيح. يجب أن يبدأ بـ G-."});
-    if(searchVerification&&!/^[a-zA-Z0-9_-]{1,200}$/.test(searchVerification))return res.status(400).json({success:false,message:"رمز إثبات Search Console غير صحيح."});
-    await admin.firestore().collection("siteSettings").doc("monetization").set({adsEnabled,clientId,slotId,analyticsId,searchVerification,updatedBy:actor.uid,updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
-    res.json({success:true,message:adsEnabled?"تم حفظ إعدادات الإعلانات وتفعيلها في صفحة المجتمع فقط.":"تم حفظ الإعدادات وإيقاف الإعلانات."});
-  }catch(error){sendAdminError(res,error);}
-});
-
 app.options("/api/public-posts",pushCors);
 app.options("/api/public-ads",pushCors);
 app.options("/api/admin/*",pushCors);
