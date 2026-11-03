@@ -1199,6 +1199,10 @@ async function refreshConversationInfo(){
     ["بداية المحادثة",formatInfoDate(d.createdAt)]
   ];
   rows.forEach(([label,value])=>{const row=document.createElement("p");row.className="infoMeta";row.textContent=label+": "+value;content.append(row)});
+  const bioSection=document.createElement("section");bioSection.className="groupInfoSection";
+  const bioHeading=document.createElement("h4");bioHeading.textContent="النبذة الشخصية";
+  const bioText=document.createElement("p");bioText.className="infoMeta";bioText.textContent=d.bio||"لم يضف هذا المستخدم نبذة شخصية بعد.";
+  bioSection.append(bioHeading,bioText);content.append(bioSection);
   const blockNote=document.createElement("p");
   blockNote.className="infoMeta";
   blockNote.textContent=d.blockedByMe?"حالة الحظر: قمت بحظر هذا المستخدم.":d.blockedMe?"حالة الحظر: هذا المستخدم قام بحظرك.":"حالة الحظر: لا يوجد حظر بينكما.";
