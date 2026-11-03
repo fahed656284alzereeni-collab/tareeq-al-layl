@@ -83,7 +83,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <div class="setting"><label for="adsEnabled">تفعيل الإعلانات</label><input id="adsEnabled" type="checkbox" aria-label="تفعيل إعلانات الموقع"></div>
 <label for="adsClientId">معرّف ناشر Google AdSense</label><input id="adsClientId" type="text" placeholder="ca-pub-0000000000000000" autocomplete="off">
 <label for="adsSlotId">رقم مساحة الإعلان</label><input id="adsSlotId" type="text" placeholder="1234567890" inputmode="numeric" autocomplete="off">
-<button class="action" type="button" id="saveAdsSettings">حفظ إعدادات الإعلانات</button>
+<label for="analyticsId">معرّف Google Analytics</label><input id="analyticsId" type="text" placeholder="G-XXXXXXXXXX" autocomplete="off">\n<label for="searchVerification">رمز إثبات Google Search Console</label><input id="searchVerification" type="text" placeholder="رمز التحقق من وسم HTML" autocomplete="off">\n<button class="action" type="button" id="saveAdsSettings">حفظ إعدادات الربح والربط</button>
 <p id="adsSettingsStatus" role="status" aria-live="polite">جارٍ تحميل إعدادات الإعلانات...</p>
 </div>
 <h3>إدارة المنشورات المنشورة</h3><p class="muted">من هنا تستطيع تعديل المنشورات التي وافقت عليها سابقًا أو إخفاءها أو حذفها نهائيًا.</p><p id="publishedPostsStatus" role="status" aria-live="polite">جارٍ تحميل المنشورات المنشورة...</p><div id="publishedPostsManagement" aria-live="polite"></div>
@@ -262,10 +262,10 @@ async function loadPublishedAdminPosts(){
  }catch(error){status.textContent=error.message||"تعذر تحميل المنشورات المنشورة.";}
 }
 async function loadAdminMonetization(){
-  const status=document.getElementById("adsSettingsStatus"),enabled=document.getElementById("adsEnabled"),client=document.getElementById("adsClientId"),slot=document.getElementById("adsSlotId"),moderation=document.getElementById("publicPostsModeration");
+  const status=document.getElementById("adsSettingsStatus"),enabled=document.getElementById("adsEnabled"),client=document.getElementById("adsClientId"),slot=document.getElementById("adsSlotId"),analytics=document.getElementById("analyticsId"),verification=document.getElementById("searchVerification"),moderation=document.getElementById("publicPostsModeration");
   try{
     const [config,posts]=await Promise.all([adminRequest("/api/admin/monetization"),adminRequest("/api/admin/public-posts")]);
-    enabled.checked=config.settings.adsEnabled;client.value=config.settings.clientId;slot.value=config.settings.slotId;
+    enabled.checked=config.settings.adsEnabled;client.value=config.settings.clientId;slot.value=config.settings.slotId;analytics.value=config.settings.analyticsId||"";verification.value=config.settings.searchVerification||"";
     status.textContent=config.settings.adsEnabled?"الإعلانات مفعّلة حاليًا.":"الإعلانات متوقفة حاليًا.";
     moderation.replaceChildren();
     if(!posts.posts.length)moderation.textContent="لا توجد منشورات بانتظار المراجعة.";
@@ -288,7 +288,7 @@ async function loadAdminMonetization(){
 document.getElementById("saveAdsSettings").addEventListener("click",async()=>{
   const button=document.getElementById("saveAdsSettings"),status=document.getElementById("adsSettingsStatus");
   button.disabled=true;status.textContent="جارٍ حفظ إعدادات الإعلانات...";
-  try{const result=await adminRequest("/api/admin/monetization","PUT",{adsEnabled:document.getElementById("adsEnabled").checked,clientId:document.getElementById("adsClientId").value,slotId:document.getElementById("adsSlotId").value});status.textContent=result.message;}
+  try{const result=await adminRequest("/api/admin/monetization","PUT",{adsEnabled:document.getElementById("adsEnabled").checked,clientId:document.getElementById("adsClientId").value,slotId:document.getElementById("adsSlotId").value,analyticsId:document.getElementById("analyticsId").value,searchVerification:document.getElementById("searchVerification").value});status.textContent=result.message;}
   catch(error){status.textContent=error.message||"تعذر حفظ الإعدادات.";}
   finally{button.disabled=false;}
 });
