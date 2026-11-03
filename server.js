@@ -1660,7 +1660,7 @@ app.get("/api/admin/groups",pushCors,async(req,res)=>{
  try{
   await requireMersaloAdmin(req);
   const snap=await admin.firestore().collection("conversations").where("type","==","group").get();
-  const groups=snap.docs.map(doc=>{const v=doc.data();return{id:doc.id,name:String(v.groupName||"مجموعة"),suspended:v.adminGroupSuspended===true,suspendedUntil:v.adminGroupSuspendedUntil?.toMillis?.()||0};}).sort((a,b)=>a.name.localeCompare(b.name,"ar"));
+  const groups=snap.docs.map(doc=>{const v=doc.data(),until=v.adminGroupSuspendedUntil?.toMillis?.()||0;return{id:doc.id,name:String(v.groupName||"مجموعة"),suspended:v.adminGroupSuspended===true,suspendedUntil:until>Date.now()?until:0};}).sort((a,b)=>a.name.localeCompare(b.name,"ar"));
   res.json({success:true,groups});
  }catch(error){sendAdminError(res,error);}
 });
