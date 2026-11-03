@@ -137,6 +137,52 @@ io.use(async (socket, next) => {
   }
 });
 
+// Automatically restore timed suspensions even if the user does not attempt to sign in.
+let expiredSuspensionsWorkerRunning = false;
+async function processExpiredAccountSuspensions() {
+  if (expiredSuspensionsWorkerRunning) return;
+  expiredSuspensionsWorkerRunning = true;
+  try {
+    const db = admin.firestore();
+    const now = Date.now();
+    const snap = await db.collection("users").where("accountSuspended", "==", true).limit(200).get();
+    for (const userDoc of snap.docs) {
+      const data = userDoc.data();
+      const until = data.suspendedUntil && typeof data.suspendedUntil.toMillis === "function"
+        ? data.suspendedUntil.toMillis() : 0;
+      if (!until || until > now) continue;
+      try {
+        await admin.auth().updateUser(userDoc.id, { disabled: false });
+        await db.runTransaction(async transaction => {
+          const fresh = await transaction.get(userDoc.ref);
+          if (!fresh.exists) return;
+          const latest = fresh.data();
+          const latestUntil = latest.suspendedUntil && typeof latest.suspendedUntil.toMillis === "function"
+            ? latest.suspendedUntil.toMillis() : 0;
+          if (latest.accountSuspended === true && latestUntil > 0 && latestUntil <= Date.now()) {
+            transaction.set(userDoc.ref, {
+              accountSuspended: false,
+              accountStatus: "active",
+              suspendedUntil: admin.firestore.FieldValue.delete(),
+              accountSuspensionReason: admin.firestore.FieldValue.delete(),
+              accountStatusUpdatedAt: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+          }
+        });
+        profileCache.delete(userDoc.id);
+      } catch (error) {
+        console.error("Timed account reactivation failed:", { uid: userDoc.id, message: error.message });
+      }
+    }
+  } catch (error) {
+    console.error("Expired account suspension scan failed:", error.message);
+  } finally {
+    expiredSuspensionsWorkerRunning = false;
+  }
+}
+setInterval(processExpiredAccountSuspensions, 60000);
+processExpiredAccountSuspensions();
+
 // Deliver scheduled text messages from Firestore, even when the sender closes the app.
 const scheduledMessagesRef = admin.firestore().collection("scheduledMessages");
 let scheduledWorkerRunning = false;
