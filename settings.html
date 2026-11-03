@@ -105,6 +105,10 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p id="pushStatus" role="status" aria-live="polite">جارٍ التحقق من حالة الإشعارات...</p>
 <button id="enablePush" class="action" type="button">تفعيل الإشعارات على هذا الجهاز</button>
 <button id="disablePush" class="action secondary" type="button">إيقاف الإشعارات على هذا الجهاز</button>
+<h3>نغمة إشعارات مِرسالو</h3><p class="muted">اختر نغمة يسمعها الجهاز عند وصول رسالة جديدة أثناء فتح مِرسالو، ثم جرّبها.</p>
+<label for="notificationTone">اختيار النغمة</label><select id="notificationTone" class="action" style="background:#fff;color:#111"><option value="classic">كلاسيكية</option><option value="soft">هادئة</option><option value="digital">رقمية</option><option value="bells">أجراس</option><option value="off">بدون صوت</option></select>
+<button id="previewNotificationTone" class="action secondary" type="button">تجربة النغمة المختارة</button><p id="toneStatus" role="status" aria-live="polite">يتم حفظ اختيار النغمة على هذا الجهاز تلقائيًا.</p>
+<p class="muted">صوت الموقع يعمل عند استقبال الرسائل ومِرسالو مفتوح. عند إغلاق الموقع، يتحكم المتصفح ونظام الجهاز بصوت إشعارات النظام.</p>
 <p class="muted">على iPhone: أضف مِرسالو إلى الشاشة الرئيسية وافتحه من الأيقونة أولًا، ثم فعّل الإشعارات. يتطلب ذلك iOS 16.4 أو أحدث.</p>
 <h3 tabindex="-1">آخر الإشعارات</h3>
 <button id="deleteAllNotifications" class="action groupDanger" type="button">حذف جميع الإشعارات</button>
@@ -445,6 +449,18 @@ document.getElementById("deleteAllNotifications").addEventListener("click",()=>{
     catch(error){button.disabled=false;throw error}
   });
 });
+const notificationTone=document.getElementById("notificationTone"),toneStatus=document.getElementById("toneStatus");
+function playMersaloTone(tone){
+ if(tone==="off")return Promise.resolve(false);
+ const AC=window.AudioContext||window.webkitAudioContext;if(!AC){toneStatus.textContent="الصوت غير مدعوم في هذا المتصفح.";return Promise.resolve(false)}
+ try{const ctx=new AC(),now=ctx.currentTime,patterns={classic:[[880,0],[660,.14]],soft:[[523.25,0],[659.25,.18]],digital:[[1046.5,0],[1318.5,.1],[1046.5,.2]],bells:[[784,0],[988,.2],[1174.7,.4]]},pattern=patterns[tone]||patterns.classic;
+ pattern.forEach(([freq,offset])=>{const o=ctx.createOscillator(),g=ctx.createGain();o.type=tone==="digital"?"square":"sine";o.frequency.value=freq;g.gain.setValueAtTime(.0001,now+offset);g.gain.exponentialRampToValueAtTime(.16,now+offset+.015);g.gain.exponentialRampToValueAtTime(.0001,now+offset+.14);o.connect(g);g.connect(ctx.destination);o.start(now+offset);o.stop(now+offset+.16)});
+ return new Promise(resolve=>setTimeout(()=>ctx.close().catch(()=>{}).finally(()=>resolve(true)),Math.max(...pattern.map(p=>p[1]))*1000+250));
+ }catch(_){return Promise.resolve(false)}
+}
+notificationTone.value=localStorage.getItem("mersalo-notification-tone")||"classic";
+notificationTone.addEventListener("change",()=>{localStorage.setItem("mersalo-notification-tone",notificationTone.value);toneStatus.textContent=notificationTone.value==="off"?"تم إيقاف صوت الرسائل على هذا الجهاز.":"تم حفظ النغمة المختارة على هذا الجهاز."});
+document.getElementById("previewNotificationTone").addEventListener("click",async()=>{toneStatus.textContent="جارٍ تشغيل النغمة...";const ok=await playMersaloTone(notificationTone.value);toneStatus.textContent=ok?"تم تشغيل النغمة المختارة.":"تعذر تشغيل النغمة المختارة."});
 async function refreshPushStatus(){
   if(!("serviceWorker" in navigator)||!("PushManager" in window)){pushStatus.textContent="هذا المتصفح لا يدعم إشعارات الويب.";return}
   try{
