@@ -1527,6 +1527,37 @@ function sendAdminError(res,error) {
   const status=error.status||500;
   res.status(status).json({success:false,message:status===500?"تعذر تنفيذ طلب الإدارة. حاول مرة أخرى.":error.message});
 }
+function sanitizeDiagnosticValue(value,max=700){
+  return String(value??"").replace(/Bearer\\s+[^\\s]+/gi,"Bearer [محجوب]").replace(/(token|password|authorization|secret|api[-_]?key)\\s*[:=]\\s*[^\\s&,]+/gi,"$1=[محجوب]").slice(0,max);
+}
+app.post("/api/admin/diagnostics",pushCors,async(req,res)=>{
+  try{
+    const actor=await requireMersaloAdmin(req);
+    const events=Array.isArray(req.body?.events)?req.body.events.slice(0,10):[];
+    if(!events.length)return res.json({success:true,stored:0});
+    const collection=admin.firestore().collection("developerDiagnostics");
+    const batch=admin.firestore().batch();
+    for(const item of events){
+      const details=item?.details&&typeof item.details==="object"?item.details:{};
+      const safeDetails={};
+      for(const key of ["file","line","column","stack","endpoint","status","durationMs"]){
+        if(details[key]!==undefined)safeDetails[key]=key==="line"||key==="column"||key==="status"||key==="durationMs"?Number(details[key])||0:sanitizeDiagnosticValue(details[key],key==="stack"?1200:180);
+      }
+      const ref=collection.doc();
+      batch.set(ref,{type:sanitizeDiagnosticValue(item?.type,40),message:sanitizeDiagnosticValue(item?.message,700),page:sanitizeDiagnosticValue(item?.page,180),action:sanitizeDiagnosticValue(item?.action,120),details:safeDetails,reporterUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+    }
+    await batch.commit();
+    res.json({success:true,stored:events.length});
+  }catch(error){sendAdminError(res,error);}
+});
+app.get("/api/admin/diagnostics",pushCors,async(req,res)=>{
+  try{
+    await requireMersaloAdmin(req);
+    const snap=await admin.firestore().collection("developerDiagnostics").orderBy("createdAt","desc").limit(100).get();
+    res.json({success:true,events:snap.docs.map(doc=>{const v=doc.data();return{id:doc.id,type:v.type||"error",message:v.message||"",page:v.page||"",action:v.action||"",details:v.details||{},createdAt:v.createdAt?.toDate?.().toISOString?.()||null};})});
+  }catch(error){sendAdminError(res,error);}
+});
+
 app.options("/api/admin/:action",pushCors);
 app.get("/api/admin/dashboard",pushCors,async(req,res)=>{
   try {
