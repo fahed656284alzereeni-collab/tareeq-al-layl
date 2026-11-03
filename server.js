@@ -1530,6 +1530,42 @@ function sendAdminError(res,error) {
 function sanitizeDiagnosticValue(value,max=700){
   return String(value??"").replace(/Bearer\\s+[^\\s]+/gi,"Bearer [محجوب]").replace(/(token|password|authorization|secret|api[-_]?key)\\s*[:=]\\s*[^\\s&,]+/gi,"$1=[محجوب]").slice(0,max);
 }
+const diagnosticRateLimits = new Map();
+app.post("/api/diagnostics/collect",pushCors,async(req,res)=>{
+  try{
+    const uid=await authenticatedUid(req);
+    const now=Date.now(),windowMs=60000,maxPerMinute=30;
+    const recent=(diagnosticRateLimits.get(uid)||[]).filter(time=>now-time<windowMs);
+    if(recent.length>=maxPerMinute)return res.status(429).json({success:false,message:"Diagnostic rate limit reached."});
+    const events=Array.isArray(req.body?.events)?req.body.events.slice(0,8):[];
+    if(!events.length)return res.json({success:true,stored:0});
+    const collection=admin.firestore().collection("developerDiagnostics");
+    const batch=admin.firestore().batch();
+    for(const item of events){
+      const details=item?.details&&typeof item.details==="object"?item.details:{};
+      const safeDetails={};
+      for(const key of ["file","line","column","stack","endpoint","status","durationMs"]){
+        if(details[key]!==undefined)safeDetails[key]=["line","column","status","durationMs"].includes(key)?Math.max(0,Math.min(100000000,Number(details[key])||0)):sanitizeDiagnosticValue(details[key],key==="stack"?1200:180);
+      }
+      batch.set(collection.doc(),{
+        type:sanitizeDiagnosticValue(item?.type,40),
+        message:sanitizeDiagnosticValue(item?.message,500),
+        page:sanitizeDiagnosticValue(item?.page,120),
+        action:sanitizeDiagnosticValue(item?.action,100),
+        details:safeDetails,
+        reporterUid:uid,
+        createdAt:admin.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    recent.push(...events.map(()=>now));diagnosticRateLimits.set(uid,recent);
+    if(diagnosticRateLimits.size>5000)diagnosticRateLimits.delete(diagnosticRateLimits.keys().next().value);
+    await batch.commit();
+    res.json({success:true,stored:events.length});
+  }catch(error){
+    const status=error.message==="AUTH_REQUIRED"?401:500;
+    res.status(status).json({success:false,message:status===401?"Authentication required.":"Unable to store diagnostics."});
+  }
+});
 app.post("/api/admin/diagnostics",pushCors,async(req,res)=>{
   try{
     const actor=await requireMersaloAdmin(req);
