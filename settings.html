@@ -295,6 +295,7 @@ document.getElementById("saveAdsSettings").addEventListener("click",async()=>{
 async function loadAdminDashboard(){
   adminStatus.textContent="جارٍ تحميل بيانات لوحة الإدارة...";
   loadAdminMonetization();
+  loadPublishedAdminPosts();
   adminStats.replaceChildren();adminReports.textContent="جارٍ تحميل البلاغات...";
   try{
     const [dashboard,reportData]=await Promise.all([adminRequest("/api/admin/dashboard"),adminRequest("/api/admin/reports")]);
