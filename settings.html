@@ -82,6 +82,11 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p class="muted">تظهر جميع الحسابات هنا مباشرة. بجانب كل حساب ستجد الإجراءات المتاحة له.</p>
 <div id="adminAccountsStatus" role="status" aria-live="polite"></div>
 <div id="adminAccounts" aria-live="polite"></div>
+<h3>إدارة المجموعات</h3>
+<label for="adminGroupSearch">البحث عن مجموعة بالاسم</label><input id="adminGroupSearch" type="search" placeholder="اكتب اسم المجموعة" autocomplete="off" aria-label="البحث عن مجموعة بالاسم">
+<p class="muted">يمكن إيقاف المجموعة أو تعليقها مؤقتًا أو إعادة تفعيلها أو حذفها نهائيًا.</p>
+<div id="adminGroupsStatus" role="status" aria-live="polite">لم يتم تحميل المجموعات بعد.</div>
+<div id="adminGroups" aria-live="polite"></div>
 <h3>بلاغات المستخدمين</h3>
 <div id="adminReports" aria-live="polite">جارٍ تحميل البلاغات...</div>
 <button class="action secondary" type="button" id="refreshAdmin">تحديث لوحة الإدارة</button>
@@ -269,6 +274,41 @@ function addAdminStat(label,value){
   const number=document.createElement("p");number.textContent=String(value);number.setAttribute("aria-label",label+": "+value);
   card.append(title,number);adminStats.append(card);
 }
+const adminGroups=document.getElementById("adminGroups");
+const adminGroupsStatus=document.getElementById("adminGroupsStatus");
+const adminGroupSearch=document.getElementById("adminGroupSearch");
+let adminGroupCards=[];
+adminGroupSearch.addEventListener("input",()=>{const q=adminGroupSearch.value.trim().toLocaleLowerCase();let n=0;for(const item of adminGroupCards){const match=!q||item.name.toLocaleLowerCase().includes(q);item.card.hidden=!match;if(match)n++;}adminGroupsStatus.textContent="المجموعات المطابقة: "+n+" من "+adminGroupCards.length;});
+async function loadAdminGroups(){
+ adminGroupsStatus.textContent="جارٍ تحميل المجموعات...";adminGroups.replaceChildren();adminGroupCards=[];
+ try{
+  const data=await adminRequest("/api/admin/groups");
+  if(!data.groups.length){adminGroupsStatus.textContent="لا توجد مجموعات.";return}
+  for(const group of data.groups){
+   const card=document.createElement("article");card.className="requestCard";
+   const title=document.createElement("h3");title.textContent=group.name;
+   const state=document.createElement("p");state.textContent=group.suspended?"حالة المجموعة: موقوفة":group.suspendedUntil?"حالة المجموعة: معلّقة مؤقتًا حتى "+new Date(group.suspendedUntil).toLocaleString("ar-JO"):"حالة المجموعة: نشطة";
+   const actions=document.createElement("div");actions.className="account-actions";
+   const run=async(action,extra={})=>{const result=await adminRequest("/api/admin/group-control","POST",{conversationId:group.id,action,...extra});adminGroupsStatus.textContent=result.message;await loadAdminGroups();};
+   const confirm=(heading,message,label,fn)=>showDeleteConfirmation(heading,message,label,fn);
+   if(group.suspended||group.suspendedUntil) {
+    const b=document.createElement("button");b.type="button";b.className="action";b.textContent="إعادة تفعيل المجموعة";b.addEventListener("click",()=>confirm("إعادة تفعيل المجموعة","هل تريد السماح لأعضاء مجموعة "+group.name+" باستخدامها مجددًا؟","إعادة التفعيل",()=>run("restore")));actions.append(b);
+   } else {
+    const b=document.createElement("button");b.type="button";b.className="action danger";b.textContent="إيقاف المجموعة";b.addEventListener("click",()=>confirm("إيقاف المجموعة","لن يتمكن الأعضاء من فتح المجموعة أو إرسال الرسائل حتى إعادة تفعيلها.","إيقاف المجموعة",()=>run("suspend")));actions.append(b);
+   }
+   const duration=document.createElement("select");duration.className="action secondary";duration.setAttribute("aria-label","مدة تعليق المجموعة");
+   [["1","ساعة واحدة"],["6","6 ساعات"],["12","12 ساعة"],["24","24 ساعة"],["72","3 أيام"],["168","7 أيام"],["720","30 يومًا"],["custom","مدة مخصصة"]].forEach(([v,l])=>{const o=document.createElement("option");o.value=v;o.textContent=l;duration.append(o)});
+   const amount=document.createElement("input");amount.type="number";amount.min="1";amount.max="8760";amount.value="2";amount.hidden=true;amount.className="action secondary";amount.setAttribute("aria-label","عدد وحدات مدة التعليق المخصصة");
+   const unit=document.createElement("select");unit.className="action secondary";unit.hidden=true;unit.setAttribute("aria-label","وحدة المدة المخصصة");[["hours","ساعات"],["days","أيام"]].forEach(([v,l])=>{const o=document.createElement("option");o.value=v;o.textContent=l;unit.append(o)});
+   duration.addEventListener("change",()=>{amount.hidden=unit.hidden=duration.value!=="custom"});
+   const timed=document.createElement("button");timed.type="button";timed.className="action danger";timed.textContent="تعليق مؤقت";
+   timed.addEventListener("click",()=>{const hours=duration.value==="custom"?Number(amount.value)*(unit.value==="days"?24:1):Number(duration.value);if(!Number.isInteger(hours)||hours<1||hours>8760){adminGroupsStatus.textContent="أدخل مدة من ساعة إلى 365 يومًا.";amount.focus();return}confirm("تعليق المجموعة مؤقتًا","سيتم تعليق "+group.name+" لمدة "+(hours%24===0?hours/24+" يومًا":hours+" ساعة")+".","تأكيد التعليق",()=>run("timed-suspend",{hours}));});
+   const del=document.createElement("button");del.type="button";del.className="action danger";del.textContent="حذف المجموعة نهائيًا";del.addEventListener("click",()=>confirm("حذف المجموعة نهائيًا","سيتم حذف مجموعة "+group.name+" ورسائلها لجميع الأعضاء. لا يمكن التراجع عن هذا الإجراء.","حذف نهائي",()=>run("delete")));
+   actions.append(duration,amount,unit,timed,del);card.append(title,state,actions);adminGroups.append(card);adminGroupCards.push({card,name:group.name});
+  }
+  adminGroupsStatus.textContent="إجمالي المجموعات: "+data.groups.length;
+ }catch(error){adminGroupsStatus.textContent=error.message||"تعذر تحميل المجموعات.";}
+}
 async function loadAdminDashboard(){
   adminStatus.textContent="جارٍ تحميل بيانات لوحة الإدارة...";
   adminStats.replaceChildren();
@@ -276,7 +316,8 @@ async function loadAdminDashboard(){
   const jobs=await Promise.allSettled([
     adminRequest("/api/admin/dashboard"),
     adminRequest("/api/admin/reports"),
-    loadAdminAccounts()
+    loadAdminAccounts(),
+    loadAdminGroups()
   ]);
   let failures=0;
   const dashboard=jobs[0],reports=jobs[1];
