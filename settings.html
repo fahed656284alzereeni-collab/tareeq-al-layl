@@ -323,8 +323,6 @@ async function loadAdminAccounts(){
         [["1","ساعة"],["24","24 ساعة"],["168","7 أيام"],["720","30 يومًا"]].forEach(([v,l])=>{const o=document.createElement("option");o.value=v;o.textContent=l;duration.append(o)});actions.append(duration);
         const timed=document.createElement("button");timed.type="button";timed.className="action danger";timed.textContent="إيقاف مؤقت";
         timed.addEventListener("click",()=>showDeleteConfirmation("إيقاف الحساب مؤقتًا","سيتم إيقاف "+account.name+" لمدة "+duration.options[duration.selectedIndex].text+".","تأكيد الإيقاف",async()=>{const result=await adminRequest("/api/admin/account-control","POST",{uid:account.uid,action:"timed-suspend",hours:Number(duration.value),reason:"قرار إداري"});adminAccountsStatus.textContent=result.message;await loadAdminAccounts()}));actions.append(timed);
-        const bioEdit=document.createElement("button");bioEdit.type="button";bioEdit.className="action secondary";bioEdit.textContent="تعديل النبذة";
-        bioEdit.addEventListener("click",()=>showDeleteConfirmation("تعديل النبذة","سيتم استبدال النبذة الحالية بنبذة فارغة. استخدم تحرير الملف الشخصي لتغييرها يدويًا.","تأكيد",async()=>{const result=await adminRequest("/api/admin/account-control","POST",{uid:account.uid,action:"clear-bio"});adminAccountsStatus.textContent=result.message;await loadAdminAccounts()}));actions.append(bioEdit);
       }
       const renameButton=document.createElement("button");
       renameButton.type="button";renameButton.className="action secondary";
