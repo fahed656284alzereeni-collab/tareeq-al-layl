@@ -90,12 +90,6 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <h3>بلاغات المستخدمين</h3>
 <div id="adminReports" aria-live="polite">جارٍ تحميل البلاغات...</div>
 <button class="action secondary" type="button" id="refreshAdmin">تحديث لوحة الإدارة</button>
-<h3>مركز تشخيص المطوّر</h3>
-<p class="muted">يرصد أخطاء الموقع والخادم وطلبات الشبكة، مع وقت الخطأ والصفحة والعملية للمساعدة في تحديد السبب. لا يجمع كلمات المرور أو رموز الدخول أو محتوى الرسائل.</p>
-<div id="diagnosticsStatus" class="requestStatus" role="status" aria-live="polite">لم يتم تحميل تقارير التشخيص بعد.</div>
-<button class="action" type="button" id="refreshDiagnostics">تحديث تقارير التشخيص</button>
-<button class="action secondary" type="button" id="copyDiagnostics">نسخ تقرير التشخيص لإرساله للدعم</button>
-<div id="diagnosticsList" aria-live="polite"></div>
 </section>
 
 <section class="panel section-screen" id="panel-notifications" hidden>
@@ -143,30 +137,9 @@ import{getAuth,onAuthStateChanged,updateProfile,signOut}from"https://www.gstatic
 import{getFirestore,doc,getDoc,setDoc}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
-const mersaloDiagnostics={queue:[],busy:false,lastAction:"فتح الصفحة"};
-function diagSafeText(value,max=500){return String(value??"").replace(/Bearer\\s+[^\\s]+/gi,"Bearer [محجوب]").replace(/(token|password|authorization|secret|api[-_]?key)\\s*[:=]\\s*[^\\s&,]+/gi,"$1=[محجوب]").slice(0,max)}
-function recordDiagnostic(type,message,details={}){
-  const entry={type:diagSafeText(type,40),message:diagSafeText(message,700),page:location.pathname,action:diagSafeText(mersaloDiagnostics.lastAction,120),time:new Date().toISOString(),details:details&&typeof details==="object"?{...details}:{}};
-  delete entry.details.body;delete entry.details.responseBody;delete entry.details.requestBody;delete entry.details.token;delete entry.details.authorization;
-  mersaloDiagnostics.queue.push(entry);if(mersaloDiagnostics.queue.length>30)mersaloDiagnostics.queue.shift();
-  if(auth.currentUser)flushDiagnostics();
-}
-async function flushDiagnostics(){
-  if(mersaloDiagnostics.busy||!auth.currentUser||!mersaloDiagnostics.queue.length)return;
-  mersaloDiagnostics.busy=true;
-  const batch=mersaloDiagnostics.queue.splice(0,10);
-  try{const token=await auth.currentUser.getIdToken();await fetch(apiBase+"/api/admin/diagnostics",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({events:batch})})}
-  catch(_){mersaloDiagnostics.queue.unshift(...batch);if(mersaloDiagnostics.queue.length>30)mersaloDiagnostics.queue.length=30}
-  finally{mersaloDiagnostics.busy=false}
-}
-window.addEventListener("error",event=>recordDiagnostic("javascript",event.message||"JavaScript error",{file:diagSafeText(event.filename||"",180),line:Number(event.lineno)||0,column:Number(event.colno)||0,stack:diagSafeText(event.error?.stack||"",1200)}));
-window.addEventListener("unhandledrejection",event=>recordDiagnostic("promise",event.reason?.message||event.reason||"Unhandled promise rejection",{stack:diagSafeText(event.reason?.stack||"",1200)}));
-document.addEventListener("click",event=>{const el=event.target.closest("button,a");if(el)mersaloDiagnostics.lastAction=diagSafeText(el.getAttribute("aria-label")||el.textContent||el.getAttribute("href")||"تفاعل",120)});
-const originalFetch=window.fetch.bind(window);
-window.fetch=async(...args)=>{const request=args[0],url=typeof request==="string"?request:request?.url||"",started=Date.now();let path="";try{path=new URL(url,location.href).pathname}catch(_){}try{const response=await originalFetch(...args);if(!response.ok&&path!=="/api/admin/diagnostics")recordDiagnostic("http","فشل طلب الشبكة: "+response.status,{endpoint:diagSafeText(path,180),status:response.status,durationMs:Date.now()-started});return response}catch(error){if(path!=="/api/admin/diagnostics")recordDiagnostic("network",error?.message||"Network request failed",{endpoint:diagSafeText(path,180),durationMs:Date.now()-started});throw error}};
 
 const largeText=document.getElementById("largeText"),strongFocus=document.getElementById("strongFocus");
-function showSection(id){document.querySelectorAll(".section-screen").forEach(section=>{const active=section.id===id;section.classList.toggle("active",active);section.hidden=!active});document.body.classList.toggle("section-open",id!=="panel-settings");const heading=document.querySelector("#"+id+" h2");if(heading)heading.focus();if(id==="panel-admin"){loadAdminDashboard();loadDiagnostics();}}
+function showSection(id){document.querySelectorAll(".section-screen").forEach(section=>{const active=section.id===id;section.classList.toggle("active",active);section.hidden=!active});document.body.classList.toggle("section-open",id!=="panel-settings");const heading=document.querySelector("#"+id+" h2");if(heading)heading.focus();if(id==="panel-admin"){loadAdminDashboard();}}
 const requestedSection=new URLSearchParams(location.search).get("section");
 if(requestedSection==="friend-requests")showSection("panel-friend-requests");
 document.querySelectorAll("[data-open-section]").forEach(button=>button.addEventListener("click",()=>showSection(button.dataset.openSection)));
@@ -227,31 +200,6 @@ const disablePush=document.getElementById("disablePush");
 const apiBase="https://tareeq-al-layl-server.onrender.com";
 const adminStatus=document.getElementById("adminStatus"),adminStats=document.getElementById("adminStats"),adminReports=document.getElementById("adminReports");
 const openAdmin=document.getElementById("openAdmin");
-const diagnosticsStatus=document.getElementById("diagnosticsStatus"),diagnosticsList=document.getElementById("diagnosticsList");
-let lastDiagnostics=[];
-async function loadDiagnostics(){
-  diagnosticsStatus.textContent="جارٍ تحميل تقارير التشخيص...";
-  diagnosticsList.replaceChildren();
-  try{
-    const result=await adminRequest("/api/admin/diagnostics");
-    lastDiagnostics=Array.isArray(result.events)?result.events:[];
-    diagnosticsStatus.textContent="عدد التقارير المعروضة: "+lastDiagnostics.length;
-    if(!lastDiagnostics.length){diagnosticsList.textContent="لا توجد أخطاء مسجلة حاليًا.";return}
-    for(const item of lastDiagnostics){
-      const card=document.createElement("article");card.className="requestCard";
-      const title=document.createElement("h3");title.textContent=(item.type||"خطأ")+" — "+(item.message||"دون تفاصيل");
-      const meta=document.createElement("p");meta.textContent="الوقت: "+(item.createdAt||"غير معروف")+" | الصفحة: "+(item.page||"غير معروفة")+" | العملية: "+(item.action||"غير معروفة");
-      const details=document.createElement("pre");details.style.cssText="white-space:pre-wrap;overflow-wrap:anywhere;font:inherit";details.textContent=JSON.stringify(item.details||{},null,2);
-      card.append(title,meta,details);diagnosticsList.append(card);
-    }
-  }catch(error){diagnosticsStatus.textContent=error.message||"تعذر تحميل تقارير التشخيص."}
-}
-document.getElementById("refreshDiagnostics").addEventListener("click",loadDiagnostics);
-document.getElementById("copyDiagnostics").addEventListener("click",async()=>{
-  const report={generatedAt:new Date().toISOString(),site:"Mersalo",count:lastDiagnostics.length,events:lastDiagnostics};
-  try{await navigator.clipboard.writeText(JSON.stringify(report,null,2));diagnosticsStatus.textContent="تم نسخ تقرير التشخيص. أرسله هنا للمراجعة."}
-  catch(_){diagnosticsStatus.textContent="تعذر النسخ التلقائي؛ حدّث التقارير وحاول مجددًا."}
-});
 async function adminRequest(path,method="GET",body){
   if(!auth.currentUser)throw new Error("سجّل الدخول أولًا.");
   const token=await auth.currentUser.getIdToken();
