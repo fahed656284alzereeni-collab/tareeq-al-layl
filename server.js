@@ -593,6 +593,7 @@ async function assertAdminMessagingAllowed(uid){
         const members = profiles.map(profile => ({
           uid: profile.id,
           name: String(profile.exists ? (profile.data().playerName || profile.data().displayName || "مستخدم") : "مستخدم"),
+          bio: String(profile.exists ? (profile.data().bio || "") : "").slice(0, 200),
           online: Boolean(getConnectedSocket(profile.id)),
           isModerator: (conversationData.moderatorUids || []).includes(profile.id)
         }));
