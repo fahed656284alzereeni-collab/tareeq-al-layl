@@ -1013,7 +1013,8 @@ async function refreshConversationInfo(){
       const name=document.createElement("button");name.type="button";name.className="secondary";name.textContent=member.name;
       const isOwner=member.uid===d.createdBy;
       const roleLabel=isOwner?"مالك المجموعة":member.isModerator?"مشرف":"عضو";
-      name.setAttribute("aria-label",member.name+"، "+roleLabel);
+      const memberBio=String(member.bio||"").trim();
+      name.setAttribute("aria-label",member.name+"، "+roleLabel+"، النبذة: "+(memberBio||"لا توجد نبذة"));
       name.disabled=member.uid===auth.currentUser?.uid;
       const role=document.createElement("span");role.className="muted";role.textContent=roleLabel;role.setAttribute("aria-hidden","true");
       if(!name.disabled)name.addEventListener("click",()=>{
