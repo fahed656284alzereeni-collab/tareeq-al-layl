@@ -568,6 +568,7 @@ io.on("connection", socket => {
         details: {
           uid: otherUid,
           name: String(profile.playerName || profile.displayName || "مستخدم"),
+          bio: String(profile.bio || "").slice(0, 200),
           online: Boolean(getConnectedSocket(otherUid)),
           lastSeenAt: profile.lastSeenAt?.toMillis?.() || 0,
           isFriend: friendshipSnap.exists,
