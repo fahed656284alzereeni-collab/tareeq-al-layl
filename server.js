@@ -1683,9 +1683,13 @@ app.post("/api/admin/group-control",pushCors,express.json({limit:"32kb"}),async(
    if(!Number.isInteger(hours)||hours<1||hours>8760)return res.status(400).json({success:false,message:"المدة يجب أن تكون من ساعة إلى 365 يومًا."});
    await ref.set({adminGroupSuspended:false,adminGroupSuspendedUntil:admin.firestore.Timestamp.fromMillis(Date.now()+hours*3600000),adminGroupStatusUpdatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
   }
-  await db.collection("adminActions").add({type:"group-"+action,conversationId:id,groupName:String(snap.data().groupName||"مجموعة"),adminUid:actor.uid,hours:action==="timed-suspend"?Number(req.body.hours):null,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+  try{await db.collection("adminActions").add({type:"group-"+action,conversationId:id,groupName:String(snap.data().groupName||"مجموعة"),adminUid:actor.uid,hours:action==="timed-suspend"?Number(req.body.hours):null,createdAt:admin.firestore.FieldValue.serverTimestamp()});}
+  catch(auditError){console.warn("Admin group action audit failed:",{action,id,message:auditError.message});}
   res.json({success:true,message:action==="delete"?"تم حذف المجموعة ورسائلها نهائيًا.":action==="restore"?"تمت إعادة تفعيل المجموعة.":action==="suspend"?"تم إيقاف المجموعة.":"تم تعليق المجموعة مؤقتًا."});
- }catch(error){sendAdminError(res,error);}
+ }catch(error){
+  console.error("Admin group control failed:",{action:String(req.body?.action||""),conversationId:String(req.body?.conversationId||""),code:error.code||"",message:error.message||String(error)});
+  sendAdminError(res,error);
+ }
 });
 app.get("/api/admin/accounts",pushCors,async(req,res)=>{
   try {
