@@ -730,7 +730,18 @@ io.on("connection", socket => {
 
       const messages = visibleDocs.map(d => {
         const data = d.data();
-        return { id: d.id, ...data, senderName: data.senderName || senderNames.get(data.senderUid) || "مستخدم", deliveredTo: data.deliveredTo || {}, createdAt: data.createdAt ? data.createdAt.toMillis() : 0 };
+        const currentSenderName = senderNames.get(data.senderUid) || data.senderName || "مستخدم";
+        const replyTo = data.replyTo && typeof data.replyTo === "object"
+          ? { ...data.replyTo, senderName: senderNames.get(data.replyTo.senderUid) || data.replyTo.senderName || "مستخدم" }
+          : data.replyTo;
+        return {
+          id: d.id,
+          ...data,
+          senderName: currentSenderName,
+          ...(replyTo ? { replyTo } : {}),
+          deliveredTo: data.deliveredTo || {},
+          createdAt: data.createdAt ? data.createdAt.toMillis() : 0
+        };
       });
       if (typeof reply === "function") reply({ success: true, messages });
     } catch (error) {
