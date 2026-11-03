@@ -1513,45 +1513,52 @@ app.post("/api/admin/account-name",pushCors,express.json({limit:"32kb"}),async(r
     if(!uid)return res.status(400).json({success:false,message:"حدد الحساب الذي تريد تغيير اسمه."});
     if(name.length<2)return res.status(400).json({success:false,message:"يجب أن يتكون الاسم من حرفين على الأقل."});
     if(/[<>]/.test(name))return res.status(400).json({success:false,message:"الاسم يحتوي على رموز غير مسموح بها."});
-    const userRef=admin.firestore().collection("users").doc(uid);
+
+    const db=admin.firestore();
+    const userRef=db.collection("users").doc(uid);
     const userSnap=await userRef.get();
     if(!userSnap.exists)return res.status(404).json({success:false,message:"الحساب غير موجود."});
-    await admin.auth().updateUser(uid,{displayName:name});
-    await userRef.set({playerName:name,displayName:name,adminNameUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),adminNameUpdatedBy:actor.uid},{merge:true});
+
+    // Firestore is the source of truth for names displayed throughout Mersalo.
+    await userRef.set({
+      playerName:name,
+      displayName:name,
+      adminNameUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),
+      adminNameUpdatedBy:actor.uid
+    },{merge:true});
+
+    // Keep Firebase Auth in sync, but do not undo a successful profile rename
+    // if the Auth profile update is temporarily unavailable.
+    let authProfileUpdated=true;
+    try{await admin.auth().updateUser(uid,{displayName:name});}
+    catch(error){authProfileUpdated=false;console.warn("Admin rename Auth profile sync failed:",{uid,message:error.message});}
+
     profileCache.delete(uid);
     for(const client of connectedUsers.get(uid)||[])client.data.playerName=name;
     io.emit("onlinePlayers",onlinePlayerList());
-
-    // Update historical messages and saved reply names so old conversations
-    // display the moderated profile name instead of the previous one.
-    const db=admin.firestore();
-    const [sentMessages,repliesToUser]=await Promise.all([
-      db.collectionGroup("messages").where("senderUid","==",uid).get(),
-      db.collectionGroup("messages").where("replyTo.senderUid","==",uid).get()
-    ]);
-    const messageUpdates=new Map();
-    for(const doc of sentMessages.docs)messageUpdates.set(doc.ref.path,{ref:doc.ref,sent:true,replied:false});
-    for(const doc of repliesToUser.docs){
-      const item=messageUpdates.get(doc.ref.path)||{ref:doc.ref,sent:false,replied:false};
-      item.replied=true;messageUpdates.set(doc.ref.path,item);
-    }
-    const updates=[...messageUpdates.values()];
-    for(let i=0;i<updates.length;i+=450){
-      const batch=db.batch();
-      for(const item of updates.slice(i,i+450)){
-        const fields={};
-        if(item.sent)fields.senderName=name;
-        if(item.replied)fields["replyTo.senderName"]=name;
-        batch.update(item.ref,fields);
-      }
-      await batch.commit();
-    }
-    await db.collection("adminActions").add({type:"rename-account",targetUid:uid,newName:name,updatedHistoricalMessages:sentMessages.size,updatedReplyNames:repliesToUser.size,adminUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp()});
     io.emit("accountNameUpdated",{uid,name});
-    res.json({success:true,message:"تم تغيير الاسم وتحديثه في الرسائل والمحادثات السابقة.",name,updatedMessages:sentMessages.size});
+
+    // Historical message names are resolved from the current profile at read
+    // time, so a large collectionGroup rewrite is unnecessary and can fail
+    // when Firestore indexes or old message data are incomplete.
+    try{
+      await db.collection("adminActions").add({
+        type:"rename-account",targetUid:uid,newName:name,adminUid:actor.uid,
+        authProfileUpdated,
+        createdAt:admin.firestore.FieldValue.serverTimestamp()
+      });
+    }catch(error){console.warn("Admin rename audit write failed:",error.message);}
+
+    res.json({
+      success:true,
+      message:authProfileUpdated
+        ?"تم تغيير الاسم بنجاح وسيظهر الاسم الجديد في مِرسالو."
+        :"تم تغيير الاسم في مِرسالو، وتعذرت مزامنة الاسم في ملف تسجيل الدخول مؤقتًا.",
+      name,
+      authProfileUpdated
+    });
   }catch(error){sendAdminError(res,error);}
 });
-
 app.post("/api/admin/account-action",pushCors,express.json({limit:"32kb"}),async(req,res)=>{
   try{
     const actor=await requireMersaloAdmin(req);
