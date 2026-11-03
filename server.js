@@ -1726,7 +1726,7 @@ app.post("/api/admin/account-name",pushCors,express.json({limit:"32kb"}),async(r
 app.post("/api/admin/account-control",pushCors,express.json({limit:"32kb"}),async(req,res)=>{
   try{
     const actor=await requireMersaloAdmin(req),uid=String(req.body?.uid||"").trim(),action=String(req.body?.action||""),reason=String(req.body?.reason||"").trim().slice(0,500);
-    if(!uid||uid===actor.uid)return res.status(400).json({success:false,message:"لا يمكن تنفيذ الإجراء على حسابك."});
+    if(!uid||(uid===actor.uid&&action!=="update-bio"))return res.status(400).json({success:false,message:"لا يمكن تنفيذ هذا الإجراء على حسابك."});
     const db=admin.firestore(),ref=db.collection("users").doc(uid),snap=await ref.get();
     if(!snap.exists)return res.status(404).json({success:false,message:"الحساب غير موجود."});
     if(action==="restrict-messaging"||action==="unrestrict-messaging"){
@@ -1740,6 +1740,14 @@ app.post("/api/admin/account-control",pushCors,express.json({limit:"32kb"}),asyn
       if(!reason)return res.status(400).json({success:false,message:"سبب الإنذار مطلوب."});
       await db.collection("adminActions").add({type:"warning",targetUid:uid,adminUid:actor.uid,reason,createdAt:admin.firestore.FieldValue.serverTimestamp()});
       return res.json({success:true,message:"تم تسجيل الإنذار على الحساب."});
+    }
+    if(action==="update-bio"){
+      if(typeof req.body?.bio!=="string")return res.status(400).json({success:false,message:"اكتب النبذة أو اتركها فارغة لمسحها."});
+      const bio=req.body.bio.trim().slice(0,200);
+      await ref.set({bio,adminBioUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),adminBioUpdatedBy:actor.uid},{merge:true});
+      profileCache.delete(uid);
+      await db.collection("adminActions").add({type:"update-bio",targetUid:uid,adminUid:actor.uid,bioLength:bio.length,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+      return res.json({success:true,message:bio?"تم تحديث نبذة الحساب بنجاح.":"تم مسح نبذة الحساب بنجاح.",bio});
     }
     if(action==="clear-bio"){
       await ref.set({bio:""},{merge:true});
