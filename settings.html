@@ -222,9 +222,7 @@ async function loadAdminDashboard(){
   const jobs=await Promise.allSettled([
     adminRequest("/api/admin/dashboard"),
     adminRequest("/api/admin/reports"),
-    loadAdminAccounts(),
-    loadAdminPublicPosts(),
-    loadPublishedAdminPosts()
+    loadAdminAccounts()
   ]);
   let failures=0;
   const dashboard=jobs[0],reports=jobs[1];
