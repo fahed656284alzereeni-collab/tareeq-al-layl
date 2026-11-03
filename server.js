@@ -1487,6 +1487,21 @@ app.post("/api/admin/warn",pushCors,express.json({limit:"32kb"}),async(req,res)=
   } catch(error) { sendAdminError(res,error); }
 });
 
+app.get("/api/admin/audit-log",pushCors,async(req,res)=>{
+  try{
+    await requireMersaloAdmin(req);
+    const snap=await admin.firestore().collection("adminActions").orderBy("createdAt","desc").limit(100).get();
+    const uids=[...new Set(snap.docs.flatMap(d=>[d.data().targetUid,d.data().adminUid]).filter(Boolean))];
+    const profiles=uids.length?await admin.firestore().getAll(...uids.map(uid=>admin.firestore().collection("users").doc(uid))):[];
+    const names=new Map(profiles.map(p=>[p.id,p.exists?String(p.data().playerName||p.data().displayName||"مستخدم"):"حساب محذوف"]));
+    const labels={warning:"إرسال تحذير",suspend:"إيقاف حساب",restore:"إعادة تفعيل حساب","revoke-sessions":"إنهاء الجلسات","rename-account":"تغيير اسم حساب"};
+    res.json({success:true,actions:snap.docs.map(d=>{
+      const v=d.data();
+      return{id:d.id,type:String(v.type||"إجراء إداري"),label:labels[v.type]||"إجراء إداري",targetUid:String(v.targetUid||""),targetName:names.get(v.targetUid)||"",adminUid:String(v.adminUid||""),adminEmail:v.adminUid===req.adminUser?.uid?"المطوّر":(names.get(v.adminUid)||"الإدارة"),reason:String(v.reason||""),newName:String(v.newName||""),createdAt:v.createdAt?.toDate?.().toISOString?.()||null};
+    })});
+  }catch(error){sendAdminError(res,error);}
+});
+
 app.get("/api/admin/accounts",pushCors,async(req,res)=>{
   try {
     await requireMersaloAdmin(req);
