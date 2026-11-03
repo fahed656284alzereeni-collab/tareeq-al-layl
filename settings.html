@@ -77,15 +77,6 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p class="muted">لوحة المطوّر الخاصة. جميع إجراءات الإدارة تُراجع صلاحيتها على الخادم.</p>
 <div id="adminStatus" class="requestStatus" role="status" aria-live="polite">جارٍ التحقق من صلاحيات المطوّر...</div>
 <div id="adminStats" aria-label="إحصائيات الموقع"></div>
-<h3>إعلانات الموقع</h3>
-<p class="muted">إعدادات إعلانات مِرسالو.</p>
-<div class="requestCard">
-<div class="setting"><label for="adsEnabled">تفعيل الإعلانات</label><input id="adsEnabled" type="checkbox" aria-label="تفعيل إعلانات الموقع"></div>
-<label for="adsClientId">معرّف ناشر Google AdSense</label><input id="adsClientId" type="text" placeholder="ca-pub-0000000000000000" autocomplete="off">
-<label for="adsSlotId">رقم مساحة الإعلان</label><input id="adsSlotId" type="text" placeholder="1234567890" inputmode="numeric" autocomplete="off">
-<button class="action" type="button" id="saveAdsSettings">حفظ إعدادات الإعلانات</button>
-<p id="adsSettingsStatus" role="status" aria-live="polite">جارٍ تحميل إعدادات الإعلانات...</p>
-</div>
 <h3>إدارة المنشورات المنشورة</h3><p class="muted">من هنا تستطيع تعديل المنشورات التي وافقت عليها سابقًا أو إخفاءها أو حذفها نهائيًا.</p><p id="publishedPostsStatus" role="status" aria-live="polite">جارٍ تحميل المنشورات المنشورة...</p><div id="publishedPostsManagement" aria-live="polite"></div>
 <h3>مراجعة المنشورات العامة</h3>
 <p class="muted">كل منشور جديد يبقى مخفيًا حتى توافق عليه. راجع المحتوى قبل نشره.</p>
@@ -261,40 +252,30 @@ async function loadPublishedAdminPosts(){
   }
  }catch(error){status.textContent=error.message||"تعذر تحميل المنشورات المنشورة.";}
 }
-async function loadAdminMonetization(){
-  const status=document.getElementById("adsSettingsStatus"),enabled=document.getElementById("adsEnabled"),client=document.getElementById("adsClientId"),slot=document.getElementById("adsSlotId"),moderation=document.getElementById("publicPostsModeration");
-  try{
-    const [config,posts]=await Promise.all([adminRequest("/api/admin/monetization"),adminRequest("/api/admin/public-posts")]);
-    enabled.checked=config.settings.adsEnabled;client.value=config.settings.clientId;slot.value=config.settings.slotId;
-    status.textContent=config.settings.adsEnabled?"الإعلانات مفعّلة حاليًا.":"الإعلانات متوقفة حاليًا.";
-    moderation.replaceChildren();
-    if(!posts.posts.length)moderation.textContent="لا توجد منشورات بانتظار المراجعة.";
-    for(const post of posts.posts){
-      const card=document.createElement("article");card.className="requestCard";
-      const title=document.createElement("h3");title.textContent=post.title;
-      const author=document.createElement("p");author.textContent="بواسطة: "+(post.authorName||"مستخدم");
-      const body=document.createElement("p");body.textContent=post.body;
-      const actions=document.createElement("div");actions.className="requestActions";
-      for(const [label,action,cls] of [["موافقة ونشر","approve",""],["رفض المنشور","reject","danger"]]){
-        const button=document.createElement("button");button.type="button";button.className=cls;button.textContent=label;
-        button.addEventListener("click",async()=>{button.disabled=true;try{const result=await adminRequest("/api/admin/public-posts/"+encodeURIComponent(post.id),"PATCH",{action});status.textContent=result.message;await loadAdminMonetization();
-  loadPublishedAdminPosts();}catch(error){button.disabled=false;status.textContent=error.message;}});
-        actions.append(button);
-      }
-      card.append(title,author,body,actions);moderation.append(card);
-    }
-  }catch(error){status.textContent=error.message||"تعذر تحميل إعدادات الإعلانات.";moderation.textContent="تعذر تحميل المنشورات بانتظار المراجعة.";}
-}
-document.getElementById("saveAdsSettings").addEventListener("click",async()=>{
-  const button=document.getElementById("saveAdsSettings"),status=document.getElementById("adsSettingsStatus");
-  button.disabled=true;status.textContent="جارٍ حفظ إعدادات الإعلانات...";
-  try{const result=await adminRequest("/api/admin/monetization","PUT",{adsEnabled:document.getElementById("adsEnabled").checked,clientId:document.getElementById("adsClientId").value,slotId:document.getElementById("adsSlotId").value});status.textContent=result.message;}
-  catch(error){status.textContent=error.message||"تعذر حفظ الإعدادات.";}
-  finally{button.disabled=false;}
-});
+async function loadAdminPublicPosts(){
+   const moderation=document.getElementById("publicPostsModeration");
+   try{
+     const posts=await adminRequest("/api/admin/public-posts");
+     moderation.replaceChildren();
+     if(!posts.posts.length)moderation.textContent="لا توجد منشورات بانتظار المراجعة.";
+     for(const post of posts.posts){
+       const card=document.createElement("article");card.className="requestCard";
+       const title=document.createElement("h3");title.textContent=post.title;
+       const author=document.createElement("p");author.textContent="بواسطة: "+(post.authorName||"مستخدم");
+       const body=document.createElement("p");body.textContent=post.body;
+       const actions=document.createElement("div");actions.className="requestActions";
+       for(const [label,action,cls] of [["موافقة ونشر","approve",""],["رفض المنشور","reject","danger"]]){
+         const button=document.createElement("button");button.type="button";button.className=cls;button.textContent=label;
+         button.addEventListener("click",async()=>{button.disabled=true;try{const result=await adminRequest("/api/admin/public-posts/"+encodeURIComponent(post.id),"PATCH",{action});adminStatus.textContent=result.message;await loadAdminPublicPosts();loadPublishedAdminPosts();}catch(error){button.disabled=false;adminStatus.textContent=error.message;}});
+         actions.append(button);
+       }
+       card.append(title,author,body,actions);moderation.append(card);
+     }
+   }catch(error){adminStatus.textContent=error.message||"تعذر تحميل المنشورات بانتظار المراجعة.";moderation.textContent="تعذر تحميل المنشورات بانتظار المراجعة.";}
+ }
 async function loadAdminDashboard(){
   adminStatus.textContent="جارٍ تحميل بيانات لوحة الإدارة...";
-  loadAdminMonetization();
+  loadAdminPublicPosts();
   loadPublishedAdminPosts();
   adminStats.replaceChildren();adminReports.textContent="جارٍ تحميل البلاغات...";
   try{
