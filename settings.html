@@ -575,7 +575,7 @@ disablePush.addEventListener("click",async()=>{
 onAuthStateChanged(auth,async user=>{
   if(!user){location.replace("login.html");return}
   try{
-    activeUser=user;const token=await user.getIdToken();flushDiagnostics();
+    activeUser=user;const token=await user.getIdToken();
     openAdmin.hidden=String(user.email||"").toLowerCase()!=="fahed656284alzereeni@gmail.com";
     loadNotifications();refreshPushStatus();
     socket=io("https://tareeq-al-layl-server.onrender.com",{auth:{token},timeout:60000,transports:["polling","websocket"],reconnection:true,reconnectionAttempts:Infinity,reconnectionDelay:1000,reconnectionDelayMax:5000});
