@@ -126,10 +126,10 @@ io.use(async (socket, next) => {
       profileCache.delete(decoded.uid);
     }
     if(profileData.accountSuspended===true)return next(new Error("ACCOUNT_SUSPENDED"));
-    const playerName = String(profileData.playerName || profileData.displayName || decoded.name || profileData.email || decoded.email || "مستخدم").trim().slice(0, 40);
+    const playerName = String(profileData.playerName || profileData.displayName || decoded.name || "مستخدم").trim().slice(0, 40);
     socket.data.uid = decoded.uid;
     socket.data.playerName = playerName;
-    socket.data.email = String(profileData.email || decoded.email || "").toLowerCase();
+    socket.data.email = String(decoded.email || "").trim().toLowerCase();
     socket.data.phoneNumber = "";
     next();
   } catch (error) {
@@ -1664,7 +1664,7 @@ app.get("/api/admin/accounts",pushCors,async(req,res)=>{
         admin.firestore().collection("conversations").where("members","array-contains",doc.id).count().get().catch(()=>null),
         admin.firestore().collection("adminActions").where("targetUid","==",doc.id).where("type","==","warning").count().get().catch(()=>null)
       ]);
-      return{uid:doc.id,name:String(v.playerName||v.displayName||"مستخدم"),email:String(v.email||authUser?.email||""),disabled:!!authUser?.disabled,restricted:v.messagingRestricted===true,bio:String(v.bio||"").slice(0,200),createdAt:authUser?.metadata?.creationTime?Date.parse(authUser.metadata.creationTime):0,lastSeenAt:v.lastSeenAt?.toMillis?.()||0,friendCount:friends?.data().count||0,conversationCount:conversations?.data().count||0,warningCount:warnings?.data().count||0};
+      return{uid:doc.id,name:String(v.playerName||v.displayName||"مستخدم"),email:String(authUser?.email||v.email||""),disabled:!!authUser?.disabled,restricted:v.messagingRestricted===true,bio:String(v.bio||"").slice(0,200),createdAt:authUser?.metadata?.creationTime?Date.parse(authUser.metadata.creationTime):0,lastSeenAt:v.lastSeenAt?.toMillis?.()||0,friendCount:friends?.data().count||0,conversationCount:conversations?.data().count||0,warningCount:warnings?.data().count||0};
     }));
     res.json({success:true,accounts});
   } catch(error) { sendAdminError(res,error); }
