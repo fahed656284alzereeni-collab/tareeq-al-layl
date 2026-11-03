@@ -372,6 +372,23 @@ io.on("connection", socket => {
     }
   });
 
+  socket.on("updateGroupDetails", async (data = {}, reply) => {
+    try {
+      const conversationId=String(data.conversationId||"");
+      const description=String(data.description||"").trim().slice(0,500);
+      const announcement=String(data.announcement||"").trim().slice(0,500);
+      const ref=conversationsRef.doc(conversationId);
+      const snap=await ref.get();
+      if(!snap.exists||snap.data().type!=="group"||!(snap.data().members||[]).includes(socket.data.uid))throw new Error("غير مصرح بتعديل هذه المجموعة.");
+      const group=snap.data(),permissions=group.groupPermissions||{};
+      const canEdit=permissions.editInfo==="members"||group.createdBy===socket.data.uid||(group.moderatorUids||[]).includes(socket.data.uid);
+      if(!canEdit)throw new Error("تعديل معلومات المجموعة متاح للمالك والمشرفين فقط.");
+      await ref.update({description,announcement,updatedAt:admin.firestore.FieldValue.serverTimestamp()});
+      for(const uid of group.members||[]){const sessions=connectedUsers.get(uid);if(sessions)for(const client of sessions)if(client.connected)client.emit("groupConversationUpdated",{conversationId});}
+      if(typeof reply==="function")reply({success:true,message:"تم تحديث وصف المجموعة وإعلانها."});
+    }catch(error){if(typeof reply==="function")reply({success:false,message:error.message||"تعذر تحديث معلومات المجموعة."});}
+  });
+
   socket.on("updateGroupPermissions", async (data = {}, reply) => {
     try {
       const conversationId = String(data.conversationId || "");
@@ -524,7 +541,7 @@ io.on("connection", socket => {
         }));
         const countSnap = await conversationRef.collection("messages").count().get();
         if (typeof reply === "function") reply({ success: true, details: {
-          type: "group", name: String(conversationData.groupName || "مجموعة"),
+          type: "group", name: String(conversationData.groupName || "مجموعة"), description: String(conversationData.description||""), announcement: String(conversationData.announcement||""),
           members, createdBy: conversationData.createdBy || "", isAdmin: conversationData.createdBy === socket.data.uid, isModerator: (conversationData.moderatorUids || []).includes(socket.data.uid),
           permissions: { editInfo: conversationData.groupPermissions?.editInfo === "members" ? "members" : "admins", addMembers: conversationData.groupPermissions?.addMembers === "members" ? "members" : "admins" },
           messageCount: countSnap.data().count || 0,
