@@ -77,10 +77,6 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p class="muted">لوحة المطوّر الخاصة. جميع إجراءات الإدارة تُراجع صلاحيتها على الخادم.</p>
 <div id="adminStatus" class="requestStatus" role="status" aria-live="polite">جارٍ التحقق من صلاحيات المطوّر...</div>
 <div id="adminStats" aria-label="إحصائيات الموقع"></div>
-<h3>إدارة المنشورات المنشورة</h3><p class="muted">من هنا تستطيع تعديل المنشورات التي وافقت عليها سابقًا أو إخفاءها أو حذفها نهائيًا.</p><p id="publishedPostsStatus" role="status" aria-live="polite">جارٍ تحميل المنشورات المنشورة...</p><div id="publishedPostsManagement" aria-live="polite"></div>
-<h3>مراجعة المنشورات العامة</h3>
-<p class="muted">كل منشور جديد يبقى مخفيًا حتى توافق عليه. راجع المحتوى قبل نشره.</p>
-<div id="publicPostsModeration" aria-live="polite">جارٍ تحميل المنشورات...</div>
 <h3>التحكم بالحسابات</h3>
 <p class="muted">تظهر جميع الحسابات هنا مباشرة. بجانب كل حساب ستجد الإجراءات المتاحة له.</p>
 <div id="adminAccountsStatus" role="status" aria-live="polite"></div>
@@ -219,68 +215,6 @@ function addAdminStat(label,value){
   const number=document.createElement("p");number.textContent=String(value);number.setAttribute("aria-label",label+": "+value);
   card.append(title,number);adminStats.append(card);
 }
-async function loadPublishedAdminPosts(){
- const root=document.getElementById("publishedPostsManagement"),status=document.getElementById("publishedPostsStatus");
- if(!root||!status)return;
- root.replaceChildren();status.textContent="جارٍ تحميل المنشورات المنشورة...";
- try{
-  const data=await adminRequest("/api/admin/public-posts?status=approved");
-  if(!data.posts.length){status.textContent="لا توجد منشورات منشورة حاليًا.";return;}
-  status.textContent="عدد المنشورات المنشورة: "+data.posts.length;
-  for(const post of data.posts){
-   const card=document.createElement("article");card.className="requestCard";
-   const heading=document.createElement("h4");heading.textContent=post.title||"منشور دون عنوان";
-   const author=document.createElement("p");author.textContent="بواسطة: "+(post.authorName||"مستخدم");
-   const body=document.createElement("p");body.textContent=post.body||"";
-   const actions=document.createElement("div");actions.className="requestActions";
-   const edit=document.createElement("button");edit.type="button";edit.className="action";edit.textContent="تعديل المنشور";
-   edit.addEventListener("click",()=>{
-    const titleInput=document.createElement("input");titleInput.type="text";titleInput.maxLength=100;titleInput.value=post.title||"";titleInput.setAttribute("aria-label","عنوان المنشور");
-    const bodyInput=document.createElement("textarea");bodyInput.maxLength=2500;bodyInput.minLength=20;bodyInput.value=post.body||"";bodyInput.setAttribute("aria-label","نص المنشور");
-    const dialog=document.createElement("section");dialog.className="mersaloConfirmOverlay";dialog.setAttribute("role","dialog");dialog.setAttribute("aria-modal","true");
-    const box=document.createElement("div");box.className="mersaloConfirmCard";
-    const title=document.createElement("h2");title.textContent="تعديل المنشور المنشور";
-    const hint=document.createElement("p");hint.textContent="عدّل العنوان أو النص ثم احفظ. ستظهر التعديلات مباشرة في المجتمع.";
-    const save=document.createElement("button");save.type="button";save.className="action";save.textContent="حفظ التعديلات";
-    const cancel=document.createElement("button");cancel.type="button";cancel.className="action secondary";cancel.textContent="إلغاء";
-    const close=()=>{dialog.remove();document.body.classList.remove("confirm-open");edit.focus()};
-    cancel.addEventListener("click",close);
-    save.addEventListener("click",async()=>{
-     save.disabled=true;hint.textContent="جارٍ حفظ التعديلات...";
-     try{const result=await adminRequest("/api/admin/public-posts/"+encodeURIComponent(post.id),"PATCH",{action:"edit",title:titleInput.value,body:bodyInput.value});status.textContent=result.message;close();await loadPublishedAdminPosts();}
-     catch(error){hint.textContent=error.message||"تعذر حفظ التعديلات.";save.disabled=false;}
-    });
-    box.append(title,hint,titleInput,bodyInput,save,cancel);dialog.append(box);document.body.append(dialog);document.body.classList.add("confirm-open");titleInput.focus();
-   });
-   const hide=document.createElement("button");hide.type="button";hide.className="action secondary";hide.textContent="إخفاء المنشور";
-   hide.addEventListener("click",()=>showDeleteConfirmation("إخفاء المنشور","سيختفي هذا المنشور عن زوار المجتمع، ويمكن للمطوّر مراجعته لاحقًا من قاعدة البيانات.","نعم، أخفِ المنشور",async()=>{const result=await adminRequest("/api/admin/public-posts/"+encodeURIComponent(post.id),"PATCH",{action:"hide"});status.textContent=result.message;await loadPublishedAdminPosts();}));
-   const remove=document.createElement("button");remove.type="button";remove.className="action danger";remove.textContent="حذف المنشور نهائيًا";
-   remove.addEventListener("click",()=>showDeleteConfirmation("حذف المنشور نهائيًا","سيتم حذف المنشور من قاعدة البيانات ولن يمكن استعادته من لوحة الإدارة. هل تريد المتابعة؟","نعم، احذف نهائيًا",async()=>{const result=await adminRequest("/api/admin/public-posts/"+encodeURIComponent(post.id),"PATCH",{action:"delete"});status.textContent=result.message;await loadPublishedAdminPosts();}));
-   actions.append(edit,hide,remove);card.append(heading,author,body,actions);root.append(card);
-  }
- }catch(error){status.textContent=error.message||"تعذر تحميل المنشورات المنشورة.";}
-}
-async function loadAdminPublicPosts(){
-   const moderation=document.getElementById("publicPostsModeration");
-   try{
-     const posts=await adminRequest("/api/admin/public-posts");
-     moderation.replaceChildren();
-     if(!posts.posts.length)moderation.textContent="لا توجد منشورات بانتظار المراجعة.";
-     for(const post of posts.posts){
-       const card=document.createElement("article");card.className="requestCard";
-       const title=document.createElement("h3");title.textContent=post.title;
-       const author=document.createElement("p");author.textContent="بواسطة: "+(post.authorName||"مستخدم");
-       const body=document.createElement("p");body.textContent=post.body;
-       const actions=document.createElement("div");actions.className="requestActions";
-       for(const [label,action,cls] of [["موافقة ونشر","approve",""],["رفض المنشور","reject","danger"]]){
-         const button=document.createElement("button");button.type="button";button.className=cls;button.textContent=label;
-         button.addEventListener("click",async()=>{button.disabled=true;try{const result=await adminRequest("/api/admin/public-posts/"+encodeURIComponent(post.id),"PATCH",{action});adminStatus.textContent=result.message;await loadAdminPublicPosts();loadPublishedAdminPosts();}catch(error){button.disabled=false;adminStatus.textContent=error.message;}});
-         actions.append(button);
-       }
-       card.append(title,author,body,actions);moderation.append(card);
-     }
-   }catch(error){adminStatus.textContent=error.message||"تعذر تحميل المنشورات بانتظار المراجعة.";moderation.textContent="تعذر تحميل المنشورات بانتظار المراجعة.";}
- }
 async function loadAdminDashboard(){
   adminStatus.textContent="جارٍ تحميل بيانات لوحة الإدارة...";
   adminStats.replaceChildren();
@@ -326,7 +260,6 @@ async function loadAdminDashboard(){
       adminReports.append(card);
     }
   }else{failures++;adminReports.textContent=reports.reason?.message||"تعذر تحميل البلاغات.";}
-  for(const job of jobs.slice(2))if(job.status==="rejected")failures++;
   adminStatus.textContent=failures?"اكتمل تحميل لوحة الإدارة مع وجود أقسام تعذر تحميلها. استخدم زر تحديث لوحة الإدارة لإعادة المحاولة.":"تم تحميل لوحة الإدارة بنجاح.";
 }
 
