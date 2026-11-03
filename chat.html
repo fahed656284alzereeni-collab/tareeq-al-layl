@@ -965,6 +965,39 @@ async function refreshConversationInfo(){
     content.replaceChildren();
     const rows=[["اسم المجموعة",d.name],["عدد الأعضاء",String(d.members.length)],["عدد الرسائل",String(d.messageCount)],["تاريخ الإنشاء",formatInfoDate(d.createdAt)],["منشئ المجموعة",d.members.find(m=>m.uid===d.createdBy)?.name||"غير متوفر"]];
     rows.forEach(([label,value])=>{const row=document.createElement("p");row.className="infoMeta";row.textContent=label+": "+value;content.append(row)});
+    const groupAbout=document.createElement("section");groupAbout.className="groupInfoSection";
+    const aboutHeading=document.createElement("h4");aboutHeading.textContent="وصف المجموعة";
+    const aboutText=document.createElement("p");aboutText.textContent=d.description||"لم تتم إضافة وصف لهذه المجموعة بعد.";
+    groupAbout.append(aboutHeading,aboutText);
+    const announcementHeading=document.createElement("h4");announcementHeading.textContent="إعلان المجموعة";
+    const announcementText=document.createElement("p");announcementText.textContent=d.announcement||"لا يوجد إعلان حاليًا.";
+    groupAbout.append(announcementHeading,announcementText);
+    if(d.permissions?.editInfo==="members"||d.isAdmin||d.isModerator){
+      const editAbout=document.createElement("button");editAbout.type="button";editAbout.className="secondary";editAbout.textContent="تعديل الوصف والإعلان";
+      const aboutPanel=document.createElement("section");aboutPanel.className="groupInlinePanel";aboutPanel.hidden=true;
+      const descriptionLabel=document.createElement("label");descriptionLabel.textContent="وصف المجموعة";
+      const descriptionInput=document.createElement("textarea");descriptionInput.maxLength=500;descriptionInput.value=d.description||"";descriptionInput.setAttribute("aria-label","وصف المجموعة");
+      const announcementLabel=document.createElement("label");announcementLabel.textContent="إعلان المجموعة";
+      const announcementInput=document.createElement("textarea");announcementInput.maxLength=500;announcementInput.value=d.announcement||"";announcementInput.setAttribute("aria-label","إعلان المجموعة");
+      const aboutStatus=document.createElement("p");aboutStatus.setAttribute("role","status");aboutStatus.setAttribute("aria-live","polite");
+      const saveAbout=document.createElement("button");saveAbout.type="button";saveAbout.textContent="حفظ التغييرات";
+      const cancelAbout=document.createElement("button");cancelAbout.type="button";cancelAbout.className="secondary";cancelAbout.textContent="إلغاء";
+      editAbout.addEventListener("click",()=>{aboutPanel.hidden=false;descriptionInput.focus()});
+      cancelAbout.addEventListener("click",()=>{aboutPanel.hidden=true;editAbout.focus()});
+      saveAbout.addEventListener("click",async()=>{
+        saveAbout.disabled=true;aboutStatus.textContent="جارٍ حفظ معلومات المجموعة...";
+        try{
+          const result=await call("updateGroupDetails",{conversationId:currentId,description:descriptionInput.value,announcement:announcementInput.value});
+          if(!result.success){aboutStatus.textContent=result.message||"تعذر حفظ المعلومات.";return}
+          aboutPanel.hidden=true;await refreshConversationInfo();await loadConversations();
+          document.getElementById("conversationActionStatus").textContent=result.message||"تم تحديث معلومات المجموعة.";
+        }catch(error){aboutStatus.textContent="تعذر حفظ المعلومات. حاول مرة أخرى."}
+        finally{saveAbout.disabled=false}
+      });
+      aboutPanel.append(descriptionLabel,descriptionInput,announcementLabel,announcementInput,saveAbout,cancelAbout,aboutStatus);
+      groupAbout.append(editAbout,aboutPanel);
+    }
+    content.append(groupAbout);
     const membersSection=document.createElement("section");membersSection.className="groupInfoSection";
     const membersHeading=document.createElement("h4");membersHeading.textContent="أعضاء المجموعة";membersSection.append(membersHeading);
     const memberActionPanel=document.createElement("section");memberActionPanel.className="groupInlinePanel";memberActionPanel.hidden=true;memberActionPanel.setAttribute("aria-label","خيارات عضو المجموعة");
