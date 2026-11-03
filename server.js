@@ -1588,7 +1588,11 @@ app.post("/api/public-posts",pushCors,async(req,res)=>{
     res.json({success:true,message:"وصل منشورك للمراجعة، وسيظهر للجميع بعد موافقة الإدارة.",id:post.id});
   }catch(error){const status=error.message==="AUTH_REQUIRED"?401:500;res.status(status).json({success:false,message:status===401?"سجّل الدخول لإرسال منشور.":"تعذر إرسال المنشور."});}
 });
-app.get("/api/public-integrations",pushCors,async(req,res)=>{\n  try{const snap=await admin.firestore().collection("siteSettings").doc("monetization").get();const v=snap.exists?snap.data():{};res.json({success:true,analyticsId:/^G-[A-Z0-9]{4,20}$/.test(String(v.analyticsId||""))?String(v.analyticsId):"",searchVerification:String(v.searchVerification||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,200)});}\n  catch(error){res.json({success:true,analyticsId:"",searchVerification:""});}\n});\napp.get("/api/public-ads",pushCors,async(req,res)=>{
+app.get("/api/public-integrations",pushCors,async(req,res)=>{
+  try{const snap=await admin.firestore().collection("siteSettings").doc("monetization").get();const v=snap.exists?snap.data():{};res.json({success:true,analyticsId:/^G-[A-Z0-9]{4,20}$/.test(String(v.analyticsId||""))?String(v.analyticsId):"",searchVerification:String(v.searchVerification||"").replace(/[^a-zA-Z0-9_-]/g,"").slice(0,200)});}
+  catch(error){res.json({success:true,analyticsId:"",searchVerification:""});}
+});
+app.get("/api/public-ads",pushCors,async(req,res)=>{
   try{
     const snap=await admin.firestore().collection("siteSettings").doc("monetization").get();
     const v=snap.exists?snap.data():{};
@@ -1643,7 +1647,9 @@ app.put("/api/admin/monetization",pushCors,async(req,res)=>{
     const clientId=String(req.body?.clientId||"").trim(),slotId=String(req.body?.slotId||"").trim(),adsEnabled=!!req.body?.adsEnabled,analyticsId=String(req.body?.analyticsId||"").trim(),searchVerification=String(req.body?.searchVerification||"").trim();
     if(clientId&&!/^ca-pub-[0-9]{10,25}$/.test(clientId))return res.status(400).json({success:false,message:"معرّف الناشر غير صحيح. يجب أن يبدأ بـ ca-pub-."});
     if(slotId&&!/^[0-9]{5,25}$/.test(slotId))return res.status(400).json({success:false,message:"رقم مساحة الإعلان غير صحيح."});
-    if(adsEnabled&&(!clientId||!slotId))return res.status(400).json({success:false,message:"أدخل معرّف الناشر ورقم مساحة الإعلان قبل التفعيل."});\n    if(analyticsId&&!/^G-[A-Z0-9]{4,20}$/.test(analyticsId))return res.status(400).json({success:false,message:"معرّف Google Analytics غير صحيح. يجب أن يبدأ بـ G-."});\n    if(searchVerification&&!/^[a-zA-Z0-9_-]{1,200}$/.test(searchVerification))return res.status(400).json({success:false,message:"رمز إثبات Search Console غير صحيح."});
+    if(adsEnabled&&(!clientId||!slotId))return res.status(400).json({success:false,message:"أدخل معرّف الناشر ورقم مساحة الإعلان قبل التفعيل."});
+    if(analyticsId&&!/^G-[A-Z0-9]{4,20}$/.test(analyticsId))return res.status(400).json({success:false,message:"معرّف Google Analytics غير صحيح. يجب أن يبدأ بـ G-."});
+    if(searchVerification&&!/^[a-zA-Z0-9_-]{1,200}$/.test(searchVerification))return res.status(400).json({success:false,message:"رمز إثبات Search Console غير صحيح."});
     await admin.firestore().collection("siteSettings").doc("monetization").set({adsEnabled,clientId,slotId,analyticsId,searchVerification,updatedBy:actor.uid,updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
     res.json({success:true,message:adsEnabled?"تم حفظ إعدادات الإعلانات وتفعيلها في صفحة المجتمع فقط.":"تم حفظ الإعدادات وإيقاف الإعلانات."});
   }catch(error){sendAdminError(res,error);}
