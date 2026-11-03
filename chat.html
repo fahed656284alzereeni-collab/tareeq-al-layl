@@ -71,14 +71,7 @@ body:has(.messageActions:not([hidden])) #chatPanel>#closeChat{display:none!impor
 #composePanel h2{font-size:1.2rem;margin:0 0 10px}
 #sendForm textarea{display:block;min-height:104px;resize:vertical}
 #sendForm button{min-height:50px}
-.mediaSharePanel{position:fixed!important;inset:0!important;z-index:2147483600!important;width:100vw!important;height:100dvh!important;max-height:100dvh!important;margin:0!important;padding:calc(28px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom))!important;border:0!important;border-radius:0!important;background:#101827!important;overflow-y:auto!important;display:flex!important;flex-direction:column!important;gap:14px!important}
-.mediaSharePanel[hidden]{display:none!important}
-.mediaSharePanel button{width:100%;min-height:54px;margin:4px 0}
-body:has(.mediaSharePanel:not([hidden])) #chatPanel>#closeChat,
-body:has(.mediaSharePanel:not([hidden])) #chatPanel>.chatHeader,
-body:has(.mediaSharePanel:not([hidden])) #chatPanel>.messages,
-body:has(.mediaSharePanel:not([hidden])) #chatPanel>#composePanel{display:none!important;visibility:hidden!important}
-body:has(.mediaSharePanel:not([hidden])){overflow:hidden!important}
+#attachmentShareActions{display:grid;grid-template-columns:1fr;gap:8px;margin:10px 0}#attachmentShareActions button{width:100%;min-height:54px;margin:0}
 
 @media(min-width:600px){
   .infoActions{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -417,16 +410,7 @@ body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 <button id="endVoiceCall" type="button" class="secondary" hidden>إنهاء المكالمة</button>
 <audio id="remoteCallAudio" autoplay playsinline webkit-playsinline></audio><button id="enableCallAudio" type="button" class="secondary" hidden>تشغيل صوت المكالمة</button>
 </section><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
-<div id="composePanel"><h2>إرسال رسالة</h2><div id="replyPreview" class="infoPanel" hidden><p id="replyPreviewText"></p><button id="cancelReply" type="button" class="secondary">إلغاء الرد</button></div><button id="openMediaShare" type="button" class="secondary">مشاركة الملفات والوسائط</button><p id="attachmentUploadStatus" role="status" aria-live="polite"></p><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button><button id="scheduleMessageButton" type="button" class="secondary" disabled>جدولة الرسالة</button><button id="openScheduledMessages" type="button" class="secondary" disabled>الرسائل المجدولة</button></form></div><section id="scheduledMessagePanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessageHeading"><h3 id="scheduledMessageHeading" tabindex="-1">جدولة الرسالة</h3><p>اختر التاريخ والوقت الذي تريد إرسال الرسالة فيه.</p><label for="scheduledMessageDate">موعد الإرسال</label><input id="scheduledMessageDate" type="datetime-local" required aria-label="تاريخ ووقت إرسال الرسالة"><p id="scheduledMessageStatus" role="status" aria-live="polite"></p><div class="groupConfirmButtons"><button id="confirmScheduledMessage" type="button">تأكيد الجدولة</button><button id="cancelScheduledMessage" type="button" class="secondary">إلغاء</button></div></section><section id="scheduledMessagesPanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessagesHeading"><button id="closeScheduledMessages" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 id="scheduledMessagesHeading" tabindex="-1">الرسائل المجدولة</h3><p id="scheduledMessagesStatus" role="status" aria-live="polite">جارٍ تحميل الرسائل المجدولة...</p><div id="scheduledMessagesList" aria-live="polite"></div></section><section id="mediaSharePanel" class="mediaSharePanel" aria-labelledby="mediaShareHeading" hidden>
-<button id="closeMediaShare" type="button" class="panelBack">رجوع إلى المحادثة</button>
-<h3 id="mediaShareHeading" tabindex="-1">مشاركة الملفات والوسائط</h3>
-<p class="muted">اختر نوع المحتوى الذي تريد مشاركته. الحد الأقصى 50 ميغابايت لكل ملف.</p>
-<button id="choosePhotosVideos" type="button">مشاركة الصور والفيديوهات</button>
-<button id="chooseFiles" type="button" class="secondary">مشاركة الملفات</button>
-<input id="photosVideosInput" type="file" accept="image/*,video/*" multiple hidden aria-label="اختيار الصور والفيديوهات">
-<input id="filesInput" type="file" multiple hidden aria-label="اختيار الملفات">
-<p id="mediaUploadStatus" role="status" aria-live="polite"></p>
-</section></section>
+<div id="composePanel"><h2>إرسال رسالة</h2><div id="replyPreview" class="infoPanel" hidden><p id="replyPreviewText"></p><button id="cancelReply" type="button" class="secondary">إلغاء الرد</button></div><div id="attachmentShareActions" aria-label="مشاركة الوسائط والملفات"><button id="choosePhotosVideos" type="button" class="secondary">مشاركة الصور والفيديوهات</button><button id="chooseFiles" type="button" class="secondary">مشاركة الملفات</button></div><p id="attachmentUploadStatus" role="status" aria-live="polite"></p><input id="photosVideosInput" type="file" accept="image/*,video/*" multiple hidden aria-label="اختيار الصور والفيديوهات"><input id="filesInput" type="file" multiple hidden aria-label="اختيار الملفات"><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button><button id="scheduleMessageButton" type="button" class="secondary" disabled>جدولة الرسالة</button><button id="openScheduledMessages" type="button" class="secondary" disabled>الرسائل المجدولة</button></form></div><section id="scheduledMessagePanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessageHeading"><h3 id="scheduledMessageHeading" tabindex="-1">جدولة الرسالة</h3><p>اختر التاريخ والوقت الذي تريد إرسال الرسالة فيه.</p><label for="scheduledMessageDate">موعد الإرسال</label><input id="scheduledMessageDate" type="datetime-local" required aria-label="تاريخ ووقت إرسال الرسالة"><p id="scheduledMessageStatus" role="status" aria-live="polite"></p><div class="groupConfirmButtons"><button id="confirmScheduledMessage" type="button">تأكيد الجدولة</button><button id="cancelScheduledMessage" type="button" class="secondary">إلغاء</button></div></section><section id="scheduledMessagesPanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessagesHeading"><button id="closeScheduledMessages" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 id="scheduledMessagesHeading" tabindex="-1">الرسائل المجدولة</h3><p id="scheduledMessagesStatus" role="status" aria-live="polite">جارٍ تحميل الرسائل المجدولة...</p><div id="scheduledMessagesList" aria-live="polite"></div></section></section>
 <p id="status" role="status" aria-live="polite">جارٍ التحقق من الحساب...</p>
 </main>
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
@@ -1381,9 +1365,6 @@ function showConversationDeleteChoice(kind){
 document.getElementById("clearChatAction").addEventListener("click",()=>{if(currentId)showConversationDeleteChoice("clear")});
 document.getElementById("deleteChatAction").addEventListener("click",()=>{if(currentId)showConversationDeleteChoice("delete")});
 document.getElementById("reportAction").addEventListener("click",()=>{if(currentOtherUid&&currentId)showInlineActionChoice("report")});
-const mediaSharePanel=document.getElementById("mediaSharePanel");
-document.getElementById("openMediaShare").addEventListener("click",()=>{mediaSharePanel.hidden=false;document.getElementById("mediaShareHeading").focus()});
-document.getElementById("closeMediaShare").addEventListener("click",()=>{mediaSharePanel.hidden=true;document.getElementById("openMediaShare").focus()});
 document.getElementById("choosePhotosVideos").addEventListener("click",()=>document.getElementById("photosVideosInput").click());
 document.getElementById("chooseFiles").addEventListener("click",()=>document.getElementById("filesInput").click());
 function readLocalVideoDuration(file){
@@ -1456,8 +1437,7 @@ async function uploadConversationAttachment(file){
   finally{document.getElementById("choosePhotosVideos").disabled=false;document.getElementById("chooseFiles").disabled=false}
 }
 async function returnToConversationBeforeUpload(selectedCount){
-  // Close the full-screen picker panel and restore the actual conversation first.
-  mediaSharePanel.hidden=true;
+  // Keep the conversation in place; the native iOS/Android picker returns here.
   const heading=document.getElementById("chatTitle");
   if(heading)heading.focus();
   const uploadStatus=document.getElementById("attachmentUploadStatus");
