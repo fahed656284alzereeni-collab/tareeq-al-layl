@@ -1756,7 +1756,7 @@ app.post("/api/admin/account-control",pushCors,express.json({limit:"32kb"}),asyn
     }
     if(action==="timed-suspend"){
       const hours=Number(req.body?.hours);
-      if(![1,24,168,720].includes(hours)||!reason)return res.status(400).json({success:false,message:"مدة الإيقاف أو السبب غير صالح."});
+      if(!Number.isInteger(hours)||hours<1||hours>8760||!reason)return res.status(400).json({success:false,message:"مدة الإيقاف أو السبب غير صالح. الحد من ساعة إلى 365 يومًا."});
       const until=Date.now()+hours*3600000;
       await admin.auth().updateUser(uid,{disabled:true});
       await admin.auth().revokeRefreshTokens(uid);
