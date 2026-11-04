@@ -73,7 +73,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <button class="navLink" type="button" data-navigate="settings.html" aria-current="page">الإعدادات</button>
 </div>
 </header>
-<div>
+<main>
 <section class="panel section-screen active" id="panel-settings">
 <button class="link secondary" type="button" data-navigate="chat.html">رجوع إلى المحادثات</button>
 <h2 role="presentation">الإعدادات</h2><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
@@ -191,7 +191,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <section id="logoutConfirm" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" hidden><div class="confirmCard"><h2 role="presentation" id="logoutConfirmTitle" tabindex="-1">تأكيد تسجيل الخروج</h2><p>هل أنت متأكد أنك تريد تسجيل الخروج من مِرسالو؟</p><button id="confirmLogout" class="action secondary" type="button">تأكيد تسجيل الخروج</button><button id="cancelLogout" class="action" type="button">إلغاء</button></div></section>
 </section>
 
-</div>
+</main>
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
