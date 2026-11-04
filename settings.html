@@ -60,9 +60,47 @@ h3{margin-bottom:4px;color:#f5f7fb}
 #deleteConfirm .confirmCard button,#logoutConfirm .confirmCard button{border-radius:13px}
 body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 </style><link rel="stylesheet" href="/mersalo-theme.css?v=20261104">
+
 <script>
-/* Keep visual layout while suppressing heading and landmark classifications for screen readers. */
-(()=>{const selector="h1,h2,h3,h4,h5,h6,nav,main,header,footer,aside,[role=\\"navigation\\"],[role=\\"main\\"],[role=\\"banner\\"],[role=\\"contentinfo\\"]";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","presentation");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","presentation"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
+/* Keep the visual design, while making spoken controls concise and headings plain text. */
+(()=>{
+ const headingSelector="h1,h2,h3,h4,h5,h6";
+ const landmarkSelector="nav,main,header,footer,aside,[role=\"navigation\"],[role=\"main\"],[role=\"banner\"],[role=\"contentinfo\"]";
+ const copyStyle=["display","font-size","font-family","font-weight","font-style","line-height","color","text-align","letter-spacing","text-transform","margin-top","margin-right","margin-bottom","margin-left","align-self"];
+ const plainHeading=el=>{
+  if(!el.matches?.(headingSelector))return el;
+  const style=getComputedStyle(el);
+  const replacement=document.createElement("div");
+  for(const attr of [...el.attributes])if(attr.name!=="role"&&attr.name!=="aria-level")replacement.setAttribute(attr.name,attr.value);
+  for(const prop of copyStyle)replacement.style.setProperty(prop,style.getPropertyValue(prop));
+  while(el.firstChild)replacement.append(el.firstChild);
+  el.replaceWith(replacement);
+  return replacement;
+ };
+ const normalizeButton=el=>{
+  if(el.tagName!=="BUTTON")return;
+  const name=(el.innerText||el.textContent||"").replace(/\s+/g," ").trim();
+  if(name)el.setAttribute("aria-label",name);
+ };
+ const apply=root=>{
+  if(root.nodeType!==1)return;
+  if(root.matches?.(headingSelector))root=plainHeading(root);
+  if(root.matches?.(landmarkSelector))root.setAttribute("role","presentation");
+  if(root.matches?.("button"))normalizeButton(root);
+  root.querySelectorAll?.(headingSelector).forEach(plainHeading);
+  root.querySelectorAll?.(landmarkSelector).forEach(el=>el.setAttribute("role","presentation"));
+  root.querySelectorAll?.("button").forEach(normalizeButton);
+ };
+ const start=()=>{
+  apply(document.documentElement);
+  new MutationObserver(records=>records.forEach(record=>{
+   if(record.type==="characterData")apply(record.target.parentElement);
+   else record.addedNodes.forEach(apply);
+  })).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+ };
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});
+ else start();
+})();
 </script>
 </head>
 <body>
