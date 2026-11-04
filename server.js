@@ -1746,6 +1746,24 @@ app.get("/api/profile/me",pushCors,async(req,res)=>{
   res.status(status).json({success:false,message:"تعذر تحميل بيانات الحساب."});
  }
 });
+app.post("/api/profile/me",pushCors,express.json({limit:"8kb"}),async(req,res)=>{
+ try{
+  const uid=await authenticatedUid(req);
+  const playerName=String(req.body?.playerName||"").trim();
+  const bio=String(req.body?.bio||"").trim();
+  if(playerName.length<2||playerName.length>30)return res.status(400).json({success:false,message:"اسم المستخدم يجب أن يكون بين حرفين و30 حرفًا."});
+  if(bio.length>200)return res.status(400).json({success:false,message:"النبذة الشخصية لا يمكن أن تتجاوز 200 حرف."});
+  await assertNameAllowed(playerName);
+  const authUser=await admin.auth().getUser(uid);
+  await admin.auth().updateUser(uid,{displayName:playerName});
+  await admin.firestore().collection("users").doc(uid).set({uid,email:String(authUser.email||""),displayName:playerName,playerName,bio,updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+  res.set("Cache-Control","no-store");
+  res.json({success:true,playerName,bio,message:"تم حفظ الملف الشخصي بنجاح."});
+ }catch(error){
+  const status=error.message==="AUTH_REQUIRED"?401:400;
+  res.status(status).json({success:false,message:error.message==="AUTH_REQUIRED"?"يرجى تسجيل الدخول مجددًا.":error.message||"تعذر حفظ الملف الشخصي."});
+ }
+});
 app.get("/api/public/system-settings",pushCors,async(req,res)=>{
  try{res.set("Cache-Control","no-store");res.json({success:true,settings:await readSystemSettings()});}
  catch(error){res.status(503).json({success:false,message:"تعذر قراءة حالة الموقع."});}
