@@ -203,7 +203,7 @@ function showAdminSubsection(id){
 }
 function showAdminMenu(){
  document.getElementById("adminSectionMenu").hidden=false;
- document.querySelectorAll("#panel-admin .admin-subsection").forEach(view=>view.hidden=true);
+ document.querySelectorAll("#panel-admin .admin-subsection").forEach(view=>{view.hidden=true;view.classList.remove("admin-subsection-active")});document.body.classList.remove("admin-subsection-open");
  const heading=document.querySelector("#panel-admin h2");if(heading)heading.focus();
 }
 document.querySelectorAll("[data-admin-section]").forEach(button=>button.addEventListener("click",()=>showAdminSubsection(button.dataset.adminSection)));
