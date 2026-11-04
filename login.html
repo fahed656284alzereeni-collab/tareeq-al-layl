@@ -117,22 +117,18 @@ form.addEventListener("submit",async e=>{
  }
 });
 </script><script src="diagnostics.js" defer></script><script>
-/* Keep checkbox interaction local: toggle the control without activating clickable parent rows/cards. */
+/* A checkbox click must not bubble into a clickable row/card and navigate away. */
 (function(){
- function protectCheckbox(el){
-  if(!el || el.dataset.checkboxInteractionProtected==="true") return;
-  el.dataset.checkboxInteractionProtected="true";
-  el.addEventListener("click",function(event){event.stopPropagation();});
+ const selector='input[type="checkbox"]';
+ function isolate(event){
+  const target=event.target;
+  if(!target || !target.closest) return;
+  const checkbox=target.closest(selector);
+  if(!checkbox) return;
+  event.stopPropagation();
  }
- document.querySelectorAll('input[type="checkbox"]').forEach(protectCheckbox);
- const observer=new MutationObserver(function(records){
-  for(const record of records) for(const node of record.addedNodes){
-   if(node.nodeType!==1) continue;
-   if(node.matches && node.matches('input[type="checkbox"]')) protectCheckbox(node);
-   if(node.querySelectorAll) node.querySelectorAll('input[type="checkbox"]').forEach(protectCheckbox);
-  }
- });
- observer.observe(document.documentElement,{childList:true,subtree:true});
+ document.addEventListener("click",isolate,true);
+ document.addEventListener("change",isolate,true);
 })();
 </script>
 </body></html>
