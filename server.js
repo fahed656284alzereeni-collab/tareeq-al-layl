@@ -1709,6 +1709,34 @@ app.get("/api/admin/audit-log",pushCors,async(req,res)=>{
   }catch(error){sendAdminError(res,error);}
 });
 
+// Developer control center: strict allow-list, no arbitrary code execution.
+app.get("/api/admin/control-center/status",pushCors,async(req,res)=>{
+ try{
+  await requireMersaloAdmin(req);
+  res.set("Cache-Control","no-store");
+  res.json({success:true,server:{status:"ok",uptimeSeconds:Math.floor(process.uptime()),checkedAt:new Date().toISOString()}});
+ }catch(error){sendAdminError(res,error);}
+});
+app.get("/api/admin/control-center/logs",pushCors,async(req,res)=>{
+ try{
+  await requireMersaloAdmin(req);
+  const snap=await admin.firestore().collection("adminControlLogs").orderBy("createdAt","desc").limit(30).get();
+  res.json({success:true,logs:snap.docs.map(d=>{const v=d.data();return{id:d.id,command:String(v.command||""),message:String(v.message||""),createdAt:v.createdAt?.toDate?.().toISOString?.()||null};})});
+ }catch(error){sendAdminError(res,error);}
+});
+app.post("/api/admin/control-center/command",pushCors,express.json({limit:"4kb"}),async(req,res)=>{
+ try{
+  const actor=await requireMersaloAdmin(req);
+  const command=String(req.body?.command||"").trim();
+  if(command!=="health-check")return res.status(400).json({success:false,message:"هذا الأمر غير متاح. اختر فحص حالة الخادم."});
+  const result={status:"ok",uptimeSeconds:Math.floor(process.uptime()),checkedAt:new Date().toISOString()};
+  const message="الخادم يعمل ويستجيب.";
+  await admin.firestore().collection("adminControlLogs").add({command,actorUid:actor.uid,actorEmail:String(actor.email||""),message,resultStatus:result.status,createdAt:admin.firestore.FieldValue.serverTimestamp()});
+  res.set("Cache-Control","no-store");
+  res.json({success:true,message,result});
+ }catch(error){sendAdminError(res,error);}
+});
+
 app.get("/api/admin/name-terms",pushCors,async(req,res)=>{
  try{
   await requireMersaloAdmin(req);
