@@ -308,7 +308,9 @@ async function loadAdminDashboard(){
     adminRequest("/api/admin/dashboard"),
     adminRequest("/api/admin/reports"),
     loadAdminAccounts(),
-    loadAdminGroups()
+    loadAdminGroups(),
+    loadAdminAudit(),
+    loadAdminDiagnostics()
   ]);
   let failures=0;
   const dashboard=jobs[0],reports=jobs[1];
@@ -346,6 +348,44 @@ async function loadAdminDashboard(){
   }else{failures++;adminReports.textContent=reports.reason?.message||"تعذر تحميل البلاغات.";}
   adminStatus.textContent=failures?"اكتمل تحميل لوحة الإدارة مع وجود أقسام تعذر تحميلها. استخدم زر تحديث لوحة الإدارة لإعادة المحاولة.":"تم تحميل لوحة الإدارة بنجاح.";
 }
+
+
+async function loadAdminAudit(){
+ const status=document.getElementById("adminAuditStatus"),list=document.getElementById("adminAuditLog");
+ status.textContent="جارٍ تحميل سجل العمليات...";list.replaceChildren();
+ try{
+  const data=await adminRequest("/api/admin/audit-log"),items=Array.isArray(data.actions)?data.actions:[];
+  if(!items.length){status.textContent="لا توجد عمليات إدارية مسجلة.";return}
+  for(const item of items){
+   const card=document.createElement("article");card.className="requestCard";
+   const title=document.createElement("h3");title.textContent=item.label||"إجراء إداري";
+   const target=document.createElement("p");target.textContent="الحساب المستهدف: "+(item.targetName||item.targetUid||"غير محدد");
+   const reason=document.createElement("p");reason.textContent="السبب: "+(item.reason||"لم يُسجل سبب.");
+   const date=document.createElement("p");date.textContent="وقت التنفيذ: "+(item.createdAt?new Date(item.createdAt).toLocaleString("ar-JO"):"غير متوفر");
+   card.append(title,target,reason,date);list.append(card);
+  }
+  status.textContent="تم تحميل "+items.length+" عملية.";
+ }catch(error){status.textContent=error.message||"تعذر تحميل سجل العمليات.";}
+}
+async function loadAdminDiagnostics(){
+ const status=document.getElementById("adminDiagnosticsStatus"),list=document.getElementById("adminDiagnostics");
+ status.textContent="جارٍ تحميل سجل الأعطال...";list.replaceChildren();
+ try{
+  const data=await adminRequest("/api/admin/diagnostics"),items=Array.isArray(data.events)?data.events:[];
+  if(!items.length){status.textContent="لا توجد أعطال مسجلة.";return}
+  for(const item of items){
+   const card=document.createElement("article");card.className="requestCard";
+   const title=document.createElement("h3");title.textContent=item.type||"خطأ فني";
+   const message=document.createElement("p");message.textContent=item.message||"لا توجد تفاصيل.";
+   const page=document.createElement("p");page.textContent="الصفحة: "+(item.page||"غير محددة");
+   const date=document.createElement("p");date.textContent="وقت التسجيل: "+(item.createdAt?new Date(item.createdAt).toLocaleString("ar-JO"):"غير متوفر");
+   card.append(title,message,page,date);list.append(card);
+  }
+  status.textContent="تم تحميل "+items.length+" بلاغًا فنيًا.";
+ }catch(error){status.textContent=error.message||"تعذر تحميل سجل الأعطال.";}
+}
+document.getElementById("refreshAdminAudit").addEventListener("click",loadAdminAudit);
+document.getElementById("refreshAdminDiagnostics").addEventListener("click",loadAdminDiagnostics);
 
 const adminAccounts=document.getElementById("adminAccounts");
 const adminAccountsStatus=document.getElementById("adminAccountsStatus");
