@@ -60,6 +60,10 @@ h3{margin-bottom:4px;color:#f5f7fb}
 #deleteConfirm .confirmCard button,#logoutConfirm .confirmCard button{border-radius:13px}
 body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 </style><link rel="stylesheet" href="/mersalo-theme.css?v=20261104">
+<script>
+/* Keep headings visible, but expose them as ordinary text to screen readers. */
+(()=>{const selector="h1,h2,h3,h4,h5,h6";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","generic");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","generic"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
+</script>
 </head>
 <body>
 <header>
@@ -853,8 +857,5 @@ document.getElementById("confirmDelete").addEventListener("click",async()=>{cons
  document.addEventListener("change",isolate,true);
 })();
 </script>
-<script>
-/* Keep heading appearance while preventing screen readers from announcing heading levels. */
-(()=>{const apply=root=>{if(root.matches?.("h1,h2,h3,h4,h5,h6"))root.setAttribute("role","generic");root.querySelectorAll?.("h1,h2,h3,h4,h5,h6").forEach(el=>el.setAttribute("role","generic"));};apply(document);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{if(node.nodeType===1)apply(node);}))).observe(document.documentElement,{childList:true,subtree:true});})();
-</script>
+
 </body></html>
