@@ -1720,7 +1720,7 @@ app.get("/api/admin/audit-log",pushCors,async(req,res)=>{
     const uids=[...new Set(snap.docs.flatMap(d=>[d.data().targetUid,d.data().adminUid]).filter(Boolean))];
     const profiles=uids.length?await admin.firestore().getAll(...uids.map(uid=>admin.firestore().collection("users").doc(uid))):[];
     const names=new Map(profiles.map(p=>[p.id,p.exists?String(p.data().playerName||p.data().displayName||"مستخدم"):"حساب محذوف"]));
-    const labels={warning:"إرسال تحذير",suspend:"إيقاف حساب",restore:"إعادة تفعيل حساب","revoke-sessions":"إنهاء الجلسات","rename-account":"تغيير اسم حساب"};
+    const labels={warning:"إرسال تحذير",suspend:"إيقاف حساب",restore:"إعادة تفعيل حساب","revoke-sessions":"إنهاء الجلسات","rename-account":"تغيير اسم حساب","system-settings":"تحديث إعدادات الموقع والميزات"};
     res.json({success:true,actions:snap.docs.map(d=>{
       const v=d.data();
       return{id:d.id,type:String(v.type||"إجراء إداري"),label:labels[v.type]||"إجراء إداري",targetUid:String(v.targetUid||""),targetName:names.get(v.targetUid)||"",adminUid:String(v.adminUid||""),adminEmail:v.adminUid===req.adminUser?.uid?"المطوّر":(names.get(v.adminUid)||"الإدارة"),reason:String(v.reason||""),newName:String(v.newName||""),createdAt:v.createdAt?.toDate?.().toISOString?.()||null};
