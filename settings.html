@@ -92,7 +92,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p id="controlStatus" role="status" aria-live="polite"></p>
 <h4>سجل آخر الأوامر</h4><div id="controlLogs" aria-live="polite">لم يتم تحميل السجل بعد.</div>
 </section>
-<h3>التحكم بالحسابات</h3>
+<section class="requestCard" aria-labelledby="auditTitle"><h3 id="auditTitle">سجل العمليات الإدارية</h3><button class="action secondary" type="button" id="refreshAdminAudit">تحديث سجل العمليات</button><p id="adminAuditStatus" role="status" aria-live="polite">لم يتم تحميل السجل بعد.</p><div id="adminAuditLog" aria-live="polite"></div></section><section class="requestCard" aria-labelledby="diagnosticsTitle"><h3 id="diagnosticsTitle">تشخيص أعطال الموقع</h3><button class="action secondary" type="button" id="refreshAdminDiagnostics">تحديث سجل الأعطال</button><p id="adminDiagnosticsStatus" role="status" aria-live="polite">لم يتم تحميل الأعطال بعد.</p><div id="adminDiagnostics" aria-live="polite"></div></section><h3>التحكم بالحسابات</h3>
 <label for="adminAccountSearch">البحث عن حساب بالاسم أو البريد أو المعرّف</label><input id="adminAccountSearch" type="search" placeholder="اكتب كلمة البحث" autocomplete="off" aria-label="البحث عن حساب بالاسم أو البريد أو المعرّف">
 <p class="muted">تظهر جميع الحسابات هنا مباشرة. بجانب كل حساب ستجد الإجراءات المتاحة له.</p>
 <div id="adminAccountsStatus" role="status" aria-live="polite"></div>
