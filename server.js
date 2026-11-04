@@ -1732,6 +1732,20 @@ app.get("/api/admin/audit-log",pushCors,async(req,res)=>{
 });
 
 // Developer control center: strict allow-list, no arbitrary code execution.
+app.get("/api/profile/me",pushCors,async(req,res)=>{
+ try{
+  const uid=await authenticatedUid(req);
+  const snap=await admin.firestore().collection("users").doc(uid).get();
+  const data=snap.exists?snap.data():{};
+  const authUser=await admin.auth().getUser(uid);
+  const playerName=String(data.playerName||data.displayName||authUser.displayName||"").trim();
+  res.set("Cache-Control","no-store");
+  res.json({success:true,playerName,bio:String(data.bio||"").slice(0,200),email:String(authUser.email||data.email||"")});
+ }catch(error){
+  const status=error.message==="AUTH_REQUIRED"?401:500;
+  res.status(status).json({success:false,message:"تعذر تحميل بيانات الحساب."});
+ }
+});
 app.get("/api/public/system-settings",pushCors,async(req,res)=>{
  try{res.set("Cache-Control","no-store");res.json({success:true,settings:await readSystemSettings()});}
  catch(error){res.status(503).json({success:false,message:"تعذر قراءة حالة الموقع."});}
