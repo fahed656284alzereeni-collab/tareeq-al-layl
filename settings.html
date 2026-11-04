@@ -62,12 +62,12 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 </style><link rel="stylesheet" href="/mersalo-theme.css?v=20261104">
 <script>
 /* Keep headings visible, but expose them as ordinary text to screen readers. */
-(()=>{const selector="h1,h2,h3,h4,h5,h6";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","generic");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","generic"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
+(()=>{const selector="h1,h2,h3,h4,h5,h6";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","presentation");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","presentation"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
 </script>
 </head>
 <body>
 <header>
-<h1 role="generic">مِرسالو</h1>
+<h1 role="presentation">مِرسالو</h1>
 <nav class="mainNav" aria-label="التنقل الرئيسي">
 <button class="navLink" type="button" data-navigate="chat.html">الصفحة الرئيسية</button>
 <button class="navLink" type="button" data-navigate="settings.html" aria-current="page">الإعدادات</button>
@@ -76,7 +76,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <main>
 <section class="panel section-screen active" id="panel-settings">
 <button class="link secondary" type="button" data-navigate="chat.html">رجوع إلى المحادثات</button>
-<h2 role="generic">الإعدادات</h2><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
+<h2 role="presentation">الإعدادات</h2><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
 <div class="setting"><label for="largeText" aria-hidden="true">تكبير النصوص</label><input id="largeText" type="checkbox" aria-label="تكبير النصوص"></div>
 <div class="setting"><label for="strongFocus" aria-hidden="true">إبراز العنصر المحدد بوضوح</label><input id="strongFocus" type="checkbox" aria-label="إبراز العنصر المحدد بوضوح"></div>
 <p id="settingsStatus" role="status" aria-live="polite">يتم حفظ التغييرات على هذا الجهاز تلقائيًا.</p><button class="action" type="button" data-open-section="panel-notifications">الإشعارات</button><button class="action" type="button" data-open-section="panel-friend-requests">طلبات الصداقة</button><button class="action" type="button" data-open-section="panel-account-options">إدارة الحساب</button><button class="action" type="button" id="openAdmin" data-open-section="panel-admin" hidden>إدارة مِرسالو - المطوّر</button><button class="action" type="button" data-navigate="terms.html">حول مِرسالو</button>
@@ -85,7 +85,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 
 <section class="panel section-screen" id="panel-admin" hidden>
 <button class="section-back" type="button">رجوع إلى الإعدادات</button>
-<h2 role="generic" tabindex="-1">إدارة مِرسالو</h2>
+<h2 role="presentation" tabindex="-1">إدارة مِرسالو</h2>
 <p class="muted">لوحة المطوّر الخاصة. جميع إجراءات الإدارة تُراجع صلاحيتها على الخادم.</p>
 <div id="adminStatus" class="requestStatus" role="status" aria-live="polite">جارٍ التحقق من صلاحيات المطوّر...</div>
 <div id="adminStats" aria-label="إحصائيات الموقع"></div>
@@ -99,12 +99,12 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <button class="action" type="button" data-admin-section="audit">سجل العمليات</button>
 <button class="action" type="button" data-admin-section="diagnostics">تشخيص الأعطال</button>
 <button class="action" type="button" data-admin-section="commands">مركز الأوامر</button>
-</div><div class="admin-subsection" id="admin-section-site" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">إدارة الموقع والميزات</h3><section class="requestCard" aria-labelledby="systemControlTitle">
-<h3 role="generic" id="systemControlTitle">إدارة حالة الموقع والميزات</h3>
+</div><div class="admin-subsection" id="admin-section-site" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="presentation">إدارة الموقع والميزات</h3><section class="requestCard" aria-labelledby="systemControlTitle">
+<h3 role="presentation" id="systemControlTitle">إدارة حالة الموقع والميزات</h3>
 <p class="muted">تُحفظ الإعدادات على الخادم وتُطبّق على تسجيل الدخول والاتصال والعمليات المرتبطة بكل ميزة. عند تفعيل الصيانة سيُمنع المستخدمون من الدخول، بينما تبقى صلاحية المطوّر متاحة لإيقافها.</p>
 <label><input id="systemMaintenance" type="checkbox"> تفعيل وضع الصيانة ومنع دخول المستخدمين</label>
 <label><input id="systemRegistration" type="checkbox" checked> السماح بإنشاء حسابات جديدة</label>
-<h4 role="generic">التحكم بالميزات</h4>
+<h4 role="presentation">التحكم بالميزات</h4>
 <label><input id="featureVoiceCalls" type="checkbox" checked> المكالمات الصوتية</label>
 <label><input id="featureGroupChats" type="checkbox" checked> إنشاء المجموعات</label>
 <label><input id="featureMediaSharing" type="checkbox" checked> مشاركة الصور والفيديوهات والملفات</label>
@@ -118,8 +118,8 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p id="developerNotesStatus" role="status" aria-live="polite"></p>
 
 </section></div>
-<div class="admin-subsection" id="admin-section-commands" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">مركز الأوامر</h3><section class="requestCard" aria-labelledby="controlCenterTitle">
-<h3 role="generic" id="controlCenterTitle">مركز التحكم والأوامر</h3>
+<div class="admin-subsection" id="admin-section-commands" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="presentation">مركز الأوامر</h3><section class="requestCard" aria-labelledby="controlCenterTitle">
+<h3 role="presentation" id="controlCenterTitle">مركز التحكم والأوامر</h3>
 <p class="muted">يمكنك فحص الخادم من هنا. الأوامر غير المعروفة لا تُنفّذ.</p>
 <div class="account-actions">
 <button class="action" type="button" id="controlHealth">فحص حالة الخادم</button>
@@ -131,55 +131,55 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p id="controlUnderstanding" role="status" aria-live="polite">لم يتم تحليل أي أمر بعد.</p>
 <button class="action" type="button" id="controlExecute" disabled>تأكيد تنفيذ الأمر</button>
 <p id="controlStatus" role="status" aria-live="polite"></p>
-<h4 role="generic">سجل آخر الأوامر</h4><div id="controlLogs" aria-live="polite">لم يتم تحميل السجل بعد.</div>
+<h4 role="presentation">سجل آخر الأوامر</h4><div id="controlLogs" aria-live="polite">لم يتم تحميل السجل بعد.</div>
 </section></div>
-<div class="admin-subsection" id="admin-section-audit" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">سجل العمليات</h3><section class="requestCard" aria-labelledby="auditTitle"><h3 role="generic" id="auditTitle">سجل العمليات الإدارية</h3><button class="action secondary" type="button" id="refreshAdminAudit">تحديث سجل العمليات</button><p id="adminAuditStatus" role="status" aria-live="polite">لم يتم تحميل السجل بعد.</p><div id="adminAuditLog" aria-live="polite"></div></section></div><div class="admin-subsection" id="admin-section-diagnostics" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">تشخيص الأعطال</h3><section class="requestCard" aria-labelledby="diagnosticsTitle"><h3 role="generic" id="diagnosticsTitle">تشخيص أعطال الموقع</h3><button class="action secondary" type="button" id="refreshAdminDiagnostics">تحديث سجل الأعطال</button><p id="adminDiagnosticsStatus" role="status" aria-live="polite">لم يتم تحميل الأعطال بعد.</p><div id="adminDiagnostics" aria-live="polite"></div></section></div><div class="admin-subsection" id="admin-section-accounts" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">إدارة الحسابات</h3><h3 role="generic">التحكم بالحسابات</h3>
+<div class="admin-subsection" id="admin-section-audit" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="presentation">سجل العمليات</h3><section class="requestCard" aria-labelledby="auditTitle"><h3 role="presentation" id="auditTitle">سجل العمليات الإدارية</h3><button class="action secondary" type="button" id="refreshAdminAudit">تحديث سجل العمليات</button><p id="adminAuditStatus" role="status" aria-live="polite">لم يتم تحميل السجل بعد.</p><div id="adminAuditLog" aria-live="polite"></div></section></div><div class="admin-subsection" id="admin-section-diagnostics" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="presentation">تشخيص الأعطال</h3><section class="requestCard" aria-labelledby="diagnosticsTitle"><h3 role="presentation" id="diagnosticsTitle">تشخيص أعطال الموقع</h3><button class="action secondary" type="button" id="refreshAdminDiagnostics">تحديث سجل الأعطال</button><p id="adminDiagnosticsStatus" role="status" aria-live="polite">لم يتم تحميل الأعطال بعد.</p><div id="adminDiagnostics" aria-live="polite"></div></section></div><div class="admin-subsection" id="admin-section-accounts" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="presentation">إدارة الحسابات</h3><h3 role="presentation">التحكم بالحسابات</h3>
 <label for="adminAccountSearch">البحث عن حساب بالاسم أو البريد أو المعرّف</label><input id="adminAccountSearch" type="search" placeholder="اكتب كلمة البحث" autocomplete="off" aria-label="البحث عن حساب بالاسم أو البريد أو المعرّف">
 <p class="muted">تظهر جميع الحسابات هنا مباشرة. بجانب كل حساب ستجد الإجراءات المتاحة له.</p>
 <div id="adminAccountsStatus" role="status" aria-live="polite"></div>
 <div id="adminAccounts" aria-live="polite"></div>
-</div><div class="admin-subsection" id="admin-section-groups" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">إدارة المجموعات</h3><h3 role="generic">إدارة المجموعات</h3>
+</div><div class="admin-subsection" id="admin-section-groups" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="presentation">إدارة المجموعات</h3><h3 role="presentation">إدارة المجموعات</h3>
 <label for="adminGroupSearch">البحث عن مجموعة بالاسم</label><input id="adminGroupSearch" type="search" placeholder="اكتب اسم المجموعة" autocomplete="off" aria-label="البحث عن مجموعة بالاسم">
 <p class="muted">يمكن إيقاف المجموعة أو تعليقها مؤقتًا أو إعادة تفعيلها أو حذفها نهائيًا.</p>
 <div id="adminGroupsStatus" role="status" aria-live="polite">لم يتم تحميل المجموعات بعد.</div>
 <div id="adminGroups" aria-live="polite"></div>
-</div><div class="admin-subsection" id="admin-section-names" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">الكلمات المحظورة للأسماء</h3><h3 role="generic">قائمة الكلمات المحظورة للأسماء</h3>
+</div><div class="admin-subsection" id="admin-section-names" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="presentation">الكلمات المحظورة للأسماء</h3><h3 role="presentation">قائمة الكلمات المحظورة للأسماء</h3>
 <p class="muted">أضف الكلمات أو العبارات غير اللائقة التي تريد منعها في أسماء الحسابات والمجموعات. ضع كل كلمة أو عبارة في سطر مستقل. تنطبق القائمة على إنشاء المجموعات وتغيير أسماء الحسابات والمجموعات، ويُفحص الاسم في الخادم.</p>
 <label for="blockedNameTerms">الكلمات والعبارات المحظورة</label>
 <textarea id="blockedNameTerms" rows="8" maxlength="30000" placeholder="كلمة في كل سطر" aria-label="قائمة الكلمات والعبارات المحظورة"></textarea>
 <button class="action" type="button" id="saveBlockedNameTerms">حفظ قائمة الكلمات المحظورة</button>
 <p id="blockedNameTermsStatus" role="status" aria-live="polite">لم يتم تحميل القائمة بعد.</p>
-</div><div class="admin-subsection" id="admin-section-reports" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">بلاغات المستخدمين</h3><h3 role="generic">بلاغات المستخدمين</h3>
+</div><div class="admin-subsection" id="admin-section-reports" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="presentation">بلاغات المستخدمين</h3><h3 role="presentation">بلاغات المستخدمين</h3>
 <div id="adminReports" aria-live="polite">جارٍ تحميل البلاغات...</div><button class="action secondary" type="button" id="refreshAdmin">تحديث لوحة الإدارة</button>
 </div>
 </section>
 
 <section class="panel section-screen" id="panel-notifications" hidden>
 <button class="section-back" type="button">رجوع إلى الإعدادات</button>
-<h2 role="generic" tabindex="-1">الإشعارات</h2>
+<h2 role="presentation" tabindex="-1">الإشعارات</h2>
 <p class="muted">ستظهر هنا إشعارات الرسائل وطلبات الصداقة وإضافتك إلى المجموعات.</p>
 <p id="pushStatus" role="status" aria-live="polite">جارٍ التحقق من حالة الإشعارات...</p>
 <button id="enablePush" class="action" type="button">تفعيل الإشعارات على هذا الجهاز</button>
 <button id="disablePush" class="action secondary" type="button">إيقاف الإشعارات على هذا الجهاز</button>
-<h3 role="generic">نغمة إشعارات مِرسالو</h3><p class="muted">اختر نغمة يسمعها الجهاز عند وصول رسالة جديدة أثناء فتح مِرسالو، ثم جرّبها.</p>
+<h3 role="presentation">نغمة إشعارات مِرسالو</h3><p class="muted">اختر نغمة يسمعها الجهاز عند وصول رسالة جديدة أثناء فتح مِرسالو، ثم جرّبها.</p>
 <label for="notificationTone">اختيار النغمة</label><select id="notificationTone" class="action" style="background:#fff;color:#111"><option value="classic">كلاسيكية</option><option value="soft">هادئة</option><option value="digital">رقمية</option><option value="bells">أجراس</option><option value="off">بدون صوت</option></select>
 <button id="previewNotificationTone" class="action secondary" type="button">تجربة النغمة المختارة</button><p id="toneStatus" role="status" aria-live="polite">يتم حفظ اختيار النغمة على هذا الجهاز تلقائيًا.</p>
 <p class="muted">صوت الموقع يعمل عند استقبال الرسائل ومِرسالو مفتوح. عند إغلاق الموقع، يتحكم المتصفح ونظام الجهاز بصوت إشعارات النظام.</p>
 <p class="muted">على iPhone: أضف مِرسالو إلى الشاشة الرئيسية وافتحه من الأيقونة أولًا، ثم فعّل الإشعارات. يتطلب ذلك iOS 16.4 أو أحدث.</p>
-<h3 role="generic" tabindex="-1">آخر الإشعارات</h3>
+<h3 role="presentation" tabindex="-1">آخر الإشعارات</h3>
 <button id="deleteAllNotifications" class="action groupDanger" type="button">حذف جميع الإشعارات</button>
 <div id="notificationsList" aria-live="polite">جارٍ تحميل الإشعارات...</div>
 </section>
 
 <section class="panel section-screen" id="panel-friend-requests" hidden>
-<button class="section-back" type="button">رجوع إلى الإعدادات</button><h2 role="generic" tabindex="-1">طلبات الصداقة الواردة</h2>
+<button class="section-back" type="button">رجوع إلى الإعدادات</button><h2 role="presentation" tabindex="-1">طلبات الصداقة الواردة</h2>
 <p class="muted">يمكنك مراجعة الطلبات الواردة وقبولها أو رفضها. لن تُضاف الصداقة إلا بعد موافقتك.</p>
 <div id="friendRequestsList" aria-live="polite" aria-relevant="additions">جارٍ الاتصال لتحميل الطلبات...</div>
 <p id="friendRequestsStatus" class="requestStatus" role="status" aria-live="polite"></p>
 </section>
 
 <section class="panel section-screen" id="panel-account-options" hidden>
-<button class="section-back" type="button">رجوع إلى الإعدادات</button><h2 role="generic" tabindex="-1">إدارة الحساب ومعلومات مِرسالو</h2>
+<button class="section-back" type="button">رجوع إلى الإعدادات</button><h2 role="presentation" tabindex="-1">إدارة الحساب ومعلومات مِرسالو</h2>
 <p>اختر القسم الذي تريد فتحه:</p>
 <button class="link" type="button" data-navigate="profile.html">الملف الشخصي</button>
 <div class="account-actions">
@@ -187,8 +187,8 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <button id="logout" class="action secondary" type="button">تسجيل الخروج</button>
 </div>
 <p id="logoutStatus" role="status" aria-live="polite"></p>
-<section id="deleteConfirm" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle" hidden><div class="confirmCard"><h2 role="generic" id="deleteConfirmTitle" tabindex="-1">تأكيد حذف الحساب</h2><p class="warning">حذف الحساب نهائي ولا يمكن التراجع عنه. ستُحذف بيانات الحساب وقائمة الأصدقاء، بينما تبقى المحادثات والرسائل محفوظة لدى الطرف الآخر.</p><label for="deleteWord">اكتب كلمة حذف للتأكيد</label><input id="deleteWord" type="text" autocomplete="off"><button id="confirmDelete" class="action danger" type="button">تأكيد الحذف النهائي</button><button id="cancelDelete" class="action secondary" type="button">إلغاء</button></div></section>
-<section id="logoutConfirm" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" hidden><div class="confirmCard"><h2 role="generic" id="logoutConfirmTitle" tabindex="-1">تأكيد تسجيل الخروج</h2><p>هل أنت متأكد أنك تريد تسجيل الخروج من مِرسالو؟</p><button id="confirmLogout" class="action secondary" type="button">تأكيد تسجيل الخروج</button><button id="cancelLogout" class="action" type="button">إلغاء</button></div></section>
+<section id="deleteConfirm" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle" hidden><div class="confirmCard"><h2 role="presentation" id="deleteConfirmTitle" tabindex="-1">تأكيد حذف الحساب</h2><p class="warning">حذف الحساب نهائي ولا يمكن التراجع عنه. ستُحذف بيانات الحساب وقائمة الأصدقاء، بينما تبقى المحادثات والرسائل محفوظة لدى الطرف الآخر.</p><label for="deleteWord">اكتب كلمة حذف للتأكيد</label><input id="deleteWord" type="text" autocomplete="off"><button id="confirmDelete" class="action danger" type="button">تأكيد الحذف النهائي</button><button id="cancelDelete" class="action secondary" type="button">إلغاء</button></div></section>
+<section id="logoutConfirm" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" hidden><div class="confirmCard"><h2 role="presentation" id="logoutConfirmTitle" tabindex="-1">تأكيد تسجيل الخروج</h2><p>هل أنت متأكد أنك تريد تسجيل الخروج من مِرسالو؟</p><button id="confirmLogout" class="action secondary" type="button">تأكيد تسجيل الخروج</button><button id="cancelLogout" class="action" type="button">إلغاء</button></div></section>
 </section>
 
 </main>
