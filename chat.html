@@ -43,6 +43,8 @@ body.chat-open #status{display:none}
 .chatHeader{align-items:stretch}
 .chatHeader>div{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;width:100%}
 .chatHeader h2{font-size:1.25rem;overflow-wrap:anywhere}
+.chatHeader .chatTitleButton{font:inherit;color:inherit;background:transparent;border:0;padding:4px 8px;margin:0;text-align:start;text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:5px;cursor:pointer;border-radius:8px}
+.chatHeader .chatTitleButton:focus-visible{outline:3px solid #ffd166;outline-offset:3px}
 .chatHeader button{width:100%;min-height:48px;margin:0;padding:10px 8px}
 .infoPanel{margin:12px 0 16px;padding:clamp(12px,3vw,18px)}
 .infoPanel h3{margin-top:4px}
@@ -400,7 +402,7 @@ body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 <button type="button" id="nextAttachment" class="secondary">المرفق التالي</button>
 <button type="button" id="downloadAttachment">تنزيل المرفق</button>
 
-</div></section><div class="chatHeader"><h2 id="chatTitle">المحادثة</h2><div><button id="conversationInfoButton" class="infoToggle" type="button" aria-controls="conversationInfo">معلومات المحادثة</button><button id="openVoiceCallPanel" class="infoToggle" type="button" aria-controls="voiceCallPanel">المكالمة الصوتية</button></div></div><section id="conversationInfo" class="infoPanel" aria-labelledby="conversationInfoHeading" hidden><button id="backToConversation" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 id="conversationInfoHeading" tabindex="-1">معلومات المحادثة</h3><div id="conversationInfoContent" aria-live="polite">جارٍ تحميل المعلومات...</div><div class="infoActions"><button id="friendAction" type="button">إضافة إلى الأصدقاء</button><button id="removeFriendAction" class="secondary" type="button">إزالة الصداقة</button><button id="clearChatAction" class="secondary" type="button">حذف محتوى الدردشة</button><button id="deleteChatAction" class="secondary" type="button">حذف الدردشة كاملة</button><button id="blockAction" class="secondary" type="button">حظر المستخدم</button><button id="reportAction" class="secondary" type="button">الإبلاغ عن المستخدم</button></div><p id="conversationActionStatus" role="status" aria-live="polite"></p></section><section id="voiceCallPanel" class="voiceCallPanel" aria-label="المكالمة الصوتية" hidden>
+</div></section><div class="chatHeader"><h2><button id="chatTitle" class="chatTitleButton" type="button" aria-controls="conversationInfo">المحادثة</button></h2><div><button id="conversationInfoButton" class="infoToggle" type="button" aria-controls="conversationInfo">معلومات المحادثة</button><button id="openVoiceCallPanel" class="infoToggle" type="button" aria-controls="voiceCallPanel">المكالمة الصوتية</button></div></div><section id="conversationInfo" class="infoPanel" aria-labelledby="conversationInfoHeading" hidden><button id="backToConversation" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 id="conversationInfoHeading" tabindex="-1">معلومات المحادثة</h3><div id="conversationInfoContent" aria-live="polite">جارٍ تحميل المعلومات...</div><div class="infoActions"><button id="friendAction" type="button">إضافة إلى الأصدقاء</button><button id="removeFriendAction" class="secondary" type="button">إزالة الصداقة</button><button id="clearChatAction" class="secondary" type="button">حذف محتوى الدردشة</button><button id="deleteChatAction" class="secondary" type="button">حذف الدردشة كاملة</button><button id="blockAction" class="secondary" type="button">حظر المستخدم</button><button id="reportAction" class="secondary" type="button">الإبلاغ عن المستخدم</button></div><p id="conversationActionStatus" role="status" aria-live="polite"></p></section><section id="voiceCallPanel" class="voiceCallPanel" aria-label="المكالمة الصوتية" hidden>
 <button id="closeVoiceCallPanel" type="button" class="panelBack">رجوع إلى المحادثة</button>
 <h3 tabindex="-1" id="voiceCallHeading">المكالمة الصوتية</h3>
 <p id="voiceCallStatus" role="status" aria-live="polite">لا توجد مكالمة نشطة.</p>
@@ -1216,6 +1218,7 @@ async function refreshConversationInfo(){
   statusBox.textContent="";
 }
 document.getElementById("backToConversation").addEventListener("click",()=>{const info=document.getElementById("conversationInfo");info.hidden=true;document.getElementById("closeChat").hidden=false;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;document.getElementById("conversationInfoButton").focus()});
+document.getElementById("chatTitle").addEventListener("click",()=>document.getElementById("conversationInfoButton").click());
 document.getElementById("conversationInfoButton").addEventListener("click",async()=>{
   const info=document.getElementById("conversationInfo"),opening=info.hidden;
   info.hidden=!opening;
