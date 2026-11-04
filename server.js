@@ -313,7 +313,8 @@ io.on("connection", socket => {
 
   socket.on("voiceCall:start", async (data = {}, reply) => {
     try {
-      const targetUid = String(data.targetUid || "");
+await assertFeatureEnabled("voiceCalls","هذه الميزة متوقفة مؤقتًا من إدارة مِرسالو.");
+            const targetUid = String(data.targetUid || "");
       const conversationId = String(data.conversationId || "");
       if (!targetUid || targetUid === socket.data.uid || !conversationId) throw new Error("بيانات المكالمة غير مكتملة.");
       const conversationSnap = await conversationsRef.doc(conversationId).get();
@@ -394,7 +395,8 @@ io.on("connection", socket => {
 
   socket.on("startGroupConversation", async (data = {}, reply) => {
     try {
-      const name = String(data.name || "").trim().slice(0, 50);
+await assertFeatureEnabled("groupChats","هذه الميزة متوقفة مؤقتًا من إدارة مِرسالو.");
+            const name = String(data.name || "").trim().slice(0, 50);
       const requested = Array.isArray(data.memberUids) ? [...new Set(data.memberUids.map(String))] : [];
       const memberUids = requested.filter(uid => uid && uid !== socket.data.uid).slice(0, 49);
       if (!name) throw new Error("اكتب اسمًا للمجموعة.");
@@ -1138,7 +1140,8 @@ async function assertAdminMessagingAllowed(uid){
 
   socket.on("scheduleDirectMessage", async (data = {}, reply) => {
     try {
-      await assertAdminMessagingAllowed(socket.data.uid);
+await assertFeatureEnabled("scheduledMessages","هذه الميزة متوقفة مؤقتًا من إدارة مِرسالو.");
+            await assertAdminMessagingAllowed(socket.data.uid);
       const conversationId = String(data.conversationId || "");
       const text = String(data.text || "").trim();
       const sendAt = Number(data.sendAt);
@@ -1485,7 +1488,8 @@ function readMp4DurationSeconds(buffer) {
 app.options("/api/upload-media",mediaUploadCors);
 app.post("/api/upload-media",mediaUploadCors,express.raw({type:"application/octet-stream",limit:"50mb"}),async(req,res)=>{
   try{
-    const authHeader=String(req.headers.authorization||"");
+
+    await assertFeatureEnabled("mediaSharing","مشاركة الوسائط والملفات متوقفة مؤقتًا من إدارة مِرسالو.");    const authHeader=String(req.headers.authorization||"");
     const match=authHeader.match(/^Bearer (.+)$/i);
     if(!match)return res.status(401).json({success:false,message:"Authentication required."});
     const decoded=await admin.auth().verifyIdToken(match[1]);
