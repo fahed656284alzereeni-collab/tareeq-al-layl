@@ -199,7 +199,7 @@ function showAdminMenu(){
 document.querySelectorAll("[data-admin-section]").forEach(button=>button.addEventListener("click",()=>showAdminSubsection(button.dataset.adminSection)));
 document.querySelectorAll(".admin-sub-back").forEach(button=>button.addEventListener("click",showAdminMenu));
 function showSection(id){document.querySelectorAll(".section-screen").forEach(section=>{const active=section.id===id;section.classList.toggle("active",active);section.hidden=!active});document.body.classList.toggle("section-open",id!=="panel-settings");const heading=document.querySelector("#"+id+" h2");if(heading)heading.focus();if(id==="panel-admin"){loadAdminDashboard();}}
-const requestedSection=new URLSearchParams(location.search).get("section");
+const requestedParams=new URLSearchParams(location.search);const requestedSection=requestedParams.get("section");const requestedAdminSection=requestedParams.get("adminSection");
 if(requestedSection==="friend-requests")showSection("panel-friend-requests");
 document.querySelectorAll("[data-open-section]").forEach(button=>button.addEventListener("click",()=>showSection(button.dataset.openSection)));
 
@@ -776,7 +776,7 @@ onAuthStateChanged(auth,async user=>{
     activeUser=user;const token=await user.getIdToken();
     openAdmin.hidden=String(user.email||"").toLowerCase()!=="fahed656284alzereeni@gmail.com";
     if(requestedSection==="admin"){
-      if(!openAdmin.hidden)showSection("panel-admin");
+      if(!openAdmin.hidden){showSection("panel-admin");if(requestedAdminSection)showAdminSubsection(requestedAdminSection);}
       else{showSection("panel-settings");document.getElementById("settingsStatus").textContent="هذا الحساب غير مخوّل لفتح لوحة المطوّر.";}
     }
     loadNotifications();refreshPushStatus();
