@@ -8,7 +8,16 @@
 <h1>مِرسالو</h1><p>سجّل الدخول أو أنشئ حسابك باستخدام حساب Google.</p>
 <button id="googleLogin" type="button">المتابعة باستخدام Google</button>
 <button id="developerEmergency" type="button" style="background:#42536b">مركز الطوارئ للمطوّر</button>
-<section id="developerEmergencyPanel" hidden aria-labelledby="developerEmergencyTitle"><h2 id="developerEmergencyTitle" tabindex="-1">مركز الطوارئ للمطوّر</h2><p>يتطلب التحقق من حساب المطوّر. الأداة المتاحة حاليًا هي فحص حالة الخادم.</p><button id="developerEmergencyCheck" type="button">فحص حالة الخادم</button><p id="developerEmergencyStatus" role="status" aria-live="polite"></p></section>
+<section id="developerEmergencyPanel" hidden aria-labelledby="developerEmergencyTitle"><h2 id="developerEmergencyTitle" tabindex="-1">مركز الطوارئ للمطوّر</h2><p id="developerEmergencyIntro">بعد التحقق من صلاحية المطوّر، اختر القسم الذي تريد فتحه.</p><div id="developerEmergencySections" hidden aria-label="أقسام مركز المطوّر">
+<button type="button" data-emergency-section="site">إدارة الموقع والميزات</button>
+<button type="button" data-emergency-section="accounts">إدارة الحسابات</button>
+<button type="button" data-emergency-section="groups">إدارة المجموعات</button>
+<button type="button" data-emergency-section="names">الكلمات المحظورة للأسماء</button>
+<button type="button" data-emergency-section="reports">بلاغات المستخدمين</button>
+<button type="button" data-emergency-section="audit">سجل العمليات</button>
+<button type="button" data-emergency-section="diagnostics">تشخيص الأعطال</button>
+<button type="button" data-emergency-section="commands">مركز الأوامر</button>
+</div><button id="developerEmergencyCheck" type="button">فحص حالة الخادم</button><p id="developerEmergencyStatus" role="status" aria-live="polite"></p></section>
 <form id="nameForm"><label for="displayName">ما الاسم الذي تريد أن يظهر للآخرين ويبحثوا عنك به؟</label><input id="displayName" type="text" maxlength="30" autocomplete="off" required><button type="submit">حفظ الاسم وفتح مِرسالو</button></form>
 <p class="note">ستظهر نافذة Google لاختيار الحساب. لا تحتاج إلى إدخال بريدك أو كلمة المرور داخل مِرسالو.</p>
 <p id="status" role="status" aria-live="polite">اضغط على زر المتابعة باستخدام Google.</p>
@@ -38,6 +47,10 @@ emergencyButton.addEventListener("click",async()=>{
  try{await signInWithPopup(auth,provider)}
  catch(error){sessionStorage.removeItem("mersalo-developer-emergency");emergencyButton.disabled=false;say("تعذر التحقق عبر Google. رمز الخطأ: "+(error.code||"unknown"))}
 });
+document.querySelectorAll("[data-emergency-section]").forEach(item=>item.addEventListener("click",()=>{
+ const section=item.dataset.emergencySection;
+ location.href="settings.html?section=admin&adminSection="+encodeURIComponent(section);
+}));
 document.getElementById("developerEmergencyCheck").addEventListener("click",async()=>{
  emergencyStatus.textContent="جارٍ فحص الخادم...";
  try{
@@ -61,8 +74,14 @@ onAuthStateChanged(auth,async user=>{
    const response=await fetch("https://tareeq-al-layl-server.onrender.com/api/admin/control-center/status",{headers:{Authorization:"Bearer "+token}});
    const result=await response.json().catch(()=>({}));
    if(!response.ok||!result.success)throw new Error(result.message||"هذا الحساب غير مخوّل.");
-   say("تم التحقق من صلاحية المطوّر. جارٍ فتح لوحة الإدارة الكاملة.");
-   location.replace("settings.html?section=admin");
+   emergencyButton.hidden=true;
+   button.hidden=true;
+   document.querySelector(".note")?.setAttribute("hidden","");
+   emergencyPanel.hidden=false;
+   document.getElementById("developerEmergencySections").hidden=false;
+   document.getElementById("developerEmergencyIntro").textContent="تم التحقق من صلاحية المطوّر. اختر قسمًا مستقلًا لفتحه.";
+   say("تم التحقق من صلاحية المطوّر. اختر القسم المطلوب.");
+   document.getElementById("developerEmergencyTitle").focus();
    return;
   }catch(error){emergencyButton.disabled=false;say(error.message||"تعذر التحقق من صلاحية المطوّر.");}
   checking=false;return;
