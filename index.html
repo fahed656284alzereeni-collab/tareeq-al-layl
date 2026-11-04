@@ -17,6 +17,10 @@ small{display:block;text-align:center;color:#b9c6d8;margin-top:18px}
 </style><link rel="stylesheet" href="/mersalo-theme.css?v=20261104">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#101827">
+<script>
+/* Keep headings visible, but expose them as ordinary text to screen readers. */
+(()=>{const selector="h1,h2,h3,h4,h5,h6";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","generic");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","generic"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
+</script>
 </head>
 <body><main>
 <h1 role="generic">مِرسالو</h1>
@@ -24,8 +28,5 @@ small{display:block;text-align:center;color:#b9c6d8;margin-top:18px}
 <p role="status" aria-live="polite">جارٍ فتح مِرسالو والتحقق من تسجيل الدخول...</p>
 <a href="login.html">إذا لم يتم التحويل تلقائيًا، افتح صفحة الدخول</a>
 <small>تواصل ببساطة، وابقَ قريباً.</small>
-</main><script>window.location.replace("login.html");</script><script src="diagnostics.js" defer></script><script>
-/* Keep heading appearance while preventing screen readers from announcing heading levels. */
-(()=>{const apply=root=>{if(root.matches?.("h1,h2,h3,h4,h5,h6"))root.setAttribute("role","generic");root.querySelectorAll?.("h1,h2,h3,h4,h5,h6").forEach(el=>el.setAttribute("role","generic"));};apply(document);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{if(node.nodeType===1)apply(node);}))).observe(document.documentElement,{childList:true,subtree:true});})();
-</script>
+</main><script>window.location.replace("login.html");</script><script src="diagnostics.js" defer></script>
 </body></html>
