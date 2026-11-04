@@ -1734,13 +1734,16 @@ app.get("/api/admin/audit-log",pushCors,async(req,res)=>{
 // Developer control center: strict allow-list, no arbitrary code execution.
 app.get("/api/profile/me",pushCors,async(req,res)=>{
  try{
-  const uid=await authenticatedUid(req);
+  const match=String(req.headers.authorization||"").match(/^Bearer (.+)$/i);
+  if(!match)throw new Error("AUTH_REQUIRED");
+  const decoded=await admin.auth().verifyIdToken(match[1]);
+  const uid=decoded.uid;
   const db=admin.firestore();
   const authUser=await admin.auth().getUser(uid);
   const ref=db.collection("users").doc(uid);
   const snap=await ref.get();
   let data=snap.exists?snap.data():{};
-  let playerName=String(data.playerName||data.displayName||data.username||data.userName||data.name||authUser.displayName||"").trim();
+  let playerName=String(data.playerName||data.displayName||data.username||data.userName||data.name||authUser.displayName||decoded.name||"").trim();
   let bio=String(data.bio||"").slice(0,200);
   if(!playerName&&authUser.email){
    const matches=await db.collection("users").where("email","==",authUser.email).limit(10).get();
@@ -1749,14 +1752,17 @@ app.get("/api/profile/me",pushCors,async(req,res)=>{
     const found=String(old.playerName||old.displayName||old.username||old.userName||old.name||"").trim();
     if(found){
      playerName=found;bio=String(old.bio||"").slice(0,200);
-     await ref.set({uid,email:authUser.email,playerName,displayName:playerName,bio},{merge:true});
      break;
     }
    }
   }
-  if(!playerName)playerName=String(authUser.displayName||"").trim();
-  res.set("Cache-Control","no-store");
-  res.json({success:true,playerName,bio,email:String(authUser.email||data.email||"")});
+  // Socket sign-in already uses the verified Google token's name as a fallback.
+  // Persist that same name on the user's own profile so the profile form is never blank.
+  if(playerName){
+   await ref.set({uid,email:String(authUser.email||decoded.email||""),playerName,displayName:playerName,username:playerName,name:playerName,bio},{merge:true});
+  }
+  res.set("Cache-Control","no-store, no-cache, must-revalidate");
+  res.json({success:true,playerName,bio,email:String(authUser.email||data.email||decoded.email||"")});
  }catch(error){
   console.error("Profile read failed:",error.message);
   const status=error.message==="AUTH_REQUIRED"?401:500;
