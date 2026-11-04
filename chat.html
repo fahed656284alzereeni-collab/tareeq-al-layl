@@ -385,16 +385,16 @@ body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 </style><link rel="stylesheet" href="/mersalo-theme.css?v=20261104"><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#101827">
 </head><body>
-<header><h1>مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><button class="tabLink" type="button" data-navigate="chat.html" aria-current="page">الصفحة الرئيسية</button><button class="tabLink" type="button" data-navigate="settings.html">الإعدادات</button></nav></header>
+<header><h1 role="generic">مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><button class="tabLink" type="button" data-navigate="chat.html" aria-current="page">الصفحة الرئيسية</button><button class="tabLink" type="button" data-navigate="settings.html">الإعدادات</button></nav></header>
 <main>
-<section class="panel" id="onlineSection"><h2>الأشخاص المتصلون</h2><p class="muted">تظهر هنا الحسابات المتصلة بمِرسالو حاليًا. ابحث عن الاسم لبدء محادثة.</p>
+<section class="panel" id="onlineSection"><h2 role="generic">الأشخاص المتصلون</h2><p class="muted">تظهر هنا الحسابات المتصلة بمِرسالو حاليًا. ابحث عن الاسم لبدء محادثة.</p>
 <button id="openOnline" type="button" aria-controls="onlinePanel">عرض الأشخاص المتصلين</button>
 <div id="onlinePanel" hidden><button type="button" class="panelBack" data-close-panel="onlinePanel" data-focus="openOnline">رجوع</button><label for="onlineSearch">ابحث عن شخص بالاسم</label><input id="onlineSearch" type="search" autocomplete="off" placeholder="اكتب اسم الشخص"><div id="onlineList" aria-live="polite">جارٍ تحميل الأشخاص المتصلين...</div></div></section>
-<section class="panel" id="newChatSection"><h2>بدء محادثة</h2><button id="openNewChatButton" type="button" aria-controls="newChatOptions">دردشة جديدة</button><div id="newChatOptions" hidden><button type="button" class="panelBack" data-close-panel="newChatOptions" data-focus="openNewChatButton">رجوع</button><p class="muted">اختر نوع الدردشة التي تريد بدءها.</p><button id="startDirectChatButton" type="button">محادثة جديدة مع شخص</button><button id="startNewGroupButton" type="button" class="secondary">مجموعة جديدة</button></div><div id="directChatPanel" hidden><button type="button" class="panelBack" data-close-panel="directChatPanel" data-focus="openNewChatButton">رجوع</button><h3>البحث عن مستخدم</h3><label for="userSearchInput">اسم المستخدم</label><input id="userSearchInput" type="search" autocomplete="off" placeholder="اكتب اسم الشخص للبحث"><div id="userSearchResults" aria-live="polite" role="status">اكتب اسمًا للبحث عن المستخدمين.</div></div><div id="newGroupPanel" hidden><button type="button" class="panelBack" data-close-panel="newGroupPanel" data-focus="openNewChatButton">رجوع</button><h3>إنشاء مجموعة جديدة</h3><label for="groupNameInput">اسم المجموعة</label><input id="groupNameInput" maxlength="50" autocomplete="off" placeholder="اكتب اسم المجموعة"><h4>المحادثات الأخيرة</h4><p class="muted">اختر الأشخاص الذين سبق وتحدثت معهم، ويمكنك اختيار أكثر من شخص.</p><div id="recentGroupContacts" aria-live="polite" role="status">جارٍ تحميل المحادثات الأخيرة...</div><label for="groupMemberSearch">أو ابحث عن أشخاص آخرين</label><input id="groupMemberSearch" type="search" autocomplete="off" placeholder="اكتب اسم الشخص"><div id="groupSearchResults" aria-live="polite" role="status">ابحث عن الأشخاص واضغط على الاسم لاختياره.</div><p id="groupSelectedUsers" aria-live="polite">لم تختر أي أعضاء بعد.</p><button id="createGroupButton" type="button">إنشاء المجموعة</button><p id="groupCreateStatus" role="status" aria-live="polite"></p></div></section>
-<section class="panel" id="conversationListPanel"><h2 id="conversationHeading" tabindex="-1">محادثاتك</h2><div id="conversationList" aria-live="polite"></div></section>
+<section class="panel" id="newChatSection"><h2 role="generic">بدء محادثة</h2><button id="openNewChatButton" type="button" aria-controls="newChatOptions">دردشة جديدة</button><div id="newChatOptions" hidden><button type="button" class="panelBack" data-close-panel="newChatOptions" data-focus="openNewChatButton">رجوع</button><p class="muted">اختر نوع الدردشة التي تريد بدءها.</p><button id="startDirectChatButton" type="button">محادثة جديدة مع شخص</button><button id="startNewGroupButton" type="button" class="secondary">مجموعة جديدة</button></div><div id="directChatPanel" hidden><button type="button" class="panelBack" data-close-panel="directChatPanel" data-focus="openNewChatButton">رجوع</button><h3 role="generic">البحث عن مستخدم</h3><label for="userSearchInput">اسم المستخدم</label><input id="userSearchInput" type="search" autocomplete="off" placeholder="اكتب اسم الشخص للبحث"><div id="userSearchResults" aria-live="polite" role="status">اكتب اسمًا للبحث عن المستخدمين.</div></div><div id="newGroupPanel" hidden><button type="button" class="panelBack" data-close-panel="newGroupPanel" data-focus="openNewChatButton">رجوع</button><h3 role="generic">إنشاء مجموعة جديدة</h3><label for="groupNameInput">اسم المجموعة</label><input id="groupNameInput" maxlength="50" autocomplete="off" placeholder="اكتب اسم المجموعة"><h4 role="generic">المحادثات الأخيرة</h4><p class="muted">اختر الأشخاص الذين سبق وتحدثت معهم، ويمكنك اختيار أكثر من شخص.</p><div id="recentGroupContacts" aria-live="polite" role="status">جارٍ تحميل المحادثات الأخيرة...</div><label for="groupMemberSearch">أو ابحث عن أشخاص آخرين</label><input id="groupMemberSearch" type="search" autocomplete="off" placeholder="اكتب اسم الشخص"><div id="groupSearchResults" aria-live="polite" role="status">ابحث عن الأشخاص واضغط على الاسم لاختياره.</div><p id="groupSelectedUsers" aria-live="polite">لم تختر أي أعضاء بعد.</p><button id="createGroupButton" type="button">إنشاء المجموعة</button><p id="groupCreateStatus" role="status" aria-live="polite"></p></div></section>
+<section class="panel" id="conversationListPanel"><h2 role="generic" id="conversationHeading" tabindex="-1">محادثاتك</h2><div id="conversationList" aria-live="polite"></div></section>
 <section class="panel" id="chatPanel" hidden><button id="closeChat" class="closeChat" type="button" style="align-self:flex-start">رجوع إلى الواجهة الرئيسية</button><section id="attachmentViewer" role="dialog" aria-modal="true" aria-labelledby="attachmentViewerTitle" hidden>
 <button type="button" id="closeAttachmentViewer" class="panelBack">إغلاق الفيديو</button>
-<h2 id="attachmentViewerTitle" tabindex="-1">عرض المرفق</h2>
+<h2 role="generic" id="attachmentViewerTitle" tabindex="-1">عرض المرفق</h2>
 <div id="attachmentViewerMedia"></div>
 <p id="attachmentViewerDetails" role="status" aria-live="polite"></p>
 <div class="attachmentViewerControls">
@@ -402,9 +402,9 @@ body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 <button type="button" id="nextAttachment" class="secondary">المرفق التالي</button>
 <button type="button" id="downloadAttachment">تنزيل المرفق</button>
 
-</div></section><div class="chatHeader"><h2><button id="chatTitle" class="chatTitleButton" type="button" aria-controls="conversationInfo">المحادثة</button></h2><div><button id="openVoiceCallPanel" class="infoToggle" type="button" aria-controls="voiceCallPanel">المكالمة الصوتية</button></div></div><section id="conversationInfo" class="infoPanel" aria-labelledby="conversationInfoHeading" hidden><button id="backToConversation" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 id="conversationInfoHeading" tabindex="-1">معلومات المحادثة</h3><div id="conversationInfoContent" aria-live="polite">جارٍ تحميل المعلومات...</div><div class="infoActions"><button id="friendAction" type="button">إضافة إلى الأصدقاء</button><button id="removeFriendAction" class="secondary" type="button">إزالة الصداقة</button><button id="clearChatAction" class="secondary" type="button">حذف محتوى الدردشة</button><button id="deleteChatAction" class="secondary" type="button">حذف الدردشة كاملة</button><button id="blockAction" class="secondary" type="button">حظر المستخدم</button><button id="reportAction" class="secondary" type="button">الإبلاغ عن المستخدم</button></div><p id="conversationActionStatus" role="status" aria-live="polite"></p></section><section id="voiceCallPanel" class="voiceCallPanel" aria-label="المكالمة الصوتية" hidden>
+</div></section><div class="chatHeader"><h2 role="generic"><button id="chatTitle" class="chatTitleButton" type="button" aria-controls="conversationInfo">المحادثة</button></h2><div><button id="openVoiceCallPanel" class="infoToggle" type="button" aria-controls="voiceCallPanel">المكالمة الصوتية</button></div></div><section id="conversationInfo" class="infoPanel" aria-labelledby="conversationInfoHeading" hidden><button id="backToConversation" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 role="generic" id="conversationInfoHeading" tabindex="-1">معلومات المحادثة</h3><div id="conversationInfoContent" aria-live="polite">جارٍ تحميل المعلومات...</div><div class="infoActions"><button id="friendAction" type="button">إضافة إلى الأصدقاء</button><button id="removeFriendAction" class="secondary" type="button">إزالة الصداقة</button><button id="clearChatAction" class="secondary" type="button">حذف محتوى الدردشة</button><button id="deleteChatAction" class="secondary" type="button">حذف الدردشة كاملة</button><button id="blockAction" class="secondary" type="button">حظر المستخدم</button><button id="reportAction" class="secondary" type="button">الإبلاغ عن المستخدم</button></div><p id="conversationActionStatus" role="status" aria-live="polite"></p></section><section id="voiceCallPanel" class="voiceCallPanel" aria-label="المكالمة الصوتية" hidden>
 <button id="closeVoiceCallPanel" type="button" class="panelBack">رجوع إلى المحادثة</button>
-<h3 tabindex="-1" id="voiceCallHeading">المكالمة الصوتية</h3>
+<h3 role="generic" tabindex="-1" id="voiceCallHeading">المكالمة الصوتية</h3>
 <p id="voiceCallStatus" role="status" aria-live="polite">لا توجد مكالمة نشطة.</p>
 <button id="startVoiceCall" type="button">اتصال صوتي</button>
 <button id="acceptVoiceCall" type="button" hidden>قبول المكالمة</button>
@@ -412,7 +412,7 @@ body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 <button id="endVoiceCall" type="button" class="secondary" hidden>إنهاء المكالمة</button>
 <audio id="remoteCallAudio" autoplay playsinline webkit-playsinline></audio><button id="enableCallAudio" type="button" class="secondary" hidden>تشغيل صوت المكالمة</button>
 </section><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
-<div id="composePanel"><h2>إرسال رسالة</h2><div id="replyPreview" class="infoPanel" hidden><p id="replyPreviewText"></p><button id="cancelReply" type="button" class="secondary">إلغاء الرد</button></div><div id="attachmentShareActions" aria-label="مشاركة الوسائط والملفات"><button id="choosePhotosVideos" type="button" class="secondary">مشاركة الصور والفيديوهات</button><button id="chooseFiles" type="button" class="secondary">مشاركة الملفات</button></div><p id="attachmentUploadStatus" role="status" aria-live="polite"></p><input id="photosVideosInput" type="file" accept="image/*,video/*" multiple hidden aria-label="اختيار الصور والفيديوهات"><input id="filesInput" type="file" multiple hidden aria-label="اختيار الملفات"><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button><button id="scheduleMessageButton" type="button" class="secondary" disabled>جدولة الرسالة</button><button id="openScheduledMessages" type="button" class="secondary" disabled>الرسائل المجدولة</button></form></div><section id="scheduledMessagePanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessageHeading"><h3 id="scheduledMessageHeading" tabindex="-1">جدولة الرسالة</h3><p>اختر التاريخ والوقت الذي تريد إرسال الرسالة فيه.</p><label for="scheduledMessageDate">موعد الإرسال</label><input id="scheduledMessageDate" type="datetime-local" required aria-label="تاريخ ووقت إرسال الرسالة"><p id="scheduledMessageStatus" role="status" aria-live="polite"></p><div class="groupConfirmButtons"><button id="confirmScheduledMessage" type="button">تأكيد الجدولة</button><button id="cancelScheduledMessage" type="button" class="secondary">إلغاء</button></div></section><section id="scheduledMessagesPanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessagesHeading"><button id="closeScheduledMessages" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 id="scheduledMessagesHeading" tabindex="-1">الرسائل المجدولة</h3><p id="scheduledMessagesStatus" role="status" aria-live="polite">جارٍ تحميل الرسائل المجدولة...</p><div id="scheduledMessagesList" aria-live="polite"></div></section></section>
+<div id="composePanel"><h2 role="generic">إرسال رسالة</h2><div id="replyPreview" class="infoPanel" hidden><p id="replyPreviewText"></p><button id="cancelReply" type="button" class="secondary">إلغاء الرد</button></div><div id="attachmentShareActions" aria-label="مشاركة الوسائط والملفات"><button id="choosePhotosVideos" type="button" class="secondary">مشاركة الصور والفيديوهات</button><button id="chooseFiles" type="button" class="secondary">مشاركة الملفات</button></div><p id="attachmentUploadStatus" role="status" aria-live="polite"></p><input id="photosVideosInput" type="file" accept="image/*,video/*" multiple hidden aria-label="اختيار الصور والفيديوهات"><input id="filesInput" type="file" multiple hidden aria-label="اختيار الملفات"><form id="sendForm" aria-label="إرسال رسالة"><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" required autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button><button id="scheduleMessageButton" type="button" class="secondary" disabled>جدولة الرسالة</button><button id="openScheduledMessages" type="button" class="secondary" disabled>الرسائل المجدولة</button></form></div><section id="scheduledMessagePanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessageHeading"><h3 role="generic" id="scheduledMessageHeading" tabindex="-1">جدولة الرسالة</h3><p>اختر التاريخ والوقت الذي تريد إرسال الرسالة فيه.</p><label for="scheduledMessageDate">موعد الإرسال</label><input id="scheduledMessageDate" type="datetime-local" required aria-label="تاريخ ووقت إرسال الرسالة"><p id="scheduledMessageStatus" role="status" aria-live="polite"></p><div class="groupConfirmButtons"><button id="confirmScheduledMessage" type="button">تأكيد الجدولة</button><button id="cancelScheduledMessage" type="button" class="secondary">إلغاء</button></div></section><section id="scheduledMessagesPanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessagesHeading"><button id="closeScheduledMessages" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 role="generic" id="scheduledMessagesHeading" tabindex="-1">الرسائل المجدولة</h3><p id="scheduledMessagesStatus" role="status" aria-live="polite">جارٍ تحميل الرسائل المجدولة...</p><div id="scheduledMessagesList" aria-live="polite"></div></section></section>
 <p id="status" role="status" aria-live="polite">جارٍ التحقق من الحساب...</p>
 </main>
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
@@ -782,7 +782,7 @@ function decorateConfirmPanel(box,headingText){
   const icon=document.createElement("div");icon.className="mersaloConfirmIcon";icon.setAttribute("aria-hidden","true");icon.textContent="!";
   let heading=box.querySelector("h3,h2");
   if(heading){heading.remove();heading.className="mersaloConfirmHeading"}
-  else{heading=document.createElement("h2");heading.textContent=headingText}
+  else{heading=Object.assign(document.createElement("h2"),{role:"generic"});heading.textContent=headingText}
   const body=document.createElement("div");body.className="mersaloConfirmBody";
   while(box.firstChild)body.append(box.firstChild);
   card.append(icon,heading,body);box.append(card);
@@ -952,10 +952,10 @@ async function refreshConversationInfo(){
     const rows=[["اسم المجموعة",d.name],["عدد الأعضاء",String(d.members.length)],["عدد الرسائل",String(d.messageCount)],["تاريخ الإنشاء",formatInfoDate(d.createdAt)],["منشئ المجموعة",d.members.find(m=>m.uid===d.createdBy)?.name||"غير متوفر"]];
     rows.forEach(([label,value])=>{const row=document.createElement("p");row.className="infoMeta";row.textContent=label+": "+value;content.append(row)});
     const groupAbout=document.createElement("section");groupAbout.className="groupInfoSection";
-    const aboutHeading=document.createElement("h4");aboutHeading.textContent="وصف المجموعة";
+    const aboutHeading=Object.assign(document.createElement("h4"),{role:"generic"});aboutHeading.textContent="وصف المجموعة";
     const aboutText=document.createElement("p");aboutText.textContent=d.description||"لم تتم إضافة وصف لهذه المجموعة بعد.";
     groupAbout.append(aboutHeading,aboutText);
-    const announcementHeading=document.createElement("h4");announcementHeading.textContent="إعلان المجموعة";
+    const announcementHeading=Object.assign(document.createElement("h4"),{role:"generic"});announcementHeading.textContent="إعلان المجموعة";
     const announcementText=document.createElement("p");announcementText.textContent=d.announcement||"لا يوجد إعلان حاليًا.";
     groupAbout.append(announcementHeading,announcementText);
     if(d.permissions?.editInfo==="members"||d.isAdmin||d.isModerator){
@@ -985,9 +985,9 @@ async function refreshConversationInfo(){
     }
     content.append(groupAbout);
     const membersSection=document.createElement("section");membersSection.className="groupInfoSection";
-    const membersHeading=document.createElement("h4");membersHeading.textContent="أعضاء المجموعة";membersSection.append(membersHeading);
+    const membersHeading=Object.assign(document.createElement("h4"),{role:"generic"});membersHeading.textContent="أعضاء المجموعة";membersSection.append(membersHeading);
     const memberActionPanel=document.createElement("section");memberActionPanel.className="groupInlinePanel";memberActionPanel.hidden=true;memberActionPanel.setAttribute("aria-label","خيارات عضو المجموعة");
-    const memberActionHeading=document.createElement("h3");const memberActionStatus=document.createElement("p");memberActionStatus.setAttribute("role","status");memberActionStatus.setAttribute("aria-live","polite");
+    const memberActionHeading=Object.assign(document.createElement("h3"),{role:"generic"});const memberActionStatus=document.createElement("p");memberActionStatus.setAttribute("role","status");memberActionStatus.setAttribute("aria-live","polite");
     const memberActionButtons=document.createElement("div");memberActionButtons.className="groupConfirmButtons";
     const memberActionCancel=document.createElement("button");memberActionCancel.type="button";memberActionCancel.className="secondary";memberActionCancel.textContent="إلغاء";
     let selectedMemberTrigger=null;
@@ -1042,9 +1042,9 @@ async function refreshConversationInfo(){
     const permissions=d.permissions||{editInfo:"admins",addMembers:"admins"};
     if(canManagePermissions){
       const permissionsSection=document.createElement("section");permissionsSection.className="groupInfoSection";
-      const permissionsHeading=document.createElement("h4");permissionsHeading.textContent="أذونات المجموعة";
+      const permissionsHeading=Object.assign(document.createElement("h4"),{role:"generic"});permissionsHeading.textContent="أذونات المجموعة";
       const permissionsPanel=document.createElement("div");permissionsPanel.className="groupInlinePanel";permissionsPanel.hidden=true;
-      const permissionsTitle=document.createElement("h3");permissionsTitle.id="groupPermissionsTitle";permissionsTitle.textContent="إدارة أذونات المجموعة";
+      const permissionsTitle=Object.assign(document.createElement("h3"),{role:"generic"});permissionsTitle.id="groupPermissionsTitle";permissionsTitle.textContent="إدارة أذونات المجموعة";
       const permissionsStatus=document.createElement("p");permissionsStatus.setAttribute("role","status");permissionsStatus.setAttribute("aria-live","assertive");permissionsStatus.setAttribute("aria-atomic","true");
       const permissionButtons=document.createElement("div");permissionButtons.className="groupConfirmButtons";permissionButtons.setAttribute("role","group");permissionButtons.setAttribute("aria-label","أذونات المجموعة");
       const makePermissionChoice=(key,labelText)=>{
@@ -1098,7 +1098,7 @@ async function refreshConversationInfo(){
     const canEditGroupInfo=permissions.editInfo==="members"||d.isAdmin||d.isModerator;
     const canAddGroupMembers=permissions.addMembers==="members"||d.isAdmin||d.isModerator;
     const actions=document.createElement("section");actions.className="groupInfoSection";
-    const actionsHeading=document.createElement("h4");actionsHeading.textContent="إجراءات المجموعة";actions.append(actionsHeading);
+    const actionsHeading=Object.assign(document.createElement("h4"),{role:"generic"});actionsHeading.textContent="إجراءات المجموعة";actions.append(actionsHeading);
     const makeButton=(label,cls="secondary")=>{const button=document.createElement("button");button.type="button";button.className=cls;button.textContent=label;return button};
     const makePanel=()=>{const panel=document.createElement("div");panel.className="groupInlinePanel";panel.hidden=true;return panel};
     if(canEditGroupInfo){
@@ -1117,7 +1117,7 @@ async function refreshConversationInfo(){
     if(canAddGroupMembers){
       const addButton=makeButton("إضافة عضو");
       const addPanel=makePanel();
-      const recentHeading=document.createElement("h4");recentHeading.textContent="أشخاص تواصلت معهم";
+      const recentHeading=Object.assign(document.createElement("h4"),{role:"generic"});recentHeading.textContent="أشخاص تواصلت معهم";
       const recentResults=document.createElement("div");recentResults.setAttribute("aria-live","polite");
       const addLabel=document.createElement("label");addLabel.textContent="أو ابحث عن أشخاص آخرين";
       const search=document.createElement("input");search.type="search";search.placeholder="اكتب اسم الشخص";search.setAttribute("aria-label","البحث عن أعضاء لإضافتهم");
@@ -1194,7 +1194,7 @@ async function refreshConversationInfo(){
   ];
   rows.forEach(([label,value])=>{const row=document.createElement("p");row.className="infoMeta";row.textContent=label+": "+value;content.append(row)});
   const bioSection=document.createElement("section");bioSection.className="groupInfoSection";
-  const bioHeading=document.createElement("h4");bioHeading.textContent="النبذة الشخصية";
+  const bioHeading=Object.assign(document.createElement("h4"),{role:"generic"});bioHeading.textContent="النبذة الشخصية";
   const bioText=document.createElement("p");bioText.className="infoMeta";bioText.textContent=d.bio||"لم يضف هذا المستخدم نبذة شخصية بعد.";
   bioSection.append(bioHeading,bioText);content.append(bioSection);
   const blockNote=document.createElement("p");
@@ -1242,7 +1242,7 @@ function showInlineActionChoice(kind){
   if(existing){const previous=document.getElementById(existing.dataset.kind==="block"?"blockAction":"reportAction");existing.remove();}
   const box=document.createElement("div");
   box.id="inlineUserActionChoice";box.dataset.kind=kind;box.className="messageActions conversationDeleteChoice";box.setAttribute("role","dialog");box.setAttribute("aria-modal","true");
-  const title=document.createElement("h3");title.tabIndex=-1;
+  const title=Object.assign(document.createElement("h3"),{role:"generic"});title.tabIndex=-1;
   const hint=document.createElement("p");
   const confirmButton=document.createElement("button");confirmButton.type="button";
   const cancelButton=document.createElement("button");cancelButton.type="button";cancelButton.className="secondary";cancelButton.textContent="إلغاء";
@@ -1313,7 +1313,7 @@ function showConversationDeleteChoice(kind){
   box.className="messageActions conversationDeleteChoice";
   
   box.setAttribute("aria-labelledby","conversationDeleteChoiceTitle");
-  const title=document.createElement("h3");
+  const title=Object.assign(document.createElement("h3"),{role:"generic"});
   title.id="conversationDeleteChoiceTitle";
   title.tabIndex=-1;
   title.textContent=kind==="clear"?"أين تريد حذف محتوى الدردشة؟":"من أين تريد حذف الدردشة؟";
