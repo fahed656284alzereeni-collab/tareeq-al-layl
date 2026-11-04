@@ -193,17 +193,35 @@ const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-a
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 
 const largeText=document.getElementById("largeText"),strongFocus=document.getElementById("strongFocus");
+const adminSectionOrigins=new Map();
 function showAdminSubsection(id){
  const menu=document.getElementById("adminSectionMenu");
- const views=[...document.querySelectorAll("#panel-admin .admin-subsection")];
+ const views=[...document.querySelectorAll("#panel-admin .admin-subsection"),...document.querySelectorAll("body > .admin-subsection")];
  const selected=views.find(view=>view.id==="admin-section-"+id);
  if(!selected)return;
- menu.hidden=true;views.forEach(view=>{view.hidden=view!==selected;view.classList.toggle("admin-subsection-active",view===selected)});document.body.classList.add("admin-subsection-open");
- const heading=selected.querySelector("h3");if(heading){heading.setAttribute("tabindex","-1");heading.focus();}
+ menu.hidden=true;
+ views.forEach(view=>{if(view!==selected){view.hidden=true;view.classList.remove("admin-subsection-active")}});
+ if(!adminSectionOrigins.has(selected.id)){
+  const marker=document.createComment("admin-section-origin");
+  selected.parentNode.insertBefore(marker,selected);
+  adminSectionOrigins.set(selected.id,marker);
+ }
+ selected.hidden=false;
+ selected.classList.add("admin-subsection-active");
+ if(selected.parentNode!==document.body)document.body.appendChild(selected);
+ document.body.classList.add("admin-subsection-open");
+ const heading=selected.querySelector("h3");
+ if(heading){heading.setAttribute("tabindex","-1");requestAnimationFrame(()=>heading.focus());}
 }
 function showAdminMenu(){
  document.getElementById("adminSectionMenu").hidden=false;
- document.querySelectorAll("#panel-admin .admin-subsection").forEach(view=>{view.hidden=true;view.classList.remove("admin-subsection-active")});document.body.classList.remove("admin-subsection-open");
+ document.querySelectorAll("body > .admin-subsection").forEach(view=>{
+  view.hidden=true;view.classList.remove("admin-subsection-active");
+  const marker=adminSectionOrigins.get(view.id);
+  if(marker&&marker.parentNode){marker.parentNode.insertBefore(view,marker);marker.remove();}
+ });
+ document.querySelectorAll("#panel-admin .admin-subsection").forEach(view=>{view.hidden=true;view.classList.remove("admin-subsection-active")});
+ document.body.classList.remove("admin-subsection-open");
  const heading=document.querySelector("#panel-admin h2");if(heading)heading.focus();
 }
 document.querySelectorAll("[data-admin-section]").forEach(button=>button.addEventListener("click",()=>showAdminSubsection(button.dataset.adminSection)));
