@@ -668,6 +668,10 @@ onAuthStateChanged(auth,async user=>{
   try{
     activeUser=user;const token=await user.getIdToken();
     openAdmin.hidden=String(user.email||"").toLowerCase()!=="fahed656284alzereeni@gmail.com";
+    if(requestedSection==="admin"){
+      if(!openAdmin.hidden)showSection("panel-admin");
+      else{showSection("panel-settings");document.getElementById("settingsStatus").textContent="هذا الحساب غير مخوّل لفتح لوحة المطوّر.";}
+    }
     loadNotifications();refreshPushStatus();
     socket=io("https://tareeq-al-layl-server.onrender.com",{auth:{token},timeout:60000,transports:["polling","websocket"],reconnection:true,reconnectionAttempts:Infinity,reconnectionDelay:1000,reconnectionDelayMax:5000});
     socket.on("connect",loadFriendRequests);
