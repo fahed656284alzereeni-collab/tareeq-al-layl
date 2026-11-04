@@ -104,6 +104,46 @@ function onlinePlayerList() {
   return players;
 }
 
+// Best-effort multilingual name moderation. Normalize Unicode and common obfuscation before checking.
+const INAPPROPRIATE_NAME_TERMS = [
+  // Arabic
+  "كس", "شرموط", "شرموطة", "قحبة", "منيوك", "منيوكة", "خول", "طيز", "زب", "متناك", "عاهرة", "كلب ابن",
+  // English
+  "fuck", "fucker", "motherfucker", "shithead", "bitch", "cunt", "nigger", "faggot", "whore", "slut", "rape",
+  // Spanish / Portuguese
+  "puta", "puto", "mierda", "joder", "caralho", "viado", "piranha",
+  // French
+  "putain", "merde", "salope", "connard", "encule",
+  // German / Dutch
+  "arschloch", "scheisse", "hure", "schlampe", "kankerhoer",
+  // Russian / Ukrainian transliteration and Cyrillic
+  "блядь", "сука", "хуй", "пизда", "ебать", "мудак",
+  // Turkish
+  "orospu", "siktir", "pic", "amk",
+  // Italian
+  "vaffanculo", "stronzo", "troia", "puttana",
+  // Hindi / Urdu (common transliterations)
+  "gaand", "chutiya", "bhenchod", "madarchod", "haramzada"
+];
+function normalizeNameForModeration(value) {
+  return String(value || "").normalize("NFKD")
+    .replace(/[\\u0300-\\u036f\\u064b-\\u065f\\u0670\\u06d6-\\u06ed]/g, "")
+    .toLocaleLowerCase()
+    .replace(/[0@]/g, "o").replace(/[1!|]/g, "i").replace(/[3]/g, "e")
+    .replace(/[4@]/g, "a").replace(/[5$]/g, "s").replace(/[7]/g, "t")
+    .replace(/[\\s._*\\-]+/g, "");
+}
+function inappropriateNameReason(value) {
+  const normalized = normalizeNameForModeration(value);
+  if (!normalized) return "";
+  return INAPPROPRIATE_NAME_TERMS.find(term => normalized.includes(normalizeNameForModeration(term))) || "";
+}
+function assertAppropriateName(value) {
+  if (inappropriateNameReason(value)) {
+    throw new Error("هذا الاسم قد يحتوي على لفظ مسيء أو غير لائق. يرجى اختيار اسم آخر.");
+  }
+}
+
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth && socket.handshake.auth.token;
@@ -344,6 +384,7 @@ io.on("connection", socket => {
       const requested = Array.isArray(data.memberUids) ? [...new Set(data.memberUids.map(String))] : [];
       const memberUids = requested.filter(uid => uid && uid !== socket.data.uid).slice(0, 49);
       if (!name) throw new Error("اكتب اسمًا للمجموعة.");
+      assertAppropriateName(name);
       if (!memberUids.length) throw new Error("اختر شخصًا واحدًا على الأقل لإضافته.");
       const profiles = await db.getAll(...memberUids.map(uid => usersRef.doc(uid)));
       if (profiles.some(profile => !profile.exists || !profile.data().playerName)) throw new Error("تعذر العثور على أحد الحسابات المختارة.");
@@ -407,6 +448,7 @@ io.on("connection", socket => {
       const conversationId = String(data.conversationId || "");
       const name = String(data.name || "").trim().slice(0, 50);
       if (!name) throw new Error("اكتب اسمًا صالحًا للمجموعة.");
+      assertAppropriateName(name);
       const ref = conversationsRef.doc(conversationId);
       const snap = await ref.get();
       if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بتعديل هذه المجموعة.");
@@ -1734,6 +1776,7 @@ app.post("/api/admin/account-name",pushCors,express.json({limit:"32kb"}),async(r
     const name=String(req.body?.name||"").trim().replace(/\\s+/g," ").slice(0,40);
     if(!uid)return res.status(400).json({success:false,message:"حدد الحساب الذي تريد تغيير اسمه."});
     if(name.length<2)return res.status(400).json({success:false,message:"يجب أن يتكون الاسم من حرفين على الأقل."});
+    if(inappropriateNameReason(name))return res.status(400).json({success:false,message:"هذا الاسم قد يحتوي على لفظ مسيء أو غير لائق. يرجى اختيار اسم آخر."});
     if(/[<>]/.test(name))return res.status(400).json({success:false,message:"الاسم يحتوي على رموز غير مسموح بها."});
 
     const db=admin.firestore();
