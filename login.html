@@ -69,7 +69,13 @@ onAuthStateChanged(auth,async user=>{
  }
 
  try{
+  const controlResponse=await withTimeout(fetch("https://tareeq-al-layl-server.onrender.com/api/public/system-settings",{cache:"no-store"}),12000,"system-settings-timeout");
+  const controlData=await controlResponse.json().catch(()=>({}));
+  if(!controlResponse.ok||!controlData.success)throw new Error("تعذر التحقق من حالة الموقع. حاول مرة أخرى.");
   profileRef=doc(db,"users",user.uid);say("تم تسجيل الدخول. جارٍ تحميل ملف حسابك...");const snap=await withTimeout(getDoc(profileRef),15000,"profile-timeout");const data=snap.exists()?snap.data():{};
+  const isDeveloper=String(user.email||"").toLowerCase()==="fahed656284alzereeni@gmail.com";
+  if(controlData.settings?.maintenance&&!isDeveloper){say("مِرسالو في وضع الصيانة حاليًا. يرجى المحاولة لاحقًا.");checking=false;button.disabled=false;return}
+  if(!snap.exists()&&controlData.settings?.registrationOpen===false){say("إنشاء الحسابات الجديدة متوقف مؤقتًا. يمكنك المحاولة لاحقًا.");checking=false;button.disabled=false;return}
   if(data.playerName){say("أهلًا بعودتك "+data.playerName+". جارٍ فتح مِرسالو.");location.replace("chat.html");return}
   nameInput.value="";
   form.style.display="block";button.style.display="none";document.body.classList.add("name-step");nameInput.focus();say("قبل إكمال إنشاء الحساب، اختر الاسم الذي سيظهر للآخرين عند البحث عنك.");
