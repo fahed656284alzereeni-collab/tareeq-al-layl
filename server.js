@@ -144,6 +144,17 @@ function assertAppropriateName(value) {
   }
 }
 
+async function assertNameAllowed(value) {
+  assertAppropriateName(value);
+  const snap = await admin.firestore().collection("appSettings").doc("nameModeration").get();
+  const terms = snap.exists && Array.isArray(snap.data().blockedTerms) ? snap.data().blockedTerms : [];
+  const normalized = normalizeNameForModeration(value);
+  if (terms.some(term => {
+    const candidate = normalizeNameForModeration(term);
+    return candidate && normalized.includes(candidate);
+  })) throw new Error("هذا الاسم يحتوي على كلمة محظورة. يرجى اختيار اسم آخر.");
+}
+
 io.use(async (socket, next) => {
   try {
     const token = socket.handshake.auth && socket.handshake.auth.token;
@@ -384,7 +395,7 @@ io.on("connection", socket => {
       const requested = Array.isArray(data.memberUids) ? [...new Set(data.memberUids.map(String))] : [];
       const memberUids = requested.filter(uid => uid && uid !== socket.data.uid).slice(0, 49);
       if (!name) throw new Error("اكتب اسمًا للمجموعة.");
-      assertAppropriateName(name);
+      await assertNameAllowed(name);
       if (!memberUids.length) throw new Error("اختر شخصًا واحدًا على الأقل لإضافته.");
       const profiles = await db.getAll(...memberUids.map(uid => usersRef.doc(uid)));
       if (profiles.some(profile => !profile.exists || !profile.data().playerName)) throw new Error("تعذر العثور على أحد الحسابات المختارة.");
@@ -1698,6 +1709,37 @@ app.get("/api/admin/audit-log",pushCors,async(req,res)=>{
   }catch(error){sendAdminError(res,error);}
 });
 
+app.get("/api/admin/name-terms",pushCors,async(req,res)=>{
+ try{
+  await requireMersaloAdmin(req);
+  const snap=await admin.firestore().collection("appSettings").doc("nameModeration").get();
+  const terms=snap.exists&&Array.isArray(snap.data().blockedTerms)?snap.data().blockedTerms:[];
+  res.json({success:true,terms});
+ }catch(error){sendAdminError(res,error);}
+});
+app.post("/api/admin/name-terms",pushCors,express.json({limit:"32kb"}),async(req,res)=>{
+ try{
+  const actor=await requireMersaloAdmin(req);
+  if(!Array.isArray(req.body?.terms))return res.status(400).json({success:false,message:"أرسل قائمة الكلمات المحظورة."});
+  const terms=[...new Set(req.body.terms.map(v=>String(v||"").trim()).filter(Boolean))].slice(0,500);
+  if(terms.some(v=>v.length>80))return res.status(400).json({success:false,message:"لا يمكن أن تتجاوز الكلمة الواحدة 80 حرفًا."});
+  await admin.firestore().collection("appSettings").doc("nameModeration").set({blockedTerms:terms,updatedAt:admin.firestore.FieldValue.serverTimestamp(),updatedBy:actor.uid},{merge:true});
+  res.json({success:true,message:"تم حفظ قائمة الكلمات المحظورة.",terms});
+ }catch(error){sendAdminError(res,error);}
+});
+app.post("/api/name-check",pushCors,express.json({limit:"8kb"}),async(req,res)=>{
+ try{
+  await authenticatedUid(req);
+  const name=String(req.body?.name||"").trim();
+  if(name.length<2||name.length>50)return res.status(400).json({success:false,message:"يجب أن يكون الاسم بين حرفين و50 حرفًا."});
+  await assertNameAllowed(name);
+  res.json({success:true,allowed:true});
+ }catch(error){
+  const status=error.message==="AUTH_REQUIRED"?401:400;
+  res.status(status).json({success:false,message:error.message==="AUTH_REQUIRED"?"يرجى تسجيل الدخول مجددًا.":error.message||"تعذر فحص الاسم."});
+ }
+});
+
 app.get("/api/admin/groups",pushCors,async(req,res)=>{
  try{
   await requireMersaloAdmin(req);
@@ -1776,7 +1818,7 @@ app.post("/api/admin/account-name",pushCors,express.json({limit:"32kb"}),async(r
     const name=String(req.body?.name||"").trim().replace(/\\s+/g," ").slice(0,40);
     if(!uid)return res.status(400).json({success:false,message:"حدد الحساب الذي تريد تغيير اسمه."});
     if(name.length<2)return res.status(400).json({success:false,message:"يجب أن يتكون الاسم من حرفين على الأقل."});
-    if(inappropriateNameReason(name))return res.status(400).json({success:false,message:"هذا الاسم قد يحتوي على لفظ مسيء أو غير لائق. يرجى اختيار اسم آخر."});
+    try{await assertNameAllowed(name);}catch(error){return res.status(400).json({success:false,message:error.message});}
     if(/[<>]/.test(name))return res.status(400).json({success:false,message:"الاسم يحتوي على رموز غير مسموح بها."});
 
     const db=admin.firestore();
