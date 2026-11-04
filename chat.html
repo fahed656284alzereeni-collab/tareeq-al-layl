@@ -389,7 +389,7 @@ body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 (()=>{const selector="h1,h2,h3,h4,h5,h6,nav,main,header,footer,aside,[role=\\"navigation\\"],[role=\\"main\\"],[role=\\"banner\\"],[role=\\"contentinfo\\"]";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","presentation");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","presentation"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
 </script>
 </head><body>
-<header><h1 aria-hidden="true">مِرسالو</h1><nav id="mainNavigation" class="tabs" aria-label="التنقل الرئيسي"><button class="tabLink" type="button" data-navigate="chat.html" aria-current="page">الصفحة الرئيسية</button><button class="tabLink" type="button" data-navigate="settings.html">الإعدادات</button></nav></header>
+<header><h1 aria-hidden="true">مِرسالو</h1><nav id="mainNavigation" class="tabs"><button class="tabLink" type="button" data-navigate="chat.html" aria-current="page">الصفحة الرئيسية</button><button class="tabLink" type="button" data-navigate="settings.html">الإعدادات</button></nav></header>
 <main>
 <section class="panel" id="onlineSection"><h2 role="presentation">الأشخاص المتصلون</h2><p class="muted">تظهر هنا الحسابات المتصلة بمِرسالو حاليًا. ابحث عن الاسم لبدء محادثة.</p>
 <button id="openOnline" type="button" aria-controls="onlinePanel">عرض الأشخاص المتصلين</button>
