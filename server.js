@@ -1734,13 +1734,15 @@ app.get("/api/public/system-settings",pushCors,async(req,res)=>{
  catch(error){res.status(503).json({success:false,message:"تعذر قراءة حالة الموقع."});}
 });
 app.get("/api/admin/system-settings",pushCors,async(req,res)=>{
- try{await requireMersaloAdmin(req);res.set("Cache-Control","no-store");res.json({success:true,settings:await readSystemSettings()});}
+ try{await requireMersaloAdmin(req);res.set("Cache-Control","no-store");const snap=await SYSTEM_SETTINGS_REF().get();res.json({success:true,settings:await readSystemSettings(),developerNotes:String(snap.exists?snap.data().developerNotes||"": "")});}
  catch(error){sendAdminError(res,error);}
 });
 app.post("/api/admin/system-settings",pushCors,express.json({limit:"8kb"}),async(req,res)=>{
  try{
   const actor=await requireMersaloAdmin(req),body=req.body||{},features=body.features&&typeof body.features==="object"?body.features:{};
-  const clean={maintenance:body.maintenance===true,registrationOpen:body.registrationOpen!==false,features:{voiceCalls:features.voiceCalls!==false,groupChats:features.groupChats!==false,mediaSharing:features.mediaSharing!==false,scheduledMessages:features.scheduledMessages!==false},updatedAt:admin.firestore.FieldValue.serverTimestamp(),updatedBy:actor.uid};
+  const developerNotes=typeof body.developerNotes==="string"?body.developerNotes.slice(0,5000):undefined;
+   if(developerNotes!==undefined){await SYSTEM_SETTINGS_REF().set({developerNotes,notesUpdatedAt:admin.firestore.FieldValue.serverTimestamp(),notesUpdatedBy:actor.uid},{merge:true});return res.json({success:true,message:"تم حفظ ملاحظات المطوّر."});}
+   const clean={maintenance:body.maintenance===true,registrationOpen:body.registrationOpen!==false,features:{voiceCalls:features.voiceCalls!==false,groupChats:features.groupChats!==false,mediaSharing:features.mediaSharing!==false,scheduledMessages:features.scheduledMessages!==false},updatedAt:admin.firestore.FieldValue.serverTimestamp(),updatedBy:actor.uid};
   await SYSTEM_SETTINGS_REF().set(clean,{merge:true});
   if(clean.maintenance){for(const sockets of connectedUsers.values()){for(const client of sockets){if(String(client.data.email||"").toLowerCase()!==MERSALO_ADMIN_EMAIL)client.disconnect(true);}}}
   await admin.firestore().collection("adminActions").add({type:"system-settings",reason:"تحديث إعدادات الموقع والميزات",adminUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp(),settings:{maintenance:clean.maintenance,registrationOpen:clean.registrationOpen,features:clean.features}});
