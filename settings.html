@@ -5,7 +5,7 @@
 <title>الإعدادات - مِرسالو</title>
 <style>
 :root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}
-*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;line-height:1.8}body>header{display:none!important}body>main{max-width:none!important;margin:0!important;padding:0!important}body.section-open{overflow:hidden}body.section-open>header{display:none}body.section-open>main{max-width:none;margin:0;padding:0}body.section-open .section-screen:not(.active){display:none!important}.section-screen.active{position:fixed!important;inset:0!important;z-index:2147483000!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;margin:0!important;padding:24px 18px!important;border:0!important;border-radius:0!important;overflow-y:auto!important;background:#101827!important;display:block!important}.section-screen .section-back{display:block;width:100%;padding:14px;margin:0 0 20px;border:0;border-radius:10px;background:#42536b;color:#fff;font:inherit;font-weight:bold}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;line-height:1.8}body>header{display:none!important}body>main{max-width:none!important;margin:0!important;padding:0!important}body.section-open{overflow:hidden}body.section-open>header{display:none}body.section-open>main{max-width:none;margin:0;padding:0}body.section-open .section-screen:not(.active){display:none!important}.section-screen.active{position:fixed!important;inset:0!important;z-index:2147483000!important;width:100vw!important;height:100vh!important;height:100dvh!important;max-width:none!important;margin:0!important;padding:24px 18px!important;border:0!important;border-radius:0!important;overflow-y:auto!important;background:#101827!important;display:block!important}.admin-subsection{margin-top:14px}.admin-sub-back{margin-bottom:14px!important}#adminSectionMenu .action{min-height:54px;text-align:right}.section-screen .section-back{display:block;width:100%;padding:14px;margin:0 0 20px;border:0;border-radius:10px;background:#42536b;color:#fff;font:inherit;font-weight:bold}
 header{padding:15px 20px;background:#1b293b;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 h1{color:#8bd8c5;margin:0;font-size:1.5rem}
 nav.mainNav{display:flex;gap:8px;flex-wrap:wrap}
@@ -77,7 +77,17 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p class="muted">لوحة المطوّر الخاصة. جميع إجراءات الإدارة تُراجع صلاحيتها على الخادم.</p>
 <div id="adminStatus" class="requestStatus" role="status" aria-live="polite">جارٍ التحقق من صلاحيات المطوّر...</div>
 <div id="adminStats" aria-label="إحصائيات الموقع"></div>
-<section class="requestCard" aria-labelledby="systemControlTitle">
+<div id="adminSectionMenu" aria-label="أقسام إدارة المطوّر">
+<p class="muted">اختر القسم المطلوب. ستظهر أدوات القسم المختار فقط.</p>
+<button class="action" type="button" data-admin-section="site">إدارة الموقع والميزات</button>
+<button class="action" type="button" data-admin-section="accounts">إدارة الحسابات</button>
+<button class="action" type="button" data-admin-section="groups">إدارة المجموعات</button>
+<button class="action" type="button" data-admin-section="names">الكلمات المحظورة للأسماء</button>
+<button class="action" type="button" data-admin-section="reports">بلاغات المستخدمين</button>
+<button class="action" type="button" data-admin-section="audit">سجل العمليات</button>
+<button class="action" type="button" data-admin-section="diagnostics">تشخيص الأعطال</button>
+<button class="action" type="button" data-admin-section="commands">مركز الأوامر</button>
+</div><div class="admin-subsection" id="admin-section-site" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>إدارة الموقع والميزات</h3><section class="requestCard" aria-labelledby="systemControlTitle">
 <h3 id="systemControlTitle">إدارة حالة الموقع والميزات</h3>
 <p class="muted">تُحفظ الإعدادات على الخادم وتُطبّق على تسجيل الدخول والاتصال والعمليات المرتبطة بكل ميزة. عند تفعيل الصيانة سيُمنع المستخدمون من الدخول، بينما تبقى صلاحية المطوّر متاحة لإيقافها.</p>
 <label><input id="systemMaintenance" type="checkbox"> تفعيل وضع الصيانة ومنع دخول المستخدمين</label>
@@ -89,8 +99,8 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <label><input id="featureScheduledMessages" type="checkbox" checked> جدولة الرسائل</label>
 <button class="action" type="button" id="saveSystemSettings">حفظ إعدادات الموقع والميزات</button>
 <p id="systemSettingsStatus" role="status" aria-live="polite">يتم تحميل الإعدادات...</p>
-</section>
-<section class="requestCard" aria-labelledby="controlCenterTitle">
+</section></div>
+<div class="admin-subsection" id="admin-section-commands" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>مركز الأوامر</h3><section class="requestCard" aria-labelledby="controlCenterTitle">
 <h3 id="controlCenterTitle">مركز التحكم والأوامر</h3>
 <p class="muted">يمكنك فحص الخادم من هنا. الأوامر غير المعروفة لا تُنفّذ.</p>
 <div class="account-actions">
@@ -104,25 +114,25 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <button class="action" type="button" id="controlExecute" disabled>تأكيد تنفيذ الأمر</button>
 <p id="controlStatus" role="status" aria-live="polite"></p>
 <h4>سجل آخر الأوامر</h4><div id="controlLogs" aria-live="polite">لم يتم تحميل السجل بعد.</div>
-</section>
-<section class="requestCard" aria-labelledby="auditTitle"><h3 id="auditTitle">سجل العمليات الإدارية</h3><button class="action secondary" type="button" id="refreshAdminAudit">تحديث سجل العمليات</button><p id="adminAuditStatus" role="status" aria-live="polite">لم يتم تحميل السجل بعد.</p><div id="adminAuditLog" aria-live="polite"></div></section><section class="requestCard" aria-labelledby="diagnosticsTitle"><h3 id="diagnosticsTitle">تشخيص أعطال الموقع</h3><button class="action secondary" type="button" id="refreshAdminDiagnostics">تحديث سجل الأعطال</button><p id="adminDiagnosticsStatus" role="status" aria-live="polite">لم يتم تحميل الأعطال بعد.</p><div id="adminDiagnostics" aria-live="polite"></div></section><h3>التحكم بالحسابات</h3>
+</section></div>
+<div class="admin-subsection" id="admin-section-audit" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>سجل العمليات</h3><section class="requestCard" aria-labelledby="auditTitle"><h3 id="auditTitle">سجل العمليات الإدارية</h3><button class="action secondary" type="button" id="refreshAdminAudit">تحديث سجل العمليات</button><p id="adminAuditStatus" role="status" aria-live="polite">لم يتم تحميل السجل بعد.</p><div id="adminAuditLog" aria-live="polite"></div></section></div><div class="admin-subsection" id="admin-section-diagnostics" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>تشخيص الأعطال</h3><section class="requestCard" aria-labelledby="diagnosticsTitle"><h3 id="diagnosticsTitle">تشخيص أعطال الموقع</h3><button class="action secondary" type="button" id="refreshAdminDiagnostics">تحديث سجل الأعطال</button><p id="adminDiagnosticsStatus" role="status" aria-live="polite">لم يتم تحميل الأعطال بعد.</p><div id="adminDiagnostics" aria-live="polite"></div></section></div><div class="admin-subsection" id="admin-section-accounts" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>إدارة الحسابات</h3><h3>التحكم بالحسابات</h3>
 <label for="adminAccountSearch">البحث عن حساب بالاسم أو البريد أو المعرّف</label><input id="adminAccountSearch" type="search" placeholder="اكتب كلمة البحث" autocomplete="off" aria-label="البحث عن حساب بالاسم أو البريد أو المعرّف">
 <p class="muted">تظهر جميع الحسابات هنا مباشرة. بجانب كل حساب ستجد الإجراءات المتاحة له.</p>
 <div id="adminAccountsStatus" role="status" aria-live="polite"></div>
 <div id="adminAccounts" aria-live="polite"></div>
-<h3>إدارة المجموعات</h3>
+</div><div class="admin-subsection" id="admin-section-groups" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>إدارة المجموعات</h3><h3>إدارة المجموعات</h3>
 <label for="adminGroupSearch">البحث عن مجموعة بالاسم</label><input id="adminGroupSearch" type="search" placeholder="اكتب اسم المجموعة" autocomplete="off" aria-label="البحث عن مجموعة بالاسم">
 <p class="muted">يمكن إيقاف المجموعة أو تعليقها مؤقتًا أو إعادة تفعيلها أو حذفها نهائيًا.</p>
 <div id="adminGroupsStatus" role="status" aria-live="polite">لم يتم تحميل المجموعات بعد.</div>
 <div id="adminGroups" aria-live="polite"></div>
-<h3>قائمة الكلمات المحظورة للأسماء</h3>
+</div><div class="admin-subsection" id="admin-section-names" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>الكلمات المحظورة للأسماء</h3><h3>قائمة الكلمات المحظورة للأسماء</h3>
 <p class="muted">أضف الكلمات أو العبارات غير اللائقة التي تريد منعها في أسماء الحسابات والمجموعات. ضع كل كلمة أو عبارة في سطر مستقل. تنطبق القائمة على إنشاء المجموعات وتغيير أسماء الحسابات والمجموعات، ويُفحص الاسم في الخادم.</p>
 <label for="blockedNameTerms">الكلمات والعبارات المحظورة</label>
 <textarea id="blockedNameTerms" rows="8" maxlength="30000" placeholder="كلمة في كل سطر" aria-label="قائمة الكلمات والعبارات المحظورة"></textarea>
 <button class="action" type="button" id="saveBlockedNameTerms">حفظ قائمة الكلمات المحظورة</button>
 <p id="blockedNameTermsStatus" role="status" aria-live="polite">لم يتم تحميل القائمة بعد.</p>
-<h3>بلاغات المستخدمين</h3>
-<div id="adminReports" aria-live="polite">جارٍ تحميل البلاغات...</div>
+</div><div class="admin-subsection" id="admin-section-reports" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>بلاغات المستخدمين</h3><h3>بلاغات المستخدمين</h3>
+<div id="adminReports" aria-live="polite">جارٍ تحميل البلاغات...</div></div>
 <button class="action secondary" type="button" id="refreshAdmin">تحديث لوحة الإدارة</button>
 </section>
 
@@ -173,6 +183,21 @@ const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-a
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 
 const largeText=document.getElementById("largeText"),strongFocus=document.getElementById("strongFocus");
+function showAdminSubsection(id){
+ const menu=document.getElementById("adminSectionMenu");
+ const views=[...document.querySelectorAll("#panel-admin .admin-subsection")];
+ const selected=views.find(view=>view.id==="admin-section-"+id);
+ if(!selected)return;
+ menu.hidden=true;views.forEach(view=>view.hidden=view!==selected);
+ const heading=selected.querySelector("h3");if(heading){heading.setAttribute("tabindex","-1");heading.focus();}
+}
+function showAdminMenu(){
+ document.getElementById("adminSectionMenu").hidden=false;
+ document.querySelectorAll("#panel-admin .admin-subsection").forEach(view=>view.hidden=true);
+ const heading=document.querySelector("#panel-admin h2");if(heading)heading.focus();
+}
+document.querySelectorAll("[data-admin-section]").forEach(button=>button.addEventListener("click",()=>showAdminSubsection(button.dataset.adminSection)));
+document.querySelectorAll(".admin-sub-back").forEach(button=>button.addEventListener("click",showAdminMenu));
 function showSection(id){document.querySelectorAll(".section-screen").forEach(section=>{const active=section.id===id;section.classList.toggle("active",active);section.hidden=!active});document.body.classList.toggle("section-open",id!=="panel-settings");const heading=document.querySelector("#"+id+" h2");if(heading)heading.focus();if(id==="panel-admin"){loadAdminDashboard();}}
 const requestedSection=new URLSearchParams(location.search).get("section");
 if(requestedSection==="friend-requests")showSection("panel-friend-requests");
