@@ -1217,7 +1217,7 @@ async function refreshConversationInfo(){
   document.getElementById("messageHint").textContent=blocked?"إرسال الرسائل متوقف بسبب إعدادات الحظر.":"يمكنك كتابة رسالة تصل إلى 4000 حرف.";
   statusBox.textContent="";
 }
-document.getElementById("backToConversation").addEventListener("click",()=>{const info=document.getElementById("conversationInfo");info.hidden=true;document.getElementById("closeChat").hidden=false;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;document.getElementById("chatTitle").focus()});
+document.getElementById("backToConversation").addEventListener("click",()=>{const info=document.getElementById("conversationInfo");info.hidden=true;document.getElementById("closeChat").hidden=false;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;document.getElementById("messageText").focus()});
 document.getElementById("chatTitle").addEventListener("click",async()=>{
   const info=document.getElementById("conversationInfo"),opening=info.hidden;
   info.hidden=!opening;
