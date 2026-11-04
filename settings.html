@@ -77,6 +77,19 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p class="muted">لوحة المطوّر الخاصة. جميع إجراءات الإدارة تُراجع صلاحيتها على الخادم.</p>
 <div id="adminStatus" class="requestStatus" role="status" aria-live="polite">جارٍ التحقق من صلاحيات المطوّر...</div>
 <div id="adminStats" aria-label="إحصائيات الموقع"></div>
+<section class="requestCard" aria-labelledby="systemControlTitle">
+<h3 id="systemControlTitle">إدارة حالة الموقع والميزات</h3>
+<p class="muted">تُحفظ الإعدادات على الخادم وتُطبّق على تسجيل الدخول والاتصال والعمليات المرتبطة بكل ميزة.</p>
+<label><input id="systemMaintenance" type="checkbox"> تفعيل وضع الصيانة ومنع دخول المستخدمين</label>
+<label><input id="systemRegistration" type="checkbox" checked> السماح بإنشاء حسابات جديدة</label>
+<h4>التحكم بالميزات</h4>
+<label><input id="featureVoiceCalls" type="checkbox" checked> المكالمات الصوتية</label>
+<label><input id="featureGroupChats" type="checkbox" checked> إنشاء المجموعات</label>
+<label><input id="featureMediaSharing" type="checkbox" checked> مشاركة الصور والفيديوهات والملفات</label>
+<label><input id="featureScheduledMessages" type="checkbox" checked> جدولة الرسائل</label>
+<button class="action" type="button" id="saveSystemSettings">حفظ إعدادات الموقع والميزات</button>
+<p id="systemSettingsStatus" role="status" aria-live="polite">يتم تحميل الإعدادات...</p>
+</section>
 <section class="requestCard" aria-labelledby="controlCenterTitle">
 <h3 id="controlCenterTitle">مركز التحكم والأوامر</h3>
 <p class="muted">يمكنك فحص الخادم من هنا. الأوامر غير المعروفة لا تُنفّذ.</p>
@@ -299,6 +312,34 @@ saveBlockedNameTerms.addEventListener("click",async()=>{
  }catch(error){blockedNameTermsStatus.textContent=error.message||"تعذر حفظ القائمة.";}
  finally{saveBlockedNameTerms.disabled=false;}
 });
+async function loadSystemSettings(){
+ const status=document.getElementById("systemSettingsStatus");
+ try{
+  const data=await adminRequest("/api/admin/system-settings"),settings=data.settings||{},features=settings.features||{};
+  document.getElementById("systemMaintenance").checked=settings.maintenance===true;
+  document.getElementById("systemRegistration").checked=settings.registrationOpen!==false;
+  document.getElementById("featureVoiceCalls").checked=features.voiceCalls!==false;
+  document.getElementById("featureGroupChats").checked=features.groupChats!==false;
+  document.getElementById("featureMediaSharing").checked=features.mediaSharing!==false;
+  document.getElementById("featureScheduledMessages").checked=features.scheduledMessages!==false;
+  status.textContent="تم تحميل إعدادات الموقع والميزات.";
+ }catch(error){status.textContent=error.message||"تعذر تحميل إعدادات الموقع.";}
+}
+document.getElementById("saveSystemSettings").addEventListener("click",async()=>{
+ const button=document.getElementById("saveSystemSettings"),status=document.getElementById("systemSettingsStatus");
+ const maintenance=document.getElementById("systemMaintenance").checked;
+ if(maintenance&&!confirm("سيتم منع المستخدمين من دخول مِرسالو حتى إيقاف وضع الصيانة. هل تريد المتابعة؟"))return;
+ const payload={maintenance,registrationOpen:document.getElementById("systemRegistration").checked,features:{
+  voiceCalls:document.getElementById("featureVoiceCalls").checked,
+  groupChats:document.getElementById("featureGroupChats").checked,
+  mediaSharing:document.getElementById("featureMediaSharing").checked,
+  scheduledMessages:document.getElementById("featureScheduledMessages").checked
+ }};
+ button.disabled=true;status.textContent="جارٍ حفظ إعدادات الموقع...";
+ try{const result=await adminRequest("/api/admin/system-settings","POST",payload);status.textContent=result.message;}
+ catch(error){status.textContent=error.message||"تعذر حفظ الإعدادات.";}
+ finally{button.disabled=false;}
+});
 async function loadAdminDashboard(){
   adminStatus.textContent="جارٍ تحميل بيانات لوحة الإدارة...";
   adminStats.replaceChildren();
@@ -310,7 +351,8 @@ async function loadAdminDashboard(){
     loadAdminAccounts(),
     loadAdminGroups(),
     loadAdminAudit(),
-    loadAdminDiagnostics()
+    loadAdminDiagnostics(),
+    loadSystemSettings()
   ]);
   let failures=0;
   const dashboard=jobs[0],reports=jobs[1];
