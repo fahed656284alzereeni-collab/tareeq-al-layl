@@ -513,6 +513,9 @@ await assertFeatureEnabled("groupChats","هذه الميزة متوقفة مؤق
       if (group.createdBy !== socket.data.uid && !(group.moderatorUids || []).includes(socket.data.uid)) throw new Error("المالك والمشرفون فقط يستطيعون تحديد أذونات المجموعة.");
       await ref.update({ groupPermissions: { editInfo, addMembers }, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
       for (const uid of group.members || []) {
+        // لا تُعد بناء واجهة المستخدم الذي حفظ الإذن أثناء تنفيذ الحفظ؛
+        // فهذا العميل يحدّث حالته محليًا، بينما بقية الأعضاء يحتاجون إشعار التحديث.
+        if (uid === socket.data.uid) continue;
         const sessions = connectedUsers.get(uid);
         if (sessions) for (const client of sessions) if (client.connected) client.emit("groupConversationUpdated", { conversationId });
       }
