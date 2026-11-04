@@ -1740,7 +1740,7 @@ app.get("/api/profile/me",pushCors,async(req,res)=>{
   const ref=db.collection("users").doc(uid);
   const snap=await ref.get();
   let data=snap.exists?snap.data():{};
-  let playerName=String(data.playerName||data.displayName||data.username||data.userName||data.name||user.displayName||"").trim();
+  let playerName=String(data.playerName||data.displayName||data.username||data.userName||data.name||authUser.displayName||"").trim();
   let bio=String(data.bio||"").slice(0,200);
   if(!playerName&&authUser.email){
    const matches=await db.collection("users").where("email","==",authUser.email).limit(10).get();

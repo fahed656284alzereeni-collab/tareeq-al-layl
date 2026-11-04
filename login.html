@@ -138,7 +138,7 @@ onAuthStateChanged(auth,async user=>{
   const isDeveloper=String(user.email||"").toLowerCase()==="fahed656284alzereeni@gmail.com";
   if(controlData.settings?.maintenance&&!isDeveloper){say("مِرسالو في وضع الصيانة حاليًا. يرجى المحاولة لاحقًا.");checking=false;button.disabled=false;return}
   if(!snap.exists()&&controlData.settings?.registrationOpen===false){say("إنشاء الحسابات الجديدة متوقف مؤقتًا. يمكنك المحاولة لاحقًا.");checking=false;button.disabled=false;return}
-  if(data.playerName){say("أهلًا بعودتك "+data.playerName+". جارٍ فتح مِرسالو.");location.replace("chat.html");return}
+  const savedPlayerName=String(data.playerName||data.displayName||data.username||data.userName||data.name||user.displayName||"").trim();if(savedPlayerName){say("أهلًا بعودتك "+savedPlayerName+". جارٍ فتح مِرسالو.");location.replace("chat.html");return}
   nameInput.value="";
   form.style.display="block";button.style.display="none";document.body.classList.add("name-step");nameInput.focus();say("قبل إكمال إنشاء الحساب، اختر الاسم الذي سيظهر للآخرين عند البحث عنك.");
  }catch(e){checking=false;button.disabled=false;const code=e.code||e.message||"unknown";say(code==="profile-timeout"?"تأخر الاتصال بملف حسابك. تحقق من اتصال الإنترنت ثم أعد المحاولة.":"تعذر قراءة ملف الحساب. رمز الخطأ: "+code)}
