@@ -235,7 +235,7 @@ const requestedParams=new URLSearchParams(location.search);const requestedSectio
 if(requestedSection==="friend-requests")showSection("panel-friend-requests");
 document.querySelectorAll("[data-open-section]").forEach(button=>button.addEventListener("click",()=>showSection(button.dataset.openSection)));
 
-document.querySelectorAll(".section-back").forEach(button=>button.addEventListener("click",()=>showSection("panel-settings")));
+document.querySelectorAll(".section-back:not(.admin-sub-back)").forEach(button=>button.addEventListener("click",()=>showSection("panel-settings")));
 function applySettings(){document.body.classList.toggle("large-text",largeText.checked);document.body.classList.toggle("strong-focus",strongFocus.checked);localStorage.setItem("mersalo-large-text",String(largeText.checked));localStorage.setItem("mersalo-strong-focus",String(strongFocus.checked))}
 largeText.checked=localStorage.getItem("mersalo-large-text")==="true";strongFocus.checked=localStorage.getItem("mersalo-strong-focus")==="true";applySettings();largeText.addEventListener("change",applySettings);strongFocus.addEventListener("change",applySettings);
 const requestsList=document.getElementById("friendRequestsList"),requestsStatus=document.getElementById("friendRequestsStatus");
