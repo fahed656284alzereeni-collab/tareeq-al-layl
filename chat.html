@@ -384,9 +384,47 @@ body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 .groupPermissionChoice{display:flex!important;align-items:center!important;gap:12px!important;width:100%!important;min-height:58px!important;padding:10px 12px!important;border:1px solid #718096!important;border-radius:10px!important;background:#1b293b!important;font-weight:bold!important;cursor:pointer!important}.groupPermissionChoice .groupPermissionCheckbox{appearance:none!important;-webkit-appearance:none!important;position:relative!important;display:inline-grid!important;place-items:center!important;width:30px!important;height:30px!important;min-width:30px!important;flex:0 0 30px!important;margin:0!important;padding:0!important;border:2px solid #d7e2ef!important;border-radius:6px!important;background:#101827!important;cursor:pointer!important}.groupPermissionChoice .groupPermissionCheckbox[aria-checked=true]{background:#167c68!important;border-color:#8bd8c5!important}.groupPermissionChoice .groupPermissionCheckbox[aria-checked=true]::after{content:"✓";color:#fff;font-size:22px;font-weight:bold;line-height:1}.groupPermissionChoice .groupPermissionCheckbox:disabled{opacity:.55;cursor:wait!important}.groupPermissionChoice .groupPermissionLabel{flex:1!important;display:block!important;margin:0!important;cursor:pointer!important}.groupPermissionChoice:focus-within{outline:3px solid #ffd166!important;outline-offset:3px!important}
 </style><link rel="stylesheet" href="/mersalo-theme.css?v=20261104"><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#101827">
+
 <script>
-/* Keep visual layout while suppressing heading and landmark classifications for screen readers. */
-(()=>{const selector="h1,h2,h3,h4,h5,h6,nav,main,header,footer,aside,[role=\\"navigation\\"],[role=\\"main\\"],[role=\\"banner\\"],[role=\\"contentinfo\\"]";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","presentation");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","presentation"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
+/* Keep the visual design, while making spoken controls concise and headings plain text. */
+(()=>{
+ const headingSelector="h1,h2,h3,h4,h5,h6";
+ const landmarkSelector="nav,main,header,footer,aside,[role=\"navigation\"],[role=\"main\"],[role=\"banner\"],[role=\"contentinfo\"]";
+ const copyStyle=["display","font-size","font-family","font-weight","font-style","line-height","color","text-align","letter-spacing","text-transform","margin-top","margin-right","margin-bottom","margin-left","align-self"];
+ const plainHeading=el=>{
+  if(!el.matches?.(headingSelector))return el;
+  const style=getComputedStyle(el);
+  const replacement=document.createElement("div");
+  for(const attr of [...el.attributes])if(attr.name!=="role"&&attr.name!=="aria-level")replacement.setAttribute(attr.name,attr.value);
+  for(const prop of copyStyle)replacement.style.setProperty(prop,style.getPropertyValue(prop));
+  while(el.firstChild)replacement.append(el.firstChild);
+  el.replaceWith(replacement);
+  return replacement;
+ };
+ const normalizeButton=el=>{
+  if(el.tagName!=="BUTTON")return;
+  const name=(el.innerText||el.textContent||"").replace(/\s+/g," ").trim();
+  if(name)el.setAttribute("aria-label",name);
+ };
+ const apply=root=>{
+  if(root.nodeType!==1)return;
+  if(root.matches?.(headingSelector))root=plainHeading(root);
+  if(root.matches?.(landmarkSelector))root.setAttribute("role","presentation");
+  if(root.matches?.("button"))normalizeButton(root);
+  root.querySelectorAll?.(headingSelector).forEach(plainHeading);
+  root.querySelectorAll?.(landmarkSelector).forEach(el=>el.setAttribute("role","presentation"));
+  root.querySelectorAll?.("button").forEach(normalizeButton);
+ };
+ const start=()=>{
+  apply(document.documentElement);
+  new MutationObserver(records=>records.forEach(record=>{
+   if(record.type==="characterData")apply(record.target.parentElement);
+   else record.addedNodes.forEach(apply);
+  })).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+ };
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});
+ else start();
+})();
 </script>
 </head><body>
 <header><h1 aria-hidden="true">مِرسالو</h1><div id="mainNavigation" class="tabs"><button class="tabLink" type="button" data-navigate="chat.html" aria-current="page">الصفحة الرئيسية</button><button class="tabLink" type="button" data-navigate="settings.html">الإعدادات</button></div></header>
