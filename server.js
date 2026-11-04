@@ -1740,13 +1740,13 @@ app.get("/api/profile/me",pushCors,async(req,res)=>{
   const ref=db.collection("users").doc(uid);
   const snap=await ref.get();
   let data=snap.exists?snap.data():{};
-  let playerName=String(data.playerName||data.displayName||"").trim();
+  let playerName=String(data.playerName||data.displayName||data.username||data.userName||data.name||user.displayName||"").trim();
   let bio=String(data.bio||"").slice(0,200);
   if(!playerName&&authUser.email){
    const matches=await db.collection("users").where("email","==",authUser.email).limit(10).get();
    for(const item of matches.docs){
     const old=item.data();
-    const found=String(old.playerName||old.displayName||"").trim();
+    const found=String(old.playerName||old.displayName||old.username||old.userName||old.name||"").trim();
     if(found){
      playerName=found;bio=String(old.bio||"").slice(0,200);
      await ref.set({uid,email:authUser.email,playerName,displayName:playerName,bio},{merge:true});
@@ -1773,7 +1773,7 @@ app.post("/api/profile/me",pushCors,express.json({limit:"8kb"}),async(req,res)=>
   await assertNameAllowed(playerName);
   const authUser=await admin.auth().getUser(uid);
   await admin.auth().updateUser(uid,{displayName:playerName});
-  await admin.firestore().collection("users").doc(uid).set({uid,email:String(authUser.email||""),displayName:playerName,playerName,bio,updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
+  await admin.firestore().collection("users").doc(uid).set({uid,email:String(authUser.email||""),displayName:playerName,playerName,username:playerName,name:playerName,bio,updatedAt:admin.firestore.FieldValue.serverTimestamp()},{merge:true});
   res.set("Cache-Control","no-store");
   res.json({success:true,playerName,bio,message:"تم حفظ الملف الشخصي بنجاح."});
  }catch(error){
