@@ -103,7 +103,3 @@ html[data-theme="light"] .infoPanel,body[data-theme="light"] .infoPanel,body.the
 html[data-theme="light"] h2,body[data-theme="light"] h2,body.theme-light h2,
 html[data-theme="light"] h3,body[data-theme="light"] h3,body.theme-light h3{color:#20334f}
 html[data-theme="light"] label,body[data-theme="light"] label,body.theme-light label{color:#263b57}
-
-/* Hide page and section headings throughout Mersalo; keep the interactive conversation title. */
-h1,h2,h3,h4,h5,h6{display:none!important}
-.chatHeader h2:has(#chatTitle){display:block!important}
