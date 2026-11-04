@@ -66,67 +66,29 @@ let activeUser=null;function say(message){status.textContent=message}
 const inappropriateNameTerms=["كس","شرموط","شرموطة","قحبة","منيوك","منيوكة","خول","طيز","زب","متناك","عاهرة","fuck","fucker","motherfucker","shithead","bitch","cunt","nigger","faggot","whore","slut","rape","puta","puto","mierda","joder","caralho","viado","putain","merde","salope","connard","encule","arschloch","scheisse","hure","schlampe","блядь","сука","хуй","пизда","ебать","мудак","orospu","siktir","amk","vaffanculo","stronzo","troia","puttana","gaand","chutiya","bhenchod","madarchod","haramzada"];
 function normalizeName(value){return String(value||"").normalize("NFKD").replace(/[\\u0300-\\u036f\\u064b-\\u065f\\u0670\\u06d6-\\u06ed]/g,"").toLocaleLowerCase().replace(/[0@]/g,"o").replace(/[1!|]/g,"i").replace(/[3]/g,"e").replace(/[4@]/g,"a").replace(/[5$]/g,"s").replace(/[7]/g,"t").replace(/[\\s._*\\-]+/g,"")}
 function hasInappropriateName(value){const normalized=normalizeName(value);return inappropriateNameTerms.some(term=>normalized.includes(normalizeName(term)))}
-let profileReady=false,profileLoadStarted=false;
-function setProfileName(value){
- const clean=String(value||"").trim();
- if(!clean)return false;
- nameField.value=clean;
- nameField.defaultValue=clean;
- nameField.setAttribute("value",clean);
- nameField.dispatchEvent(new Event("input",{bubbles:true}));
- return nameField.value.trim()===clean;
-}
-async function loadProfile(user){
- if(profileLoadStarted)return;
- profileLoadStarted=true;
+let profileReady=false;
+(async()=>{
  try{
+  await auth.authStateReady();
+  const user=auth.currentUser;
+  if(!user){location.replace("login.html");return;}
   activeUser=user;
-  email.textContent=user.email||"لا يوجد بريد إلكتروني";
-  let savedName="",savedBio="";
-  // Ask the authenticated server first: it reads the same users/{uid} record used by chat names.
-  const token=await user.getIdToken(true);
-  const response=await fetch(apiBase+"/api/profile/me",{method:"GET",headers:{Authorization:"Bearer "+token,"Accept":"application/json"},cache:"no-store"});
-  const result=await response.json().catch(()=>({}));
-  if(response.ok&&result.success){
-   savedName=String(result.playerName||result.displayName||result.username||result.name||"").trim();
-   savedBio=String(result.bio||"").slice(0,200);
-   if(result.email)email.textContent=result.email;
-  }else{
-   throw new Error(result.message||"تعذر جلب بيانات الملف الشخصي من الخادم.");
-  }
-  // Direct Firestore fallback only if the server returned no saved name.
-  if(!savedName){
-   try{
-    const snap=await getDoc(doc(db,"users",user.uid));
-    if(snap.exists()){
-     const data=snap.data()||{};
-     savedName=String(data.playerName||data.displayName||data.username||data.userName||data.name||"").trim();
-     if(!savedBio)savedBio=String(data.bio||"").slice(0,200);
-    }
-   }catch(firestoreError){console.warn("Profile Firestore fallback failed:",firestoreError?.code||firestoreError?.message||"unknown");}
-  }
-  if(!savedName){
-   savedName=String(user.displayName||user.providerData?.find(p=>p.providerId==="google.com")?.displayName||"").trim();
-  }
-  if(savedName){
-   setProfileName(savedName);
-   say("تم تحميل اسم المستخدم المحفوظ.");
-  }else{
-   say("لم يصل اسم محفوظ من سجل الحساب. لم يتم تغيير الاسم.");
-  }
-  bioField.value=savedBio;
+  const snap=await getDoc(doc(db,"users",user.uid));
+  const data=snap.exists()?snap.data():{};
+  const savedName=String(data.playerName||data.displayName||user.displayName||"").trim();
+  nameField.value=savedName;
+  bioField.value=String(data.bio||"").slice(0,200);
   bioCount.textContent=bioField.value.length+" من 200 حرف";
+  email.textContent=user.email||"لا يوجد بريد إلكتروني";
+  say(savedName?"تم تحميل بيانات الحساب.":"لا يوجد اسم محفوظ في سجل الحساب.");
  }catch(error){
-  console.error("Profile load failed:",error?.code||error?.message||"unknown");
-  say("تعذر تحميل الاسم من الحساب: "+(error.message||"تحقق من الاتصال ثم أعد تحميل الصفحة."));
+  email.textContent=auth.currentUser?.email||"لا يوجد بريد إلكتروني";
+  say("تعذر تحميل الملف الشخصي. رمز الخطأ: "+(error.code||"unknown"));
+  console.error("Original profile load failed:",error?.code||error?.message||"unknown");
  }finally{
   profileReady=true;
  }
-}
-onAuthStateChanged(auth,user=>{
- if(!user){if(!profileLoadStarted)location.replace("login.html");return;}
- loadProfile(user);
-});
+})();
 form.addEventListener("submit",async event=>{event.preventDefault();if(!activeUser)return;let playerName=nameField.value.trim();const bio=bioField.value.trim();if(!playerName){try{const token=await activeUser.getIdToken();const response=await fetch(apiBase+"/api/profile/me",{headers:{Authorization:"Bearer "+token},cache:"no-store"});const result=await response.json().catch(()=>({}));playerName=String(result.playerName||result.displayName||result.username||result.name||activeUser.displayName||"").trim();if(playerName)nameField.value=playerName;}catch(error){playerName=String(activeUser.displayName||"").trim();if(playerName)nameField.value=playerName;}}if(playerName.length<2||playerName.length>30){say("اسم المستخدم يجب أن يكون بين حرفين و30 حرفًا.");nameField.focus();return}if(hasInappropriateName(playerName)){say("هذا الاسم قد يحتوي على لفظ مسيء أو غير لائق. يرجى اختيار اسم آخر.");nameField.focus();return}if(bio.length>200){say("النبذة الشخصية لا يمكن أن تتجاوز 200 حرف.");bioField.focus();return}save.disabled=true;say("جارٍ حفظ بيانات الحساب...");try{const token=await activeUser.getIdToken(true);const response=await fetch(apiBase+"/api/profile/me",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({playerName,bio}),cache:"no-store"});const result=await response.json().catch(()=>({}));if(!response.ok||!result.success)throw new Error(result.message||"تعذر حفظ الملف الشخصي.");await activeUser.reload();nameField.value=result.playerName||playerName;bioField.value=result.bio??bio;bioCount.textContent=bioField.value.length+" من 200 حرف";say("تم حفظ الاسم والنبذة الشخصية بنجاح.")}catch(error){say("تعذر حفظ بيانات الحساب: "+(error.message||error.code||"خطأ غير معروف"))}finally{save.disabled=false}});
 </script><script>document.addEventListener("click",function(event){const button=event.target.closest("button[data-navigate]");if(button){location.href=button.dataset.navigate;}});</script><script src="diagnostics.js" defer></script><script>
 (function(){
