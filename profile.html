@@ -35,4 +35,8 @@ form.addEventListener("submit",async event=>{event.preventDefault();if(!activeUs
  document.addEventListener('change',stopCheckboxParentClick,true);
 })();
 </script>
+<script>
+/* Keep heading appearance while preventing screen readers from announcing heading levels. */
+(()=>{const apply=root=>{if(root.matches?.("h1,h2,h3,h4,h5,h6"))root.setAttribute("role","generic");root.querySelectorAll?.("h1,h2,h3,h4,h5,h6").forEach(el=>el.setAttribute("role","generic"));};apply(document);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(node=>{if(node.nodeType===1)apply(node);}))).observe(document.documentElement,{childList:true,subtree:true});})();
+</script>
 </body></html>
