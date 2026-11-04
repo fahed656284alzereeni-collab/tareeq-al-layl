@@ -198,7 +198,10 @@ const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app);
 
 const largeText=document.getElementById("largeText"),strongFocus=document.getElementById("strongFocus");
 const adminSectionOrigins=new Map();
+let activeAdminSectionTrigger=null;
+let activeSectionTrigger=null;
 function showAdminSubsection(id){
+ activeAdminSectionTrigger=document.querySelector(`[data-admin-section="${id}"]`);
  const menu=document.getElementById("adminSectionMenu");
  const views=[...document.querySelectorAll("#panel-admin .admin-subsection"),...document.querySelectorAll("body > .admin-subsection")];
  const selected=views.find(view=>view.id==="admin-section-"+id);
@@ -214,8 +217,8 @@ function showAdminSubsection(id){
  selected.classList.add("admin-subsection-active");
  if(selected.parentNode!==document.body)document.body.appendChild(selected);
  document.body.classList.add("admin-subsection-open");
- const heading=selected.querySelector("h3");
- if(heading){heading.setAttribute("tabindex","-1");requestAnimationFrame(()=>heading.focus());}
+ const firstControl=selected.querySelector(".admin-sub-back,button,a,input,select,textarea");
+ if(firstControl)requestAnimationFrame(()=>firstControl.focus());
 }
 function showAdminMenu(){
  document.getElementById("adminSectionMenu").hidden=false;
@@ -226,14 +229,14 @@ function showAdminMenu(){
  });
  document.querySelectorAll("#panel-admin .admin-subsection").forEach(view=>{view.hidden=true;view.classList.remove("admin-subsection-active")});
  document.body.classList.remove("admin-subsection-open");
- const heading=document.querySelector("#panel-admin h2");if(heading)heading.focus();
+ if(activeAdminSectionTrigger){activeAdminSectionTrigger.focus();activeAdminSectionTrigger=null;}
 }
 document.querySelectorAll("[data-admin-section]").forEach(button=>button.addEventListener("click",()=>showAdminSubsection(button.dataset.adminSection)));
 document.querySelectorAll(".admin-sub-back").forEach(button=>button.addEventListener("click",showAdminMenu));
-function showSection(id){document.querySelectorAll(".section-screen").forEach(section=>{const active=section.id===id;section.classList.toggle("active",active);section.hidden=!active});document.body.classList.toggle("section-open",id!=="panel-settings");const heading=document.querySelector("#"+id+" h2");if(heading)heading.focus();if(id==="panel-admin"){loadAdminDashboard();}}
+function showSection(id){document.querySelectorAll(".section-screen").forEach(section=>{const active=section.id===id;section.classList.toggle("active",active);section.hidden=!active});document.body.classList.toggle("section-open",id!=="panel-settings");if(id==="panel-admin"){loadAdminDashboard();}if(id==="panel-settings"&&activeSectionTrigger){const trigger=activeSectionTrigger;activeSectionTrigger=null;requestAnimationFrame(()=>trigger.focus());}}
 const requestedParams=new URLSearchParams(location.search);const requestedSection=requestedParams.get("section");const requestedAdminSection=requestedParams.get("adminSection");
 if(requestedSection==="friend-requests")showSection("panel-friend-requests");
-document.querySelectorAll("[data-open-section]").forEach(button=>button.addEventListener("click",()=>showSection(button.dataset.openSection)));
+document.querySelectorAll("[data-open-section]").forEach(button=>button.addEventListener("click",()=>{activeSectionTrigger=button;showSection(button.dataset.openSection);}));
 
 document.querySelectorAll(".section-back:not(.admin-sub-back)").forEach(button=>button.addEventListener("click",()=>showSection("panel-settings")));
 function applySettings(){document.body.classList.toggle("large-text",largeText.checked);document.body.classList.toggle("strong-focus",strongFocus.checked);localStorage.setItem("mersalo-large-text",String(largeText.checked));localStorage.setItem("mersalo-strong-focus",String(strongFocus.checked))}
