@@ -1742,6 +1742,7 @@ app.post("/api/admin/system-settings",pushCors,express.json({limit:"8kb"}),async
   const actor=await requireMersaloAdmin(req),body=req.body||{},features=body.features&&typeof body.features==="object"?body.features:{};
   const clean={maintenance:body.maintenance===true,registrationOpen:body.registrationOpen!==false,features:{voiceCalls:features.voiceCalls!==false,groupChats:features.groupChats!==false,mediaSharing:features.mediaSharing!==false,scheduledMessages:features.scheduledMessages!==false},updatedAt:admin.firestore.FieldValue.serverTimestamp(),updatedBy:actor.uid};
   await SYSTEM_SETTINGS_REF().set(clean,{merge:true});
+  if(clean.maintenance){for(const sockets of connectedUsers.values()){for(const client of sockets){if(String(client.data.email||"").toLowerCase()!==MERSALO_ADMIN_EMAIL)client.disconnect(true);}}}
   await admin.firestore().collection("adminActions").add({type:"system-settings",reason:"تحديث إعدادات الموقع والميزات",adminUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp(),settings:{maintenance:clean.maintenance,registrationOpen:clean.registrationOpen,features:clean.features}});
   res.set("Cache-Control","no-store");res.json({success:true,message:"تم حفظ إعدادات الموقع والميزات.",settings:{maintenance:clean.maintenance,registrationOpen:clean.registrationOpen,features:clean.features}});
  }catch(error){sendAdminError(res,error);}
