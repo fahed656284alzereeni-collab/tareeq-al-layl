@@ -19,11 +19,11 @@ small{display:block;text-align:center;color:#b9c6d8;margin-top:18px}
 <meta name="theme-color" content="#101827">
 <script>
 /* Keep headings visible, but expose them as ordinary text to screen readers. */
-(()=>{const selector="h1,h2,h3,h4,h5,h6";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","generic");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","generic"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
+(()=>{const selector="h1,h2,h3,h4,h5,h6";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","presentation");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","presentation"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
 </script>
 </head>
 <body><main>
-<h1 role="generic">مِرسالو</h1>
+<h1 role="presentation">مِرسالو</h1>
 <p lang="en" dir="ltr">Mersalo</p>
 <p role="status" aria-live="polite">جارٍ فتح مِرسالو والتحقق من تسجيل الدخول...</p>
 <a href="login.html">إذا لم يتم التحويل تلقائيًا، افتح صفحة الدخول</a>
