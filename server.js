@@ -1731,6 +1731,8 @@ app.get("/api/admin/audit-log",pushCors,async(req,res)=>{
   }catch(error){sendAdminError(res,error);}
 });
 
+// Explicitly answer browser preflight requests for profile reads and saves.
+app.options("/api/profile/me",pushCors);
 // Developer control center: strict allow-list, no arbitrary code execution.
 app.get("/api/profile/me",pushCors,async(req,res)=>{
  try{
