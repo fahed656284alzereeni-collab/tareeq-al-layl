@@ -99,6 +99,12 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <label><input id="featureScheduledMessages" type="checkbox" checked> جدولة الرسائل</label>
 <button class="action" type="button" id="saveSystemSettings">حفظ إعدادات الموقع والميزات</button>
 <p id="systemSettingsStatus" role="status" aria-live="polite">يتم تحميل الإعدادات...</p>
+<label for="developerNotes">ملاحظات المطوّر الخاصة</label>
+<textarea id="developerNotes" rows="6" maxlength="5000" style="width:100%;padding:12px;border-radius:10px;font:inherit" placeholder="اكتب هنا التعديلات أو الأفكار أو التعليمات التي تريد الرجوع إليها لاحقًا." aria-label="ملاحظات المطوّر الخاصة"></textarea>
+<p class="muted">هذه الملاحظات خاصة بحساب المطوّر ولا تظهر للمستخدمين. حفظها لا ينفّذ التعديل تلقائيًا؛ هي مساحة لتوثيق ما تريد تغييره.</p>
+<button class="action" type="button" id="saveDeveloperNotes">حفظ ملاحظات المطوّر</button>
+<p id="developerNotesStatus" role="status" aria-live="polite"></p>
+
 </section></div>
 <div class="admin-subsection" id="admin-section-commands" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>مركز الأوامر</h3><section class="requestCard" aria-labelledby="controlCenterTitle">
 <h3 id="controlCenterTitle">مركز التحكم والأوامر</h3>
@@ -347,9 +353,18 @@ async function loadSystemSettings(){
   document.getElementById("featureGroupChats").checked=features.groupChats!==false;
   document.getElementById("featureMediaSharing").checked=features.mediaSharing!==false;
   document.getElementById("featureScheduledMessages").checked=features.scheduledMessages!==false;
+  document.getElementById("developerNotes").value=String(data.developerNotes||"");
   status.textContent="تم تحميل إعدادات الموقع والميزات.";
  }catch(error){status.textContent=error.message||"تعذر تحميل إعدادات الموقع.";}
 }
+document.getElementById("saveDeveloperNotes").addEventListener("click",async()=>{
+ const button=document.getElementById("saveDeveloperNotes"),status=document.getElementById("developerNotesStatus");
+ const developerNotes=document.getElementById("developerNotes").value;
+ button.disabled=true;status.textContent="جارٍ حفظ ملاحظات المطوّر...";
+ try{const result=await adminRequest("/api/admin/system-settings","POST",{developerNotes});status.textContent=result.message||"تم حفظ ملاحظات المطوّر."}
+ catch(error){status.textContent=error.message||"تعذر حفظ الملاحظات."}
+ finally{button.disabled=false;}
+});
 document.getElementById("saveSystemSettings").addEventListener("click",async()=>{
  const button=document.getElementById("saveSystemSettings"),status=document.getElementById("systemSettingsStatus");
  const maintenance=document.getElementById("systemMaintenance").checked;
