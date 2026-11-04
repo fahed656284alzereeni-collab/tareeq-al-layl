@@ -50,7 +50,7 @@
 <h1 role="presentation">الملف الشخصي</h1><p class="muted">يمكنك تعديل اسم المستخدم وإدارة حسابك.</p>
 <div id="avatar" role="img" aria-label="صورة افتراضية لمِرسالو">م</div>
 <p id="email" class="muted" aria-live="polite"></p>
-<form id="profileForm" novalidate><label for="playerName">اسم المستخدم</label><input id="playerName" type="text" maxlength="30" minlength="2" autocomplete="nickname"><label for="profileBio">نبذة شخصية (حتى 200 حرف)</label><textarea id="profileBio" maxlength="200" rows="4" aria-describedby="bioCount" placeholder="اكتب نبذة قصيرة عن نفسك"></textarea><p id="bioCount" class="muted" aria-live="polite">0 من 200 حرف</p><button id="save" type="submit">حفظ التغييرات</button></form>
+<form id="profileForm" novalidate><label for="playerName">اسم المستخدم</label><input id="playerName" type="text" maxlength="30" minlength="2" autocomplete="nickname" aria-describedby="nameHelp" required><p id="nameHelp" class="muted">من حرفين إلى 30 حرفًا.</p><label for="profileBio">نبذة شخصية (حتى 200 حرف)</label><textarea id="profileBio" maxlength="200" rows="4" aria-describedby="bioCount" placeholder="اكتب نبذة قصيرة عن نفسك"></textarea><p id="bioCount" class="muted" aria-live="polite">0 من 200 حرف</p><button id="save" type="submit" disabled>حفظ التغييرات</button></form>
 <p id="status" role="status" aria-live="polite"></p>
 </main>
 <script type="module">
@@ -67,29 +67,48 @@ const inappropriateNameTerms=["كس","شرموط","شرموطة","قحبة","م�
 function normalizeName(value){return String(value||"").normalize("NFKD").replace(/[\\u0300-\\u036f\\u064b-\\u065f\\u0670\\u06d6-\\u06ed]/g,"").toLocaleLowerCase().replace(/[0@]/g,"o").replace(/[1!|]/g,"i").replace(/[3]/g,"e").replace(/[4@]/g,"a").replace(/[5$]/g,"s").replace(/[7]/g,"t").replace(/[\\s._*\\-]+/g,"")}
 function hasInappropriateName(value){const normalized=normalizeName(value);return inappropriateNameTerms.some(term=>normalized.includes(normalizeName(term)))}
 let profileReady=false;
+save.disabled=true;
 (async()=>{
  try{
   await auth.authStateReady();
   const user=auth.currentUser;
   if(!user){location.replace("login.html");return;}
   activeUser=user;
-  const snap=await getDoc(doc(db,"users",user.uid));
-  const data=snap.exists()?snap.data():{};
-  const savedName=String(data.playerName||data.displayName||user.displayName||"").trim();
+  // The server profile endpoint is the canonical source: it reconciles Firestore
+  // fields and the verified Google account name before returning the profile.
+  const token=await user.getIdToken();
+  const response=await fetch(apiBase+"/api/profile/me",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.success)throw new Error(result.message||"تعذر تحميل بيانات الحساب.");
+  const savedName=String(result.playerName||result.displayName||result.username||result.name||"").trim();
   nameField.value=savedName;
-  bioField.value=String(data.bio||"").slice(0,200);
+  bioField.value=String(result.bio||"").slice(0,200);
   bioCount.textContent=bioField.value.length+" من 200 حرف";
-  email.textContent=user.email||"لا يوجد بريد إلكتروني";
-  say(savedName?"تم تحميل بيانات الحساب.":"لا يوجد اسم محفوظ في سجل الحساب.");
+  email.textContent=result.email||user.email||"لا يوجد بريد إلكتروني";
+  say(savedName?"تم تحميل بيانات الحساب.":"لم نعثر على اسم محفوظ لهذا الحساب. يمكنك إدخال اسمك وحفظه.");
  }catch(error){
-  email.textContent=auth.currentUser?.email||"لا يوجد بريد إلكتروني";
-  say("تعذر تحميل الملف الشخصي. رمز الخطأ: "+(error.code||"unknown"));
-  console.error("Original profile load failed:",error?.code||error?.message||"unknown");
+  // Read-only fallback keeps the page usable if the profile API is temporarily unavailable.
+  try{
+   const user=activeUser||auth.currentUser;
+   if(user){
+    const snap=await getDoc(doc(db,"users",user.uid));
+    const data=snap.exists()?snap.data():{};
+    nameField.value=String(data.playerName||data.displayName||data.username||user.displayName||"").trim();
+    bioField.value=String(data.bio||"").slice(0,200);
+    bioCount.textContent=bioField.value.length+" من 200 حرف";
+    email.textContent=user.email||"لا يوجد بريد إلكتروني";
+    say(nameField.value?"تم تحميل بيانات الحساب من قاعدة البيانات.":"تعذر تحديد الاسم المحفوظ. يمكنك إدخاله وحفظه.");
+   }else{say("تعذر التحقق من الحساب. أعد تحميل الصفحة.");}
+  }catch(fallbackError){
+   say("تعذر تحميل بيانات الملف الشخصي. تحقق من الاتصال ثم أعد المحاولة.");
+   console.error("Profile load failed:",error?.message,fallbackError?.message);
+  }
  }finally{
   profileReady=true;
+  save.disabled=!activeUser;
  }
 })();
-form.addEventListener("submit",async event=>{event.preventDefault();if(!activeUser)return;let playerName=nameField.value.trim();const bio=bioField.value.trim();if(!playerName){try{const token=await activeUser.getIdToken();const response=await fetch(apiBase+"/api/profile/me",{headers:{Authorization:"Bearer "+token},cache:"no-store"});const result=await response.json().catch(()=>({}));playerName=String(result.playerName||result.displayName||result.username||result.name||activeUser.displayName||"").trim();if(playerName)nameField.value=playerName;}catch(error){playerName=String(activeUser.displayName||"").trim();if(playerName)nameField.value=playerName;}}if(playerName.length<2||playerName.length>30){say("اسم المستخدم يجب أن يكون بين حرفين و30 حرفًا.");nameField.focus();return}if(hasInappropriateName(playerName)){say("هذا الاسم قد يحتوي على لفظ مسيء أو غير لائق. يرجى اختيار اسم آخر.");nameField.focus();return}if(bio.length>200){say("النبذة الشخصية لا يمكن أن تتجاوز 200 حرف.");bioField.focus();return}save.disabled=true;say("جارٍ حفظ بيانات الحساب...");try{const token=await activeUser.getIdToken(true);const response=await fetch(apiBase+"/api/profile/me",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({playerName,bio}),cache:"no-store"});const result=await response.json().catch(()=>({}));if(!response.ok||!result.success)throw new Error(result.message||"تعذر حفظ الملف الشخصي.");await activeUser.reload();nameField.value=result.playerName||playerName;bioField.value=result.bio??bio;bioCount.textContent=bioField.value.length+" من 200 حرف";say("تم حفظ الاسم والنبذة الشخصية بنجاح.")}catch(error){say("تعذر حفظ بيانات الحساب: "+(error.message||error.code||"خطأ غير معروف"))}finally{save.disabled=false}});
+form.addEventListener("submit",async event=>{event.preventDefault();if(!activeUser||!profileReady){say("انتظر حتى يكتمل تحميل بيانات الحساب.");return;}let playerName=nameField.value.trim();const bio=bioField.value.trim();if(!playerName){try{const token=await activeUser.getIdToken();const response=await fetch(apiBase+"/api/profile/me",{headers:{Authorization:"Bearer "+token},cache:"no-store"});const result=await response.json().catch(()=>({}));playerName=String(result.playerName||result.displayName||result.username||result.name||activeUser.displayName||"").trim();if(playerName)nameField.value=playerName;}catch(error){playerName=String(activeUser.displayName||"").trim();if(playerName)nameField.value=playerName;}}if(playerName.length<2||playerName.length>30){say("اسم المستخدم يجب أن يكون بين حرفين و30 حرفًا.");nameField.focus();return}if(hasInappropriateName(playerName)){say("هذا الاسم قد يحتوي على لفظ مسيء أو غير لائق. يرجى اختيار اسم آخر.");nameField.focus();return}if(bio.length>200){say("النبذة الشخصية لا يمكن أن تتجاوز 200 حرف.");bioField.focus();return}save.disabled=true;say("جارٍ حفظ بيانات الحساب...");try{const token=await activeUser.getIdToken(true);const response=await fetch(apiBase+"/api/profile/me",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({playerName,bio}),cache:"no-store"});const result=await response.json().catch(()=>({}));if(!response.ok||!result.success)throw new Error(result.message||"تعذر حفظ الملف الشخصي.");await activeUser.reload();nameField.value=result.playerName||playerName;bioField.value=result.bio??bio;bioCount.textContent=bioField.value.length+" من 200 حرف";say("تم حفظ الاسم والنبذة الشخصية بنجاح.")}catch(error){say("تعذر حفظ بيانات الحساب: "+(error.message||error.code||"خطأ غير معروف"))}finally{save.disabled=false}});
 </script><script>document.addEventListener("click",function(event){const button=event.target.closest("button[data-navigate]");if(button){location.href=button.dataset.navigate;}});</script><script src="diagnostics.js" defer></script><script>
 (function(){
  function stopCheckboxParentClick(event){
