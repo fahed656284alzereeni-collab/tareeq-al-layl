@@ -79,7 +79,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <div id="adminStats" aria-label="إحصائيات الموقع"></div>
 <section class="requestCard" aria-labelledby="systemControlTitle">
 <h3 id="systemControlTitle">إدارة حالة الموقع والميزات</h3>
-<p class="muted">تُحفظ الإعدادات على الخادم وتُطبّق على تسجيل الدخول والاتصال والعمليات المرتبطة بكل ميزة.</p>
+<p class="muted">تُحفظ الإعدادات على الخادم وتُطبّق على تسجيل الدخول والاتصال والعمليات المرتبطة بكل ميزة. عند تفعيل الصيانة سيُمنع المستخدمون من الدخول، بينما تبقى صلاحية المطوّر متاحة لإيقافها.</p>
 <label><input id="systemMaintenance" type="checkbox"> تفعيل وضع الصيانة ومنع دخول المستخدمين</label>
 <label><input id="systemRegistration" type="checkbox" checked> السماح بإنشاء حسابات جديدة</label>
 <h4>التحكم بالميزات</h4>
@@ -328,7 +328,7 @@ async function loadSystemSettings(){
 document.getElementById("saveSystemSettings").addEventListener("click",async()=>{
  const button=document.getElementById("saveSystemSettings"),status=document.getElementById("systemSettingsStatus");
  const maintenance=document.getElementById("systemMaintenance").checked;
- if(maintenance&&!confirm("سيتم منع المستخدمين من دخول مِرسالو حتى إيقاف وضع الصيانة. هل تريد المتابعة؟"))return;
+
  const payload={maintenance,registrationOpen:document.getElementById("systemRegistration").checked,features:{
   voiceCalls:document.getElementById("featureVoiceCalls").checked,
   groupChats:document.getElementById("featureGroupChats").checked,
