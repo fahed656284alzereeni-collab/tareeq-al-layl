@@ -7,14 +7,14 @@
 /* Keep visual layout while suppressing heading and landmark classifications for screen readers. */
 (()=>{const selector="h1,h2,h3,h4,h5,h6,nav,main,header,footer,aside,[role=\\"navigation\\"],[role=\\"main\\"],[role=\\"banner\\"],[role=\\"contentinfo\\"]";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","presentation");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","presentation"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
 </script>
-</head><body><main>
+</head><body><div>
 <button class="link secondary" type="button" data-navigate="settings.html">رجوع إلى الإعدادات</button>
 <h1 role="presentation">الملف الشخصي</h1><p class="muted">يمكنك تعديل اسم المستخدم وإدارة حسابك.</p>
 <div id="avatar" role="img" aria-label="صورة افتراضية لمِرسالو">م</div>
 <p id="email" class="muted" aria-live="polite">جارٍ تحميل بيانات الحساب...</p>
 <form id="profileForm"><label for="playerName">اسم المستخدم</label><input id="playerName" type="text" maxlength="30" minlength="2" required autocomplete="nickname"><label for="profileBio">نبذة شخصية (حتى 200 حرف)</label><textarea id="profileBio" maxlength="200" rows="4" aria-describedby="bioCount" placeholder="اكتب نبذة قصيرة عن نفسك"></textarea><p id="bioCount" class="muted" aria-live="polite">0 من 200 حرف</p><button id="save" type="submit">حفظ التغييرات</button></form>
 <p id="status" role="status" aria-live="polite">جارٍ تحميل الملف الشخصي...</p>
-</main>
+</div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import{getAuth,onAuthStateChanged,updateProfile}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
