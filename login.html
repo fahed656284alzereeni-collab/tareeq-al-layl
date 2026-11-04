@@ -5,6 +5,10 @@
 </style><link rel="stylesheet" href="/mersalo-theme.css?v=20261104"><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#101827">
 <script>/* Visible text, without heading-level announcements. */(()=>{const s="h1,h2,h3,h4,h5,h6";const a=r=>{if(r.nodeType!==1)return;if(r.matches?.(s))r.setAttribute("role","presentation");r.querySelectorAll?.(s).forEach(e=>e.setAttribute("role","presentation"));};const m=()=>{a(document.documentElement);new MutationObserver(rs=>rs.forEach(x=>x.addedNodes.forEach(a))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)m();else document.addEventListener("DOMContentLoaded",m,{once:true});})();</script>
+<script>
+/* Keep visual layout while suppressing heading and landmark classifications for screen readers. */
+(()=>{const selector="h1,h2,h3,h4,h5,h6,nav,main,header,footer,aside,[role=\\"navigation\\"],[role=\\"main\\"],[role=\\"banner\\"],[role=\\"contentinfo\\"]";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","presentation");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","presentation"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
+</script>
 </head><body><main>
 <h1 role="presentation">مِرسالو</h1><p>سجّل الدخول أو أنشئ حسابك باستخدام حساب Google.</p>
 <button id="googleLogin" type="button">المتابعة باستخدام Google</button>
