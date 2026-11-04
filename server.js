@@ -459,7 +459,7 @@ io.on("connection", socket => {
       const conversationId = String(data.conversationId || "");
       const name = String(data.name || "").trim().slice(0, 50);
       if (!name) throw new Error("اكتب اسمًا صالحًا للمجموعة.");
-      assertAppropriateName(name);
+      await assertNameAllowed(name);
       const ref = conversationsRef.doc(conversationId);
       const snap = await ref.get();
       if (!snap.exists || snap.data().type !== "group" || !(snap.data().members || []).includes(socket.data.uid)) throw new Error("غير مصرح بتعديل هذه المجموعة.");
