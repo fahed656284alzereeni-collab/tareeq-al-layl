@@ -402,7 +402,7 @@ body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 <button type="button" id="nextAttachment" class="secondary">المرفق التالي</button>
 <button type="button" id="downloadAttachment">تنزيل المرفق</button>
 
-</div></section><div class="chatHeader"><h2><button id="chatTitle" class="chatTitleButton" type="button" aria-controls="conversationInfo">المحادثة</button></h2><div><button id="conversationInfoButton" class="infoToggle" type="button" aria-controls="conversationInfo">معلومات المحادثة</button><button id="openVoiceCallPanel" class="infoToggle" type="button" aria-controls="voiceCallPanel">المكالمة الصوتية</button></div></div><section id="conversationInfo" class="infoPanel" aria-labelledby="conversationInfoHeading" hidden><button id="backToConversation" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 id="conversationInfoHeading" tabindex="-1">معلومات المحادثة</h3><div id="conversationInfoContent" aria-live="polite">جارٍ تحميل المعلومات...</div><div class="infoActions"><button id="friendAction" type="button">إضافة إلى الأصدقاء</button><button id="removeFriendAction" class="secondary" type="button">إزالة الصداقة</button><button id="clearChatAction" class="secondary" type="button">حذف محتوى الدردشة</button><button id="deleteChatAction" class="secondary" type="button">حذف الدردشة كاملة</button><button id="blockAction" class="secondary" type="button">حظر المستخدم</button><button id="reportAction" class="secondary" type="button">الإبلاغ عن المستخدم</button></div><p id="conversationActionStatus" role="status" aria-live="polite"></p></section><section id="voiceCallPanel" class="voiceCallPanel" aria-label="المكالمة الصوتية" hidden>
+</div></section><div class="chatHeader"><h2><button id="chatTitle" class="chatTitleButton" type="button" aria-controls="conversationInfo">المحادثة</button></h2><div><button id="openVoiceCallPanel" class="infoToggle" type="button" aria-controls="voiceCallPanel">المكالمة الصوتية</button></div></div><section id="conversationInfo" class="infoPanel" aria-labelledby="conversationInfoHeading" hidden><button id="backToConversation" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 id="conversationInfoHeading" tabindex="-1">معلومات المحادثة</h3><div id="conversationInfoContent" aria-live="polite">جارٍ تحميل المعلومات...</div><div class="infoActions"><button id="friendAction" type="button">إضافة إلى الأصدقاء</button><button id="removeFriendAction" class="secondary" type="button">إزالة الصداقة</button><button id="clearChatAction" class="secondary" type="button">حذف محتوى الدردشة</button><button id="deleteChatAction" class="secondary" type="button">حذف الدردشة كاملة</button><button id="blockAction" class="secondary" type="button">حظر المستخدم</button><button id="reportAction" class="secondary" type="button">الإبلاغ عن المستخدم</button></div><p id="conversationActionStatus" role="status" aria-live="polite"></p></section><section id="voiceCallPanel" class="voiceCallPanel" aria-label="المكالمة الصوتية" hidden>
 <button id="closeVoiceCallPanel" type="button" class="panelBack">رجوع إلى المحادثة</button>
 <h3 tabindex="-1" id="voiceCallHeading">المكالمة الصوتية</h3>
 <p id="voiceCallStatus" role="status" aria-live="polite">لا توجد مكالمة نشطة.</p>
@@ -827,7 +827,7 @@ async function openConversation(c){
   document.getElementById("conversationInfo").hidden=true;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;
   document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;document.getElementById("scheduleMessageButton").disabled=false;document.getElementById("openScheduledMessages").disabled=false;document.getElementById("messageHint").hidden=true;document.getElementById("messageText").removeAttribute("aria-describedby");
   document.getElementById("chatTitle").textContent=currentConversationType==="group"?"مجموعة: "+currentOtherName:"محادثة مع "+currentOtherName;say("جارٍ تحميل المحادثة...");
-  document.getElementById("conversationInfoButton").textContent=currentConversationType==="group"?"معلومات المجموعة":"معلومات المحادثة";
+  
   const waitingCall=pendingVoiceCall;const waitingIce=waitingCall?queuedIce.slice():[];resetVoiceCall();voicePanel.hidden=true;document.getElementById("openVoiceCallPanel").hidden=currentConversationType!=="direct";if(currentConversationType==="direct"&&waitingCall?.conversationId===currentId){pendingVoiceCall=waitingCall;queuedIce.push(...waitingIce);voicePanel.hidden=false;voiceStatus.textContent="مكالمة صوتية واردة من "+(waitingCall.caller?.name||"مستخدم")+".";acceptVoiceCallButton.hidden=false;acceptVoiceCallButton.disabled=!waitingCall.offer;rejectVoiceCallButton.hidden=false;startVoiceCallButton.hidden=true;}
   document.getElementById("conversationInfoHeading").textContent=currentConversationType==="group"?"معلومات المجموعة":"معلومات المحادثة";
   const r=await call("getConversationMessages",{conversationId:c.id},30000);
@@ -946,7 +946,7 @@ async function refreshConversationInfo(){
     ["friendAction","removeFriendAction","blockAction","reportAction","clearChatAction","deleteChatAction"].forEach(id=>{document.getElementById(id).hidden=true});
     document.getElementById("messageText").disabled=false;document.getElementById("sendButton").disabled=false;document.getElementById("scheduleMessageButton").disabled=false;document.getElementById("openScheduledMessages").disabled=false;
     document.getElementById("chatTitle").textContent="مجموعة: "+d.name;
-    document.getElementById("conversationInfoButton").textContent="معلومات المجموعة";
+    
     document.getElementById("conversationInfoHeading").textContent="معلومات المجموعة";
     content.replaceChildren();
     const rows=[["اسم المجموعة",d.name],["عدد الأعضاء",String(d.members.length)],["عدد الرسائل",String(d.messageCount)],["تاريخ الإنشاء",formatInfoDate(d.createdAt)],["منشئ المجموعة",d.members.find(m=>m.uid===d.createdBy)?.name||"غير متوفر"]];
@@ -1181,7 +1181,7 @@ async function refreshConversationInfo(){
     return;
   }
   currentConversationType="direct";currentOtherUid=d.uid;
-  document.getElementById("conversationInfoButton").textContent="معلومات المحادثة";
+  
   document.getElementById("conversationInfoHeading").textContent="معلومات المحادثة";
   content.replaceChildren();
   const rows=[
@@ -1217,9 +1217,8 @@ async function refreshConversationInfo(){
   document.getElementById("messageHint").textContent=blocked?"إرسال الرسائل متوقف بسبب إعدادات الحظر.":"يمكنك كتابة رسالة تصل إلى 4000 حرف.";
   statusBox.textContent="";
 }
-document.getElementById("backToConversation").addEventListener("click",()=>{const info=document.getElementById("conversationInfo");info.hidden=true;document.getElementById("closeChat").hidden=false;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;document.getElementById("conversationInfoButton").focus()});
-document.getElementById("chatTitle").addEventListener("click",()=>document.getElementById("conversationInfoButton").click());
-document.getElementById("conversationInfoButton").addEventListener("click",async()=>{
+document.getElementById("backToConversation").addEventListener("click",()=>{const info=document.getElementById("conversationInfo");info.hidden=true;document.getElementById("closeChat").hidden=false;document.getElementById("messages").hidden=false;document.getElementById("composePanel").hidden=false;document.getElementById("chatTitle").focus()});
+document.getElementById("chatTitle").addEventListener("click",async()=>{
   const info=document.getElementById("conversationInfo"),opening=info.hidden;
   info.hidden=!opening;
   document.getElementById("closeChat").hidden=opening;
