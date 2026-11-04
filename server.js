@@ -127,11 +127,11 @@ const INAPPROPRIATE_NAME_TERMS = [
 ];
 function normalizeNameForModeration(value) {
   return String(value || "").normalize("NFKD")
-    .replace(/[\\u0300-\\u036f\\u064b-\\u065f\\u0670\\u06d6-\\u06ed]/g, "")
+    .replace(/[\u0300-\u036f\u064b-\u065f\u0670\u06d6-\u06ed]/g, "")
     .toLocaleLowerCase()
     .replace(/[0@]/g, "o").replace(/[1!|]/g, "i").replace(/[3]/g, "e")
     .replace(/[4@]/g, "a").replace(/[5$]/g, "s").replace(/[7]/g, "t")
-    .replace(/[\\s._*\\-]+/g, "");
+    .replace(/[\s._*\-]+/g, "");
 }
 function inappropriateNameReason(value) {
   const normalized = normalizeNameForModeration(value);
