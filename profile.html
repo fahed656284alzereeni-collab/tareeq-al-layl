@@ -25,4 +25,23 @@ function normalizeName(value){return String(value||"").normalize("NFKD").replace
 function hasInappropriateName(value){const normalized=normalizeName(value);return inappropriateNameTerms.some(term=>normalized.includes(normalizeName(term)))}
 onAuthStateChanged(auth,async user=>{if(!user){location.replace("login.html");return}activeUser=user;try{const snap=await getDoc(doc(db,"users",user.uid));const data=snap.exists()?snap.data():{};nameField.value=data.playerName||user.displayName||"";bioField.value=String(data.bio||"").slice(0,200);bioCount.textContent=bioField.value.length+" من 200 حرف";email.textContent=user.email||"لا يوجد بريد إلكتروني";say("تم تحميل بيانات الحساب.")}catch(error){say("تعذر تحميل الملف الشخصي. رمز الخطأ: "+(error.code||"unknown"))}});
 form.addEventListener("submit",async event=>{event.preventDefault();if(!activeUser)return;const playerName=nameField.value.trim();if(playerName.length<2){say("اسم المستخدم يجب أن يتكون من حرفين على الأقل.");nameField.focus();return}if(hasInappropriateName(playerName)){say("هذا الاسم قد يحتوي على لفظ مسيء أو غير لائق. يرجى اختيار اسم آخر.");nameField.focus();return}save.disabled=true;try{const token=await activeUser.getIdToken();const check=await fetch(apiBase+"/api/name-check",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({name:playerName})});const checkResult=await check.json().catch(()=>({}));if(!check.ok||!checkResult.success)throw new Error(checkResult.message||"هذا الاسم غير مسموح به.");await updateProfile(activeUser,{displayName:playerName});await setDoc(doc(db,"users",activeUser.uid),{uid:activeUser.uid,email:activeUser.email||"",displayName:playerName,playerName,bio:bioField.value.trim().slice(0,200)},{merge:true});say("تم حفظ الملف الشخصي بنجاح.")}catch(error){say("تعذر حفظ الاسم: "+(error.message||error.code||"خطأ غير معروف"))}finally{save.disabled=false}});
-</script><script>document.addEventListener("click",function(event){const button=event.target.closest("button[data-navigate]");if(button){location.href=button.dataset.navigate;}});</script><script src="diagnostics.js" defer></script></body></html>
+</script><script>document.addEventListener("click",function(event){const button=event.target.closest("button[data-navigate]");if(button){location.href=button.dataset.navigate;}});</script><script src="diagnostics.js" defer></script><script>
+/* Keep checkbox interaction local: toggle the control without activating clickable parent rows/cards. */
+(function(){
+ function protectCheckbox(el){
+  if(!el || el.dataset.checkboxInteractionProtected==="true") return;
+  el.dataset.checkboxInteractionProtected="true";
+  el.addEventListener("click",function(event){event.stopPropagation();});
+ }
+ document.querySelectorAll('input[type="checkbox"]').forEach(protectCheckbox);
+ const observer=new MutationObserver(function(records){
+  for(const record of records) for(const node of record.addedNodes){
+   if(node.nodeType!==1) continue;
+   if(node.matches && node.matches('input[type="checkbox"]')) protectCheckbox(node);
+   if(node.querySelectorAll) node.querySelectorAll('input[type="checkbox"]').forEach(protectCheckbox);
+  }
+ });
+ observer.observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+</body></html>
