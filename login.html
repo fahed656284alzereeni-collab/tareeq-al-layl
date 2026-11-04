@@ -4,10 +4,48 @@
 :root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}*{box-sizing:border-box}body{margin:0;padding:22px;line-height:1.8}body.name-step{padding:0;overflow:hidden}body.name-step .login-card{position:fixed;inset:0;z-index:10000;width:100vw;height:100vh;height:100dvh;max-width:none;margin:0;padding:calc(28px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));border:0;border-radius:0;overflow-y:auto;display:flex;flex-direction:column;justify-content:center}body.name-step .login-card>h1,body.name-step .login-card>p:not(#status){display:none} .login-card{max-width:480px;margin:5vh auto;background:#1b293b;border:1px solid #34445a;border-radius:22px;padding:24px}.login-title{text-align:center;color:#8bd8c5}button{width:100%;padding:15px;margin-top:18px;border-radius:11px;font-size:18px;background:#167c68;color:#fff;border:0;font-weight:bold;cursor:pointer}button:focus,input:focus{outline:3px solid #ffd166;outline-offset:3px}button:disabled{opacity:.55}input{width:100%;padding:14px;border-radius:10px;font:inherit;margin-top:8px}#status{margin-top:20px;padding:12px;border-radius:10px;background:#26384e;overflow-wrap:anywhere}.note{font-size:.92rem;color:#c3d0df}#nameForm{display:none}
 </style><link rel="stylesheet" href="/mersalo-theme.css?v=20261104"><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#101827">
-<script>/* Visible text, without heading-level announcements. */(()=>{const s="h1,h2,h3,h4,h5,h6";const a=r=>{if(r.nodeType!==1)return;if(r.matches?.(s))r.setAttribute("role","presentation");r.querySelectorAll?.(s).forEach(e=>e.setAttribute("role","presentation"));};const m=()=>{a(document.documentElement);new MutationObserver(rs=>rs.forEach(x=>x.addedNodes.forEach(a))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)m();else document.addEventListener("DOMContentLoaded",m,{once:true});})();</script>
+
+
 <script>
-/* Keep visual layout while suppressing heading and landmark classifications for screen readers. */
-(()=>{const selector="h1,h2,h3,h4,h5,h6,nav,main,header,footer,aside,[role=\\"navigation\\"],[role=\\"main\\"],[role=\\"banner\\"],[role=\\"contentinfo\\"]";const apply=root=>{if(root.nodeType!==1)return;if(root.matches?.(selector))root.setAttribute("role","presentation");root.querySelectorAll?.(selector).forEach(el=>el.setAttribute("role","presentation"));};const start=()=>{apply(document.documentElement);new MutationObserver(records=>records.forEach(record=>record.addedNodes.forEach(apply))).observe(document.documentElement,{childList:true,subtree:true});};if(document.documentElement)start();else document.addEventListener("DOMContentLoaded",start,{once:true});})();
+/* Keep the visual design, while making spoken controls concise and headings plain text. */
+(()=>{
+ const headingSelector="h1,h2,h3,h4,h5,h6";
+ const landmarkSelector="nav,main,header,footer,aside,[role=\"navigation\"],[role=\"main\"],[role=\"banner\"],[role=\"contentinfo\"]";
+ const copyStyle=["display","font-size","font-family","font-weight","font-style","line-height","color","text-align","letter-spacing","text-transform","margin-top","margin-right","margin-bottom","margin-left","align-self"];
+ const plainHeading=el=>{
+  if(!el.matches?.(headingSelector))return el;
+  const style=getComputedStyle(el);
+  const replacement=document.createElement("div");
+  for(const attr of [...el.attributes])if(attr.name!=="role"&&attr.name!=="aria-level")replacement.setAttribute(attr.name,attr.value);
+  for(const prop of copyStyle)replacement.style.setProperty(prop,style.getPropertyValue(prop));
+  while(el.firstChild)replacement.append(el.firstChild);
+  el.replaceWith(replacement);
+  return replacement;
+ };
+ const normalizeButton=el=>{
+  if(el.tagName!=="BUTTON")return;
+  const name=(el.innerText||el.textContent||"").replace(/\s+/g," ").trim();
+  if(name)el.setAttribute("aria-label",name);
+ };
+ const apply=root=>{
+  if(root.nodeType!==1)return;
+  if(root.matches?.(headingSelector))root=plainHeading(root);
+  if(root.matches?.(landmarkSelector))root.setAttribute("role","presentation");
+  if(root.matches?.("button"))normalizeButton(root);
+  root.querySelectorAll?.(headingSelector).forEach(plainHeading);
+  root.querySelectorAll?.(landmarkSelector).forEach(el=>el.setAttribute("role","presentation"));
+  root.querySelectorAll?.("button").forEach(normalizeButton);
+ };
+ const start=()=>{
+  apply(document.documentElement);
+  new MutationObserver(records=>records.forEach(record=>{
+   if(record.type==="characterData")apply(record.target.parentElement);
+   else record.addedNodes.forEach(apply);
+  })).observe(document.documentElement,{childList:true,subtree:true,characterData:true});
+ };
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});
+ else start();
+})();
 </script>
 </head><body><div class="login-card">
 <div class="login-title">مِرسالو</div><p>سجّل الدخول أو أنشئ حسابك باستخدام حساب Google.</p>
