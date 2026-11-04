@@ -63,7 +63,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 </head>
 <body>
 <header>
-<h1>مِرسالو</h1>
+<h1 role="generic">مِرسالو</h1>
 <nav class="mainNav" aria-label="التنقل الرئيسي">
 <button class="navLink" type="button" data-navigate="chat.html">الصفحة الرئيسية</button>
 <button class="navLink" type="button" data-navigate="settings.html" aria-current="page">الإعدادات</button>
@@ -72,7 +72,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <main>
 <section class="panel section-screen active" id="panel-settings">
 <button class="link secondary" type="button" data-navigate="chat.html">رجوع إلى المحادثات</button>
-<h2>الإعدادات</h2><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
+<h2 role="generic">الإعدادات</h2><p>خصص طريقة عرض مِرسالو لتناسب استخدامك.</p>
 <div class="setting"><label for="largeText" aria-hidden="true">تكبير النصوص</label><input id="largeText" type="checkbox" aria-label="تكبير النصوص"></div>
 <div class="setting"><label for="strongFocus" aria-hidden="true">إبراز العنصر المحدد بوضوح</label><input id="strongFocus" type="checkbox" aria-label="إبراز العنصر المحدد بوضوح"></div>
 <p id="settingsStatus" role="status" aria-live="polite">يتم حفظ التغييرات على هذا الجهاز تلقائيًا.</p><button class="action" type="button" data-open-section="panel-notifications">الإشعارات</button><button class="action" type="button" data-open-section="panel-friend-requests">طلبات الصداقة</button><button class="action" type="button" data-open-section="panel-account-options">إدارة الحساب</button><button class="action" type="button" id="openAdmin" data-open-section="panel-admin" hidden>إدارة مِرسالو - المطوّر</button><button class="action" type="button" data-navigate="terms.html">حول مِرسالو</button>
@@ -81,7 +81,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 
 <section class="panel section-screen" id="panel-admin" hidden>
 <button class="section-back" type="button">رجوع إلى الإعدادات</button>
-<h2 tabindex="-1">إدارة مِرسالو</h2>
+<h2 role="generic" tabindex="-1">إدارة مِرسالو</h2>
 <p class="muted">لوحة المطوّر الخاصة. جميع إجراءات الإدارة تُراجع صلاحيتها على الخادم.</p>
 <div id="adminStatus" class="requestStatus" role="status" aria-live="polite">جارٍ التحقق من صلاحيات المطوّر...</div>
 <div id="adminStats" aria-label="إحصائيات الموقع"></div>
@@ -95,12 +95,12 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <button class="action" type="button" data-admin-section="audit">سجل العمليات</button>
 <button class="action" type="button" data-admin-section="diagnostics">تشخيص الأعطال</button>
 <button class="action" type="button" data-admin-section="commands">مركز الأوامر</button>
-</div><div class="admin-subsection" id="admin-section-site" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>إدارة الموقع والميزات</h3><section class="requestCard" aria-labelledby="systemControlTitle">
-<h3 id="systemControlTitle">إدارة حالة الموقع والميزات</h3>
+</div><div class="admin-subsection" id="admin-section-site" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">إدارة الموقع والميزات</h3><section class="requestCard" aria-labelledby="systemControlTitle">
+<h3 role="generic" id="systemControlTitle">إدارة حالة الموقع والميزات</h3>
 <p class="muted">تُحفظ الإعدادات على الخادم وتُطبّق على تسجيل الدخول والاتصال والعمليات المرتبطة بكل ميزة. عند تفعيل الصيانة سيُمنع المستخدمون من الدخول، بينما تبقى صلاحية المطوّر متاحة لإيقافها.</p>
 <label><input id="systemMaintenance" type="checkbox"> تفعيل وضع الصيانة ومنع دخول المستخدمين</label>
 <label><input id="systemRegistration" type="checkbox" checked> السماح بإنشاء حسابات جديدة</label>
-<h4>التحكم بالميزات</h4>
+<h4 role="generic">التحكم بالميزات</h4>
 <label><input id="featureVoiceCalls" type="checkbox" checked> المكالمات الصوتية</label>
 <label><input id="featureGroupChats" type="checkbox" checked> إنشاء المجموعات</label>
 <label><input id="featureMediaSharing" type="checkbox" checked> مشاركة الصور والفيديوهات والملفات</label>
@@ -114,8 +114,8 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p id="developerNotesStatus" role="status" aria-live="polite"></p>
 
 </section></div>
-<div class="admin-subsection" id="admin-section-commands" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>مركز الأوامر</h3><section class="requestCard" aria-labelledby="controlCenterTitle">
-<h3 id="controlCenterTitle">مركز التحكم والأوامر</h3>
+<div class="admin-subsection" id="admin-section-commands" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">مركز الأوامر</h3><section class="requestCard" aria-labelledby="controlCenterTitle">
+<h3 role="generic" id="controlCenterTitle">مركز التحكم والأوامر</h3>
 <p class="muted">يمكنك فحص الخادم من هنا. الأوامر غير المعروفة لا تُنفّذ.</p>
 <div class="account-actions">
 <button class="action" type="button" id="controlHealth">فحص حالة الخادم</button>
@@ -127,55 +127,55 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p id="controlUnderstanding" role="status" aria-live="polite">لم يتم تحليل أي أمر بعد.</p>
 <button class="action" type="button" id="controlExecute" disabled>تأكيد تنفيذ الأمر</button>
 <p id="controlStatus" role="status" aria-live="polite"></p>
-<h4>سجل آخر الأوامر</h4><div id="controlLogs" aria-live="polite">لم يتم تحميل السجل بعد.</div>
+<h4 role="generic">سجل آخر الأوامر</h4><div id="controlLogs" aria-live="polite">لم يتم تحميل السجل بعد.</div>
 </section></div>
-<div class="admin-subsection" id="admin-section-audit" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>سجل العمليات</h3><section class="requestCard" aria-labelledby="auditTitle"><h3 id="auditTitle">سجل العمليات الإدارية</h3><button class="action secondary" type="button" id="refreshAdminAudit">تحديث سجل العمليات</button><p id="adminAuditStatus" role="status" aria-live="polite">لم يتم تحميل السجل بعد.</p><div id="adminAuditLog" aria-live="polite"></div></section></div><div class="admin-subsection" id="admin-section-diagnostics" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>تشخيص الأعطال</h3><section class="requestCard" aria-labelledby="diagnosticsTitle"><h3 id="diagnosticsTitle">تشخيص أعطال الموقع</h3><button class="action secondary" type="button" id="refreshAdminDiagnostics">تحديث سجل الأعطال</button><p id="adminDiagnosticsStatus" role="status" aria-live="polite">لم يتم تحميل الأعطال بعد.</p><div id="adminDiagnostics" aria-live="polite"></div></section></div><div class="admin-subsection" id="admin-section-accounts" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>إدارة الحسابات</h3><h3>التحكم بالحسابات</h3>
+<div class="admin-subsection" id="admin-section-audit" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">سجل العمليات</h3><section class="requestCard" aria-labelledby="auditTitle"><h3 role="generic" id="auditTitle">سجل العمليات الإدارية</h3><button class="action secondary" type="button" id="refreshAdminAudit">تحديث سجل العمليات</button><p id="adminAuditStatus" role="status" aria-live="polite">لم يتم تحميل السجل بعد.</p><div id="adminAuditLog" aria-live="polite"></div></section></div><div class="admin-subsection" id="admin-section-diagnostics" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">تشخيص الأعطال</h3><section class="requestCard" aria-labelledby="diagnosticsTitle"><h3 role="generic" id="diagnosticsTitle">تشخيص أعطال الموقع</h3><button class="action secondary" type="button" id="refreshAdminDiagnostics">تحديث سجل الأعطال</button><p id="adminDiagnosticsStatus" role="status" aria-live="polite">لم يتم تحميل الأعطال بعد.</p><div id="adminDiagnostics" aria-live="polite"></div></section></div><div class="admin-subsection" id="admin-section-accounts" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">إدارة الحسابات</h3><h3 role="generic">التحكم بالحسابات</h3>
 <label for="adminAccountSearch">البحث عن حساب بالاسم أو البريد أو المعرّف</label><input id="adminAccountSearch" type="search" placeholder="اكتب كلمة البحث" autocomplete="off" aria-label="البحث عن حساب بالاسم أو البريد أو المعرّف">
 <p class="muted">تظهر جميع الحسابات هنا مباشرة. بجانب كل حساب ستجد الإجراءات المتاحة له.</p>
 <div id="adminAccountsStatus" role="status" aria-live="polite"></div>
 <div id="adminAccounts" aria-live="polite"></div>
-</div><div class="admin-subsection" id="admin-section-groups" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>إدارة المجموعات</h3><h3>إدارة المجموعات</h3>
+</div><div class="admin-subsection" id="admin-section-groups" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">إدارة المجموعات</h3><h3 role="generic">إدارة المجموعات</h3>
 <label for="adminGroupSearch">البحث عن مجموعة بالاسم</label><input id="adminGroupSearch" type="search" placeholder="اكتب اسم المجموعة" autocomplete="off" aria-label="البحث عن مجموعة بالاسم">
 <p class="muted">يمكن إيقاف المجموعة أو تعليقها مؤقتًا أو إعادة تفعيلها أو حذفها نهائيًا.</p>
 <div id="adminGroupsStatus" role="status" aria-live="polite">لم يتم تحميل المجموعات بعد.</div>
 <div id="adminGroups" aria-live="polite"></div>
-</div><div class="admin-subsection" id="admin-section-names" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>الكلمات المحظورة للأسماء</h3><h3>قائمة الكلمات المحظورة للأسماء</h3>
+</div><div class="admin-subsection" id="admin-section-names" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">الكلمات المحظورة للأسماء</h3><h3 role="generic">قائمة الكلمات المحظورة للأسماء</h3>
 <p class="muted">أضف الكلمات أو العبارات غير اللائقة التي تريد منعها في أسماء الحسابات والمجموعات. ضع كل كلمة أو عبارة في سطر مستقل. تنطبق القائمة على إنشاء المجموعات وتغيير أسماء الحسابات والمجموعات، ويُفحص الاسم في الخادم.</p>
 <label for="blockedNameTerms">الكلمات والعبارات المحظورة</label>
 <textarea id="blockedNameTerms" rows="8" maxlength="30000" placeholder="كلمة في كل سطر" aria-label="قائمة الكلمات والعبارات المحظورة"></textarea>
 <button class="action" type="button" id="saveBlockedNameTerms">حفظ قائمة الكلمات المحظورة</button>
 <p id="blockedNameTermsStatus" role="status" aria-live="polite">لم يتم تحميل القائمة بعد.</p>
-</div><div class="admin-subsection" id="admin-section-reports" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3>بلاغات المستخدمين</h3><h3>بلاغات المستخدمين</h3>
+</div><div class="admin-subsection" id="admin-section-reports" hidden><button class="section-back admin-sub-back" type="button">رجوع إلى أقسام الإدارة</button><h3 role="generic">بلاغات المستخدمين</h3><h3 role="generic">بلاغات المستخدمين</h3>
 <div id="adminReports" aria-live="polite">جارٍ تحميل البلاغات...</div><button class="action secondary" type="button" id="refreshAdmin">تحديث لوحة الإدارة</button>
 </div>
 </section>
 
 <section class="panel section-screen" id="panel-notifications" hidden>
 <button class="section-back" type="button">رجوع إلى الإعدادات</button>
-<h2 tabindex="-1">الإشعارات</h2>
+<h2 role="generic" tabindex="-1">الإشعارات</h2>
 <p class="muted">ستظهر هنا إشعارات الرسائل وطلبات الصداقة وإضافتك إلى المجموعات.</p>
 <p id="pushStatus" role="status" aria-live="polite">جارٍ التحقق من حالة الإشعارات...</p>
 <button id="enablePush" class="action" type="button">تفعيل الإشعارات على هذا الجهاز</button>
 <button id="disablePush" class="action secondary" type="button">إيقاف الإشعارات على هذا الجهاز</button>
-<h3>نغمة إشعارات مِرسالو</h3><p class="muted">اختر نغمة يسمعها الجهاز عند وصول رسالة جديدة أثناء فتح مِرسالو، ثم جرّبها.</p>
+<h3 role="generic">نغمة إشعارات مِرسالو</h3><p class="muted">اختر نغمة يسمعها الجهاز عند وصول رسالة جديدة أثناء فتح مِرسالو، ثم جرّبها.</p>
 <label for="notificationTone">اختيار النغمة</label><select id="notificationTone" class="action" style="background:#fff;color:#111"><option value="classic">كلاسيكية</option><option value="soft">هادئة</option><option value="digital">رقمية</option><option value="bells">أجراس</option><option value="off">بدون صوت</option></select>
 <button id="previewNotificationTone" class="action secondary" type="button">تجربة النغمة المختارة</button><p id="toneStatus" role="status" aria-live="polite">يتم حفظ اختيار النغمة على هذا الجهاز تلقائيًا.</p>
 <p class="muted">صوت الموقع يعمل عند استقبال الرسائل ومِرسالو مفتوح. عند إغلاق الموقع، يتحكم المتصفح ونظام الجهاز بصوت إشعارات النظام.</p>
 <p class="muted">على iPhone: أضف مِرسالو إلى الشاشة الرئيسية وافتحه من الأيقونة أولًا، ثم فعّل الإشعارات. يتطلب ذلك iOS 16.4 أو أحدث.</p>
-<h3 tabindex="-1">آخر الإشعارات</h3>
+<h3 role="generic" tabindex="-1">آخر الإشعارات</h3>
 <button id="deleteAllNotifications" class="action groupDanger" type="button">حذف جميع الإشعارات</button>
 <div id="notificationsList" aria-live="polite">جارٍ تحميل الإشعارات...</div>
 </section>
 
 <section class="panel section-screen" id="panel-friend-requests" hidden>
-<button class="section-back" type="button">رجوع إلى الإعدادات</button><h2 tabindex="-1">طلبات الصداقة الواردة</h2>
+<button class="section-back" type="button">رجوع إلى الإعدادات</button><h2 role="generic" tabindex="-1">طلبات الصداقة الواردة</h2>
 <p class="muted">يمكنك مراجعة الطلبات الواردة وقبولها أو رفضها. لن تُضاف الصداقة إلا بعد موافقتك.</p>
 <div id="friendRequestsList" aria-live="polite" aria-relevant="additions">جارٍ الاتصال لتحميل الطلبات...</div>
 <p id="friendRequestsStatus" class="requestStatus" role="status" aria-live="polite"></p>
 </section>
 
 <section class="panel section-screen" id="panel-account-options" hidden>
-<button class="section-back" type="button">رجوع إلى الإعدادات</button><h2 tabindex="-1">إدارة الحساب ومعلومات مِرسالو</h2>
+<button class="section-back" type="button">رجوع إلى الإعدادات</button><h2 role="generic" tabindex="-1">إدارة الحساب ومعلومات مِرسالو</h2>
 <p>اختر القسم الذي تريد فتحه:</p>
 <button class="link" type="button" data-navigate="profile.html">الملف الشخصي</button>
 <div class="account-actions">
@@ -183,8 +183,8 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <button id="logout" class="action secondary" type="button">تسجيل الخروج</button>
 </div>
 <p id="logoutStatus" role="status" aria-live="polite"></p>
-<section id="deleteConfirm" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle" hidden><div class="confirmCard"><h2 id="deleteConfirmTitle" tabindex="-1">تأكيد حذف الحساب</h2><p class="warning">حذف الحساب نهائي ولا يمكن التراجع عنه. ستُحذف بيانات الحساب وقائمة الأصدقاء، بينما تبقى المحادثات والرسائل محفوظة لدى الطرف الآخر.</p><label for="deleteWord">اكتب كلمة حذف للتأكيد</label><input id="deleteWord" type="text" autocomplete="off"><button id="confirmDelete" class="action danger" type="button">تأكيد الحذف النهائي</button><button id="cancelDelete" class="action secondary" type="button">إلغاء</button></div></section>
-<section id="logoutConfirm" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" hidden><div class="confirmCard"><h2 id="logoutConfirmTitle" tabindex="-1">تأكيد تسجيل الخروج</h2><p>هل أنت متأكد أنك تريد تسجيل الخروج من مِرسالو؟</p><button id="confirmLogout" class="action secondary" type="button">تأكيد تسجيل الخروج</button><button id="cancelLogout" class="action" type="button">إلغاء</button></div></section>
+<section id="deleteConfirm" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle" hidden><div class="confirmCard"><h2 role="generic" id="deleteConfirmTitle" tabindex="-1">تأكيد حذف الحساب</h2><p class="warning">حذف الحساب نهائي ولا يمكن التراجع عنه. ستُحذف بيانات الحساب وقائمة الأصدقاء، بينما تبقى المحادثات والرسائل محفوظة لدى الطرف الآخر.</p><label for="deleteWord">اكتب كلمة حذف للتأكيد</label><input id="deleteWord" type="text" autocomplete="off"><button id="confirmDelete" class="action danger" type="button">تأكيد الحذف النهائي</button><button id="cancelDelete" class="action secondary" type="button">إلغاء</button></div></section>
+<section id="logoutConfirm" role="dialog" aria-modal="true" aria-labelledby="logoutConfirmTitle" hidden><div class="confirmCard"><h2 role="generic" id="logoutConfirmTitle" tabindex="-1">تأكيد تسجيل الخروج</h2><p>هل أنت متأكد أنك تريد تسجيل الخروج من مِرسالو؟</p><button id="confirmLogout" class="action secondary" type="button">تأكيد تسجيل الخروج</button><button id="cancelLogout" class="action" type="button">إلغاء</button></div></section>
 </section>
 
 </main>
@@ -264,7 +264,7 @@ function loadFriendRequests(){
     if(!requests.length){requestsList.textContent="لا توجد طلبات صداقة واردة حاليًا.";return}
     requests.forEach(request=>{
       const card=document.createElement("article");card.className="requestCard";
-      const title=document.createElement("h3");title.textContent="طلب صداقة من "+(request.name||"مستخدم");
+      const title=Object.assign(document.createElement("h3"),{role:"generic"});title.textContent="طلب صداقة من "+(request.name||"مستخدم");
       const description=document.createElement("p");description.className="muted";description.textContent="هذا الشخص يريد إضافتك إلى قائمة أصدقائه.";
       const actions=document.createElement("div");actions.className="requestActions";
       const accept=document.createElement("button");accept.type="button";accept.textContent="موافقة";
@@ -312,7 +312,7 @@ async function adminRequest(path,method="GET",body){
 }
 function addAdminStat(label,value){
   const card=document.createElement("article");card.className="requestCard";
-  const title=document.createElement("h3");title.textContent=label;
+  const title=Object.assign(document.createElement("h3"),{role:"generic"});title.textContent=label;
   const number=document.createElement("p");number.textContent=String(value);number.setAttribute("aria-label",label+": "+value);
   card.append(title,number);adminStats.append(card);
 }
@@ -328,7 +328,7 @@ async function loadAdminGroups(){
   if(!data.groups.length){adminGroupsStatus.textContent="لا توجد مجموعات.";return}
   for(const group of data.groups){
    const card=document.createElement("article");card.className="requestCard";
-   const title=document.createElement("h3");title.textContent=group.name;
+   const title=Object.assign(document.createElement("h3"),{role:"generic"});title.textContent=group.name;
    const state=document.createElement("p");state.textContent=group.suspended?"حالة المجموعة: موقوفة":group.suspendedUntil?"حالة المجموعة: معلّقة مؤقتًا حتى "+new Date(group.suspendedUntil).toLocaleString("ar-JO"):"حالة المجموعة: نشطة";
    const actions=document.createElement("div");actions.className="account-actions";
    const run=async(action,extra={})=>{const result=await adminRequest("/api/admin/group-control","POST",{conversationId:group.id,action,...extra});adminGroupsStatus.textContent=result.message;await loadAdminGroups();};
@@ -438,7 +438,7 @@ async function loadAdminDashboard(){
     if(!items.length)adminReports.textContent="لا توجد بلاغات حتى الآن.";
     for(const report of items){
       const card=document.createElement("article");card.className="requestCard";
-      const title=document.createElement("h3");title.textContent="بلاغ ضد: "+(report.reportedName||"مستخدم");
+      const title=Object.assign(document.createElement("h3"),{role:"generic"});title.textContent="بلاغ ضد: "+(report.reportedName||"مستخدم");
       const reporter=document.createElement("p");reporter.textContent="مقدّم البلاغ: "+(report.reporterName||"مستخدم");
       const reason=document.createElement("p");reason.textContent="السبب: "+(report.reason||"غير محدد");
       const details=document.createElement("p");details.textContent="التفاصيل: "+(report.details||"لا توجد تفاصيل إضافية.");
@@ -469,7 +469,7 @@ async function loadAdminAudit(){
   if(!items.length){status.textContent="لا توجد عمليات إدارية مسجلة.";return}
   for(const item of items){
    const card=document.createElement("article");card.className="requestCard";
-   const title=document.createElement("h3");title.textContent=item.label||"إجراء إداري";
+   const title=Object.assign(document.createElement("h3"),{role:"generic"});title.textContent=item.label||"إجراء إداري";
    const target=document.createElement("p");target.textContent="الحساب المستهدف: "+(item.targetName||item.targetUid||"غير محدد");
    const reason=document.createElement("p");reason.textContent="السبب: "+(item.reason||"لم يُسجل سبب.");
    const date=document.createElement("p");date.textContent="وقت التنفيذ: "+(item.createdAt?new Date(item.createdAt).toLocaleString("ar-JO"):"غير متوفر");
@@ -486,7 +486,7 @@ async function loadAdminDiagnostics(){
   if(!items.length){status.textContent="لا توجد أعطال مسجلة.";return}
   for(const item of items){
    const card=document.createElement("article");card.className="requestCard";
-   const title=document.createElement("h3");title.textContent=item.type||"خطأ فني";
+   const title=Object.assign(document.createElement("h3"),{role:"generic"});title.textContent=item.type||"خطأ فني";
    const message=document.createElement("p");message.textContent=item.message||"لا توجد تفاصيل.";
    const page=document.createElement("p");page.textContent="الصفحة: "+(item.page||"غير محددة");
    const date=document.createElement("p");date.textContent="وقت التسجيل: "+(item.createdAt?new Date(item.createdAt).toLocaleString("ar-JO"):"غير متوفر");
@@ -512,7 +512,7 @@ async function loadAdminAccounts(){
     adminAccountsStatus.textContent="إجمالي الحسابات المعروضة: "+data.accounts.length;
     for(const account of data.accounts){
       const card=document.createElement("article");card.className="requestCard";
-      const heading=document.createElement("h3");heading.textContent=account.name;
+      const heading=Object.assign(document.createElement("h3"),{role:"generic"});heading.textContent=account.name;
       const email=document.createElement("p");email.textContent="البريد: "+(account.email||"غير متوفر");
       const uid=document.createElement("p");uid.textContent="معرّف الحساب: "+account.uid;
       const state=document.createElement("p");state.textContent=account.disabled?"حالة الحساب: موقوف":account.restricted?"حالة الحساب: مقيّد من المراسلة":"حالة الحساب: نشط";
@@ -520,7 +520,7 @@ async function loadAdminAccounts(){
       const detailsText=document.createElement("p");detailsText.textContent="التسجيل: "+(account.createdAt?new Date(account.createdAt).toLocaleDateString("ar-JO"):"غير متوفر")+" | آخر ظهور: "+(account.lastSeenAt?new Date(account.lastSeenAt).toLocaleString("ar-JO"):"غير متوفر")+" | الأصدقاء: "+account.friendCount+" | المحادثات: "+account.conversationCount+" | الإنذارات: "+account.warningCount;
       const bioText=document.createElement("p");bioText.textContent="النبذة: "+(account.bio||"لا توجد نبذة");
       details.append(detailsText,bioText);
-      const actionsTitle=document.createElement("h4");actionsTitle.textContent="إجراءات الحساب";
+      const actionsTitle=Object.assign(document.createElement("h4"),{role:"generic"});actionsTitle.textContent="إجراءات الحساب";
       const actions=document.createElement("div");actions.className="account-actions";
       card.append(heading,email,uid,state,details,actionsTitle,actions);
       const isOwnAccount=account.uid===auth.currentUser?.uid;
@@ -570,7 +570,7 @@ async function loadAdminAccounts(){
         overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");
         overlay.setAttribute("aria-labelledby","renameAccountTitle");
         const form=document.createElement("div");form.className="mersaloConfirmCard";
-        const title=document.createElement("h2");title.id="renameAccountTitle";title.tabIndex=-1;title.textContent="تغيير اسم الحساب";
+        const title=Object.assign(document.createElement("h2"),{role:"generic"});title.id="renameAccountTitle";title.tabIndex=-1;title.textContent="تغيير اسم الحساب";
         const message=document.createElement("p");message.textContent="الاسم الحالي: "+account.name+". اكتب الاسم الجديد الذي سيظهر للآخرين في مِرسالو.";
         const label=document.createElement("label");label.textContent="الاسم الجديد";label.htmlFor="adminNewAccountName";
         const input=document.createElement("input");input.id="adminNewAccountName";input.type="text";input.value=account.name;input.maxLength=40;input.autocomplete="off";input.setAttribute("aria-label","الاسم الجديد للحساب");
@@ -606,7 +606,7 @@ async function loadAdminAccounts(){
         overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");
         overlay.setAttribute("aria-labelledby","editAccountBioTitle");
         const form=document.createElement("div");form.className="mersaloConfirmCard";
-        const title=document.createElement("h2");title.id="editAccountBioTitle";title.tabIndex=-1;title.textContent="تعديل نبذة المستخدم";
+        const title=Object.assign(document.createElement("h2"),{role:"generic"});title.id="editAccountBioTitle";title.tabIndex=-1;title.textContent="تعديل نبذة المستخدم";
         const message=document.createElement("p");message.textContent="اكتب النبذة التي تريد إظهارها في ملف "+account.name+". يمكنك ترك الحقل فارغًا لمسح النبذة.";
         const label=document.createElement("label");label.textContent="نبذة المستخدم";label.htmlFor="adminAccountBio";
         const input=document.createElement("textarea");input.id="adminAccountBio";input.value=account.bio||"";input.maxLength=200;input.rows=5;
@@ -707,7 +707,7 @@ function showDeleteConfirmation(titleText,messageText,confirmText,onConfirm){
   const overlay=document.createElement("section");overlay.className="mersaloConfirmOverlay";overlay.setAttribute("role","dialog");overlay.setAttribute("aria-modal","true");overlay.setAttribute("aria-labelledby","mersaloDeleteTitle");
   const card=document.createElement("div");card.className="mersaloConfirmCard";
   const icon=document.createElement("div");icon.className="mersaloConfirmIcon";icon.setAttribute("aria-hidden","true");icon.textContent="!";
-  const title=document.createElement("h2");title.id="mersaloDeleteTitle";title.tabIndex=-1;title.textContent=titleText;
+  const title=Object.assign(document.createElement("h2"),{role:"generic"});title.id="mersaloDeleteTitle";title.tabIndex=-1;title.textContent=titleText;
   const message=document.createElement("p");message.textContent=messageText;
   const confirm=document.createElement("button");confirm.type="button";confirm.className="action danger";confirm.textContent=confirmText;
   const cancel=document.createElement("button");cancel.type="button";cancel.className="action secondary";cancel.textContent="إلغاء";
@@ -731,7 +731,7 @@ async function loadNotifications(){
     if(!result.notifications.length){notificationsList.textContent="لا توجد إشعارات حتى الآن.";return}
     for(const item of result.notifications){
       const card=document.createElement("article");card.className="requestCard";
-      const title=document.createElement("h3");title.textContent=item.title||"إشعار";
+      const title=Object.assign(document.createElement("h3"),{role:"generic"});title.textContent=item.title||"إشعار";
       const body=document.createElement("p");body.textContent=item.body||"";
       const state=document.createElement("p");state.textContent=item.read?"مقروء":"غير مقروء";
       const actions=document.createElement("div");actions.className="notificationActions";
