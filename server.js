@@ -1493,6 +1493,9 @@ app.post("/api/upload-media",mediaUploadCors,express.raw({type:"application/octe
     const match=authHeader.match(/^Bearer (.+)$/i);
     if(!match)return res.status(401).json({success:false,message:"Authentication required."});
     const decoded=await admin.auth().verifyIdToken(match[1]);
+    const systemSettings=await readSystemSettings();
+    const developer=String(decoded.email||"").toLowerCase()===MERSALO_ADMIN_EMAIL&&decoded.email_verified===true;
+    if(systemSettings.maintenance&&!developer)return res.status(503).json({success:false,message:"مِرسالو في وضع الصيانة حاليًا."});
     const conversationId=String(req.headers["x-conversation-id"]||"");
     const mimeType=String(req.headers["x-file-type"]||"application/octet-stream").slice(0,150);
     const fileName=decodeURIComponent(String(req.headers["x-file-name"]||"file").slice(0,600)).replace(/[\\/]/g,"_").slice(0,180);
