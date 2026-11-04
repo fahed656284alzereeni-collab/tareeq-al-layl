@@ -1735,13 +1735,30 @@ app.get("/api/admin/audit-log",pushCors,async(req,res)=>{
 app.get("/api/profile/me",pushCors,async(req,res)=>{
  try{
   const uid=await authenticatedUid(req);
-  const snap=await admin.firestore().collection("users").doc(uid).get();
-  const data=snap.exists?snap.data():{};
+  const db=admin.firestore();
   const authUser=await admin.auth().getUser(uid);
-  const playerName=String(data.playerName||data.displayName||authUser.displayName||"").trim();
+  const ref=db.collection("users").doc(uid);
+  const snap=await ref.get();
+  let data=snap.exists?snap.data():{};
+  let playerName=String(data.playerName||data.displayName||"").trim();
+  let bio=String(data.bio||"").slice(0,200);
+  if(!playerName&&authUser.email){
+   const matches=await db.collection("users").where("email","==",authUser.email).limit(10).get();
+   for(const item of matches.docs){
+    const old=item.data();
+    const found=String(old.playerName||old.displayName||"").trim();
+    if(found){
+     playerName=found;bio=String(old.bio||"").slice(0,200);
+     await ref.set({uid,email:authUser.email,playerName,displayName:playerName,bio},{merge:true});
+     break;
+    }
+   }
+  }
+  if(!playerName)playerName=String(authUser.displayName||"").trim();
   res.set("Cache-Control","no-store");
-  res.json({success:true,playerName,bio:String(data.bio||"").slice(0,200),email:String(authUser.email||data.email||"")});
+  res.json({success:true,playerName,bio,email:String(authUser.email||data.email||"")});
  }catch(error){
+  console.error("Profile read failed:",error.message);
   const status=error.message==="AUTH_REQUIRED"?401:500;
   res.status(status).json({success:false,message:"تعذر تحميل بيانات الحساب."});
  }
