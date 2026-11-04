@@ -66,72 +66,67 @@ let activeUser=null;function say(message){status.textContent=message}
 const inappropriateNameTerms=["كس","شرموط","شرموطة","قحبة","منيوك","منيوكة","خول","طيز","زب","متناك","عاهرة","fuck","fucker","motherfucker","shithead","bitch","cunt","nigger","faggot","whore","slut","rape","puta","puto","mierda","joder","caralho","viado","putain","merde","salope","connard","encule","arschloch","scheisse","hure","schlampe","блядь","сука","хуй","пизда","ебать","мудак","orospu","siktir","amk","vaffanculo","stronzo","troia","puttana","gaand","chutiya","bhenchod","madarchod","haramzada"];
 function normalizeName(value){return String(value||"").normalize("NFKD").replace(/[\\u0300-\\u036f\\u064b-\\u065f\\u0670\\u06d6-\\u06ed]/g,"").toLocaleLowerCase().replace(/[0@]/g,"o").replace(/[1!|]/g,"i").replace(/[3]/g,"e").replace(/[4@]/g,"a").replace(/[5$]/g,"s").replace(/[7]/g,"t").replace(/[\\s._*\\-]+/g,"")}
 function hasInappropriateName(value){const normalized=normalizeName(value);return inappropriateNameTerms.some(term=>normalized.includes(normalizeName(term)))}
-let profileReady=false;
-const profileWaitTimer=setTimeout(()=>{if(!profileReady){say("تأخر تحميل بيانات الحساب. تحقق من الاتصال ثم أعد تحميل الصفحة.")}},15000);
+let profileReady=false,profileLoadStarted=false;
 function setProfileName(value){
  const clean=String(value||"").trim();
  if(!clean)return false;
  nameField.value=clean;
+ nameField.defaultValue=clean;
  nameField.setAttribute("value",clean);
  nameField.dispatchEvent(new Event("input",{bubbles:true}));
  return nameField.value.trim()===clean;
 }
-async function readProfileFromFirestore(user){
- let data={};
- const snap=await getDoc(doc(db,"users",user.uid));
- if(snap.exists())data=snap.data()||{};
- let found=String(data.playerName||data.displayName||data.username||data.userName||data.name||"").trim();
- let bio=String(data.bio||"").slice(0,200);
- if(!found&&user.email){
-  const matches=await getDocs(query(collection(db,"users"),where("email","==",user.email),limit(10)));
-  for(const item of matches.docs){
-   const old=item.data()||{};
-   const candidate=String(old.playerName||old.displayName||old.username||old.userName||old.name||"").trim();
-   if(candidate){found=candidate;if(!bio)bio=String(old.bio||"").slice(0,200);break;}
-  }
- }
- return {name:found,bio};
-}
-(async()=>{
+async function loadProfile(user){
+ if(profileLoadStarted)return;
+ profileLoadStarted=true;
  try{
-  await auth.authStateReady();
-  let user=auth.currentUser;
-  if(!user){clearTimeout(profileWaitTimer);location.replace("login.html");return;}
-  try{await user.reload();user=auth.currentUser||user;}catch(_){}
   activeUser=user;
   email.textContent=user.email||"لا يوجد بريد إلكتروني";
   let savedName="",savedBio="";
-  // Firestore is the same profile record used to show names in chats; read it first.
-  try{
-   const stored=await readProfileFromFirestore(user);
-   savedName=stored.name;
-   savedBio=stored.bio;
-  }catch(firestoreError){console.warn("Profile Firestore read failed:",firestoreError?.code||firestoreError?.message||"unknown");}
-  // The authenticated server endpoint is a secondary source and can fill missing fields.
-  try{
-   const token=await user.getIdToken();
-   const response=await fetch(apiBase+"/api/profile/me",{headers:{Authorization:"Bearer "+token},cache:"no-store"});
-   const result=await response.json().catch(()=>({}));
-   if(response.ok&&result.success){
-    if(!savedName)savedName=String(result.playerName||result.displayName||result.username||result.name||"").trim();
-    if(!savedBio)savedBio=String(result.bio||"").slice(0,200);
-    if(result.email)email.textContent=result.email;
-   }
-  }catch(apiError){console.warn("Profile API read failed:",apiError?.message||"unknown");}
-  // Google/Auth is only the final fallback, never overwrites a stored Mersalo name.
-  if(!savedName)savedName=String(user.displayName||user.providerData?.find(p=>p.providerId==="google.com")?.displayName||"").trim();
-  if(savedName)setProfileName(savedName);
+  // Ask the authenticated server first: it reads the same users/{uid} record used by chat names.
+  const token=await user.getIdToken(true);
+  const response=await fetch(apiBase+"/api/profile/me",{method:"GET",headers:{Authorization:"Bearer "+token,"Accept":"application/json"},cache:"no-store"});
+  const result=await response.json().catch(()=>({}));
+  if(response.ok&&result.success){
+   savedName=String(result.playerName||result.displayName||result.username||result.name||"").trim();
+   savedBio=String(result.bio||"").slice(0,200);
+   if(result.email)email.textContent=result.email;
+  }else{
+   throw new Error(result.message||"تعذر جلب بيانات الملف الشخصي من الخادم.");
+  }
+  // Direct Firestore fallback only if the server returned no saved name.
+  if(!savedName){
+   try{
+    const snap=await getDoc(doc(db,"users",user.uid));
+    if(snap.exists()){
+     const data=snap.data()||{};
+     savedName=String(data.playerName||data.displayName||data.username||data.userName||data.name||"").trim();
+     if(!savedBio)savedBio=String(data.bio||"").slice(0,200);
+    }
+   }catch(firestoreError){console.warn("Profile Firestore fallback failed:",firestoreError?.code||firestoreError?.message||"unknown");}
+  }
+  if(!savedName){
+   savedName=String(user.displayName||user.providerData?.find(p=>p.providerId==="google.com")?.displayName||"").trim();
+  }
+  if(savedName){
+   setProfileName(savedName);
+   say("تم تحميل اسم المستخدم المحفوظ.");
+  }else{
+   say("لم يصل اسم محفوظ من سجل الحساب. لم يتم تغيير الاسم.");
+  }
   bioField.value=savedBio;
   bioCount.textContent=bioField.value.length+" من 200 حرف";
-  say(savedName?"تم تحميل بيانات الحساب.":"لم يُعثر على اسم محفوظ في سجل الحساب.");
  }catch(error){
-  say("تعذر تحميل بيانات الحساب. أعد تحميل الصفحة.");
   console.error("Profile load failed:",error?.code||error?.message||"unknown");
+  say("تعذر تحميل الاسم من الحساب: "+(error.message||"تحقق من الاتصال ثم أعد تحميل الصفحة."));
  }finally{
   profileReady=true;
-  clearTimeout(profileWaitTimer);
  }
-})();
+}
+onAuthStateChanged(auth,user=>{
+ if(!user){if(!profileLoadStarted)location.replace("login.html");return;}
+ loadProfile(user);
+});
 form.addEventListener("submit",async event=>{event.preventDefault();if(!activeUser)return;let playerName=nameField.value.trim();const bio=bioField.value.trim();if(!playerName){try{const token=await activeUser.getIdToken();const response=await fetch(apiBase+"/api/profile/me",{headers:{Authorization:"Bearer "+token},cache:"no-store"});const result=await response.json().catch(()=>({}));playerName=String(result.playerName||result.displayName||result.username||result.name||activeUser.displayName||"").trim();if(playerName)nameField.value=playerName;}catch(error){playerName=String(activeUser.displayName||"").trim();if(playerName)nameField.value=playerName;}}if(playerName.length<2||playerName.length>30){say("اسم المستخدم يجب أن يكون بين حرفين و30 حرفًا.");nameField.focus();return}if(hasInappropriateName(playerName)){say("هذا الاسم قد يحتوي على لفظ مسيء أو غير لائق. يرجى اختيار اسم آخر.");nameField.focus();return}if(bio.length>200){say("النبذة الشخصية لا يمكن أن تتجاوز 200 حرف.");bioField.focus();return}save.disabled=true;say("جارٍ حفظ بيانات الحساب...");try{const token=await activeUser.getIdToken(true);const response=await fetch(apiBase+"/api/profile/me",{method:"POST",headers:{Authorization:"Bearer "+token,"Content-Type":"application/json"},body:JSON.stringify({playerName,bio}),cache:"no-store"});const result=await response.json().catch(()=>({}));if(!response.ok||!result.success)throw new Error(result.message||"تعذر حفظ الملف الشخصي.");await activeUser.reload();nameField.value=result.playerName||playerName;bioField.value=result.bio??bio;bioCount.textContent=bioField.value.length+" من 200 حرف";say("تم حفظ الاسم والنبذة الشخصية بنجاح.")}catch(error){say("تعذر حفظ بيانات الحساب: "+(error.message||error.code||"خطأ غير معروف"))}finally{save.disabled=false}});
 </script><script>document.addEventListener("click",function(event){const button=event.target.closest("button[data-navigate]");if(button){location.href=button.dataset.navigate;}});</script><script src="diagnostics.js" defer></script><script>
 (function(){
