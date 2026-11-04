@@ -116,4 +116,23 @@ form.addEventListener("submit",async e=>{
   say("تعذر حفظ الاسم. رمز الخطأ: "+(e.code||"unknown"));
  }
 });
-</script><script src="diagnostics.js" defer></script></body></html>
+</script><script src="diagnostics.js" defer></script><script>
+/* Keep checkbox interaction local: toggle the control without activating clickable parent rows/cards. */
+(function(){
+ function protectCheckbox(el){
+  if(!el || el.dataset.checkboxInteractionProtected==="true") return;
+  el.dataset.checkboxInteractionProtected="true";
+  el.addEventListener("click",function(event){event.stopPropagation();});
+ }
+ document.querySelectorAll('input[type="checkbox"]').forEach(protectCheckbox);
+ const observer=new MutationObserver(function(records){
+  for(const record of records) for(const node of record.addedNodes){
+   if(node.nodeType!==1) continue;
+   if(node.matches && node.matches('input[type="checkbox"]')) protectCheckbox(node);
+   if(node.querySelectorAll) node.querySelectorAll('input[type="checkbox"]').forEach(protectCheckbox);
+  }
+ });
+ observer.observe(document.documentElement,{childList:true,subtree:true});
+})();
+</script>
+</body></html>
