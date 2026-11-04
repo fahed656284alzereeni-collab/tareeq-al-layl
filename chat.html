@@ -1050,7 +1050,6 @@ async function refreshConversationInfo(){
         const checkbox=document.createElement("button");checkbox.type="button";checkbox.className="groupPermissionCheckbox";
         checkbox.setAttribute("role","checkbox");checkbox.setAttribute("aria-label",labelText);
         checkbox.setAttribute("aria-checked",String(permissions[key]==="members"));
-        checkbox.setAttribute("aria-describedby","groupPermissionsTitle");
         checkbox.addEventListener("click",event=>{
           event.preventDefault();event.stopPropagation();
           if(checkbox.disabled)return;
