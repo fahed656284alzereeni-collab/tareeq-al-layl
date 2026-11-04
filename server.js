@@ -1586,6 +1586,15 @@ async function requireMersaloAdmin(req) {
   }
   return decoded;
 }
+const SYSTEM_SETTINGS_REF = () => admin.firestore().collection("appSettings").doc("systemControl");
+async function readSystemSettings(){
+ const snap=await SYSTEM_SETTINGS_REF().get(),saved=snap.exists?snap.data():{};
+ return {maintenance:saved.maintenance===true,registrationOpen:saved.registrationOpen!==false,features:{voiceCalls:saved.features?.voiceCalls!==false,groupChats:saved.features?.groupChats!==false,mediaSharing:saved.features?.mediaSharing!==false,scheduledMessages:saved.features?.scheduledMessages!==false}};
+}
+async function assertFeatureEnabled(feature,message){
+ const settings=await readSystemSettings();
+ if(settings.features[feature]===false)throw new Error(message||"الميزة متوقفة مؤقتًا.");
+}
 function sendAdminError(res,error) {
   const status=error.status||500;
   res.status(status).json({success:false,message:status===500?"تعذر تنفيذ طلب الإدارة. حاول مرة أخرى.":error.message});
