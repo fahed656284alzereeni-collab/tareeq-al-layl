@@ -177,6 +177,9 @@ io.use(async (socket, next) => {
       profileCache.delete(decoded.uid);
     }
     if(profileData.accountSuspended===true)return next(new Error("ACCOUNT_SUSPENDED"));
+    const systemSettings=await readSystemSettings();
+    const isDeveloper=String(decoded.email||"").toLowerCase()===MERSALO_ADMIN_EMAIL&&decoded.email_verified===true;
+    if(systemSettings.maintenance&&!isDeveloper)return next(new Error("MERSALO_MAINTENANCE"));
     const playerName = String(profileData.playerName || profileData.displayName || decoded.name || "مستخدم").trim().slice(0, 40);
     socket.data.uid = decoded.uid;
     socket.data.playerName = playerName;
@@ -1719,6 +1722,23 @@ app.get("/api/admin/audit-log",pushCors,async(req,res)=>{
 });
 
 // Developer control center: strict allow-list, no arbitrary code execution.
+app.get("/api/public/system-settings",pushCors,async(req,res)=>{
+ try{res.set("Cache-Control","no-store");res.json({success:true,settings:await readSystemSettings()});}
+ catch(error){res.status(503).json({success:false,message:"تعذر قراءة حالة الموقع."});}
+});
+app.get("/api/admin/system-settings",pushCors,async(req,res)=>{
+ try{await requireMersaloAdmin(req);res.set("Cache-Control","no-store");res.json({success:true,settings:await readSystemSettings()});}
+ catch(error){sendAdminError(res,error);}
+});
+app.post("/api/admin/system-settings",pushCors,express.json({limit:"8kb"}),async(req,res)=>{
+ try{
+  const actor=await requireMersaloAdmin(req),body=req.body||{},features=body.features&&typeof body.features==="object"?body.features:{};
+  const clean={maintenance:body.maintenance===true,registrationOpen:body.registrationOpen!==false,features:{voiceCalls:features.voiceCalls!==false,groupChats:features.groupChats!==false,mediaSharing:features.mediaSharing!==false,scheduledMessages:features.scheduledMessages!==false},updatedAt:admin.firestore.FieldValue.serverTimestamp(),updatedBy:actor.uid};
+  await SYSTEM_SETTINGS_REF().set(clean,{merge:true});
+  await admin.firestore().collection("adminActions").add({type:"system-settings",reason:"تحديث إعدادات الموقع والميزات",adminUid:actor.uid,createdAt:admin.firestore.FieldValue.serverTimestamp(),settings:{maintenance:clean.maintenance,registrationOpen:clean.registrationOpen,features:clean.features}});
+  res.set("Cache-Control","no-store");res.json({success:true,message:"تم حفظ إعدادات الموقع والميزات.",settings:{maintenance:clean.maintenance,registrationOpen:clean.registrationOpen,features:clean.features}});
+ }catch(error){sendAdminError(res,error);}
+});
 app.get("/api/admin/control-center/status",pushCors,async(req,res)=>{
  try{
   await requireMersaloAdmin(req);
