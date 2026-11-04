@@ -87,6 +87,12 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p class="muted">يمكن إيقاف المجموعة أو تعليقها مؤقتًا أو إعادة تفعيلها أو حذفها نهائيًا.</p>
 <div id="adminGroupsStatus" role="status" aria-live="polite">لم يتم تحميل المجموعات بعد.</div>
 <div id="adminGroups" aria-live="polite"></div>
+<h3>قائمة الكلمات المحظورة للأسماء</h3>
+<p class="muted">أضف الكلمات أو العبارات غير اللائقة التي تريد منعها في أسماء الحسابات والمجموعات. ضع كل كلمة أو عبارة في سطر مستقل. تنطبق القائمة على إنشاء المجموعات وتغيير أسماء الحسابات والمجموعات، ويُفحص الاسم في الخادم.</p>
+<label for="blockedNameTerms">الكلمات والعبارات المحظورة</label>
+<textarea id="blockedNameTerms" rows="8" maxlength="30000" placeholder="كلمة في كل سطر" aria-label="قائمة الكلمات والعبارات المحظورة"></textarea>
+<button class="action" type="button" id="saveBlockedNameTerms">حفظ قائمة الكلمات المحظورة</button>
+<p id="blockedNameTermsStatus" role="status" aria-live="polite">لم يتم تحميل القائمة بعد.</p>
 <h3>بلاغات المستخدمين</h3>
 <div id="adminReports" aria-live="polite">جارٍ تحميل البلاغات...</div>
 <button class="action secondary" type="button" id="refreshAdmin">تحديث لوحة الإدارة</button>
@@ -257,10 +263,32 @@ async function loadAdminGroups(){
   adminGroupsStatus.textContent="إجمالي المجموعات: "+data.groups.length;
  }catch(error){adminGroupsStatus.textContent=error.message||"تعذر تحميل المجموعات.";}
 }
+const blockedNameTerms=document.getElementById("blockedNameTerms");
+const blockedNameTermsStatus=document.getElementById("blockedNameTermsStatus");
+const saveBlockedNameTerms=document.getElementById("saveBlockedNameTerms");
+async function loadBlockedNameTerms(){
+ try{
+  const data=await adminRequest("/api/admin/name-terms");
+  blockedNameTerms.value=(data.terms||[]).join("\\n");
+  blockedNameTermsStatus.textContent="تم تحميل "+(data.terms||[]).length+" كلمة أو عبارة محظورة.";
+ }catch(error){blockedNameTermsStatus.textContent=error.message||"تعذر تحميل قائمة الكلمات.";}
+}
+saveBlockedNameTerms.addEventListener("click",async()=>{
+ const terms=blockedNameTerms.value.split(/\\r?\\n/).map(v=>v.trim()).filter(Boolean);
+ saveBlockedNameTerms.disabled=true;
+ blockedNameTermsStatus.textContent="جارٍ حفظ القائمة...";
+ try{
+  const data=await adminRequest("/api/admin/name-terms","POST",{terms});
+  blockedNameTerms.value=(data.terms||[]).join("\\n");
+  blockedNameTermsStatus.textContent=data.message+" عدد الكلمات: "+data.terms.length+".";
+ }catch(error){blockedNameTermsStatus.textContent=error.message||"تعذر حفظ القائمة.";}
+ finally{saveBlockedNameTerms.disabled=false;}
+});
 async function loadAdminDashboard(){
   adminStatus.textContent="جارٍ تحميل بيانات لوحة الإدارة...";
   adminStats.replaceChildren();
   adminReports.textContent="جارٍ تحميل البلاغات...";
+  void loadBlockedNameTerms();
   const jobs=await Promise.allSettled([
     adminRequest("/api/admin/dashboard"),
     adminRequest("/api/admin/reports"),
