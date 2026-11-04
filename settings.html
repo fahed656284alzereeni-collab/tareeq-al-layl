@@ -77,6 +77,21 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <p class="muted">لوحة المطوّر الخاصة. جميع إجراءات الإدارة تُراجع صلاحيتها على الخادم.</p>
 <div id="adminStatus" class="requestStatus" role="status" aria-live="polite">جارٍ التحقق من صلاحيات المطوّر...</div>
 <div id="adminStats" aria-label="إحصائيات الموقع"></div>
+<section class="requestCard" aria-labelledby="controlCenterTitle">
+<h3 id="controlCenterTitle">مركز التحكم والأوامر</h3>
+<p class="muted">يمكنك فحص الخادم من هنا. الأوامر غير المعروفة لا تُنفّذ.</p>
+<div class="account-actions">
+<button class="action" type="button" id="controlHealth">فحص حالة الخادم</button>
+<button class="action secondary" type="button" id="controlRefreshLogs">تحديث سجل الأوامر</button>
+</div>
+<label for="controlCommandText">اكتب الأمر الذي تريد تنفيذه</label>
+<textarea id="controlCommandText" rows="3" maxlength="300" style="width:100%;padding:12px;border-radius:10px;font:inherit" placeholder="مثال: افحص حالة الخادم" aria-label="حقل كتابة أوامر مركز التحكم"></textarea>
+<button class="action" type="button" id="controlAnalyze">تحليل الأمر</button>
+<p id="controlUnderstanding" role="status" aria-live="polite">لم يتم تحليل أي أمر بعد.</p>
+<button class="action" type="button" id="controlExecute" disabled>تأكيد تنفيذ الأمر</button>
+<p id="controlStatus" role="status" aria-live="polite"></p>
+<h4>سجل آخر الأوامر</h4><div id="controlLogs" aria-live="polite">لم يتم تحميل السجل بعد.</div>
+</section>
 <h3>التحكم بالحسابات</h3>
 <label for="adminAccountSearch">البحث عن حساب بالاسم أو البريد أو المعرّف</label><input id="adminAccountSearch" type="search" placeholder="اكتب كلمة البحث" autocomplete="off" aria-label="البحث عن حساب بالاسم أو البريد أو المعرّف">
 <p class="muted">تظهر جميع الحسابات هنا مباشرة. بجانب كل حساب ستجد الإجراءات المتاحة له.</p>
@@ -475,6 +490,54 @@ async function loadAdminAccounts(){
 }
 
 document.getElementById("refreshAdmin").addEventListener("click",loadAdminDashboard);
+const controlCommandText=document.getElementById("controlCommandText");
+const controlUnderstanding=document.getElementById("controlUnderstanding");
+const controlStatus=document.getElementById("controlStatus");
+const controlExecute=document.getElementById("controlExecute");
+const controlLogs=document.getElementById("controlLogs");
+let understoodControlCommand="";
+function parseControlCommand(value){
+ const text=String(value||"").trim().toLocaleLowerCase();
+ if(/^(health-check|health|status|فحص الخادم|افحص الخادم|فحص حالة الخادم|حالة الخادم|افحص حالة الخادم)$/.test(text))return "health-check";
+ return "";
+}
+async function loadControlLogs(){
+ controlLogs.textContent="جارٍ تحميل سجل الأوامر...";
+ try{
+  const data=await adminRequest("/api/admin/control-center/logs");
+  controlLogs.replaceChildren();
+  if(!data.logs.length){controlLogs.textContent="لا توجد أوامر منفذة بعد.";return}
+  for(const item of data.logs){
+   const card=document.createElement("article");card.className="requestCard";
+   const command=document.createElement("p");command.textContent="الأمر: "+(item.command==="health-check"?"فحص حالة الخادم":item.command);
+   const message=document.createElement("p");message.textContent=item.message||"";
+   const date=document.createElement("p");date.textContent=item.createdAt?new Date(item.createdAt).toLocaleString("ar-JO"):"وقت غير متوفر";
+   card.append(command,message,date);controlLogs.append(card);
+  }
+ }catch(error){controlLogs.textContent=error.message||"تعذر تحميل سجل الأوامر."}
+}
+async function runControlHealth(){
+ controlStatus.textContent="جارٍ فحص الخادم...";
+ try{
+  const data=await adminRequest("/api/admin/control-center/command","POST",{command:"health-check"});
+  controlStatus.textContent=data.message+" مدة تشغيل الخادم: "+data.result.uptimeSeconds+" ثانية.";
+  await loadControlLogs();
+ }catch(error){controlStatus.textContent=error.message||"تعذر فحص الخادم."}
+}
+document.getElementById("controlHealth").addEventListener("click",runControlHealth);
+document.getElementById("controlRefreshLogs").addEventListener("click",loadControlLogs);
+document.getElementById("controlAnalyze").addEventListener("click",()=>{
+ understoodControlCommand=parseControlCommand(controlCommandText.value);
+ controlExecute.disabled=!understoodControlCommand;
+ controlUnderstanding.textContent=understoodControlCommand?"الأمر الذي فهمه النظام: فحص حالة الخادم. اضغط تأكيد التنفيذ للمتابعة.":"لم أتعرف على الأمر. الأمر المتاح حاليًا هو: فحص حالة الخادم.";
+});
+controlExecute.addEventListener("click",async()=>{
+ if(understoodControlCommand!=="health-check")return;
+ controlExecute.disabled=true;
+ await runControlHealth();
+ controlExecute.disabled=false;
+});
+
 
 async function apiRequest(path,method="GET",body){
   if(!auth.currentUser)throw new Error("سجّل الدخول أولًا.");
