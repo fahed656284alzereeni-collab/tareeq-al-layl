@@ -2332,9 +2332,6 @@ app.post("/api/delete-account", accountDeleteCors, async (req, res) => {
     const uid = decoded.uid;
     const db = admin.firestore();
     const userRef = db.collection("users").doc(uid);
-    const [usernameCredential, usernameIndex] = await Promise.all([db.collection("loginCredentials").doc(uid).get(), db.collection("usernameIndex").where("uid","==",uid).limit(1).get()]);
-    if (usernameCredential.exists) refsToDeleteForAuthCleanup = true;
-
     // Preserve every conversation and message so the other participant keeps the history.
     // Friend requests are stored under the recipient as friendRequests/{senderUid}.
     // Scan user documents and check that exact document path to find outgoing requests
