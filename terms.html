@@ -16,7 +16,7 @@
 /* Keep the visual design, while making spoken controls concise and headings plain text. */
 (()=>{
  const headingSelector="h1,h2,h3,h4,h5,h6";
- const landmarkSelector="nav,main,header,footer,aside,[role=\"navigation\"],[role=\"main\"],[role=\"banner\"],[role=\"contentinfo\"]";
+ const landmarkSelector="nav,main,header,footer,aside,[role=\"navigation\"],[role=\"main\"],[role=\"banner\"],[role=\"contentinfo\"],section:not([role=\"dialog\"])[aria-label],section:not([role=\"dialog\"])[aria-labelledby],form[aria-label],form[aria-labelledby]";
  const copyStyle=["display","font-size","font-family","font-weight","font-style","line-height","color","text-align","letter-spacing","text-transform","margin-top","margin-right","margin-bottom","margin-left","align-self"];
  const plainHeading=el=>{
   if(!el.matches?.(headingSelector))return el;
