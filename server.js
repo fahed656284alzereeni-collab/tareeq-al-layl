@@ -1669,7 +1669,13 @@ app.post("/api/auth/register", pushCors, async (req, res) => {
       await admin.auth().deleteUser(createdUid).catch(() => {});
       await admin.firestore().collection("loginCredentials").doc(createdUid).delete().catch(() => {});
       await admin.firestore().collection("users").doc(createdUid).delete().catch(() => {});
-      if (createdUsernameKey) await admin.firestore().collection("usernameIndex").doc(createdUsernameKey).delete().catch(() => {});
+      if (createdUsernameKey) {
+        const claimedName = admin.firestore().collection("usernameIndex").doc(createdUsernameKey);
+        await admin.firestore().runTransaction(async transaction => {
+          const snapshot = await transaction.get(claimedName);
+          if (snapshot.exists && snapshot.data().uid === createdUid) transaction.delete(claimedName);
+        }).catch(() => {});
+      }
     }
     const status = error.status || (error.message?.includes("اسم المستخدم") || error.message?.includes("لفظ مسيء") || error.message?.includes("كلمة محظورة") ? 400 : 500);
     console.error("Username registration failed:", error.message);
