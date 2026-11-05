@@ -639,7 +639,7 @@ function updateVideoMessageDuration(messageId,durationSeconds){
   if(!button)return;
   const formatted=Math.floor(total/60)+":"+String(total%60).padStart(2,"0");
   button.textContent="▶ فيديو · "+formatted;
-  button.setAttribute("aria-label","فيديو، المدة "+formatted);
+  button.setAttribute("aria-label","المدة "+formatted);
 }
 function addMessage(m){
   if(known.has(m.id))return Array.from(messages.children).find(element=>String(element.dataset.messageId||"")===String(m.id||""))||null;
@@ -669,7 +669,7 @@ function addMessage(m){
     const formatVideoDuration=value=>{const total=Math.floor(Number(value));if(!Number.isFinite(total)||total<=0)return "";return Math.floor(total/60)+":"+String(total%60).padStart(2,"0")};
     const knownDuration=isVideo?formatVideoDuration(savedDuration):"";
     open.textContent=isImage?"عرض الصورة: "+item.name:isVideo?(knownDuration?"▶ فيديو · "+knownDuration:"▶ فيديو"):isAudioItem?"▶ تشغيل الرسالة الصوتية":"فتح الملف: "+item.name;
-    open.setAttribute("aria-label",isVideo?(knownDuration?"فيديو، المدة "+knownDuration:"فيديو"):isAudio?"رسالة صوتية، اضغط للاستماع":open.textContent);
+    open.setAttribute("aria-label",isVideo?(knownDuration?"المدة "+knownDuration:"فيديو"):isAudio?"رسالة صوتية، اضغط للاستماع":open.textContent);
     if(!isAudio)open.addEventListener("click",()=>openAttachmentViewer(itemIndex));
     if(isImage){const preview=document.createElement("img");preview.src=item.url;preview.alt="معاينة الصورة: "+item.name;preview.loading="lazy";preview.className="attachmentPreview";open.prepend(preview)}
     if(isVideo){
@@ -734,8 +734,7 @@ function addMessage(m){
       firstAction?.focus();
     }
   });
-  if(videoAttachmentRow)videoAttachmentRow.append(optionsButton);
-  else div.append(optionsButton);
+  div.append(optionsButton);
   const replyButton=document.createElement("button");replyButton.type="button";replyButton.dataset.action="reply-message";replyButton.textContent="الرد على الرسالة";replyButton.setAttribute("aria-label","الرد على رسالة "+who);replyButton.addEventListener("click",()=>{replyingToMessage={id:String(m.id),senderUid:String(m.senderUid||""),senderName:who==="أنت"?"أنت":who,text:String(m.text||"").slice(0,500),attachment:m.attachment?{name:String(m.attachment.name||"مرفق"),type:String(m.attachment.type||"")}:null};const preview=document.getElementById("replyPreview");document.getElementById("replyPreviewText").textContent="الرد على "+who+": "+(replyingToMessage.text||replyingToMessage.attachment?.name||"مرفق");preview.hidden=false;actions.hidden=true;document.getElementById("messageText").focus()});actions.append(replyButton);
   if(mine&&String(m.text||"").trim()&&!m.attachment){
     const edit=document.createElement("button");
