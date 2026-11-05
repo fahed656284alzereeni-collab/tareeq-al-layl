@@ -495,6 +495,28 @@ let voicePeer=null,voiceStream=null,activeVoiceCallId=null,pendingVoiceCall=null
 const voicePanel=document.getElementById("voiceCallPanel"),voiceStatus=document.getElementById("voiceCallStatus");
 const startVoiceCallButton=document.getElementById("startVoiceCall"),acceptVoiceCallButton=document.getElementById("acceptVoiceCall"),rejectVoiceCallButton=document.getElementById("rejectVoiceCall"),endVoiceCallButton=document.getElementById("endVoiceCall"),remoteCallAudio=document.getElementById("remoteCallAudio");
 let callRingtoneContext=null,callRingtoneOscillators=[],callRingtoneGain=null,callRingtoneTimer=null,callRingtoneActive=false;
+let callPlaybackContext=null,callPlaybackSource=null;
+function prepareRemoteCallPlayback(){
+  try{
+    const AudioContextClass=window.AudioContext||window.webkitAudioContext;
+    if(!AudioContextClass)return false;
+    if(!callPlaybackContext)callPlaybackContext=new AudioContextClass();
+    if(callPlaybackContext.state==="suspended")callPlaybackContext.resume().catch(error=>console.warn("Unable to resume call playback",error));
+    return true;
+  }catch(error){console.warn("Call playback preparation failed",error);return false}
+}
+function attachRemoteCallAudio(stream){
+  if(callPlaybackSource){try{callPlaybackSource.disconnect()}catch(error){}callPlaybackSource=null}
+  remoteCallAudio.srcObject=stream;
+  remoteCallAudio.autoplay=true;remoteCallAudio.playsInline=true;remoteCallAudio.muted=false;remoteCallAudio.volume=1;
+  if(callPlaybackContext){
+    const connect=()=>{try{if(callPlaybackContext.state!=="running")return false;callPlaybackSource=callPlaybackContext.createMediaStreamSource(stream);callPlaybackSource.connect(callPlaybackContext.destination);remoteCallAudio.muted=true;document.getElementById("enableCallAudio").hidden=true;voiceStatus.textContent="المكالمة الصوتية متصلة.";return true}catch(error){console.warn("Web Audio call playback failed",error);return false}};
+    if(!connect())callPlaybackContext.resume().then(()=>{if(!connect())playRemoteCallElement()}).catch(()=>playRemoteCallElement());
+  }else playRemoteCallElement();
+}
+function playRemoteCallElement(){
+  remoteCallAudio.muted=false;remoteCallAudio.play().then(()=>{document.getElementById("enableCallAudio").hidden=true;voiceStatus.textContent="المكالمة الصوتية متصلة."}).catch(error=>{console.warn("Remote call audio autoplay was blocked",error);document.getElementById("enableCallAudio").hidden=false;voiceStatus.textContent="تم الاتصال. اضغط زر تشغيل صوت المكالمة لسماع الطرف الآخر."});
+}
 function prepareCallAudio(){
   try{
     const AudioContextClass=window.AudioContext||window.webkitAudioContext;
@@ -550,7 +572,7 @@ function resetVoiceCall(message){
   stopCallRingtone();
   if(voicePeer){voicePeer.onicecandidate=null;voicePeer.ontrack=null;voicePeer.close();voicePeer=null}
   if(voiceStream){voiceStream.getTracks().forEach(track=>track.stop());voiceStream=null}
-  remoteCallAudio.pause();remoteCallAudio.srcObject=null;remoteCallAudio.muted=false;remoteCallAudio.volume=1;document.getElementById("enableCallAudio").hidden=true;activeVoiceCallId=null;pendingVoiceCall=null;queuedIce=[];queuedCallerIce=[];voiceSignalingReady=false;
+  if(callPlaybackSource){try{callPlaybackSource.disconnect()}catch(error){}callPlaybackSource=null}remoteCallAudio.pause();remoteCallAudio.srcObject=null;remoteCallAudio.muted=false;remoteCallAudio.volume=1;document.getElementById("enableCallAudio").hidden=true;activeVoiceCallId=null;pendingVoiceCall=null;queuedIce=[];queuedCallerIce=[];voiceSignalingReady=false;
   acceptVoiceCallButton.hidden=true;rejectVoiceCallButton.hidden=true;endVoiceCallButton.hidden=true;
   startVoiceCallButton.hidden=currentConversationType!=="direct"||!currentOtherUid;
   voiceStatus.textContent=message||"لا توجد مكالمة نشطة.";
@@ -559,14 +581,14 @@ async function createVoicePeer(callId){
   const pc=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]});
   voicePeer=pc;activeVoiceCallId=callId==="pending"?null:callId;voiceSignalingReady=false;
   pc.onicecandidate=event=>{if(!event.candidate)return;if(activeVoiceCallId&&voiceSignalingReady&&socket?.connected)socket.emit("voiceCall:signal",{callId:activeVoiceCallId,candidate:event.candidate});else queuedCallerIce.push(event.candidate)};
-  pc.ontrack=event=>{const remoteStream=event.streams&&event.streams[0]?event.streams[0]:new MediaStream([event.track]);remoteCallAudio.srcObject=remoteStream;remoteCallAudio.autoplay=true;remoteCallAudio.playsInline=true;remoteCallAudio.muted=false;remoteCallAudio.volume=1;event.track.enabled=true;remoteCallAudio.play().then(()=>{document.getElementById("enableCallAudio").hidden=true;voiceStatus.textContent="المكالمة الصوتية متصلة."}).catch(error=>{console.warn("Remote call audio autoplay was blocked",error);document.getElementById("enableCallAudio").hidden=false;voiceStatus.textContent="تم الاتصال. اضغط زر تشغيل صوت المكالمة لسماع الطرف الآخر."})};
+  pc.ontrack=event=>{const remoteStream=event.streams&&event.streams[0]?event.streams[0]:new MediaStream([event.track]);event.track.enabled=true;attachRemoteCallAudio(remoteStream)};
   pc.onconnectionstatechange=()=>{if(pc.connectionState==="connected")voiceStatus.textContent="المكالمة الصوتية متصلة.";else if(["failed","disconnected"].includes(pc.connectionState))voiceStatus.textContent="الاتصال الصوتي غير مستقر؛ جارٍ محاولة الاستعادة."};
   return pc;
 }
 async function addQueuedIce(){if(!voicePeer||!voicePeer.remoteDescription)return;for(const candidate of queuedIce.splice(0)){try{await voicePeer.addIceCandidate(candidate)}catch(error){console.warn("Unable to add queued ICE candidate",error)}}}
 startVoiceCallButton.addEventListener("click",async()=>{
   if(!socket?.connected||!currentId||currentConversationType!=="direct"||!currentOtherUid||activeVoiceCallId||pendingVoiceCall||voiceStream)return;
-  startVoiceCallButton.disabled=true;startVoiceCallButton.hidden=true;startCallRingtone();voiceStatus.textContent="جارٍ الاتصال بـ"+currentOtherName+"...";
+  startVoiceCallButton.disabled=true;startVoiceCallButton.hidden=true;prepareRemoteCallPlayback();startCallRingtone();voiceStatus.textContent="جارٍ الاتصال بـ"+currentOtherName+"...";
   try{
     voiceStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
     const pc=await createVoicePeer("pending");
@@ -580,10 +602,11 @@ startVoiceCallButton.addEventListener("click",async()=>{
   }catch(error){resetVoiceCall(error.message||"تعذر بدء المكالمة. تحقق من إذن الميكروفون.");}
   finally{startVoiceCallButton.disabled=false;if(!activeVoiceCallId&&!pendingVoiceCall&&!voiceStream)startVoiceCallButton.hidden=currentConversationType!=="direct"||!currentOtherUid}
 });
-document.getElementById("enableCallAudio").addEventListener("click",async()=>{try{remoteCallAudio.muted=false;remoteCallAudio.volume=1;await remoteCallAudio.play();document.getElementById("enableCallAudio").hidden=true;voiceStatus.textContent="تم تفعيل صوت المكالمة."}catch(error){voiceStatus.textContent="تعذر تشغيل الصوت. تأكد من مستوى صوت الهاتف وأعد المحاولة.";console.warn("Unable to start remote call audio",error)}});
+document.getElementById("enableCallAudio").addEventListener("click",async()=>{try{if(callPlaybackContext){await callPlaybackContext.resume();if(remoteCallAudio.srcObject){if(callPlaybackSource){try{callPlaybackSource.disconnect()}catch(error){}callPlaybackSource=null}callPlaybackSource=callPlaybackContext.createMediaStreamSource(remoteCallAudio.srcObject);callPlaybackSource.connect(callPlaybackContext.destination);remoteCallAudio.muted=true}}else{remoteCallAudio.muted=false;remoteCallAudio.volume=1;await remoteCallAudio.play()}document.getElementById("enableCallAudio").hidden=true;voiceStatus.textContent="تم تفعيل صوت المكالمة."}catch(error){voiceStatus.textContent="تعذر تشغيل الصوت. تأكد من مستوى صوت الهاتف وأعد المحاولة.";console.warn("Unable to start remote call audio",error)}});
 acceptVoiceCallButton.addEventListener("click",async()=>{
   if(!pendingVoiceCall)return;
   acceptVoiceCallButton.disabled=true;
+  prepareRemoteCallPlayback();
   try{
     voiceStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true},video:false});
     const pc=await createVoicePeer(pendingVoiceCall.callId);
