@@ -382,6 +382,18 @@ body:has(#newGroupPanel:not([hidden])) #newChatSection{
 body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 @media(min-width:600px){.mersaloConfirmBody .groupConfirmButtons{display:flex;gap:10px}.mersaloConfirmBody .groupConfirmButtons button{flex:1}}
 .groupPermissionChoice{display:flex!important;align-items:center!important;gap:12px!important;width:100%!important;min-height:58px!important;padding:10px 12px!important;border:1px solid #718096!important;border-radius:10px!important;background:#1b293b!important;font-weight:bold!important;cursor:pointer!important}.groupPermissionChoice .groupPermissionCheckbox{appearance:none!important;-webkit-appearance:none!important;position:relative!important;display:inline-grid!important;place-items:center!important;width:30px!important;height:30px!important;min-width:30px!important;flex:0 0 30px!important;margin:0!important;padding:0!important;border:2px solid #d7e2ef!important;border-radius:6px!important;background:#101827!important;cursor:pointer!important}.groupPermissionChoice .groupPermissionCheckbox[aria-checked=true]{background:#167c68!important;border-color:#8bd8c5!important}.groupPermissionChoice .groupPermissionCheckbox[aria-checked=true]::after{content:"✓";color:#fff;font-size:22px;font-weight:bold;line-height:1}.groupPermissionChoice .groupPermissionCheckbox:disabled{opacity:.55;cursor:wait!important}.groupPermissionChoice .groupPermissionLabel{flex:1!important;display:block!important;margin:0!important;cursor:pointer!important}.groupPermissionChoice:focus-within{outline:3px solid #ffd166!important;outline-offset:3px!important}
+
+/* شريط تنقل سفلي ثابت ومتوافق مع قارئات الشاشة */
+.bottomNavigation{position:fixed!important;right:max(12px,env(safe-area-inset-right))!important;bottom:max(12px,env(safe-area-inset-bottom))!important;z-index:2147483600!important;width:min(420px,calc(100vw - 24px))!important;display:flex!important;gap:8px!important;padding:8px!important;margin:0!important;border:1px solid #52677f!important;border-radius:18px!important;background:#1b293b!important;box-shadow:0 8px 28px #0008!important;direction:rtl!important}
+.bottomNavigation[hidden]{display:none!important}
+.bottomTab{flex:1!important;min-width:0!important;min-height:54px!important;margin:0!important;padding:10px 8px!important;border:2px solid transparent!important;border-radius:12px!important;background:#26384e!important;color:#f5f7fb!important;font:inherit!important;font-weight:bold!important;white-space:normal!important;cursor:pointer!important}
+.bottomTab[aria-selected=true]{background:#167c68!important;border-color:#8bd8c5!important}
+.bottomTab:focus-visible{outline:3px solid #ffd166!important;outline-offset:3px!important}
+
+body>main{padding-bottom:110px!important}
+body.chat-open #bottomNavigation{display:none!important}
+body:has(#onlinePanel:not([hidden])) #bottomNavigation,body:has(#newChatOptions:not([hidden])) #bottomNavigation,body:has(#directChatPanel:not([hidden])) #bottomNavigation,body:has(#newGroupPanel:not([hidden])) #bottomNavigation{display:none!important}
+#status{display:block!important;position:relative!important;order:-1!important;margin:0 0 14px!important;padding:12px 14px!important;border:1px solid #42536b!important;border-radius:12px!important;background:#26384e!important;color:#f5f7fb!important;font-weight:bold!important;text-align:right!important}
 </style><link rel="stylesheet" href="/mersalo-theme.css?v=20261104"><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#101827">
 
@@ -427,8 +439,9 @@ body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 })();
 </script>
 </head><body>
-<header><h1 aria-hidden="true">مِرسالو</h1><div id="mainNavigation" class="tabs"><button class="tabLink" type="button" data-navigate="chat.html" aria-current="page">الصفحة الرئيسية</button><button class="tabLink" type="button" data-navigate="settings.html">الإعدادات</button></div></header>
+<header><h1 aria-hidden="true">مِرسالو</h1></header>
 <main>
+<p id="status" role="status" aria-live="polite">جارٍ التحقق من الحساب...</p>
 <section class="panel" id="onlineSection"><h2 role="presentation">الأشخاص المتصلون</h2><p class="muted">تظهر هنا الحسابات المتصلة بمِرسالو حاليًا. ابحث عن الاسم لبدء محادثة.</p>
 <button id="openOnline" type="button" aria-controls="onlinePanel">عرض الأشخاص المتصلين</button>
 <div id="onlinePanel" hidden><button type="button" class="panelBack" data-close-panel="onlinePanel" data-focus="openOnline">رجوع</button><label for="onlineSearch">ابحث عن شخص بالاسم</label><input id="onlineSearch" type="search" autocomplete="off" placeholder="اكتب اسم الشخص"><div id="onlineList" aria-live="polite">جارٍ تحميل الأشخاص المتصلين...</div></div></section>
@@ -455,8 +468,12 @@ body:has(.mersaloConfirmOverlay){overflow:hidden!important}
 <audio id="remoteCallAudio" autoplay playsinline webkit-playsinline></audio><button id="enableCallAudio" type="button" class="secondary" hidden>تشغيل صوت المكالمة</button>
 </section><div class="messages" id="messages" role="log" aria-live="polite" aria-relevant="additions"></div>
 <div id="composePanel"><h2 role="presentation">إرسال رسالة</h2><div id="replyPreview" class="infoPanel" hidden><p id="replyPreviewText"></p><button id="cancelReply" type="button" class="secondary">إلغاء الرد</button></div><div id="attachmentShareActions" aria-label="مشاركة الوسائط والملفات"><button id="choosePhotosVideos" type="button" class="secondary">مشاركة الصور والفيديوهات</button><button id="chooseFiles" type="button" class="secondary">مشاركة الملفات</button></div><p id="attachmentUploadStatus" role="status" aria-live="polite"></p><input id="photosVideosInput" type="file" accept="image/*,video/*" multiple hidden aria-label="اختيار الصور والفيديوهات"><input id="filesInput" type="file" multiple hidden aria-label="اختيار الملفات"><form id="sendForm" aria-label="إرسال رسالة" novalidate><label for="messageText">اكتب رسالتك</label><textarea id="messageText" rows="3" maxlength="4000" autocomplete="off" placeholder="اكتب رسالتك هنا..." aria-describedby="messageHint" disabled></textarea><p id="messageHint" class="muted">اكتب رسالتك هنا. الحد الأقصى 4000 حرف.</p><button id="sendButton" type="submit" disabled>إرسال الرسالة</button><button id="scheduleMessageButton" type="button" class="secondary" disabled>جدولة الرسالة</button><button id="openScheduledMessages" type="button" class="secondary" disabled>الرسائل المجدولة</button></form></div><section id="scheduledMessagePanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessageHeading"><h3 role="presentation" id="scheduledMessageHeading" tabindex="-1">جدولة الرسالة</h3><p>اختر التاريخ والوقت الذي تريد إرسال الرسالة فيه.</p><label for="scheduledMessageDate">موعد الإرسال</label><input id="scheduledMessageDate" type="datetime-local" required aria-label="تاريخ ووقت إرسال الرسالة"><p id="scheduledMessageStatus" role="status" aria-live="polite"></p><div class="groupConfirmButtons"><button id="confirmScheduledMessage" type="button">تأكيد الجدولة</button><button id="cancelScheduledMessage" type="button" class="secondary">إلغاء</button></div></section><section id="scheduledMessagesPanel" class="groupInlinePanel" hidden aria-labelledby="scheduledMessagesHeading"><button id="closeScheduledMessages" type="button" class="panelBack">رجوع إلى المحادثة</button><h3 role="presentation" id="scheduledMessagesHeading" tabindex="-1">الرسائل المجدولة</h3><p id="scheduledMessagesStatus" role="status" aria-live="polite">جارٍ تحميل الرسائل المجدولة...</p><div id="scheduledMessagesList" aria-live="polite"></div></section></section>
-<p id="status" role="status" aria-live="polite">جارٍ التحقق من الحساب...</p>
+
 </main>
+<nav id="bottomNavigation" class="bottomNavigation" role="tablist" aria-label="التنقل الرئيسي">
+<button class="bottomTab" type="button" role="tab" data-navigate="chat.html" aria-label="الصفحة الرئيسية" aria-selected="true" aria-posinset="1" aria-setsize="2" tabindex="0">الصفحة الرئيسية</button>
+<button class="bottomTab" type="button" role="tab" data-navigate="settings.html" aria-label="الإعدادات" aria-selected="false" aria-posinset="2" aria-setsize="2" tabindex="0">الإعدادات</button>
+</nav>
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
