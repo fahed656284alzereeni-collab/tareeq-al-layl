@@ -1549,8 +1549,10 @@ async function createUserNotification(uid, item) {
       read: false,
       createdAt: admin.firestore.FieldValue.serverTimestamp()
     });
-    if (!ensurePushConfigured()) return;
+    if (!ensurePushConfigured()) { console.error("Push diagnostics: VAPID configuration is missing."); return; }
     const subscriptions = await db.collection("users").doc(uid).collection("pushSubscriptions").get();
+    if (subscriptions.empty) { console.warn("Push diagnostics: no saved subscriptions for recipient."); return; }
+    console.info("Push diagnostics: attempting delivery to", subscriptions.size, "subscription(s).");
     const payload = JSON.stringify({
       title: String(item.title || "إشعار جديد").slice(0, 100),
       body: String(item.body || "").slice(0, 180),
