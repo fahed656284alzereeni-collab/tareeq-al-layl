@@ -1610,7 +1610,7 @@ function normalizeLoginUsername(value) {
 }
 function validateLoginUsername(value) {
   const name = String(value || "").normalize("NFKC").trim();
-  if (name.length < 3 || name.length > 24 || !/^[\\p{L}\\p{N}][\\p{L}\\p{N}_.-]{2,23}$/u.test(name)) {
+  if (name.length < 3 || name.length > 24 || !/^[\p{L}\p{N}][\p{L}\p{N}_.-]{2,23}$/u.test(name)) {
     throw new Error("اسم المستخدم يجب أن يكون من 3 إلى 24 حرفًا أو رقمًا، ويمكن استخدام النقطة والشرطة.");
   }
   return name;
