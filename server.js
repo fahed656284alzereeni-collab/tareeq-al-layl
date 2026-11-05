@@ -1620,13 +1620,18 @@ function deriveLoginPassword(password, salt) {
 }
 app.post("/api/auth/register", pushCors, async (req, res) => {
   let createdUid = "";
+  let createdUsernameKey = "";
   try {
     if (!usernameAuthRateLimit(req, "register")) return res.status(429).json({ success:false, message:"محاولات كثيرة. انتظر دقيقة ثم حاول مجددًا." });
     const username = validateLoginUsername(req.body?.username);
+    const controls = await readSystemSettings();
+    if (controls.maintenance) return res.status(503).json({ success:false, message:"مِرسالو في وضع الصيانة حاليًا." });
+    if (!controls.registrationOpen) return res.status(403).json({ success:false, message:"إنشاء الحسابات الجديدة متوقف مؤقتًا." });
     const password = String(req.body?.password || "");
     if (password.length < 8 || password.length > 128) return res.status(400).json({ success:false, message:"كلمة المرور يجب أن تكون بين 8 و128 حرفًا." });
     await assertNameAllowed(username);
     const normalized = normalizeLoginUsername(username);
+    createdUsernameKey = normalized;
     const db = admin.firestore();
     const usernameRef = db.collection("usernameIndex").doc(normalized);
     const existing = await usernameRef.get();
@@ -1664,6 +1669,7 @@ app.post("/api/auth/register", pushCors, async (req, res) => {
       await admin.auth().deleteUser(createdUid).catch(() => {});
       await admin.firestore().collection("loginCredentials").doc(createdUid).delete().catch(() => {});
       await admin.firestore().collection("users").doc(createdUid).delete().catch(() => {});
+      if (createdUsernameKey) await admin.firestore().collection("usernameIndex").doc(createdUsernameKey).delete().catch(() => {});
     }
     const status = error.status || (error.message?.includes("اسم المستخدم") || error.message?.includes("لفظ مسيء") || error.message?.includes("كلمة محظورة") ? 400 : 500);
     console.error("Username registration failed:", error.message);
@@ -2326,6 +2332,8 @@ app.post("/api/delete-account", accountDeleteCors, async (req, res) => {
     const uid = decoded.uid;
     const db = admin.firestore();
     const userRef = db.collection("users").doc(uid);
+    const [usernameCredential, usernameIndex] = await Promise.all([db.collection("loginCredentials").doc(uid).get(), db.collection("usernameIndex").where("uid","==",uid).limit(1).get()]);
+    if (usernameCredential.exists) refsToDeleteForAuthCleanup = true;
 
     // Preserve every conversation and message so the other participant keeps the history.
     // Friend requests are stored under the recipient as friendRequests/{senderUid}.
@@ -2368,6 +2376,9 @@ app.post("/api/delete-account", accountDeleteCors, async (req, res) => {
       }
     }
     refsToDelete.set(userRef.path, userRef);
+    refsToDelete.set(db.collection("loginCredentials").doc(uid).path, db.collection("loginCredentials").doc(uid));
+    const usernameMappings = await db.collection("usernameIndex").where("uid", "==", uid).get();
+    for (const mapping of usernameMappings.docs) refsToDelete.set(mapping.ref.path, mapping.ref);
 
     const refs = [...refsToDelete.values()];
     for (let i = 0; i < refs.length; i += 450) {
