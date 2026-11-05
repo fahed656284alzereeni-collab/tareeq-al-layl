@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#101827"><title>الدخول إلى مِرسالو</title>
 <style>
-:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}*{box-sizing:border-box}body{margin:0;padding:22px;line-height:1.8}body.name-step{padding:0;overflow:hidden}body.name-step .login-card{position:fixed;inset:0;z-index:10000;width:100vw;height:100vh;height:100dvh;max-width:none;margin:0;padding:calc(28px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));border:0;border-radius:0;overflow-y:auto;display:flex;flex-direction:column;justify-content:center}body.name-step .login-card>h1,body.name-step .login-card>p:not(#status){display:none} .login-card{max-width:480px;margin:5vh auto;background:#1b293b;border:1px solid #34445a;border-radius:22px;padding:24px}.login-title{text-align:center;color:#8bd8c5}button{width:100%;padding:15px;margin-top:18px;border-radius:11px;font-size:18px;background:#167c68;color:#fff;border:0;font-weight:bold;cursor:pointer}button:focus,input:focus{outline:3px solid #ffd166;outline-offset:3px}button:disabled{opacity:.55}input{width:100%;padding:14px;border-radius:10px;font:inherit;margin-top:8px}#status{margin-top:20px;padding:12px;border-radius:10px;background:#26384e;overflow-wrap:anywhere}.note{font-size:.92rem;color:#c3d0df}#nameForm{display:none}
+:root{color-scheme:dark;font-family:Arial,sans-serif;background:#101827;color:#f5f7fb}*{box-sizing:border-box}body{margin:0;padding:22px;line-height:1.8}body.name-step{padding:0;overflow:hidden}body.name-step .login-card{position:fixed;inset:0;z-index:10000;width:100vw;height:100vh;height:100dvh;max-width:none;margin:0;padding:calc(28px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom));border:0;border-radius:0;overflow-y:auto;display:flex;flex-direction:column;justify-content:center}body.name-step .login-card>h1,body.name-step .login-card>p:not(#status){display:none} .login-card{max-width:480px;margin:5vh auto;background:#1b293b;border:1px solid #34445a;border-radius:22px;padding:24px}.login-title{text-align:center;color:#8bd8c5}button{width:100%;padding:15px;margin-top:18px;border-radius:11px;font-size:18px;background:#167c68;color:#fff;border:0;font-weight:bold;cursor:pointer}button:focus,input:focus{outline:3px solid #ffd166;outline-offset:3px}button:disabled{opacity:.55}input{width:100%;padding:14px;border-radius:10px;font:inherit;margin-top:8px}#status{margin-top:20px;padding:12px;border-radius:10px;background:#26384e;overflow-wrap:anywhere}.note{font-size:.92rem;color:#c3d0df}#nameForm,#registerForm,#usernameLoginForm{display:none}form.authForm{margin-top:18px}form.authForm label{display:block;margin-top:12px;font-weight:bold}form.authForm input{display:block} .authActions{display:grid;gap:8px}.authActions button{margin-top:8px}
 </style><link rel="stylesheet" href="/mersalo-theme.css?v=20261104"><link rel="manifest" href="/manifest.webmanifest">
 <meta name="theme-color" content="#101827">
 
@@ -48,8 +48,25 @@
 })();
 </script>
 </head><body><div class="login-card">
-<div class="login-title">مِرسالو</div><p>سجّل الدخول أو أنشئ حسابك باستخدام حساب Google.</p>
-<button id="googleLogin" type="button">المتابعة باستخدام Google</button>
+<div class="login-title">مِرسالو</div><p>أنشئ حسابًا باسم مستخدم وكلمة مرور، أو سجّل الدخول إلى حسابك الحالي.</p>
+<div class="authActions">
+<button id="showRegister" type="button">إنشاء حساب جديد</button>
+<button id="showUsernameLogin" type="button" class="secondary">تسجيل الدخول باسم المستخدم</button>
+</div>
+<form id="registerForm" class="authForm">
+<label for="registerUsername">اسم المستخدم</label><input id="registerUsername" type="text" minlength="3" maxlength="24" autocomplete="username" required>
+<label for="registerPassword">كلمة المرور</label><input id="registerPassword" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+<label for="registerPasswordConfirm">تأكيد كلمة المرور</label><input id="registerPasswordConfirm" type="password" minlength="8" maxlength="128" autocomplete="new-password" required>
+<button id="registerSubmit" type="submit">إنشاء الحساب وفتح مِرسالو</button>
+<button id="cancelRegister" type="button" class="secondary">رجوع</button>
+</form>
+<form id="usernameLoginForm" class="authForm">
+<label for="loginUsername">اسم المستخدم</label><input id="loginUsername" type="text" maxlength="24" autocomplete="username" required>
+<label for="loginPassword">كلمة المرور</label><input id="loginPassword" type="password" maxlength="128" autocomplete="current-password" required>
+<button id="usernameLoginSubmit" type="submit">تسجيل الدخول</button>
+<button id="cancelUsernameLogin" type="button" class="secondary">رجوع</button>
+</form>
+<button id="googleLogin" type="button" class="secondary">دخول الحسابات الحالية والمطوّر باستخدام Google</button>
 <button id="developerEmergency" type="button" style="background:#42536b">مركز الطوارئ للمطوّر</button>
 <section id="developerEmergencyPanel" hidden aria-labelledby="developerEmergencyTitle"><h2 role="presentation" id="developerEmergencyTitle" tabindex="-1">مركز الطوارئ للمطوّر</h2><p id="developerEmergencyIntro">بعد التحقق من صلاحية المطوّر، اختر القسم الذي تريد فتحه.</p><div id="developerEmergencySections" hidden aria-label="أقسام مركز المطوّر">
 <button type="button" data-emergency-section="site">إدارة الموقع والميزات</button>
@@ -67,7 +84,7 @@
 </div>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import{getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import{getAuth,GoogleAuthProvider,signInWithPopup,signInWithCustomToken,onAuthStateChanged,setPersistence,browserLocalPersistence}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 import{getFirestore,doc,getDoc,setDoc,serverTimestamp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore.js";
 const cfg={apiKey:"AIzaSyDQZpAJgNCqd4iXyJyN9zFC-8LneS_UWQs",authDomain:"tareeq-al-layl.firebaseapp.com",projectId:"tareeq-al-layl",storageBucket:"tareeq-al-layl.firebasestorage.app",messagingSenderId:"1071185437335",appId:"1:1071185437335:web:4ca6e3f87152f9ef68ffd2"};
 const app=initializeApp(cfg),auth=getAuth(app),db=getFirestore(app),provider=new GoogleAuthProvider();
@@ -77,6 +94,8 @@ fetch("https://tareeq-al-layl-server.onrender.com/health",{cache:"no-store",keep
 // Keep the Firebase session on this browser without blocking login UI indefinitely.
 provider.setCustomParameters({prompt:"select_account"});
 const button=document.getElementById("googleLogin"),form=document.getElementById("nameForm"),nameInput=document.getElementById("displayName"),status=document.getElementById("status");
+const registerForm=document.getElementById("registerForm"),usernameLoginForm=document.getElementById("usernameLoginForm"),authActions=document.querySelector(".authActions");
+const apiBase="https://tareeq-al-layl-server.onrender.com";
 function withTimeout(promise,ms,label){return Promise.race([promise,new Promise((_,reject)=>setTimeout(()=>reject(new Error(label)),ms))])}
 try{await withTimeout(setPersistence(auth,browserLocalPersistence),8000,"persistence-timeout")}catch(e){console.warn("Firebase persistence setup delayed or unavailable:",e)}
 let currentUser=null,profileRef=null,checking=false;
@@ -107,6 +126,37 @@ document.getElementById("developerEmergencyCheck").addEventListener("click",asyn
 });
 
 function say(t){status.textContent=t}
+function showAuthForm(which){
+ authActions.hidden=true;button.hidden=true;registerForm.style.display=which==="register"?"block":"none";usernameLoginForm.style.display=which==="login"?"block":"none";
+ const first=which==="register"?document.getElementById("registerUsername"):document.getElementById("loginUsername");first.focus();
+}
+function hideAuthForms(){
+ registerForm.style.display="none";usernameLoginForm.style.display="none";authActions.hidden=false;button.hidden=false;say("اختر إنشاء حساب أو تسجيل الدخول.");
+}
+document.getElementById("showRegister").addEventListener("click",()=>showAuthForm("register"));
+document.getElementById("showUsernameLogin").addEventListener("click",()=>showAuthForm("login"));
+document.getElementById("cancelRegister").addEventListener("click",hideAuthForms);
+document.getElementById("cancelUsernameLogin").addEventListener("click",hideAuthForms);
+async function submitUsernameAuth(endpoint,username,password,submitButton){
+ submitButton.disabled=true;say(endpoint.endsWith("register")?"جارٍ إنشاء حسابك...":"جارٍ التحقق من بيانات الدخول...");
+ try{
+  const response=await fetch(apiBase+endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({username,password})});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||!result.success)throw new Error(result.message||"تعذر تنفيذ الطلب.");
+  say("تم التحقق. جارٍ فتح مِرسالو...");
+  await signInWithCustomToken(auth,result.customToken);
+ }catch(error){say(error.message||"تعذر الاتصال بالخادم. حاول مرة أخرى.");submitButton.disabled=false}
+}
+registerForm.addEventListener("submit",async event=>{
+ event.preventDefault();
+ const username=document.getElementById("registerUsername").value.trim(),password=document.getElementById("registerPassword").value,confirm=document.getElementById("registerPasswordConfirm").value,submit=document.getElementById("registerSubmit");
+ if(password!==confirm){say("كلمتا المرور غير متطابقتين.");document.getElementById("registerPasswordConfirm").focus();return}
+ await submitUsernameAuth("/api/auth/register",username,password,submit);
+});
+usernameLoginForm.addEventListener("submit",async event=>{
+ event.preventDefault();
+ await submitUsernameAuth("/api/auth/login",document.getElementById("loginUsername").value.trim(),document.getElementById("loginPassword").value,document.getElementById("usernameLoginSubmit"));
+});
 button.addEventListener("click",async()=>{button.disabled=true;say("جارٍ فتح نافذة Google لاختيار الحساب...");try{await signInWithPopup(auth,provider)}catch(e){button.disabled=false;say("تعذر تسجيل الدخول باستخدام Google. رمز الخطأ: "+(e.code||"unknown"))}});
 onAuthStateChanged(auth,async user=>{
  if(!user||checking)return;checking=true;currentUser=user;button.disabled=true;say("جارٍ التحقق من ملف حسابك...");
