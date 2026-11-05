@@ -20,7 +20,7 @@ self.addEventListener("push", event => {
   };
   event.waitUntil((async () => {
     const windows = await clients.matchAll({ type: "window", includeUncontrolled: true });
-    if (windows.some(client => client.visibilityState === "visible")) return;
+    if (data.type !== "pushTest" && windows.some(client => client.visibilityState === "visible")) return;
     await self.registration.showNotification(title, options);
   })());
 });
