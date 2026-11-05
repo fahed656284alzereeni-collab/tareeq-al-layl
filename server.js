@@ -2130,6 +2130,19 @@ app.post("/api/push/unsubscribe", pushCors, async (req,res) => {
     res.json({success:true});
   } catch(error) { res.status(error.message==="AUTH_REQUIRED"?401:500).json({success:false,message:"Unable to remove push subscription."}); }
 });
+app.post("/api/push/test", pushCors, async (req,res) => {
+  try {
+    const uid=await authenticatedUid(req);
+    if(!ensurePushConfigured()) return res.status(503).json({success:false,message:"إعدادات الإشعارات على الخادم غير مكتملة."});
+    const subscriptions=await admin.firestore().collection("users").doc(uid).collection("pushSubscriptions").get();
+    if(subscriptions.empty) return res.status(404).json({success:false,message:"لا يوجد اشتراك محفوظ لهذا الجهاز. أوقف الإشعارات ثم فعّلها مجددًا."});
+    await createUserNotification(uid,{type:"pushTest",title:"اختبار إشعارات مِرسالو",body:"إذا ظهر هذا الإشعار، فإن استقبال الإشعارات يعمل على جهازك.",url:"settings.html",tag:"mersalo-push-test-"+Date.now()});
+    res.json({success:true,message:"تم إرسال طلب إشعار تجريبي. تحقق من ظهور إشعار مِرسالو على الجهاز."});
+  } catch(error) {
+    console.error("Push test failed:",error.message);
+    res.status(error.message==="AUTH_REQUIRED"?401:500).json({success:false,message:"تعذر تنفيذ اختبار الإشعارات."});
+  }
+});
 app.get("/api/notifications", pushCors, async (req,res) => {
   try {
     const uid=await authenticatedUid(req);
