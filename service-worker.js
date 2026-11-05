@@ -1,16 +1,22 @@
 self.addEventListener("push", event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; } catch (_) {}
+  const isCall = data.type === "incomingCall";
   const title = String(data.title || "إشعار جديد من مِرسالو");
   const options = {
     body: String(data.body || "لديك تحديث جديد."),
     icon: "/icon.svg",
     badge: "/icon.svg",
     tag: String(data.tag || "mersalo-notification"),
-    data: { url: String(data.url || "/") },
+    data: { url: String(data.url || "/"), type: String(data.type || "general") },
     renotify: true,
-    requireInteraction: data.type === "incomingCall",
-    vibrate: data.type === "incomingCall" ? [250, 150, 250, 150, 450] : [120]
+    silent: false,
+    requireInteraction: isCall,
+    vibrate: isCall ? [400, 200, 400, 200, 700, 300, 700] : [120],
+    actions: isCall ? [
+      { action: "answer", title: "فتح مِرسالو للرد" },
+      { action: "dismiss", title: "إغلاق الإشعار" }
+    ] : []
   };
   event.waitUntil((async () => {
     const windows = await clients.matchAll({ type: "window", includeUncontrolled: true });
@@ -19,8 +25,11 @@ self.addEventListener("push", event => {
   })());
 });
 self.addEventListener("notificationclick", event => {
-  event.notification.close();
-  const target = new URL(event.notification.data && event.notification.data.url || "/", self.location.origin).href;
+  const notification = event.notification;
+  const action = event.action;
+  notification.close();
+  if (action === "dismiss") return;
+  const target = new URL(notification.data && notification.data.url || "/", self.location.origin).href;
   event.waitUntil((async () => {
     const windows = await clients.matchAll({ type: "window", includeUncontrolled: true });
     for (const client of windows) {
