@@ -1560,7 +1560,7 @@ async function createUserNotification(uid, item) {
     });
     await Promise.all(subscriptions.docs.map(async doc => {
       try {
-        await webpush.sendNotification(doc.data(), payload);
+        await webpush.sendNotification(doc.data(), payload, { TTL: item.type === "incomingCall" ? 60 : 3600, urgency: item.type === "incomingCall" ? "high" : "normal" });
       } catch (error) {
         if (error.statusCode === 404 || error.statusCode === 410) {
           await doc.ref.delete().catch(() => {});
