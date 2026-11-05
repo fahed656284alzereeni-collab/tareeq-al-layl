@@ -59,6 +59,16 @@ h3{margin-bottom:4px;color:#f5f7fb}
 #deleteConfirm .confirmCard p,#logoutConfirm .confirmCard p{text-align:right;line-height:1.8}
 #deleteConfirm .confirmCard button,#logoutConfirm .confirmCard button{border-radius:13px}
 body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
+
+/* شريط تنقل سفلي ثابت ومتوافق مع قارئات الشاشة */
+.bottomNavigation{position:fixed!important;right:max(12px,env(safe-area-inset-right))!important;bottom:max(12px,env(safe-area-inset-bottom))!important;z-index:2147483600!important;width:min(420px,calc(100vw - 24px))!important;display:flex!important;gap:8px!important;padding:8px!important;margin:0!important;border:1px solid #52677f!important;border-radius:18px!important;background:#1b293b!important;box-shadow:0 8px 28px #0008!important;direction:rtl!important}
+.bottomNavigation[hidden]{display:none!important}
+.bottomTab{flex:1!important;min-width:0!important;min-height:54px!important;margin:0!important;padding:10px 8px!important;border:2px solid transparent!important;border-radius:12px!important;background:#26384e!important;color:#f5f7fb!important;font:inherit!important;font-weight:bold!important;white-space:normal!important;cursor:pointer!important}
+.bottomTab[aria-selected=true]{background:#167c68!important;border-color:#8bd8c5!important}
+.bottomTab:focus-visible{outline:3px solid #ffd166!important;outline-offset:3px!important}
+
+body>main{padding-bottom:110px!important}
+body.section-open #bottomNavigation,body.admin-subsection-open #bottomNavigation{display:none!important}
 </style><link rel="stylesheet" href="/mersalo-theme.css?v=20261104">
 
 <script>
@@ -106,10 +116,7 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 <body>
 <header>
 <h1 role="presentation">مِرسالو</h1>
-<div class="mainNav">
-<button class="navLink" type="button" data-navigate="chat.html">الصفحة الرئيسية</button>
-<button class="navLink" type="button" data-navigate="settings.html" aria-current="page">الإعدادات</button>
-</div>
+
 </header>
 <main>
 <section class="panel section-screen active" id="panel-settings">
@@ -230,6 +237,10 @@ body:has(.mersaloConfirmOverlay),body.confirm-open{overflow:hidden!important}
 </section>
 
 </main>
+<nav id="bottomNavigation" class="bottomNavigation" role="tablist" aria-label="التنقل الرئيسي">
+<button class="bottomTab" type="button" role="tab" data-navigate="chat.html" aria-label="الصفحة الرئيسية" aria-selected="false" aria-posinset="1" aria-setsize="2" tabindex="0">الصفحة الرئيسية</button>
+<button class="bottomTab" type="button" role="tab" data-navigate="settings.html" aria-label="الإعدادات" aria-selected="true" aria-posinset="2" aria-setsize="2" tabindex="0">الإعدادات</button>
+</nav>
 <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 <script type="module">
 import{initializeApp}from"https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
