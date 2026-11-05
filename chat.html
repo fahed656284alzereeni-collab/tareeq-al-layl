@@ -494,34 +494,46 @@ function removeMessageFromView(element){
 let voicePeer=null,voiceStream=null,activeVoiceCallId=null,pendingVoiceCall=null,queuedIce=[],queuedCallerIce=[],voiceSignalingReady=false;
 const voicePanel=document.getElementById("voiceCallPanel"),voiceStatus=document.getElementById("voiceCallStatus");
 const startVoiceCallButton=document.getElementById("startVoiceCall"),acceptVoiceCallButton=document.getElementById("acceptVoiceCall"),rejectVoiceCallButton=document.getElementById("rejectVoiceCall"),endVoiceCallButton=document.getElementById("endVoiceCall"),remoteCallAudio=document.getElementById("remoteCallAudio");
-let callRingtoneContext=null,callRingtoneOscillators=[],callRingtoneGain=null,callRingtoneTimer=null;
-function startCallRingtone(){
-  stopCallRingtone();
+let callRingtoneContext=null,callRingtoneOscillators=[],callRingtoneGain=null,callRingtoneTimer=null,callRingtoneActive=false;
+function prepareCallAudio(){
   try{
     const AudioContextClass=window.AudioContext||window.webkitAudioContext;
     if(!AudioContextClass)return;
-    callRingtoneContext=new AudioContextClass();
-    callRingtoneGain=callRingtoneContext.createGain();
-    callRingtoneGain.gain.value=0;
-    callRingtoneGain.connect(callRingtoneContext.destination);
+    if(!callRingtoneContext){
+      callRingtoneContext=new AudioContextClass();
+      callRingtoneGain=callRingtoneContext.createGain();
+      callRingtoneGain.gain.value=0;
+      callRingtoneGain.connect(callRingtoneContext.destination);
+    }
+    if(callRingtoneContext.state==="suspended")callRingtoneContext.resume().catch(()=>{});
+  }catch(error){console.warn("Call audio preparation failed",error)}
+}
+function startCallRingtone(){
+  stopCallRingtone();
+  try{
+    prepareCallAudio();
+    if(!callRingtoneContext||!callRingtoneGain)return;
+    const context=callRingtoneContext;
     for(const frequency of [440,480]){
-      const oscillator=callRingtoneContext.createOscillator();
+      const oscillator=context.createOscillator();
       oscillator.type="sine";oscillator.frequency.value=frequency;
       oscillator.connect(callRingtoneGain);oscillator.start();callRingtoneOscillators.push(oscillator);
     }
     const pulse=()=>{
-      if(!callRingtoneContext||!callRingtoneGain)return;
-      const now=callRingtoneContext.currentTime;
+      if(!callRingtoneActive||!callRingtoneContext||!callRingtoneGain)return;
+      const now=context.currentTime;
       callRingtoneGain.gain.cancelScheduledValues(now);
       callRingtoneGain.gain.setValueAtTime(0,now);
       callRingtoneGain.gain.linearRampToValueAtTime(0.12,now+0.08);
       callRingtoneGain.gain.setValueAtTime(0.12,now+0.9);
       callRingtoneGain.gain.linearRampToValueAtTime(0,now+1.05);
     };
-    callRingtoneContext.resume().then(()=>{pulse();callRingtoneTimer=setInterval(pulse,2200)}).catch(()=>{});
+    callRingtoneActive=true;
+    context.resume().then(()=>{if(!callRingtoneActive)return;pulse();callRingtoneTimer=setInterval(pulse,2200)}).catch(()=>{});
   }catch(error){console.warn("Call ringtone unavailable",error)}
 }
 function stopCallRingtone(){
+  callRingtoneActive=false;
   if(callRingtoneTimer){clearInterval(callRingtoneTimer);callRingtoneTimer=null}
   if(callRingtoneGain&&callRingtoneContext){
     const now=callRingtoneContext.currentTime;
@@ -530,8 +542,10 @@ function stopCallRingtone(){
   }
   for(const oscillator of callRingtoneOscillators){try{oscillator.stop()}catch(error){}}
   callRingtoneOscillators=[];
-  if(callRingtoneContext){const context=callRingtoneContext;callRingtoneContext=null;callRingtoneGain=null;context.close().catch(()=>{})}
 }
+document.addEventListener("pointerdown",prepareCallAudio,{passive:true});
+document.addEventListener("touchstart",prepareCallAudio,{passive:true});
+document.addEventListener("keydown",prepareCallAudio);
 function resetVoiceCall(message){
   stopCallRingtone();
   if(voicePeer){voicePeer.onicecandidate=null;voicePeer.ontrack=null;voicePeer.close();voicePeer=null}
@@ -591,6 +605,7 @@ document.getElementById("closeVoiceCallPanel").addEventListener("click",()=>{if(
 function handleVoiceCallEvents(){
   socket.on("voiceCall:incoming",async data=>{
     pendingVoiceCall={...data,offer:pendingVoiceCall?.callId===data.callId?pendingVoiceCall.offer:null};
+    startCallRingtone();
     if(currentConversationType!=="direct"||data.conversationId!==currentId){
       await openConversation({id:data.conversationId,type:"direct",otherUid:data.caller?.uid||null,displayName:data.caller?.name||"مستخدم"});
       if(currentId!==data.conversationId){
