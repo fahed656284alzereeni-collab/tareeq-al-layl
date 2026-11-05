@@ -1591,6 +1591,118 @@ async function authenticatedUid(req) {
   const decoded = await admin.auth().verifyIdToken(match[1]);
   return decoded.uid;
 }
+
+const usernameAuthAttempts = new Map();
+function usernameAuthRateLimit(req, action) {
+  const key = action + ":" + String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+  const now = Date.now();
+  const recent = (usernameAuthAttempts.get(key) || []).filter(time => now - time < 60000);
+  if (recent.length >= 10) return false;
+  recent.push(now);
+  usernameAuthAttempts.set(key, recent);
+  if (usernameAuthAttempts.size > 5000) {
+    for (const [entry, times] of usernameAuthAttempts) if (!times.some(time => now - time < 60000)) usernameAuthAttempts.delete(entry);
+  }
+  return true;
+}
+function normalizeLoginUsername(value) {
+  return String(value || "").normalize("NFKC").trim().toLocaleLowerCase("und");
+}
+function validateLoginUsername(value) {
+  const name = String(value || "").normalize("NFKC").trim();
+  if (name.length < 3 || name.length > 24 || !/^[\\p{L}\\p{N}][\\p{L}\\p{N}_.-]{2,23}$/u.test(name)) {
+    throw new Error("اسم المستخدم يجب أن يكون من 3 إلى 24 حرفًا أو رقمًا، ويمكن استخدام النقطة والشرطة.");
+  }
+  return name;
+}
+function deriveLoginPassword(password, salt) {
+  return new Promise((resolve, reject) => crypto.scrypt(String(password), salt, 64, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }, (error, key) => error ? reject(error) : resolve(key)));
+}
+app.post("/api/auth/register", pushCors, async (req, res) => {
+  let createdUid = "";
+  try {
+    if (!usernameAuthRateLimit(req, "register")) return res.status(429).json({ success:false, message:"محاولات كثيرة. انتظر دقيقة ثم حاول مجددًا." });
+    const username = validateLoginUsername(req.body?.username);
+    const password = String(req.body?.password || "");
+    if (password.length < 8 || password.length > 128) return res.status(400).json({ success:false, message:"كلمة المرور يجب أن تكون بين 8 و128 حرفًا." });
+    await assertNameAllowed(username);
+    const normalized = normalizeLoginUsername(username);
+    const db = admin.firestore();
+    const usernameRef = db.collection("usernameIndex").doc(normalized);
+    const existing = await usernameRef.get();
+    if (existing.exists) return res.status(409).json({ success:false, message:"اسم المستخدم مستخدم بالفعل. اختر اسمًا آخر." });
+    const uid = crypto.randomUUID();
+    createdUid = uid;
+    const salt = crypto.randomBytes(16);
+    const passwordHash = await deriveLoginPassword(password, salt);
+    await admin.auth().createUser({ uid, displayName: username });
+    await db.runTransaction(async transaction => {
+      const claimed = await transaction.get(usernameRef);
+      if (claimed.exists) {
+        const error = new Error("اسم المستخدم مستخدم بالفعل. اختر اسمًا آخر.");
+        error.status = 409;
+        throw error;
+      }
+      transaction.create(usernameRef, { uid, username, createdAt: admin.firestore.FieldValue.serverTimestamp() });
+      transaction.create(db.collection("loginCredentials").doc(uid), {
+        username: normalized,
+        salt: salt.toString("base64"),
+        passwordHash: passwordHash.toString("base64"),
+        createdAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+      transaction.set(db.collection("users").doc(uid), {
+        uid, username, playerName: username, displayName: username, email: "",
+        authType: "username", createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        lastLoginAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+    });
+    const customToken = await admin.auth().createCustomToken(uid);
+    res.set("Cache-Control", "no-store");
+    return res.json({ success:true, customToken, username });
+  } catch (error) {
+    if (createdUid) {
+      await admin.auth().deleteUser(createdUid).catch(() => {});
+      await admin.firestore().collection("loginCredentials").doc(createdUid).delete().catch(() => {});
+      await admin.firestore().collection("users").doc(createdUid).delete().catch(() => {});
+    }
+    const status = error.status || (error.message?.includes("اسم المستخدم") || error.message?.includes("لفظ مسيء") || error.message?.includes("كلمة محظورة") ? 400 : 500);
+    console.error("Username registration failed:", error.message);
+    return res.status(status).json({ success:false, message:status===500?"تعذر إنشاء الحساب حاليًا. حاول مرة أخرى.":error.message });
+  }
+});
+app.post("/api/auth/login", pushCors, async (req, res) => {
+  try {
+    if (!usernameAuthRateLimit(req, "login")) return res.status(429).json({ success:false, message:"محاولات كثيرة. انتظر دقيقة ثم حاول مجددًا." });
+    const username = validateLoginUsername(req.body?.username);
+    const password = String(req.body?.password || "");
+    if (!password || password.length > 128) return res.status(400).json({ success:false, message:"اسم المستخدم أو كلمة المرور غير صحيحة." });
+    const db = admin.firestore();
+    const normalized = normalizeLoginUsername(username);
+    const usernameSnap = await db.collection("usernameIndex").doc(normalized).get();
+    if (!usernameSnap.exists) return res.status(401).json({ success:false, message:"اسم المستخدم أو كلمة المرور غير صحيحة." });
+    const uid = String(usernameSnap.data().uid || "");
+    const credentialSnap = await db.collection("loginCredentials").doc(uid).get();
+    if (!credentialSnap.exists) return res.status(401).json({ success:false, message:"اسم المستخدم أو كلمة المرور غير صحيحة." });
+    const saved = credentialSnap.data();
+    const salt = Buffer.from(String(saved.salt || ""), "base64");
+    const expected = Buffer.from(String(saved.passwordHash || ""), "base64");
+    const actual = await deriveLoginPassword(password, salt);
+    if (expected.length !== actual.length || !crypto.timingSafeEqual(expected, actual)) {
+      return res.status(401).json({ success:false, message:"اسم المستخدم أو كلمة المرور غير صحيحة." });
+    }
+    const user = await admin.auth().getUser(uid);
+    if (user.disabled) return res.status(403).json({ success:false, message:"هذا الحساب موقوف حاليًا." });
+    await db.collection("users").doc(uid).set({ lastLoginAt:admin.firestore.FieldValue.serverTimestamp() }, { merge:true });
+    const customToken = await admin.auth().createCustomToken(uid);
+    res.set("Cache-Control", "no-store");
+    return res.json({ success:true, customToken, username:String(saved.username || username) });
+  } catch (error) {
+    const status = error.status || (error.message?.includes("اسم المستخدم") ? 400 : 500);
+    console.error("Username login failed:", error.message);
+    return res.status(status).json({ success:false, message:status===500?"تعذر تسجيل الدخول حاليًا. حاول مرة أخرى.":error.message });
+  }
+});
+
 const MERSALO_ADMIN_EMAIL = "fahed656284alzereeni@gmail.com";
 async function requireMersaloAdmin(req) {
   const match = String(req.headers.authorization || "").match(/^Bearer (.+)$/i);
