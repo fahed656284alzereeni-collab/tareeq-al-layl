@@ -345,6 +345,7 @@ const pushStatus=document.getElementById("pushStatus");
 const notificationsList=document.getElementById("notificationsList");
 const enablePush=document.getElementById("enablePush");
 const disablePush=document.getElementById("disablePush");
+const testPush=document.getElementById("testPush");
 const apiBase="https://tareeq-al-layl-server.onrender.com";
 const adminStatus=document.getElementById("adminStatus"),adminStats=document.getElementById("adminStats"),adminReports=document.getElementById("adminReports");
 const openAdmin=document.getElementById("openAdmin");
@@ -857,6 +858,7 @@ enablePush.addEventListener("click",async()=>{
   }catch(error){pushStatus.textContent=error.message||"تعذر تفعيل الإشعارات."}
   finally{enablePush.disabled=false;await refreshPushStatus()}
 });
+testPush.addEventListener("click",async()=>{testPush.disabled=true;pushStatus.textContent="جارٍ إرسال إشعار تجريبي...";try{const result=await apiRequest("/api/push/test","POST",{});pushStatus.textContent=result.message||"تم إرسال طلب إشعار تجريبي.";}catch(error){pushStatus.textContent=error.message||"تعذر إرسال إشعار تجريبي.";}finally{testPush.disabled=false}});
 disablePush.addEventListener("click",async()=>{
   disablePush.disabled=true;pushStatus.textContent="جارٍ إيقاف الإشعارات...";
   try{
