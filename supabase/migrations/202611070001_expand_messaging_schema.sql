@@ -361,7 +361,7 @@ begin
   insert into public.conversations(type,title,created_by)
     values ('group',nullif(btrim(p_title),''),v_me) returning id into v_id;
   insert into public.conversation_members(conversation_id,user_id,role)
-    select v_id,x,case when x=v_me then 'owner' else 'member' end from unnest(v_members) x;
+    select v_id,user_id,case when user_id=v_me then 'owner' else 'member' end from unnest(v_members) as members(user_id);
   return v_id;
 end;
 $;
@@ -397,6 +397,7 @@ grant execute on function private.accept_friend_request(uuid) to authenticated;
 -- 7) Replace pair-only conversation/message authorization with membership checks.
 drop policy if exists "Participants can view conversations" on public.conversations;
 drop policy if exists "Users can start direct conversations" on public.conversations;
+drop policy if exists "Active members can view conversations" on public.conversations;
 create policy "Active members can view conversations"
 on public.conversations for select to authenticated
 using (public.is_conversation_member(id));
@@ -404,10 +405,12 @@ using (public.is_conversation_member(id));
 drop policy if exists "Participants can view messages" on public.messages;
 drop policy if exists "Participants can send messages as themselves" on public.messages;
 drop policy if exists "Recipients can mark messages as read" on public.messages;
+drop policy if exists "Active members can view messages" on public.messages;
 create policy "Active members can view messages"
 on public.messages for select to authenticated
 using (public.is_conversation_member(conversation_id));
 
+drop policy if exists "Active members can send messages as themselves" on public.messages;
 create policy "Active members can send messages as themselves"
 on public.messages for insert to authenticated
 with check (
@@ -428,6 +431,7 @@ grant update (read_at) on public.notifications to authenticated;
 
 -- Client updates are limited to marking a message read. More privileged
 -- edit/delete operations will be exposed through verified server/RPC paths.
+drop policy if exists "Recipients can mark own incoming messages read" on public.messages;
 create policy "Recipients can mark own incoming messages read"
 on public.messages for update to authenticated
 using (
