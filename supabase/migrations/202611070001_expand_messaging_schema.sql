@@ -9,6 +9,8 @@ alter table public.conversations
   add column if not exists type text not null default 'direct',
   add column if not exists title text,
   add column if not exists description text,
+  add column if not exists announcement text,
+  add column if not exists group_permissions jsonb not null default '{"editInfo":"admins","addMembers":"admins"}'::jsonb,
   add column if not exists created_by uuid references auth.users(id) on delete set null,
   add column if not exists updated_at timestamptz not null default now(),
   add column if not exists last_message_at timestamptz;
@@ -370,6 +372,21 @@ with check (user_id = (select auth.uid()));
 create schema if not exists private;
 revoke all on schema private from public;
 grant usage on schema private to authenticated;
+revoke all on function private.add_group_members(uuid,uuid[]) from public,anon;
+revoke all on function private.remove_group_member(uuid,uuid) from public,anon;
+revoke all on function private.leave_group(uuid) from public,anon;
+revoke all on function private.update_group_details(uuid,text,text) from public,anon;
+revoke all on function private.update_group_permissions(uuid,text,text) from public,anon;
+revoke all on function private.set_group_moderator(uuid,uuid,boolean) from public,anon;
+revoke all on function private.delete_group(uuid) from public,anon;
+grant execute on function private.add_group_members(uuid,uuid[]) to authenticated;
+grant execute on function private.remove_group_member(uuid,uuid) to authenticated;
+grant execute on function private.leave_group(uuid) to authenticated;
+grant execute on function private.update_group_details(uuid,text,text) to authenticated;
+grant execute on function private.update_group_permissions(uuid,text,text) to authenticated;
+grant execute on function private.set_group_moderator(uuid,uuid,boolean) to authenticated;
+grant execute on function private.delete_group(uuid) to authenticated;
+
 
 create unique index if not exists friend_requests_one_pending_unordered_pair
   on public.friend_requests (least(sender_id, recipient_id), greatest(sender_id, recipient_id))
@@ -475,7 +492,7 @@ declare
   v_id uuid;
 begin
   if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
-  if coalesce(cardinality(p_member_ids),0)<1 or cardinality(p_member_ids)>99 then
+  if coalesce(cardinality(p_member_ids),0)<1 or cardinality(p_member_ids)>49 then
     raise exception 'Invalid group member count' using errcode='22023';
   end if;
   select array_agg(x order by x) into v_members
@@ -494,6 +511,167 @@ begin
   return v_id;
 end;
 $$;
+
+create or replace function private.add_group_members(p_conversation_id uuid,p_member_ids uuid[])
+returns integer language plpgsql security definer set search_path = ''
+as $fn$
+declare
+  v_me uuid := auth.uid(); v_type text; v_permissions jsonb; v_role text;
+  v_ids uuid[]; v_new uuid[]; v_count integer;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  if coalesce(cardinality(p_member_ids),0)<1 or cardinality(p_member_ids)>49 then
+    raise exception 'Invalid group member count' using errcode='22023';
+  end if;
+  select c.type,c.group_permissions,cm.role into v_type,v_permissions,v_role
+  from public.conversations c join public.conversation_members cm
+    on cm.conversation_id=c.id and cm.user_id=v_me and cm.left_at is null
+  where c.id=p_conversation_id for update of c;
+  if not found or v_type<>'group' then raise exception 'Group not found or access denied' using errcode='42501'; end if;
+  if coalesce(v_permissions->>'addMembers','admins')<>'members' and v_role not in ('owner','moderator') then
+    raise exception 'Only group admins may add members' using errcode='42501';
+  end if;
+  select array_agg(x order by x) into v_ids from (select distinct unnest(p_member_ids) x) q
+    where x is not null and x<>v_me;
+  if coalesce(cardinality(v_ids),0)=0 then raise exception 'No new members selected' using errcode='22023'; end if;
+  select array_agg(x order by x) into v_new from unnest(v_ids) as requested(x)
+    where not exists (select 1 from public.conversation_members cm
+      where cm.conversation_id=p_conversation_id and cm.user_id=x and cm.left_at is null);
+  if coalesce(cardinality(v_new),0)=0 then raise exception 'All selected users are already members' using errcode='22023'; end if;
+  if exists (select 1 from unnest(v_new) x where not exists(select 1 from auth.users u where u.id=x)) then
+    raise exception 'Unknown group member' using errcode='22023';
+  end if;
+  if exists (select 1 from public.user_blocks b
+    where (b.blocker_id=v_me and b.blocked_id=any(v_new))
+       or (b.blocked_id=v_me and b.blocker_id=any(v_new))) then
+    raise exception 'A selected member is unavailable' using errcode='42501';
+  end if;
+  select count(*) into v_count from public.conversation_members cm
+    where cm.conversation_id=p_conversation_id and cm.left_at is null;
+  if v_count+cardinality(v_new)>50 then raise exception 'Group member limit reached' using errcode='22023'; end if;
+  insert into public.conversation_members(conversation_id,user_id,role,joined_at,left_at,is_hidden,cleared_at)
+    select p_conversation_id,x,'member',now(),null,false,null from unnest(v_new) x
+    on conflict (conversation_id,user_id) do update
+      set role='member',joined_at=now(),left_at=null,is_hidden=false,cleared_at=null;
+  update public.conversations set updated_at=now() where id=p_conversation_id;
+  return cardinality(v_new);
+end;
+$fn$;
+
+create or replace function private.remove_group_member(p_conversation_id uuid,p_target_user uuid)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid(); v_type text; v_actor_role text; v_target_role text;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  select c.type,actor.role into v_type,v_actor_role
+  from public.conversations c join public.conversation_members actor
+    on actor.conversation_id=c.id and actor.user_id=v_me and actor.left_at is null
+  where c.id=p_conversation_id for update of c;
+  if not found or v_type<>'group' or v_actor_role not in ('owner','moderator') then
+    raise exception 'Not authorized to manage this group' using errcode='42501';
+  end if;
+  select role into v_target_role from public.conversation_members
+    where conversation_id=p_conversation_id and user_id=p_target_user and left_at is null;
+  if not found then raise exception 'Member not found' using errcode='P0002'; end if;
+  if v_target_role='owner' then raise exception 'Cannot remove group owner' using errcode='42501'; end if;
+  update public.conversation_members set left_at=now()
+    where conversation_id=p_conversation_id and user_id=p_target_user and left_at is null;
+  update public.conversations set updated_at=now() where id=p_conversation_id;
+end;
+$fn$;
+
+create or replace function private.leave_group(p_conversation_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid(); v_type text; v_creator uuid;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  select type,created_by into v_type,v_creator from public.conversations where id=p_conversation_id for update;
+  if not found or v_type<>'group' then raise exception 'Group not found' using errcode='P0002'; end if;
+  if v_creator=v_me then raise exception 'Group creator cannot leave; delete the group instead' using errcode='42501'; end if;
+  update public.conversation_members set left_at=now()
+    where conversation_id=p_conversation_id and user_id=v_me and left_at is null;
+  if not found then raise exception 'You are not an active group member' using errcode='42501'; end if;
+  update public.conversations set updated_at=now() where id=p_conversation_id;
+end;
+$fn$;
+
+create or replace function private.update_group_details(p_conversation_id uuid,p_description text,p_announcement text)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid(); v_type text; v_permissions jsonb; v_role text;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  if char_length(coalesce(p_description,''))>500 or char_length(coalesce(p_announcement,''))>500 then
+    raise exception 'Group details are too long' using errcode='22023';
+  end if;
+  select c.type,c.group_permissions,cm.role into v_type,v_permissions,v_role
+  from public.conversations c join public.conversation_members cm
+    on cm.conversation_id=c.id and cm.user_id=v_me and cm.left_at is null
+  where c.id=p_conversation_id;
+  if not found or v_type<>'group' then raise exception 'Group not found or access denied' using errcode='42501'; end if;
+  if coalesce(v_permissions->>'editInfo','admins')<>'members' and v_role not in ('owner','moderator') then
+    raise exception 'Only group admins may edit group information' using errcode='42501';
+  end if;
+  update public.conversations set description=coalesce(p_description,''),
+    announcement=coalesce(p_announcement,''),updated_at=now() where id=p_conversation_id;
+end;
+$fn$;
+
+create or replace function private.update_group_permissions(p_conversation_id uuid,p_edit_info text,p_add_members text)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid(); v_type text; v_role text;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  if p_edit_info not in ('admins','members') or p_add_members not in ('admins','members') then
+    raise exception 'Invalid group permissions' using errcode='22023';
+  end if;
+  select c.type,cm.role into v_type,v_role
+  from public.conversations c join public.conversation_members cm
+    on cm.conversation_id=c.id and cm.user_id=v_me and cm.left_at is null
+  where c.id=p_conversation_id;
+  if not found or v_type<>'group' or v_role not in ('owner','moderator') then
+    raise exception 'Only group admins may change permissions' using errcode='42501';
+  end if;
+  update public.conversations set group_permissions=jsonb_build_object(
+    'editInfo',p_edit_info,'addMembers',p_add_members),updated_at=now() where id=p_conversation_id;
+end;
+$fn$;
+
+create or replace function private.set_group_moderator(p_conversation_id uuid,p_target_user uuid,p_make_moderator boolean)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid(); v_type text; v_creator uuid; v_target_role text;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  select type,created_by into v_type,v_creator from public.conversations where id=p_conversation_id for update;
+  if not found or v_type<>'group' or v_creator<>v_me then
+    raise exception 'Only the group creator may appoint moderators' using errcode='42501';
+  end if;
+  select role into v_target_role from public.conversation_members
+    where conversation_id=p_conversation_id and user_id=p_target_user and left_at is null;
+  if not found or v_target_role='owner' then raise exception 'Invalid moderator target' using errcode='22023'; end if;
+  update public.conversation_members set role=case when p_make_moderator then 'moderator' else 'member' end
+    where conversation_id=p_conversation_id and user_id=p_target_user and left_at is null;
+  update public.conversations set updated_at=now() where id=p_conversation_id;
+end;
+$fn$;
+
+create or replace function private.delete_group(p_conversation_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid(); v_type text; v_creator uuid;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  select type,created_by into v_type,v_creator from public.conversations where id=p_conversation_id for update;
+  if not found or v_type<>'group' or v_creator<>v_me then
+    raise exception 'Only the group creator may delete this group' using errcode='42501';
+  end if;
+  delete from public.conversations where id=p_conversation_id;
+end;
+$fn$;
 
 create or replace function private.accept_friend_request(p_request_id uuid)
 returns void language plpgsql security definer set search_path = ''
@@ -561,6 +739,34 @@ create or replace function public.create_group_conversation(p_title text,p_membe
 returns uuid language sql security invoker set search_path = ''
 as $$ select private.create_group_conversation(p_title,p_member_ids); $$;
 
+create or replace function public.add_group_members(p_conversation_id uuid,p_member_ids uuid[])
+returns integer language sql security invoker set search_path = ''
+as $fn$ select private.add_group_members(p_conversation_id,p_member_ids); $fn$;
+
+create or replace function public.remove_group_member(p_conversation_id uuid,p_target_user uuid)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.remove_group_member(p_conversation_id,p_target_user); $fn$;
+
+create or replace function public.leave_group(p_conversation_id uuid)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.leave_group(p_conversation_id); $fn$;
+
+create or replace function public.update_group_details(p_conversation_id uuid,p_description text,p_announcement text)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.update_group_details(p_conversation_id,p_description,p_announcement); $fn$;
+
+create or replace function public.update_group_permissions(p_conversation_id uuid,p_edit_info text,p_add_members text)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.update_group_permissions(p_conversation_id,p_edit_info,p_add_members); $fn$;
+
+create or replace function public.set_group_moderator(p_conversation_id uuid,p_target_user uuid,p_make_moderator boolean)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.set_group_moderator(p_conversation_id,p_target_user,p_make_moderator); $fn$;
+
+create or replace function public.delete_group(p_conversation_id uuid)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.delete_group(p_conversation_id); $fn$;
+
 create or replace function public.accept_friend_request(p_request_id uuid)
 returns void language sql security invoker set search_path = ''
 as $$ select private.accept_friend_request(p_request_id); $$;
@@ -581,6 +787,21 @@ grant execute on function public.create_direct_conversation(uuid) to authenticat
 grant execute on function public.create_group_conversation(text,uuid[]) to authenticated;
 grant execute on function public.accept_friend_request(uuid) to authenticated;
 grant execute on function public.decline_friend_request(uuid) to authenticated;
+revoke all on function public.add_group_members(uuid,uuid[]) from public,anon;
+revoke all on function public.remove_group_member(uuid,uuid) from public,anon;
+revoke all on function public.leave_group(uuid) from public,anon;
+revoke all on function public.update_group_details(uuid,text,text) from public,anon;
+revoke all on function public.update_group_permissions(uuid,text,text) from public,anon;
+revoke all on function public.set_group_moderator(uuid,uuid,boolean) from public,anon;
+revoke all on function public.delete_group(uuid) from public,anon;
+grant execute on function public.add_group_members(uuid,uuid[]) to authenticated;
+grant execute on function public.remove_group_member(uuid,uuid) to authenticated;
+grant execute on function public.leave_group(uuid) to authenticated;
+grant execute on function public.update_group_details(uuid,text,text) to authenticated;
+grant execute on function public.update_group_permissions(uuid,text,text) to authenticated;
+grant execute on function public.set_group_moderator(uuid,uuid,boolean) to authenticated;
+grant execute on function public.delete_group(uuid) to authenticated;
+
 
 -- 7) Replace pair-only conversation/message authorization with membership checks.
 drop policy if exists "Participants can view conversations" on public.conversations;
