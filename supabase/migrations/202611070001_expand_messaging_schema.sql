@@ -429,6 +429,25 @@ grant update (status) on public.scheduled_messages to authenticated;
 revoke update on public.notifications from authenticated;
 grant update (read_at) on public.notifications to authenticated;
 
+-- Explicit Data API grants. RLS remains the row-level authorization boundary.
+grant select on public.conversations to authenticated;
+grant select, insert on public.messages to authenticated;
+grant select on public.conversation_members to authenticated;
+grant select, update (read_at) on public.message_receipts to authenticated;
+grant select, insert, delete on public.message_user_visibility to authenticated;
+grant select, insert on public.friend_requests to authenticated;
+revoke update on public.friend_requests from authenticated;
+grant update (status, responded_at) on public.friend_requests to authenticated;
+grant select, delete on public.friendships to authenticated;
+grant select, insert, delete on public.user_blocks to authenticated;
+grant select, insert on public.user_reports to authenticated;
+grant select, insert on public.scheduled_messages to authenticated;
+revoke update on public.scheduled_messages from authenticated;
+grant update (status) on public.scheduled_messages to authenticated;
+grant select on public.notifications to authenticated;
+revoke update on public.notifications from authenticated;
+grant update (read_at) on public.notifications to authenticated;
+
 -- Client updates are limited to marking a message read. More privileged
 -- edit/delete operations will be exposed through verified server/RPC paths.
 drop policy if exists "Recipients can mark own incoming messages read" on public.messages;
