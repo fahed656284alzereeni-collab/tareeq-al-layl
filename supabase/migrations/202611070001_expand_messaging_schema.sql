@@ -317,6 +317,34 @@ begin
 end;
 $scheduled$;
 
+create or replace function private.validate_scheduled_message_insert()
+returns trigger language plpgsql security definer set search_path = ''
+as $fn$
+begin
+  if char_length(coalesce(new.body,''))>4000
+     or (char_length(coalesce(new.body,''))=0 and new.attachment is null) then
+    raise exception 'Invalid scheduled message content' using errcode='22023';
+  end if;
+  if new.attachment is not null then
+    if jsonb_typeof(new.attachment)<>'object'
+       or coalesce(new.attachment->>'type','')=''
+       or coalesce(new.attachment->>'name','')=''
+       or coalesce((new.attachment->>'size')::bigint,0)<1
+       or coalesce((new.attachment->>'size')::bigint,0)>52428800
+       or coalesce(new.attachment->>'storagePath','') not like
+          ('conversations/'||new.conversation_id::text||'/'||new.sender_id::text||'/%') then
+      raise exception 'Invalid scheduled attachment metadata or storage path' using errcode='22023';
+    end if;
+  end if;
+  return new;
+end;
+$fn$;
+revoke all on function private.validate_scheduled_message_insert() from public,anon,authenticated;
+drop trigger if exists scheduled_messages_validate_insert on public.scheduled_messages;
+create trigger scheduled_messages_validate_insert
+before insert on public.scheduled_messages
+for each row execute function private.validate_scheduled_message_insert();
+
 create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
