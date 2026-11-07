@@ -120,6 +120,45 @@ $$;
 -- Automatically create one receipt per other active member and keep the
 -- conversation's last-message timestamp current in the same transaction.
 create schema if not exists private;
+
+-- Profile fields used by the existing account screens.
+alter table public.profiles
+  add column if not exists bio text not null default '';
+
+do $profile$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid='public.profiles'::regclass and conname='profiles_bio_length'
+  ) then
+    alter table public.profiles
+      add constraint profiles_bio_length check (char_length(bio) <= 200);
+  end if;
+end;
+$profile$;
+
+create unique index if not exists profiles_username_lower_unique
+  on public.profiles (lower(username)) where username is not null;
+
+-- Users may edit only their own public profile fields. updated_at is trigger-managed.
+revoke update on public.profiles from authenticated;
+grant update (username, display_name, bio, avatar_url) on public.profiles to authenticated;
+
+create or replace function private.touch_profile_updated_at()
+returns trigger language plpgsql set search_path = ''
+as $fn$
+begin
+  new.updated_at := now();
+  return new;
+end;
+$fn$;
+
+revoke all on function private.touch_profile_updated_at() from public,anon,authenticated;
+drop trigger if exists profiles_touch_updated_at on public.profiles;
+create trigger profiles_touch_updated_at
+before update on public.profiles
+for each row execute function private.touch_profile_updated_at();
+
 revoke all on schema private from public;
 
 create or replace function private.on_message_insert()
