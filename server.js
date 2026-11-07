@@ -13,6 +13,7 @@ const crypto = require("crypto");
 const { createSupabaseAuthVerifier } = require("./supabase-auth-verifier");
 const { createSupabaseUserClient } = require("./supabase-clients");
 const { createSupabaseProfileHandlers } = require("./supabase-profile-handlers");
+const { createSupabaseChatHandlers } = require("./supabase-chat-handlers");
 
 // Prefer keyless Google Workload Identity Federation when Render configures ADC.
 // Otherwise support a Render Secret File or the legacy JSON environment variable.
@@ -1539,6 +1540,35 @@ if (process.env.SUPABASE_PROFILE_API_ENABLED === "true") {
   app.options("/api/supabase/profile/me", pushCors);
   app.get("/api/supabase/profile/me", pushCors, supabaseProfileHandlers.getProfile);
   app.post("/api/supabase/profile/me", pushCors, supabaseProfileHandlers.updateProfile);
+}
+
+// Opt-in Supabase chat HTTP API. Existing Firebase Socket.IO handlers remain
+// active until the frontend and all feature workflows complete the cutover.
+if (process.env.SUPABASE_CHAT_API_ENABLED === "true") {
+  const supabaseChatHandlers = createSupabaseChatHandlers({
+    verifier: createSupabaseAuthVerifier(),
+    createUserClient: accessToken => createSupabaseUserClient(accessToken)
+  });
+  app.use("/api/supabase/chat", pushCors);
+  app.get("/api/supabase/chat/conversations", supabaseChatHandlers.listConversations);
+  app.get("/api/supabase/chat/conversations/:conversationId", supabaseChatHandlers.getConversation);
+  app.get("/api/supabase/chat/conversations/:conversationId/messages", supabaseChatHandlers.listMessages);
+  app.post("/api/supabase/chat/conversations/direct", supabaseChatHandlers.createDirectConversation);
+  app.post("/api/supabase/chat/conversations/group", supabaseChatHandlers.createGroupConversation);
+  app.post("/api/supabase/chat/messages", supabaseChatHandlers.sendMessage);
+  app.post("/api/supabase/chat/messages/:messageId/read", supabaseChatHandlers.markMessageRead);
+  app.post("/api/supabase/chat/messages/:messageId/delivered", supabaseChatHandlers.markMessageDelivered);
+  app.post("/api/supabase/chat/messages/:messageId/edit", supabaseChatHandlers.editMessage);
+  app.post("/api/supabase/chat/messages/:messageId/delete-for-everyone", supabaseChatHandlers.deleteMessageForEveryone);
+  app.post("/api/supabase/chat/conversations/:conversationId/hide", supabaseChatHandlers.hideConversation);
+  app.post("/api/supabase/chat/conversations/:conversationId/clear-for-me", supabaseChatHandlers.clearConversationForMe);
+  app.post("/api/supabase/chat/conversations/:conversationId/clear-for-everyone", supabaseChatHandlers.clearConversationForEveryone);
+  app.delete("/api/supabase/chat/conversations/:conversationId", supabaseChatHandlers.deleteDirectConversation);
+  app.post("/api/supabase/chat/friend-requests", supabaseChatHandlers.sendFriendRequest);
+  app.post("/api/supabase/chat/friend-requests/:requestId/accept", supabaseChatHandlers.acceptFriendRequest);
+  app.post("/api/supabase/chat/friend-requests/:requestId/decline", supabaseChatHandlers.declineFriendRequest);
+  app.post("/api/supabase/chat/blocks", supabaseChatHandlers.blockUser);
+  app.delete("/api/supabase/chat/blocks/:userId", supabaseChatHandlers.unblockUser);
 }
 
 
