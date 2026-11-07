@@ -14,6 +14,7 @@ const { createSupabaseAuthVerifier } = require("./supabase-auth-verifier");
 const { createSupabaseUserClient } = require("./supabase-clients");
 const { createSupabaseProfileHandlers } = require("./supabase-profile-handlers");
 const { createSupabaseChatHandlers } = require("./supabase-chat-handlers");
+const { createSupabaseMediaHandlers } = require("./supabase-media-handlers");
 
 // Prefer keyless Google Workload Identity Federation when Render configures ADC.
 // Otherwise support a Render Secret File or the legacy JSON environment variable.
@@ -1549,7 +1550,14 @@ if (process.env.SUPABASE_CHAT_API_ENABLED === "true") {
     verifier: createSupabaseAuthVerifier(),
     createUserClient: accessToken => createSupabaseUserClient(accessToken)
   });
+  const supabaseMediaHandlers = createSupabaseMediaHandlers({
+    verifier: createSupabaseAuthVerifier(),
+    createUserClient: accessToken => createSupabaseUserClient(accessToken),
+    getStorage: getMediaStorage,
+    assertMediaEnabled: () => assertFeatureEnabled("mediaSharing","مشاركة الوسائط والملفات متوقفة مؤقتًا من إدارة مِرسالو.")
+  });
   app.use("/api/supabase/chat", pushCors);
+  app.post("/api/supabase/chat/upload", express.raw({type:"application/octet-stream",limit:"50mb"}), supabaseMediaHandlers.upload);
   app.get("/api/supabase/chat/conversations", supabaseChatHandlers.listConversations);
   app.get("/api/supabase/chat/conversations/:conversationId", supabaseChatHandlers.getConversation);
   app.get("/api/supabase/chat/conversations/:conversationId/messages", supabaseChatHandlers.listMessages);
