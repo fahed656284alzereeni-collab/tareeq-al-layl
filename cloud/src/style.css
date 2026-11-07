@@ -83,6 +83,31 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 20px 0; }
   .send-form label { grid-column: auto; }
   .send-form button { width: 100%; }
   .account-name { max-width: 42vw; }
+
+  /* On phones, a conversation becomes its own screen for simpler VoiceOver navigation. */
+  .app-shell.chat-open .topbar,
+  .app-shell.chat-open .side-panel { display: none; }
+  .app-shell.chat-open .workspace { display: block; width: 100%; margin: 0; padding: 0; }
+  .app-shell.chat-open .chat-panel {
+    min-height: 100vh;
+    min-height: 100svh;
+    padding: 12px;
+    border: 0;
+    border-radius: 0;
+  }
+  .app-shell.chat-open #chat-view {
+    min-height: calc(100vh - 24px);
+    min-height: calc(100svh - 24px);
+  }
+  .app-shell.chat-open .chat-heading {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 4px 0 10px;
+    background: var(--surface);
+  }
+  .app-shell.chat-open .back-button { order: -1; }
+  .app-shell.chat-open .messages { flex: 1; min-height: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
