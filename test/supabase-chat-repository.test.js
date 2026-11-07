@@ -31,6 +31,22 @@ function makeClient({ rpcResult = { data: "result", error: null }, queryResult =
   return { client, calls };
 }
 
+test("attachment metadata must belong to the sender and conversation", async () => {
+  const { client, calls } = makeClient();
+  const repository = createSupabaseChatRepository(client, "user-1");
+  await assert.rejects(repository.sendMessage({
+    conversationId: "conversation-1",
+    body: "",
+    attachment: { type: "image/png", name: "photo.png", size: 100, storagePath: "conversations/other/user-1/file" }
+  }), { code: "ATTACHMENT_INVALID" });
+  await assert.rejects(repository.sendMessage({
+    conversationId: "conversation-1",
+    body: "",
+    attachment: { type: "image/png", name: "photo.png", size: 52428801, storagePath: "conversations/conversation-1/user-1/file" }
+  }), { code: "ATTACHMENT_INVALID" });
+  assert.equal(calls.some(call => call[0] === "insert"), false);
+});
+
 test("conversation and group creation use authenticated database RPCs", async () => {
   const { client, calls } = makeClient({ rpcResult: { data: "conversation-1", error: null } });
   const repository = createSupabaseChatRepository(client, "user-1");
@@ -46,7 +62,10 @@ test("messages are inserted with the verified sender id and attachments", async 
   const { client, calls } = makeClient({ insertResult: { data: { id: "message-1" }, error: null } });
   const repository = createSupabaseChatRepository(client, "verified-user");
   assert.deepEqual(await repository.sendMessage({
-    conversationId: "conversation-1", body: "", attachment: { type: "image/png" }
+    conversationId: "conversation-1", body: "", attachment: {
+      type: "image/png", name: "photo.png", size: 2048,
+      storagePath: "conversations/conversation-1/verified-user/file-1"
+    }
   }), { id: "message-1" });
   const inserted = calls.find(call => call[0] === "insert")[1];
   assert.equal(inserted.sender_id, "verified-user");
