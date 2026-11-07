@@ -698,6 +698,19 @@ begin
 end;
 $fn$;
 
+create or replace function private.cancel_friend_request(p_request_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $$
+declare v_me uuid := auth.uid();
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  update public.friend_requests
+    set status='cancelled',responded_at=now()
+    where id=p_request_id and sender_id=v_me and status='pending';
+  if not found then raise exception 'Pending outgoing request not found' using errcode='P0002'; end if;
+end;
+$$;
+
 create or replace function private.accept_friend_request(p_request_id uuid)
 returns void language plpgsql security definer set search_path = ''
 as $$
@@ -736,6 +749,7 @@ $$;
 
 revoke all on function private.create_direct_conversation(uuid) from public,anon;
 revoke all on function private.create_group_conversation(text,uuid[]) from public,anon;
+revoke all on function private.cancel_friend_request(uuid) from public,anon;
 revoke all on function private.accept_friend_request(uuid) from public,anon;
 revoke all on function private.decline_friend_request(uuid) from public,anon;
 grant usage on schema private to authenticated;
@@ -743,6 +757,7 @@ grant execute on function private.send_friend_request(uuid) to authenticated;
 grant execute on function private.remove_friendship(uuid) to authenticated;
 grant execute on function private.create_direct_conversation(uuid) to authenticated;
 grant execute on function private.create_group_conversation(text,uuid[]) to authenticated;
+grant execute on function private.cancel_friend_request(uuid) to authenticated;
 grant execute on function private.accept_friend_request(uuid) to authenticated;
 grant execute on function private.decline_friend_request(uuid) to authenticated;
 
@@ -796,6 +811,10 @@ create or replace function public.delete_group(p_conversation_id uuid)
 returns void language sql security invoker set search_path = ''
 as $fn$ select private.delete_group(p_conversation_id); $fn$;
 
+create or replace function public.cancel_friend_request(p_request_id uuid)
+returns void language sql security invoker set search_path = ''
+as $$ select private.cancel_friend_request(p_request_id); $$;
+
 create or replace function public.accept_friend_request(p_request_id uuid)
 returns void language sql security invoker set search_path = ''
 as $$ select private.accept_friend_request(p_request_id); $$;
@@ -808,12 +827,14 @@ revoke all on function public.send_friend_request(uuid) from public,anon;
 revoke all on function public.remove_friendship(uuid) from public,anon;
 revoke all on function public.create_direct_conversation(uuid) from public,anon;
 revoke all on function public.create_group_conversation(text,uuid[]) from public,anon;
+revoke all on function public.cancel_friend_request(uuid) from public,anon;
 revoke all on function public.accept_friend_request(uuid) from public,anon;
 revoke all on function public.decline_friend_request(uuid) from public,anon;
 grant execute on function public.send_friend_request(uuid) to authenticated;
 grant execute on function public.remove_friendship(uuid) to authenticated;
 grant execute on function public.create_direct_conversation(uuid) to authenticated;
 grant execute on function public.create_group_conversation(text,uuid[]) to authenticated;
+grant execute on function public.cancel_friend_request(uuid) to authenticated;
 grant execute on function public.accept_friend_request(uuid) to authenticated;
 grant execute on function public.decline_friend_request(uuid) to authenticated;
 revoke all on function public.add_group_members(uuid,uuid[]) from public,anon;
