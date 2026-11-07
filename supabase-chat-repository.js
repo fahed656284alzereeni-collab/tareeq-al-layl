@@ -112,7 +112,7 @@ function createSupabaseChatRepository(client, userId) {
       error.code = "MESSAGE_EMPTY";
       throw error;
     }
-    if (body.length > 10000) {
+    if (body.length > 4000) {
       const error = new Error("Message is too long.");
       error.code = "MESSAGE_TOO_LONG";
       throw error;
