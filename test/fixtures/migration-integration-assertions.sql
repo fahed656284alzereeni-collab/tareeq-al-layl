@@ -199,6 +199,24 @@ begin
   exception when insufficient_privilege then null;
   end;
 
+  -- A direct conversation cannot be used to bypass a block created by either side.
+  insert into public.user_blocks(blocker_id,blocked_id) values (v_user2,v_user1);
+  begin
+    insert into public.messages(conversation_id,sender_id,body)
+      values (v_direct,v_user1,'blocked message');
+    raise exception 'Unexpected message send across a block';
+  exception when insufficient_privilege then null;
+  end;
+  delete from public.user_blocks where blocker_id=v_user2 and blocked_id=v_user1;
+
+  -- Server-controlled timestamps and receipt fields cannot be forged by clients.
+  begin
+    insert into public.messages(conversation_id,sender_id,body,created_at)
+      values (v_direct,v_user1,'forged timestamp',now()-interval '1 day');
+    raise exception 'Unexpected message timestamp override';
+  exception when insufficient_privilege then null;
+  end;
+
   -- The caller cannot write membership, friendship, or friend-request rows directly.
   begin
     insert into public.conversation_members(conversation_id,user_id)
