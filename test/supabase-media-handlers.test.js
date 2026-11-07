@@ -27,7 +27,8 @@ function setup(options={}) {
   };
   const storage={
     upload:async(path,body,opts)=>{calls.push(["upload",path,body.length,opts]);return {error:null};},
-    createSignedUrl:async(path,ttl)=>{calls.push(["signed",path,ttl]);return {data:{signedUrl:"https://signed.test/file"},error:null};}
+    createSignedUrl:async(path,ttl)=>{calls.push(["signed",path,ttl]);return {data:{signedUrl:"https://signed.test/file"},error:options.signedError||null};},
+    remove:async(paths)=>{calls.push(["remove",paths]);return {error:null};}
   };
   const handlers=createSupabaseMediaHandlers({
     verifier:{verifyRequest:async()=>({uid:"user-1"})},
@@ -79,4 +80,15 @@ test("Supabase media upload rejects missing or oversized files",async()=>{
   },res);
   assert.equal(res.statusCode,400);
   assert.equal(calls.some(call=>call[0]==="upload"),false);
+});
+
+test("Supabase media upload removes orphaned object when signing fails",async()=>{
+  const {handlers,calls}=setup({signedError:new Error("signing failed")});
+  const res=response();
+  await handlers.upload({
+    headers:{authorization:"Bearer token","x-conversation-id":"conversation-1"},
+    body:Buffer.from("bytes")
+  },res);
+  assert.equal(res.statusCode,500);
+  assert.equal(calls.some(call=>call[0]==="remove"),true);
 });
