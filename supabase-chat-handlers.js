@@ -23,8 +23,10 @@ function createSupabaseChatHandlers(options = {}) {
       error.code === "SUPABASE_AUTH_NOT_CONFIGURED" || error.code === "SUPABASE_USER_CLIENT_NOT_CONFIGURED" ? 503 :
       error.code === "INVALID_ID" || error.code === "MESSAGE_EMPTY" ||
       error.code === "MESSAGE_TOO_LONG" || error.code === "GROUP_TITLE_INVALID" ||
-      error.code === "ATTACHMENT_INVALID" || error.code === "SCHEDULE_TIME_INVALID" ? 400 :
+      error.code === "ATTACHMENT_INVALID" || error.code === "SCHEDULE_TIME_INVALID" ||
+      error.code === "22023" ? 400 :
       error.code === "42501" || error.code === "PGRST301" ? 403 :
+      error.code === "P0002" ? 404 :
       error.status && Number.isInteger(error.status) ? error.status : 500;
     return res.status(status).json({
       success: false,
