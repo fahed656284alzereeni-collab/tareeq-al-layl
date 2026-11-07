@@ -103,6 +103,24 @@ test("message lifecycle and friend actions route through narrow RPCs", async () 
   ]);
 });
 
+test("group administration uses the SQL parameter names", async () => {
+  const { client, calls } = makeClient();
+  const repository = createSupabaseChatRepository(client, "user-1");
+  await repository.removeGroupMember("conversation-1", "user-2");
+  await repository.setGroupModerator("conversation-1", "user-2", true);
+  assert.deepEqual(calls.filter(call => call[0] === "rpc"), [
+    ["rpc", "remove_group_member", { p_conversation_id: "conversation-1", p_target_user: "user-2" }],
+    ["rpc", "set_group_moderator", { p_conversation_id: "conversation-1", p_target_user: "user-2", p_make_moderator: true }]
+  ]);
+});
+
+test("latest-message queries are ordered newest first", async () => {
+  const { client, calls } = makeClient({ queryResult: { data: [], error: null } });
+  const repository = createSupabaseChatRepository(client, "user-1");
+  await repository.getConversationMessages("conversation-1", { latest: true, limit: 5 });
+  assert.ok(calls.some(call => call[0] === "order" && call[1] === "created_at" && call[2].ascending === false));
+});
+
 test("scheduled messages require a future time", async () => {
   const { client, calls } = makeClient();
   const repository = createSupabaseChatRepository(client, "user-1");
