@@ -13,13 +13,23 @@ alter table public.conversations
   add column if not exists updated_at timestamptz not null default now(),
   add column if not exists last_message_at timestamptz;
 
--- Group conversations do not need the legacy direct pair columns.
+-- Retire pair-only constraints before allowing group rows with NULL legacy pair fields.
+alter table public.conversations
+  drop constraint if exists ordered_participants,
+  drop constraint if exists different_participants,
+  drop constraint if exists unique_direct_conversation,
+  drop constraint if exists conversations_type_check;
+
 alter table public.conversations
   alter column user_one drop not null,
   alter column user_two drop not null;
 
 alter table public.conversations
   add constraint conversations_type_check check (type in ('direct','group'));
+
+create unique index if not exists conversations_unique_direct_pair
+  on public.conversations (user_one, user_two)
+  where type = 'direct' and user_one is not null and user_two is not null;
 
 create table if not exists public.conversation_members (
   conversation_id uuid not null references public.conversations(id) on delete cascade,
@@ -282,6 +292,107 @@ create policy "Users can update their notifications"
 on public.notifications for update to authenticated
 using (user_id = (select auth.uid()))
 with check (user_id = (select auth.uid()));
+
+
+-- Private transactional APIs: membership is never client-writable.
+create schema if not exists private;
+revoke all on schema private from public;
+grant usage on schema private to authenticated;
+
+create or replace function private.create_direct_conversation(p_other_user uuid)
+returns uuid language plpgsql security definer set search_path = ''
+as $
+declare
+  v_me uuid := auth.uid();
+  v_low uuid;
+  v_high uuid;
+  v_id uuid;
+begin
+  if v_me is null or p_other_user is null or p_other_user = v_me then
+    raise exception 'Invalid conversation participants' using errcode = '22023';
+  end if;
+  if not exists (select 1 from auth.users u where u.id = p_other_user) then
+    raise exception 'User not found' using errcode = '22023';
+  end if;
+  if exists (select 1 from public.user_blocks b
+    where (b.blocker_id=v_me and b.blocked_id=p_other_user)
+       or (b.blocker_id=p_other_user and b.blocked_id=v_me)) then
+    raise exception 'Conversation is unavailable' using errcode = '42501';
+  end if;
+  v_low := least(v_me,p_other_user);
+  v_high := greatest(v_me,p_other_user);
+  perform pg_advisory_xact_lock(hashtextextended(v_low::text || ':' || v_high::text,0));
+  select id into v_id from public.conversations
+    where type='direct' and user_one=v_low and user_two=v_high limit 1;
+  if v_id is null then
+    insert into public.conversations(type,user_one,user_two,created_by)
+    values ('direct',v_low,v_high,v_me) returning id into v_id;
+  end if;
+  insert into public.conversation_members(conversation_id,user_id,role)
+  values (v_id,v_low,case when v_low=v_me then 'owner' else 'member' end),
+         (v_id,v_high,case when v_high=v_me then 'owner' else 'member' end)
+  on conflict (conversation_id,user_id) do nothing;
+  return v_id;
+end;
+$;
+
+create or replace function private.create_group_conversation(p_title text,p_member_ids uuid[])
+returns uuid language plpgsql security definer set search_path = ''
+as $
+declare
+  v_me uuid := auth.uid();
+  v_members uuid[];
+  v_count integer;
+  v_id uuid;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  if coalesce(cardinality(p_member_ids),0)<1 or cardinality(p_member_ids)>100 then
+    raise exception 'Invalid group member count' using errcode='22023';
+  end if;
+  select array_agg(x order by x) into v_members
+    from (select distinct unnest(p_member_ids || array[v_me]) as x) d;
+  select count(*) into v_count from auth.users u where u.id=any(v_members);
+  if v_count<>cardinality(v_members) then raise exception 'Unknown group member' using errcode='22023'; end if;
+  if exists (select 1 from public.user_blocks b
+    where (b.blocker_id=v_me and b.blocked_id=any(v_members))
+       or (b.blocked_id=v_me and b.blocker_id=any(v_members))) then
+    raise exception 'A selected member is unavailable' using errcode='42501';
+  end if;
+  insert into public.conversations(type,title,created_by)
+    values ('group',nullif(btrim(p_title),''),v_me) returning id into v_id;
+  insert into public.conversation_members(conversation_id,user_id,role)
+    select v_id,x,case when x=v_me then 'owner' else 'member' end from unnest(v_members) x;
+  return v_id;
+end;
+$;
+
+create or replace function private.accept_friend_request(p_request_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $
+declare v_me uuid := auth.uid(); v_sender uuid;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  update public.friend_requests set status='accepted',responded_at=now()
+    where id=p_request_id and recipient_id=v_me and status='pending'
+    returning sender_id into v_sender;
+  if v_sender is null then raise exception 'Pending request not found' using errcode='P0002'; end if;
+  if exists (select 1 from public.user_blocks b
+    where (b.blocker_id=v_me and b.blocked_id=v_sender)
+       or (b.blocker_id=v_sender and b.blocked_id=v_me)) then
+    raise exception 'Friendship is unavailable' using errcode='42501';
+  end if;
+  insert into public.friendships(user_id,friend_id)
+    values (v_me,v_sender),(v_sender,v_me) on conflict do nothing;
+end;
+$;
+
+revoke all on function private.create_direct_conversation(uuid) from public,anon;
+revoke all on function private.create_group_conversation(text,uuid[]) from public,anon;
+revoke all on function private.accept_friend_request(uuid) from public,anon;
+grant usage on schema private to authenticated;
+grant execute on function private.create_direct_conversation(uuid) to authenticated;
+grant execute on function private.create_group_conversation(text,uuid[]) to authenticated;
+grant execute on function private.accept_friend_request(uuid) to authenticated;
 
 -- 7) Replace pair-only conversation/message authorization with membership checks.
 drop policy if exists "Participants can view conversations" on public.conversations;
