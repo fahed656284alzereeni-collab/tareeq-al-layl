@@ -147,3 +147,26 @@ Only after every acceptance test passes:
 ## Current next implementation task
 
 Start with Phase A as an isolated static-hosting preview. Before adding any Cloudflare deployment workflow, inspect the complete tree for build-time assumptions, service-worker scope, hard-coded origin URLs, and Firebase redirect origins. Do not deploy or change live auth settings as part of this commit.
+
+
+## Phase A implementation update — 2026-11-07
+
+An isolated Pages auth-preview build has now been added on `supabase-migration`:
+- `scripts/build-pages-preview.mjs` builds only the standalone Supabase Auth smoke test and its public browser client.
+- `npm run build:pages-preview` is the build command.
+- `wrangler.toml` points Pages to `./dist` and sets the project name `mersal-auth-preview`.
+- `test/pages-preview-build.test.js` checks the output allow-list and verifies that no Render URL, Firebase Admin code, or secret key enters the static artifact.
+- The production site pages are deliberately not copied to this preview because they still contain hard-coded Render API/socket URLs and Firebase Auth dependencies. The preview is for OAuth plumbing only.
+- The current GitHub Actions run for the Pages builder/test commit is still in progress at the time of this note; do not describe it as passed until its final conclusion is success.
+
+### Static-hosting blockers found
+
+The current production HTML is not ready to be copied wholesale to Pages:
+- `login.html` calls `https://tareeq-al-layl-server.onrender.com` for health, admin, system settings, and welcome-email APIs.
+- `chat.html` calls that Render origin for media uploads and system settings, and loads Socket.IO from a Render-backed server.
+- `settings.html` uses the Render API and opens a Socket.IO connection to the Render host.
+- `profile.html` calls the Render API.
+- `diagnostics.js` posts diagnostics to the old Render API.
+- The pages still use Firebase Auth/Firestore directly.
+
+These URLs must be migrated to the new API contracts before the complete application can work on Pages. The isolated OAuth preview does not depend on them.
