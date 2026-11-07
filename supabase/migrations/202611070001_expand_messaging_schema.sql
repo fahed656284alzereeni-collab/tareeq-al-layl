@@ -1315,6 +1315,28 @@ grant select on public.notifications to authenticated;
 revoke update on public.notifications from authenticated;
 grant update (read_at) on public.notifications to authenticated;
 
+-- Keep the Supabase Realtime publication aligned with the tables the client
+-- needs for live membership, delivery/read receipts, notifications and social updates.
+do $realtime$
+declare v_table text;
+begin
+  if exists (select 1 from pg_publication where pubname='supabase_realtime') then
+    foreach v_table in array array[
+      'conversation_members','message_receipts','notifications',
+      'friend_requests','friendships'
+    ] loop
+      if not exists (
+        select 1 from pg_publication_tables
+        where pubname='supabase_realtime'
+          and schemaname='public' and tablename=v_table
+      ) then
+        execute format('alter publication supabase_realtime add table public.%I',v_table);
+      end if;
+    end loop;
+  end if;
+end;
+$realtime$;
+
 -- All message and receipt updates use narrow authenticated RPCs.
 drop policy if exists "Recipients can mark own incoming messages read" on public.messages;
 
