@@ -1267,6 +1267,7 @@ grant update (read_at) on public.notifications to authenticated;
 -- Explicit Data API grants. RLS remains the row-level authorization boundary.
 grant select on public.conversations to authenticated;
 grant select on public.messages to authenticated;
+revoke insert on public.messages from public, anon, authenticated;
 grant insert (conversation_id, sender_id, body, attachment, reply_to) on public.messages to authenticated;
 grant select on public.conversation_members to authenticated;
 grant select on public.message_receipts to authenticated;
