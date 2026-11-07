@@ -1577,6 +1577,8 @@ if (process.env.SUPABASE_CHAT_API_ENABLED === "true") {
   app.get("/api/supabase/chat/scheduled-messages", supabaseChatHandlers.listScheduledMessages);
   app.post("/api/supabase/chat/scheduled-messages", supabaseChatHandlers.scheduleMessage);
   app.delete("/api/supabase/chat/scheduled-messages/:scheduledId", supabaseChatHandlers.cancelScheduledMessage);
+  app.get("/api/supabase/chat/notifications", supabaseChatHandlers.listNotifications);
+  app.post("/api/supabase/chat/notifications/:notificationId/read", supabaseChatHandlers.markNotificationRead);
   app.post("/api/supabase/chat/conversations/:conversationId/members", supabaseChatHandlers.addGroupMembers);
   app.delete("/api/supabase/chat/conversations/:conversationId/members/:userId", supabaseChatHandlers.removeGroupMember);
   app.post("/api/supabase/chat/conversations/:conversationId/leave", supabaseChatHandlers.leaveGroup);
