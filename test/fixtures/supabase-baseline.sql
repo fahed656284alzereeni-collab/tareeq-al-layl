@@ -129,3 +129,7 @@ insert into public.messages(id,conversation_id,sender_id,body) values
  '00000000-0000-0000-0000-000000000101',
  '00000000-0000-0000-0000-000000000001',
  'Legacy message');
+
+-- Mirror the existing Supabase Realtime publication for the migration test.
+create publication supabase_realtime;
+alter publication supabase_realtime add table public.conversations, public.messages;
