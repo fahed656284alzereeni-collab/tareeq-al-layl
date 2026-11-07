@@ -87,7 +87,7 @@ test("chat API encodes search terms and message pagination parameters", async ()
   });
   await api.searchUsers("فهد & أحمد");
   await api.listMessages("group/one", { limit: 25, before: "2026-11-07T10:00:00+00:00" });
-  assert.match(urls[0], /q=%D9%81%D9%87%D8%AF+%26+%D8%A3%D8%AD%D9%85%D8%AF/);
+  assert.match(urls[0], /q=%D9%81%D9%87%D8%AF%20%26%20%D8%A3%D8%AD%D9%85%D8%AF/);
   assert.match(urls[1], /^\/api\/supabase\/chat\/conversations\/group%2Fone\/messages\?/);
   assert.match(urls[1], /limit=25/);
   assert.match(urls[1], /before=2026-11-07T10%3A00%3A00%2B00%3A00/);
