@@ -83,7 +83,7 @@ Do not merge this branch, apply the migration to the live database, deploy to Re
 
 ## Authentication bootstrap finding — 7 November 2026
 - A read-only inspection of the live Supabase project found no trigger on `auth.users` to create `public.profiles` after a first Google OAuth signup. The live prototype has zero Auth users and zero profile rows, so no existing user data is affected.
-- Added `20261107110100_auth_profile_bootstrap.sql` on the isolated migration branch. It creates a hardened trigger function in the non-exposed `private` schema, validates/bounds the display name, maps Google `full_name`/`name` and `avatar_url`/`picture` metadata, and inserts a profile without overwriting an existing one.
+- Added `20261107100410_mersal_auth_profile_bootstrap.sql` on the isolated migration branch. It creates a hardened trigger function in the non-exposed `private` schema, validates/bounds the display name, maps Google `full_name`/`name` and `avatar_url`/`picture` metadata, and inserts a profile without overwriting an existing one.
 - Added a PostgreSQL integration assertion that creates a disposable Auth user and verifies the corresponding profile is created. CI now applies both migration files twice to test repeatability.
 - This fix is branch-only and has not been applied to the live Supabase project. Google OAuth cutover and browser integration remain incomplete; Firebase login and chat continue to be the production path.
 
