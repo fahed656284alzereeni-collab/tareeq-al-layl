@@ -57,6 +57,8 @@ jobs:
       - name: Apply migration to disposable PostgreSQL twice
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/202611070001_expand_messaging_schema.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/202611070002_auth_profile_bootstrap.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/202611070001_expand_messaging_schema.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/202611070002_auth_profile_bootstrap.sql
       - name: Verify RPCs, backfill, receipts, profile permissions, and negative RLS cases
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f test/fixtures/migration-integration-assertions.sql
