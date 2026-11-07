@@ -497,7 +497,7 @@ begin
   if coalesce(cardinality(p_member_ids),0)<1 or cardinality(p_member_ids)>49 then
     raise exception 'Invalid group member count' using errcode='22023';
   end if;
-  if char_length(btrim(coalesce(p_title,'')))<1 or char_length(btrim(p_title))>50 then
+  if nullif(btrim(coalesce(p_title,'')),'') is null or char_length(btrim(coalesce(p_title,'')))>50 then
     raise exception 'Invalid group title' using errcode='22023';
   end if;
   select array_agg(x order by x) into v_members
@@ -650,7 +650,7 @@ as $fn$
 declare v_me uuid := auth.uid(); v_type text; v_role text;
 begin
   if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
-  if p_edit_info not in ('admins','members') or p_add_members not in ('admins','members') then
+  if p_edit_info is null or p_add_members is null or p_edit_info not in ('admins','members') or p_add_members not in ('admins','members') then
     raise exception 'Invalid group permissions' using errcode='22023';
   end if;
   select c.type,cm.role into v_type,v_role
