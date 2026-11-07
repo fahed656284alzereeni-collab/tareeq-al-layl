@@ -74,3 +74,60 @@ test("chat API uploads media with bearer auth and conversation metadata", async 
   assert.equal(captured.init.headers["X-File-Name"], "photo%20one.png");
   assert.equal(captured.init.headers["Content-Type"], "application/octet-stream");
 });
+
+
+test("chat API encodes search terms and message pagination parameters", async () => {
+  const urls = [];
+  const api = createSupabaseChatApi({
+    getAccessToken: async () => "token",
+    fetchImpl: async url => {
+      urls.push(String(url));
+      return { ok: true, status: 200, json: async () => ({ success: true, users: [], messages: [] }) };
+    }
+  });
+  await api.searchUsers("فهد & أحمد");
+  await api.listMessages("group/one", { limit: 25, before: "2026-11-07T10:00:00+00:00" });
+  assert.match(urls[0], /q=%D9%81%D9%87%D8%AF+%26+%D8%A3%D8%AD%D9%85%D8%AF/);
+  assert.match(urls[1], /^\/api\/supabase\/chat\/conversations\/group%2Fone\/messages\?/);
+  assert.match(urls[1], /limit=25/);
+  assert.match(urls[1], /before=2026-11-07T10%3A00%3A00%2B00%3A00/);
+});
+
+test("chat API rejects empty media before making a network request", async () => {
+  let called = false;
+  const api = createSupabaseChatApi({
+    getAccessToken: async () => "token",
+    fetchImpl: async () => { called = true; }
+  });
+  await assert.rejects(api.uploadMedia("conversation-1", {
+    name: "empty.txt", type: "text/plain", size: 0,
+    arrayBuffer: async () => new ArrayBuffer(0)
+  }), { code: "UPLOAD_INPUT_INVALID", status: 400 });
+  assert.equal(called, false);
+});
+
+test("chat API reports server failures when response body is not JSON", async () => {
+  const api = createSupabaseChatApi({
+    getAccessToken: async () => "token",
+    fetchImpl: async () => ({
+      ok: false, status: 502,
+      json: async () => { throw new Error("not JSON"); }
+    })
+  });
+  await assert.rejects(api.listConversations(), {
+    code: "CHAT_REQUEST_FAILED", status: 502, message: "Chat request failed."
+  });
+});
+
+test("chat API rejects media upload without a session", async () => {
+  let called = false;
+  const api = createSupabaseChatApi({
+    getAccessToken: async () => null,
+    fetchImpl: async () => { called = true; }
+  });
+  await assert.rejects(api.uploadMedia("conversation-1", {
+    name: "photo.png", type: "image/png", size: 1,
+    arrayBuffer: async () => new ArrayBuffer(1)
+  }), { code: "AUTH_REQUIRED", status: 401 });
+  assert.equal(called, false);
+});
