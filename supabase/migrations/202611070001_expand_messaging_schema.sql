@@ -473,6 +473,7 @@ with check (
   and scheduled_for > now()
   and char_length(body) <= 4000
   and (char_length(body) > 0 or attachment is not null)
+  and not public.is_direct_conversation_blocked(conversation_id)
 );
 
 drop policy if exists "Users can cancel their pending scheduled messages" on public.scheduled_messages;
