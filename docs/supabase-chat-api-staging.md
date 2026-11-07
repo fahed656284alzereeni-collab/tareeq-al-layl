@@ -54,6 +54,10 @@ Media upload uses `POST /upload` with an `application/octet-stream` body and `X-
 - `POST /friend-requests/:requestId/cancel`
 - `DELETE /friends/:userId` (remove friendship)
 
+## Isolated OAuth smoke test
+
+`supabase-auth-preview.html` is an accessible, standalone Google OAuth test page. It checks that Supabase Auth returns a session and that the new auth-user trigger creates a readable profile. It does not replace `login.html`, does not open the Firebase chat UI, and is not linked from the production navigation.
+
 ## Before enabling in a staging deployment
 
 1. Configure `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in the staging server.
