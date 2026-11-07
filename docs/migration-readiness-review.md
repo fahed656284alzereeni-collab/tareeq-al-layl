@@ -37,7 +37,7 @@ Direct client INSERT/UPDATE/DELETE privileges and policies for friend-request cr
 The private schema is not exposed through the Data API. The public wrappers call the private SECURITY DEFINER functions as invoker, and the private routines use an empty search path plus explicit schema qualification. Do not grant browser users direct write access to membership rows.
 
 ## Required implementation stages before cutover
-1. Validate the SQL migration on an isolated staging database with a disposable Supabase project or local Supabase stack. Run it twice to verify idempotency.
+1. **Completed in CI:** apply the SQL migration twice to a disposable PostgreSQL 16 database based on the live schema, then verify RPC behavior, legacy membership backfill, message receipts, profile updates, and selected negative RLS cases. A true Supabase staging project is still required before live application.
 2. Add negative RLS tests: anonymous access, non-member reads, non-member inserts, member tampering, receipt ownership, friend-request sender/recipient boundaries, and scheduled-message cancellation.
 3. Implement a server-side Supabase JWT verifier. Verify signatures and issuer/audience using Supabase-supported verification (prefer `auth.getClaims()`/JWKS for asymmetric signing keys; use Auth server validation when the project uses symmetric signing). Never merely decode the JWT.
 4. Introduce an authentication adapter without removing Firebase Admin yet. Keep separate identity namespaces; Firebase UIDs and Supabase UUIDs are not interchangeable.
@@ -46,8 +46,8 @@ The private schema is not exposed through the Data API. The public wrappers call
 7. Only after all tests pass: switch production traffic, observe logs, and later retire Firebase. Never delete Firebase credentials before this point.
 
 ## Current blockers / not yet complete
-- The expanded SQL is a reviewed draft, not applied or proven against a PostgreSQL runtime.
-- The private RPC functions are not yet wired to the Express/Socket.IO server.
+- The expanded SQL passed the disposable PostgreSQL 16 integration job, including two consecutive applications and the included RPC/RLS assertions. It remains unapplied to the real Supabase project; Supabase-specific staging verification and the remaining negative cases are still required.
+- The conversation, group, and social RPC functions are not yet wired to the Express/Socket.IO chat events. An isolated opt-in profile API has been added, but it does not replace the existing Firebase profile route.
 - `login.html`, `chat.html`, `settings.html`, `profile.html`, and the Firebase-dependent routes have not yet been cut over.
 - Supabase Storage upload still has an existing Firebase conversation membership check in the server route.
 - Render production environment variables and health checks have not been changed.
@@ -61,15 +61,15 @@ Do not merge this branch, apply the migration to the live database, deploy to Re
 - Fixed malformed dollar-quote delimiters in the SQL draft; a static check now finds no remaining single-dollar function/DO delimiters and an even count of paired `$$` delimiters. This is a textual check, not a PostgreSQL execution test.
 - Added atomic friend-request creation and reciprocal friendship removal RPCs. Direct table writes that could leave friend requests accepted without reciprocal friendship rows, or delete only one friendship edge, are no longer granted.
 - Tightened per-user message visibility to require active membership in the message's conversation.
-- The server-side verifier module `supabase-auth-verifier.js` and Node test file `test/supabase-auth-verifier.test.js` are present. The verifier calls Supabase Auth `getUser(accessToken)`; it does not decode and trust JWT claims locally. It is still staged and not connected to `server.js`.
-- `supabase-clients.js` now creates a request-scoped user client carrying the caller's bearer token (so RLS applies) and a separate server-only admin client. Both factories have unit tests and neither is wired into production routes yet.
+- The server-side verifier module `supabase-auth-verifier.js` calls Supabase Auth `getUser(accessToken)` and has passing Node tests. It is used by the new opt-in profile API only; Socket.IO and existing Firebase endpoints still use Firebase tokens.
+- `supabase-clients.js` creates a request-scoped user client carrying the caller's bearer token (so RLS applies) and a separate server-only admin client. The user client is used by the opt-in profile API; the admin client is not yet used.
 - The live Supabase security advisor returned no lints at the last read-only check. That result describes the current live prototype, not the un-applied migration draft.
 - The branch comparison currently shows the migration branch ahead of `main` with no commits behind. Production `main` remains untouched.
 
 ## Additional release blockers
-- The SQL has not been executed on a disposable PostgreSQL/Supabase staging database, and idempotency has not been verified by applying it twice.
-- GitHub Actions has run the Node test suite successfully on several migration-branch commits, including the verifier, static migration checks, and Supabase client factory tests. The latest cancellation-RPC/test expansion is awaiting its CI result.
+- The SQL passed on disposable PostgreSQL 16 and was applied twice successfully. It has not yet been applied to a separate Supabase staging project, where Supabase Auth roles, Data API exposure, realtime publication, and Storage policies must also be verified.
+- GitHub Actions Node tests and the disposable PostgreSQL migration/RLS integration job both passed on the latest migration-fix commit. Later opt-in profile API changes also have passing unit tests; their latest full CI runs are being checked.
 - The repository has no committed `package-lock.json`; dependency resolution is therefore not reproducible yet. Add and verify a lockfile before release.
-- Added `.github/workflows/migration-branch-tests.yml`, static SQL safety checks in `test/migration-safety.test.js`, and request-scoped client tests in `test/supabase-clients.test.js`.
-- The login page, chat page, settings page, profile page, Socket.IO middleware, upload route, and the remaining Firestore-backed routes still use Firebase. The presence of Supabase OAuth settings and helper modules does not mean Google login has switched.
+- Added `.github/workflows/migration-branch-tests.yml`, static SQL safety checks, PostgreSQL fixtures/integration assertions, request-scoped client tests, and profile repository/handler tests.
+- `login.html`, `chat.html`, `settings.html`, and `profile.html` still use Firebase. The new `/api/supabase/profile/me` routes are gated behind `SUPABASE_PROFILE_API_ENABLED=true` and are not enabled by default. Socket.IO, uploads, messaging, friends, notifications, and admin workflows still use Firebase/Firestore.
 - The current server is a 2,478-line Firebase-dependent service with many socket events and admin workflows. It must be migrated in feature groups with compatibility tests; replacing only its token verifier would break those features.
