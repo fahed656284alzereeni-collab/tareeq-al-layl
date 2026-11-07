@@ -12,6 +12,28 @@ function requiredId(value, label) {
   return id;
 }
 
+function validateAttachmentMetadata(attachment, conversationId, userId) {
+  if (attachment == null) return null;
+  if (!attachment || typeof attachment !== "object" || Array.isArray(attachment)) {
+    const error = new TypeError("Attachment metadata must be an object.");
+    error.code = "ATTACHMENT_INVALID";
+    throw error;
+  }
+  const type = String(attachment.type || "").trim();
+  const name = String(attachment.name || "").trim();
+  const storagePath = String(attachment.storagePath || "").trim();
+  const size = Number(attachment.size);
+  const prefix = "conversations/" + conversationId + "/" + userId + "/";
+  if (!type || type.length > 150 || !name || name.length > 255 ||
+      !Number.isSafeInteger(size) || size < 1 || size > 52428800 ||
+      !storagePath.startsWith(prefix) || storagePath.includes("..")) {
+    const error = new Error("Attachment metadata or storage path is invalid.");
+    error.code = "ATTACHMENT_INVALID";
+    throw error;
+  }
+  return attachment;
+}
+
 function createSupabaseChatRepository(client, userId) {
   if (!client || typeof client.from !== "function" || typeof client.rpc !== "function") {
     throw new TypeError("A request-scoped Supabase client is required.");
@@ -106,7 +128,7 @@ function createSupabaseChatRepository(client, userId) {
   async function sendMessage(input = {}) {
     const conversationId = requiredId(input.conversationId, "Conversation id");
     const body = String(input.body ?? "");
-    const attachment = input.attachment ?? null;
+    const attachment = validateAttachmentMetadata(input.attachment ?? null, conversationId, uid);
     if (body.trim().length === 0 && !attachment) {
       const error = new Error("A message must contain text or an attachment.");
       error.code = "MESSAGE_EMPTY";
@@ -220,7 +242,7 @@ function createSupabaseChatRepository(client, userId) {
       throw error;
     }
     const body = String(input.body ?? "");
-    const attachment = input.attachment ?? null;
+    const attachment = validateAttachmentMetadata(input.attachment ?? null, conversationId, uid);
     if (!body.trim() && !attachment) throw new TypeError("A scheduled message needs text or an attachment.");
     const { data, error } = await client.from("scheduled_messages").insert({
       conversation_id: conversationId,
@@ -308,4 +330,4 @@ function createSupabaseChatRepository(client, userId) {
   });
 }
 
-module.exports = { createSupabaseChatRepository, MESSAGE_COLUMNS, requiredId };
+module.exports = { createSupabaseChatRepository, MESSAGE_COLUMNS, requiredId, validateAttachmentMetadata };
