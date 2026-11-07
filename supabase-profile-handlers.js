@@ -1,6 +1,7 @@
 "use strict";
 
 const { createSupabaseUserClient } = require("./supabase-clients");
+const { extractBearerToken } = require("./supabase-auth-verifier");
 const { createSupabaseProfileRepository } = require("./supabase-profile-repository");
 
 function createSupabaseProfileHandlers(options = {}) {
@@ -13,7 +14,7 @@ function createSupabaseProfileHandlers(options = {}) {
 
   async function context(req) {
     const identity = await verifier.verifyRequest(req);
-    const client = createUserClient(req, identity);
+    const client = createUserClient(extractBearerToken(req));
     return {
       identity,
       repository: createSupabaseProfileRepository(client)
