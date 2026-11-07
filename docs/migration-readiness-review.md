@@ -67,8 +67,8 @@ Do not merge this branch, apply the migration to the live database, deploy to Re
 - The branch comparison currently shows the migration branch ahead of `main` with no commits behind. Production `main` remains untouched.
 
 ## Additional release blockers
-- The SQL passed on disposable PostgreSQL 16 and was applied twice successfully. It has not yet been applied to a separate Supabase staging project, where Supabase Auth roles, Data API exposure, realtime publication, and Storage policies must also be verified.
-- GitHub Actions run 89 passed Node tests and the disposable PostgreSQL 16 migration/RPC/RLS integration job. The suite applies the migration twice, verifies Realtime publication membership, tests authenticated and anonymous access, and covers attachment path rejection, block checks, receipts, message lifecycle, scheduling, and denial of forged timestamps/direct writes.
+- The SQL passed on disposable PostgreSQL 16 and was applied twice successfully. The three migrations are now applied to the live Supabase project as versions `20261107100404`, `20261107100410`, and `20261107100650`. There is still no separate hosted staging project, so a real two-user end-to-end run is outstanding.
+- GitHub Actions run 151 passed Node tests, syntax checks, and the PostgreSQL 16 migration/RPC/RLS integration job. The suite applies all three migrations twice, verifies Realtime publication membership, tests authenticated and anonymous access, and covers attachment path rejection, block checks, receipts, message lifecycle, scheduling, and denial of forged timestamps/direct writes.
 - The repository has no committed `package-lock.json`; dependency resolution is therefore not reproducible yet. Add and verify a lockfile before release.
 - Added `.github/workflows/migration-branch-tests.yml`, static SQL safety checks, PostgreSQL fixtures/integration assertions, request-scoped client tests, and profile repository/handler tests.
 - `login.html`, `chat.html`, `settings.html`, and `profile.html` still use Firebase. The new `/api/supabase/profile/me` routes are gated behind `SUPABASE_PROFILE_API_ENABLED=true` and are not enabled by default. Socket.IO, uploads, messaging, friends, notifications, and admin workflows still use Firebase/Firestore.
@@ -83,9 +83,9 @@ Do not merge this branch, apply the migration to the live database, deploy to Re
 
 ## Authentication bootstrap finding — 7 November 2026
 - A read-only inspection of the live Supabase project found no trigger on `auth.users` to create `public.profiles` after a first Google OAuth signup. The live prototype has zero Auth users and zero profile rows, so no existing user data is affected.
-- Added `20261107100410_mersal_auth_profile_bootstrap.sql` on the isolated migration branch. It creates a hardened trigger function in the non-exposed `private` schema, validates/bounds the display name, maps Google `full_name`/`name` and `avatar_url`/`picture` metadata, and inserts a profile without overwriting an existing one.
+- Added `20261107100410_mersal_auth_profile_bootstrap.sql` and applied it to the live Supabase project. It creates a hardened trigger function in the non-exposed `private` schema, validates/bounds the display name, maps Google `full_name`/`name` and `avatar_url`/`picture` metadata, and inserts a profile without overwriting an existing one.
 - Added a PostgreSQL integration assertion that creates a disposable Auth user and verifies the corresponding profile is created. CI now applies both migration files twice to test repeatability.
-- This fix is branch-only and has not been applied to the live Supabase project. Google OAuth cutover and browser integration remain incomplete; Firebase login and chat continue to be the production path.
+- This auth-profile bootstrap migration is applied to the live Supabase project. A follow-up migration moved the SECURITY DEFINER membership/block helpers into the non-exposed `private` schema; the live Supabase security advisor now reports no lints. Google OAuth cutover and browser integration remain incomplete; Firebase login and chat continue to be the production path.
 
 
 ## Isolated Google OAuth preview — 7 November 2026
