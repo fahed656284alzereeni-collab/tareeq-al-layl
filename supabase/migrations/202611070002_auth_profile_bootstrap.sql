@@ -47,4 +47,9 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function private.handle_new_auth_user();
 
+-- The old trigger function is no longer referenced; remove its public
+-- SECURITY DEFINER entry point rather than leaving an orphaned callable function.
+revoke all on function public.handle_new_user() from public, anon, authenticated;
+drop function if exists public.handle_new_user();
+
 commit;
