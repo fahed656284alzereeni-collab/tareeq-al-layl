@@ -7,7 +7,7 @@ const path = require("node:path");
 
 const root = path.resolve(__dirname, "..");
 const migration = fs.readFileSync(
-  path.join(root, "supabase/migrations/20261107110000_expand_messaging_schema.sql"),
+  path.join(root, "supabase/migrations/20261107100404_mersal_expand_messaging_schema.sql"),
   "utf8"
 );
 const browserClient = fs.readFileSync(path.join(root, "supabase-client.js"), "utf8");
