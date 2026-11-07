@@ -107,6 +107,12 @@ function createSupabaseChatHandlers(options = {}) {
     declineFriendRequest: (req,res) => run(req,res,async repository => {
       await repository.declineFriendRequest(req.params.requestId); return {};
     }),
+    cancelFriendRequest: (req,res) => run(req,res,async repository => {
+      await repository.cancelFriendRequest(req.params.requestId); return {};
+    }),
+    removeFriendship: (req,res) => run(req,res,async repository => {
+      await repository.removeFriendship(req.params.userId); return {};
+    }),
     blockUser: (req,res) => run(req,res,async repository => {
       await repository.blockUser(req.body?.otherUserId); return {};
     }),
