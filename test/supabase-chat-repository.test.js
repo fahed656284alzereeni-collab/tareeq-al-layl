@@ -121,6 +121,17 @@ test("latest-message queries are ordered newest first", async () => {
   assert.ok(calls.some(call => call[0] === "order" && call[1] === "created_at" && call[2].ascending === false));
 });
 
+test("notifications are scoped to the verified user and only read_at is updated", async () => {
+  const { client, calls } = makeClient();
+  const repository = createSupabaseChatRepository(client, "user-1");
+  await repository.listNotifications(25);
+  await repository.markNotificationRead("notification-1");
+  assert.ok(calls.some(call => call[0] === "from" && call[1] === "notifications"));
+  assert.ok(calls.some(call => call[0] === "eq" && call[1] === "user_id" && call[2] === "user-1"));
+  assert.ok(calls.some(call => call[0] === "update" && Object.keys(call[1]).join(",") === "read_at"));
+  assert.ok(calls.some(call => call[0] === "eq" && call[1] === "id" && call[2] === "notification-1"));
+});
+
 test("scheduled messages require a future time", async () => {
   const { client, calls } = makeClient();
   const repository = createSupabaseChatRepository(client, "user-1");
