@@ -101,7 +101,7 @@ create table if not exists public.message_user_visibility (
 
 -- Permit attachment-only messages while retaining the text length limit.
 alter table public.messages drop constraint if exists message_body_length;
-do $
+do $$
 begin
   if not exists (
     select 1 from pg_constraint
@@ -113,7 +113,7 @@ begin
       check (char_length(body) <= 10000 and (char_length(body) >= 1 or attachment is not null));
   end if;
 end;
-$;
+$$;
 
 -- Automatically create one receipt per other active member and keep the
 -- conversation's last-message timestamp current in the same transaction.
@@ -125,7 +125,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $$
 begin
   insert into public.message_receipts(message_id,user_id)
   select new.id, cm.user_id
@@ -145,7 +145,7 @@ begin
 
   return new;
 end;
-$;
+$$;
 
 revoke all on function private.on_message_insert() from public, anon, authenticated;
 drop trigger if exists messages_after_insert on public.messages;
@@ -230,7 +230,7 @@ returns boolean
 language sql
 stable
 security definer
-set search_path = public
+set search_path = ''
 as $$
   select exists (
     select 1
@@ -241,7 +241,7 @@ as $$
   );
 $$;
 
-revoke all on function public.is_conversation_member(uuid) from public;
+revoke all on function public.is_conversation_member(uuid) from public,anon;
 grant execute on function public.is_conversation_member(uuid) to authenticated;
 
 -- 6) Enable RLS on every newly exposed table.
@@ -288,8 +288,14 @@ using (user_id = (select auth.uid()));
 drop policy if exists "Users can manage own message visibility" on public.message_user_visibility;
 create policy "Users can manage own message visibility"
 on public.message_user_visibility for all to authenticated
-using (user_id = (select auth.uid()))
-with check (user_id = (select auth.uid()));
+using (
+  user_id = (select auth.uid())
+  and exists (select 1 from public.messages m where m.id = message_id and public.is_conversation_member(m.conversation_id))
+)
+with check (
+  user_id = (select auth.uid())
+  and exists (select 1 from public.messages m where m.id = message_id and public.is_conversation_member(m.conversation_id))
+);
 
 drop policy if exists "Users can view own sent or received friend requests" on public.friend_requests;
 create policy "Users can view own sent or received friend requests"
@@ -297,15 +303,8 @@ on public.friend_requests for select to authenticated
 using ((sender_id = (select auth.uid())) or (recipient_id = (select auth.uid())));
 
 drop policy if exists "Users can send friend requests as themselves" on public.friend_requests;
-create policy "Users can send friend requests as themselves"
-on public.friend_requests for insert to authenticated
-with check (sender_id = (select auth.uid()) and sender_id <> recipient_id);
 
 drop policy if exists "Recipients can respond to friend requests" on public.friend_requests;
-create policy "Recipients can respond to friend requests"
-on public.friend_requests for update to authenticated
-using (recipient_id = (select auth.uid()) and status = 'pending')
-with check (recipient_id = (select auth.uid()) and status in ('accepted','declined'));
 
 drop policy if exists "Users can view their friendships" on public.friendships;
 create policy "Users can view their friendships"
@@ -313,9 +312,6 @@ on public.friendships for select to authenticated
 using (user_id = (select auth.uid()) or friend_id = (select auth.uid()));
 
 drop policy if exists "Users can remove their own friendship edge" on public.friendships;
-create policy "Users can remove their own friendship edge"
-on public.friendships for delete to authenticated
-using (user_id = (select auth.uid()));
 
 drop policy if exists "Users can view blocks they created" on public.user_blocks;
 create policy "Users can view blocks they created"
@@ -374,6 +370,63 @@ with check (user_id = (select auth.uid()));
 create schema if not exists private;
 revoke all on schema private from public;
 grant usage on schema private to authenticated;
+
+create unique index if not exists friend_requests_one_pending_unordered_pair
+  on public.friend_requests (least(sender_id, recipient_id), greatest(sender_id, recipient_id))
+  where status = 'pending';
+
+create or replace function private.send_friend_request(p_recipient_id uuid)
+returns uuid language plpgsql security definer set search_path = ''
+as $$
+declare
+  v_me uuid := auth.uid();
+  v_request_id uuid;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  if p_recipient_id is null or p_recipient_id = v_me then
+    raise exception 'Invalid recipient' using errcode='22023';
+  end if;
+  if not exists (select 1 from auth.users u where u.id = p_recipient_id) then
+    raise exception 'User not found' using errcode='22023';
+  end if;
+  perform pg_advisory_xact_lock(hashtextextended(
+    least(v_me,p_recipient_id)::text || ':' || greatest(v_me,p_recipient_id)::text, 0
+  ));
+  if exists (select 1 from public.user_blocks b
+    where (b.blocker_id=v_me and b.blocked_id=p_recipient_id)
+       or (b.blocker_id=p_recipient_id and b.blocked_id=v_me)) then
+    raise exception 'Friend request is unavailable' using errcode='42501';
+  end if;
+  if exists (select 1 from public.friendships f
+    where f.user_id=v_me and f.friend_id=p_recipient_id) then
+    raise exception 'Already friends' using errcode='23505';
+  end if;
+  if exists (select 1 from public.friend_requests r
+    where r.status='pending'
+      and ((r.sender_id=v_me and r.recipient_id=p_recipient_id)
+        or (r.sender_id=p_recipient_id and r.recipient_id=v_me))) then
+    raise exception 'A pending request already exists' using errcode='23505';
+  end if;
+  insert into public.friend_requests(sender_id,recipient_id)
+    values (v_me,p_recipient_id) returning id into v_request_id;
+  return v_request_id;
+end;
+$$;
+
+create or replace function private.remove_friendship(p_friend_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $$
+declare v_me uuid := auth.uid();
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  if p_friend_id is null or p_friend_id = v_me then
+    raise exception 'Invalid friend' using errcode='22023';
+  end if;
+  delete from public.friendships
+    where (user_id=v_me and friend_id=p_friend_id)
+       or (user_id=p_friend_id and friend_id=v_me);
+end;
+$$;
 
 create or replace function private.create_direct_conversation(p_other_user uuid)
 returns uuid language plpgsql security definer set search_path = ''
@@ -462,6 +515,8 @@ begin
 end;
 $$;
 
+revoke all on function private.send_friend_request(uuid) from public,anon;
+revoke all on function private.remove_friendship(uuid) from public,anon;
 revoke all on function private.create_direct_conversation(uuid) from public,anon;
 revoke all on function private.create_group_conversation(text,uuid[]) from public,anon;
 create or replace function private.decline_friend_request(p_request_id uuid)
@@ -481,6 +536,8 @@ revoke all on function private.create_group_conversation(text,uuid[]) from publi
 revoke all on function private.accept_friend_request(uuid) from public,anon;
 revoke all on function private.decline_friend_request(uuid) from public,anon;
 grant usage on schema private to authenticated;
+grant execute on function private.send_friend_request(uuid) to authenticated;
+grant execute on function private.remove_friendship(uuid) to authenticated;
 grant execute on function private.create_direct_conversation(uuid) to authenticated;
 grant execute on function private.create_group_conversation(text,uuid[]) to authenticated;
 grant execute on function private.accept_friend_request(uuid) to authenticated;
@@ -488,6 +545,14 @@ grant execute on function private.decline_friend_request(uuid) to authenticated;
 
 -- Public, invoker-rights entry points for the authenticated Data API.
 -- The privileged work remains isolated in the private SECURITY DEFINER routines.
+create or replace function public.send_friend_request(p_recipient_id uuid)
+returns uuid language sql security invoker set search_path = ''
+as $$ select private.send_friend_request(p_recipient_id); $$;
+
+create or replace function public.remove_friendship(p_friend_id uuid)
+returns void language sql security invoker set search_path = ''
+as $$ select private.remove_friendship(p_friend_id); $$;
+
 create or replace function public.create_direct_conversation(p_other_user uuid)
 returns uuid language sql security invoker set search_path = ''
 as $$ select private.create_direct_conversation(p_other_user); $$;
@@ -504,10 +569,14 @@ create or replace function public.decline_friend_request(p_request_id uuid)
 returns void language sql security invoker set search_path = ''
 as $$ select private.decline_friend_request(p_request_id); $$;
 
+revoke all on function public.send_friend_request(uuid) from public,anon;
+revoke all on function public.remove_friendship(uuid) from public,anon;
 revoke all on function public.create_direct_conversation(uuid) from public,anon;
 revoke all on function public.create_group_conversation(text,uuid[]) from public,anon;
 revoke all on function public.accept_friend_request(uuid) from public,anon;
 revoke all on function public.decline_friend_request(uuid) from public,anon;
+grant execute on function public.send_friend_request(uuid) to authenticated;
+grant execute on function public.remove_friendship(uuid) to authenticated;
 grant execute on function public.create_direct_conversation(uuid) to authenticated;
 grant execute on function public.create_group_conversation(text,uuid[]) to authenticated;
 grant execute on function public.accept_friend_request(uuid) to authenticated;
@@ -554,11 +623,11 @@ grant select, insert on public.messages to authenticated;
 grant select on public.conversation_members to authenticated;
 grant select, update (read_at) on public.message_receipts to authenticated;
 grant select, insert, delete on public.message_user_visibility to authenticated;
-grant select, insert on public.friend_requests to authenticated;
+grant select on public.friend_requests to authenticated;
 revoke update on public.friend_requests from authenticated;
 -- Friend-request responses must go through the atomic RPC so acceptance
 -- cannot change status without creating both friendship edges.
-grant select, delete on public.friendships to authenticated;
+grant select on public.friendships to authenticated;
 grant select, insert, delete on public.user_blocks to authenticated;
 grant select, insert on public.user_reports to authenticated;
 grant select, insert on public.scheduled_messages to authenticated;
