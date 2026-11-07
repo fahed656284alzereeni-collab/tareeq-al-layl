@@ -85,3 +85,12 @@ Do not merge this branch, apply the migration to the live database, deploy to Re
 - Added `202611070002_auth_profile_bootstrap.sql` on the isolated migration branch. It creates a hardened trigger function in the non-exposed `private` schema, validates/bounds the display name, maps Google `full_name`/`name` and `avatar_url`/`picture` metadata, and inserts a profile without overwriting an existing one.
 - Added a PostgreSQL integration assertion that creates a disposable Auth user and verifies the corresponding profile is created. CI now applies both migration files twice to test repeatability.
 - This fix is branch-only and has not been applied to the live Supabase project. Google OAuth cutover and browser integration remain incomplete; Firebase login and chat continue to be the production path.
+
+
+## Isolated Google OAuth preview — 7 November 2026
+- Added `supabase-auth-preview.html`, a standalone, screen-reader-friendly OAuth test page on the migration branch. It uses the existing public Supabase browser client and PKCE flow, returns to itself after Google consent, checks the current Supabase session, reads only the signed-in user's profile through the RLS-protected Data API, and supports signing out.
+- The page deliberately does not redirect into `chat.html`, does not import Firebase, and does not change `login.html`. A successful OAuth callback alone is not treated as a completed migration.
+- Added automated checks for the isolated redirect, absence of Firebase references, profile verification, missing-profile messaging, and sign-out.
+- GitHub Actions run 91 completed its Node test/syntax job and PostgreSQL 16 migration/RPC/RLS integration job successfully. This validates repository code and the disposable PostgreSQL fixture only; it does not execute a real Google consent flow or validate Supabase Auth against a separate hosted staging project.
+- The preview file is committed only to `supabase-migration` and is not available on the production Render deployment. The configured Supabase redirect allow-list covers the Render origin, but no deploy or live redirect test has been performed.
+- Remaining prerequisites: a hosted staging environment for real Google OAuth and two-user end-to-end chat tests, plus a reproducible dependency lockfile. Do not merge or deploy the branch as part of this preview work.
