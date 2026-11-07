@@ -71,3 +71,12 @@ Important schema gap: current `conversations` is strictly two-person/direct-mess
 - Added attachment-only message support and a database trigger that creates per-recipient receipt rows and updates conversation activity in the same transaction.
 - Static review confirms balanced SQL dollar-quote delimiters and no remaining malformed bare delimiters. This is a text-level check only; the migration still needs execution against a disposable staging database before it can be considered validated.
 - The current application applies name-moderation rules in its server code. The final server/RPC integration must preserve those checks for group names; do not rely on client-side validation alone.
+
+
+## Server/client dependency inventory update (2026-11-07)
+- Added `docs/firebase-server-feature-inventory.md` after scanning the current server and browser entry points. It maps the Socket.IO event families, HTTP route families, Firebase Auth/Firestore coupling, and safe cutover sequence.
+- Confirmed that `login.html`, `chat.html`, `settings.html`, and `profile.html` still initialize Firebase directly. The staged Supabase browser client is not yet consumed by these pages.
+- Confirmed that server startup still requires Firebase Admin credentials; Socket.IO middleware and persistence handlers still depend on Firebase Admin/Firestore semantics.
+- Therefore the Supabase token verifier must remain staged and must not be enabled by itself. A real cutover requires a persistence adapter and feature-by-feature migration, not a token-only switch.
+- Rechecked the live Supabase public schema: `profiles`, `conversations`, and `messages` remain empty and RLS-enabled; `conversations` remains a two-participant schema. Security advisor currently reports no lints for the live schema only.
+- No live database DDL, production branch change, or Render deployment was performed in this work session.
