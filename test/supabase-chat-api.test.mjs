@@ -53,3 +53,24 @@ test("chat API URL-encodes identifiers and JSON-encodes message bodies", async (
   assert.equal(captured.init.headers.get("Content-Type"), "application/json");
   assert.deepEqual(JSON.parse(captured.init.body), { conversationId: "group/a", body: "مرحبا" });
 });
+
+test("chat API uploads media with bearer auth and conversation metadata", async () => {
+  let captured;
+  const api = createSupabaseChatApi({
+    getAccessToken: async () => "token",
+    fetchImpl: async (url, init) => {
+      captured = { url, init };
+      return { ok: true, status: 200, json: async () => ({ success: true, attachment: { storagePath: "path" } }) };
+    }
+  });
+  const file = {
+    name: "photo one.png", type: "image/png", size: 4,
+    arrayBuffer: async () => new Uint8Array([1,2,3,4]).buffer
+  };
+  assert.deepEqual(await api.uploadMedia("conversation-1", file), { storagePath: "path" });
+  assert.equal(captured.url, "/api/supabase/chat/upload");
+  assert.equal(captured.init.headers.Authorization, "Bearer token");
+  assert.equal(captured.init.headers["X-Conversation-Id"], "conversation-1");
+  assert.equal(captured.init.headers["X-File-Name"], "photo%20one.png");
+  assert.equal(captured.init.headers["Content-Type"], "application/octet-stream");
+});
