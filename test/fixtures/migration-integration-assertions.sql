@@ -309,3 +309,26 @@ end;
 $delete_direct$;
 
 reset role;
+
+-- Anonymous sessions must not access exposed user data or authenticated RPCs.
+set role anon;
+do $anon_access$
+begin
+  begin
+    perform count(*) from public.profiles;
+    raise exception 'Unexpected anon profile read access';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.is_conversation_member('00000000-0000-0000-0000-000000000101');
+    raise exception 'Unexpected anon membership helper execution';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.create_direct_conversation('00000000-0000-0000-0000-000000000002');
+    raise exception 'Unexpected anon direct conversation creation';
+  exception when insufficient_privilege then null;
+  end;
+end;
+$anon_access$;
+reset role;
