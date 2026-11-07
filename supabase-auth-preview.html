@@ -23,6 +23,7 @@
   <button id="google" type="button">تسجيل الدخول باستخدام Google</button>
   <p id="status" role="status" aria-live="polite">جارٍ التحقق من جلسة الاختبار...</p>
   <button id="signout" type="button" hidden>إنهاء جلسة الاختبار</button>
+  <p><a id="chatPreview" href="./supabase-chat-preview.html" hidden>فتح معاينة المحادثات</a></p>
 </main>
 <script type="module">
 import { supabase } from "./supabase-client.js";
@@ -30,6 +31,7 @@ import { supabase } from "./supabase-client.js";
 const status = document.getElementById("status");
 const googleButton = document.getElementById("google");
 const signoutButton = document.getElementById("signout");
+const chatPreviewLink = document.getElementById("chatPreview");
 const say = (message) => { status.textContent = message; };
 
 async function inspectSession() {
@@ -56,7 +58,8 @@ async function inspectSession() {
     } else if (!profile) {
       say("نجح تسجيل الدخول، لكن الملف الشخصي غير موجود. يلزم تطبيق ترحيل إنشاء الملف الشخصي على بيئة الاختبار قبل اعتماد الدخول.");
     } else {
-      say("نجح تسجيل الدخول وقراءة الملف الشخصي. الاسم: " + (profile.display_name || "غير محدد") + ". لم يتم فتح المحادثات لأن واجهتها ما زالت على نظام الدخول القديم.");
+      say("نجح تسجيل الدخول وقراءة الملف الشخصي. الاسم: " + (profile.display_name || "غير محدد") + ". يمكنك فتح معاينة المحادثات التجريبية.");
+      chatPreviewLink.hidden = false;
     }
     signoutButton.hidden = false;
   } catch (error) {
@@ -89,6 +92,7 @@ signoutButton.addEventListener("click", async () => {
   }
   say("تم إنهاء جلسة الاختبار.");
   signoutButton.hidden = true;
+  chatPreviewLink.hidden = true;
   signoutButton.disabled = false;
   googleButton.disabled = false;
 });
