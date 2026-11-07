@@ -64,7 +64,7 @@ Important schema gap: current `conversations` is strictly two-person/direct-mess
 - The application still depends heavily on Firebase Auth and Firestore in login.html, chat.html, settings.html, and server.js. The new verifier alone must not be switched on.
 - Complete migration of user profile operations, conversation/message persistence, group membership administration, friend/block workflows, scheduled messages, notifications, media storage, admin actions, account deletion, and Socket.IO identity checks.
 - Add/verify storage bucket policies and attachment validation; define trusted admin authorization in app_metadata or a server-controlled role table.
-- Test the migration SQL against a disposable Supabase staging project, including RLS negative tests and re-run/idempotency checks. The live project's advisor currently reports no security lints for its existing schema; this is not a validation of the unapplied draft.
+- The migration SQL passed disposable PostgreSQL 16 tests twice and was applied to the live Supabase project as versions 20261107100404, 20261107100410, and 20261107100650. The post-migration security advisor reports no lints. A separate hosted staging project and full two-user end-to-end tests remain outstanding.
 - Run browser and Socket.IO end-to-end tests before any Render environment change or production deploy.
 
 - Expanded the draft with transactional group operations: add/remove members, leave/delete group, rename, update details and permissions, and appoint/revoke moderators. The SQL enforces the current 50-member product limit and keeps membership changes out of direct client table writes.
