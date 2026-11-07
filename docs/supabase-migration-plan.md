@@ -66,3 +66,8 @@ Important schema gap: current `conversations` is strictly two-person/direct-mess
 - Add/verify storage bucket policies and attachment validation; define trusted admin authorization in app_metadata or a server-controlled role table.
 - Test the migration SQL against a disposable Supabase staging project, including RLS negative tests and re-run/idempotency checks. The live project's advisor currently reports no security lints for its existing schema; this is not a validation of the unapplied draft.
 - Run browser and Socket.IO end-to-end tests before any Render environment change or production deploy.
+
+- Expanded the draft with transactional group operations: add/remove members, leave/delete group, rename, update details and permissions, and appoint/revoke moderators. The SQL enforces the current 50-member product limit and keeps membership changes out of direct client table writes.
+- Added attachment-only message support and a database trigger that creates per-recipient receipt rows and updates conversation activity in the same transaction.
+- Static review confirms balanced SQL dollar-quote delimiters and no remaining malformed bare delimiters. This is a text-level check only; the migration still needs execution against a disposable staging database before it can be considered validated.
+- The current application applies name-moderation rules in its server code. The final server/RPC integration must preserve those checks for group names; do not rely on client-side validation alone.
