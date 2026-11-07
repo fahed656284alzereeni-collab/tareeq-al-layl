@@ -304,6 +304,17 @@ with check (
   and public.is_conversation_member(conversation_id)
 );
 
+-- Restrict column privileges as well as row policies: otherwise a recipient
+-- could alter message body/sender fields while satisfying a broad UPDATE policy.
+revoke update on public.messages from authenticated;
+grant update (read_at) on public.messages to authenticated;
+revoke update on public.message_receipts from authenticated;
+grant update (read_at) on public.message_receipts to authenticated;
+revoke update on public.scheduled_messages from authenticated;
+grant update (status) on public.scheduled_messages to authenticated;
+revoke update on public.notifications from authenticated;
+grant update (read_at) on public.notifications to authenticated;
+
 -- Client updates are limited to marking a message read. More privileged
 -- edit/delete operations will be exposed through verified server/RPC paths.
 create policy "Recipients can mark own incoming messages read"
