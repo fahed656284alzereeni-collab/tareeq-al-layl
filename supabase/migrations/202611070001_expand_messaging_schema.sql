@@ -375,6 +375,7 @@ grant usage on schema private to authenticated;
 revoke all on function private.add_group_members(uuid,uuid[]) from public,anon;
 revoke all on function private.remove_group_member(uuid,uuid) from public,anon;
 revoke all on function private.leave_group(uuid) from public,anon;
+revoke all on function private.rename_group(uuid,text) from public,anon;
 revoke all on function private.update_group_details(uuid,text,text) from public,anon;
 revoke all on function private.update_group_permissions(uuid,text,text) from public,anon;
 revoke all on function private.set_group_moderator(uuid,uuid,boolean) from public,anon;
@@ -382,6 +383,7 @@ revoke all on function private.delete_group(uuid) from public,anon;
 grant execute on function private.add_group_members(uuid,uuid[]) to authenticated;
 grant execute on function private.remove_group_member(uuid,uuid) to authenticated;
 grant execute on function private.leave_group(uuid) to authenticated;
+grant execute on function private.rename_group(uuid,text) to authenticated;
 grant execute on function private.update_group_details(uuid,text,text) to authenticated;
 grant execute on function private.update_group_permissions(uuid,text,text) to authenticated;
 grant execute on function private.set_group_moderator(uuid,uuid,boolean) to authenticated;
@@ -600,6 +602,26 @@ begin
 end;
 $fn$;
 
+create or replace function private.rename_group(p_conversation_id uuid,p_title text)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid(); v_type text; v_permissions jsonb; v_role text; v_title text;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  v_title:=btrim(coalesce(p_title,''));
+  if char_length(v_title)<1 or char_length(v_title)>50 then raise exception 'Invalid group title' using errcode='22023'; end if;
+  select c.type,c.group_permissions,cm.role into v_type,v_permissions,v_role
+  from public.conversations c join public.conversation_members cm
+    on cm.conversation_id=c.id and cm.user_id=v_me and cm.left_at is null
+  where c.id=p_conversation_id;
+  if not found or v_type<>'group' then raise exception 'Group not found or access denied' using errcode='42501'; end if;
+  if coalesce(v_permissions->>'editInfo','admins')<>'members' and v_role not in ('owner','moderator') then
+    raise exception 'Only group admins may edit group information' using errcode='42501';
+  end if;
+  update public.conversations set title=v_title,updated_at=now() where id=p_conversation_id;
+end;
+$fn$;
+
 create or replace function private.update_group_details(p_conversation_id uuid,p_description text,p_announcement text)
 returns void language plpgsql security definer set search_path = ''
 as $fn$
@@ -754,6 +776,10 @@ create or replace function public.leave_group(p_conversation_id uuid)
 returns void language sql security invoker set search_path = ''
 as $fn$ select private.leave_group(p_conversation_id); $fn$;
 
+create or replace function public.rename_group(p_conversation_id uuid,p_title text)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.rename_group(p_conversation_id,p_title); $fn$;
+
 create or replace function public.update_group_details(p_conversation_id uuid,p_description text,p_announcement text)
 returns void language sql security invoker set search_path = ''
 as $fn$ select private.update_group_details(p_conversation_id,p_description,p_announcement); $fn$;
@@ -793,6 +819,7 @@ grant execute on function public.decline_friend_request(uuid) to authenticated;
 revoke all on function public.add_group_members(uuid,uuid[]) from public,anon;
 revoke all on function public.remove_group_member(uuid,uuid) from public,anon;
 revoke all on function public.leave_group(uuid) from public,anon;
+revoke all on function public.rename_group(uuid,text) from public,anon;
 revoke all on function public.update_group_details(uuid,text,text) from public,anon;
 revoke all on function public.update_group_permissions(uuid,text,text) from public,anon;
 revoke all on function public.set_group_moderator(uuid,uuid,boolean) from public,anon;
@@ -800,6 +827,7 @@ revoke all on function public.delete_group(uuid) from public,anon;
 grant execute on function public.add_group_members(uuid,uuid[]) to authenticated;
 grant execute on function public.remove_group_member(uuid,uuid) to authenticated;
 grant execute on function public.leave_group(uuid) to authenticated;
+grant execute on function public.rename_group(uuid,text) to authenticated;
 grant execute on function public.update_group_details(uuid,text,text) to authenticated;
 grant execute on function public.update_group_permissions(uuid,text,text) to authenticated;
 grant execute on function public.set_group_moderator(uuid,uuid,boolean) to authenticated;
