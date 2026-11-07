@@ -42,6 +42,9 @@ create index if not exists user_reports_reporter_id_idx
 
 drop policy if exists "Users can manage own message visibility" on public.message_user_visibility;
 
+drop policy if exists "Users can insert own message visibility" on public.message_user_visibility;
+drop policy if exists "Users can delete own message visibility" on public.message_user_visibility;
+
 create policy "Users can insert own message visibility"
 on public.message_user_visibility for insert to authenticated
 with check (
