@@ -256,7 +256,7 @@ function createSupabaseChatRepository(client, userId) {
     }),
     removeGroupMember: (conversationId, memberId) => rpc("remove_group_member", {
       p_conversation_id: requiredId(conversationId, "Conversation id"),
-      p_member_id: requiredId(memberId, "Group member id")
+      p_target_user: requiredId(memberId, "Group member id")
     }),
     leaveGroup: conversationId => rpc("leave_group", { p_conversation_id: requiredId(conversationId, "Conversation id") }),
     renameGroup: (conversationId, title) => rpc("rename_group", {
@@ -271,7 +271,7 @@ function createSupabaseChatRepository(client, userId) {
     }),
     setGroupModerator: (conversationId, memberId, isModerator) => rpc("set_group_moderator", {
       p_conversation_id: requiredId(conversationId, "Conversation id"),
-      p_member_id: requiredId(memberId, "Group member id"), p_is_moderator: Boolean(isModerator)
+      p_target_user: requiredId(memberId, "Group member id"), p_make_moderator: Boolean(isModerator)
     }),
     deleteGroup: conversationId => rpc("delete_group", { p_conversation_id: requiredId(conversationId, "Conversation id") }),
     editMessage: (messageId, body) => rpc("edit_message", { p_message_id: requiredId(messageId, "Message id"), p_body: String(body || "") }),
