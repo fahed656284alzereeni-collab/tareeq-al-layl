@@ -347,6 +347,24 @@ $$;
 
 revoke all on function public.is_conversation_member(uuid) from public,anon;
 grant execute on function public.is_conversation_member(uuid) to authenticated;
+create or replace function public.is_direct_conversation_blocked(p_conversation_id uuid)
+returns boolean language sql stable security definer set search_path = ''
+as $fn$
+  select exists (
+    select 1
+    from public.conversations c
+    join public.conversation_members me
+      on me.conversation_id=c.id and me.user_id=auth.uid() and me.left_at is null
+    join public.conversation_members other_member
+      on other_member.conversation_id=c.id and other_member.user_id<>auth.uid() and other_member.left_at is null
+    join public.user_blocks b
+      on (b.blocker_id=auth.uid() and b.blocked_id=other_member.user_id)
+      or (b.blocker_id=other_member.user_id and b.blocked_id=auth.uid())
+    where c.id=p_conversation_id and c.type='direct'
+  );
+$fn$;
+revoke all on function public.is_direct_conversation_blocked(uuid) from public,anon;
+grant execute on function public.is_direct_conversation_blocked(uuid) to authenticated;
 
 -- 6) Enable RLS on every newly exposed table.
 alter table public.conversation_members enable row level security;
@@ -1224,17 +1242,7 @@ on public.messages for insert to authenticated
 with check (
   sender_id = (select auth.uid())
   and public.is_conversation_member(conversation_id)
-  and not exists (
-    select 1 from public.conversations c
-    join public.conversation_members other_member
-      on other_member.conversation_id=c.id
-      and other_member.user_id<> (select auth.uid())
-      and other_member.left_at is null
-    join public.user_blocks b
-      on (b.blocker_id=(select auth.uid()) and b.blocked_id=other_member.user_id)
-      or (b.blocker_id=other_member.user_id and b.blocked_id=(select auth.uid()))
-    where c.id=conversation_id and c.type='direct'
-  )
+  and not public.is_direct_conversation_blocked(conversation_id)
 );
 
 -- Restrict column privileges as well as row policies: otherwise a recipient
