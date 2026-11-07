@@ -6,6 +6,8 @@ The opt-in Express API is mounted behind `SUPABASE_CHAT_API_ENABLED=true`. It us
 
 The default remains unchanged: the existing Firebase Socket.IO application is still the active production path. Do not set this flag on the live Render service yet.
 
+A browser adapter is now available in `supabase-chat-api.mjs`. It attaches the current Supabase access token, uses no-store requests, exposes the implemented REST methods, and preserves server error codes. Its Node tests pass. It is deliberately not imported by `chat.html` yet; it is a tested integration layer, not a completed frontend cutover.
+
 ## Implemented endpoints
 
 All endpoints are under `/api/supabase/chat` and require `Authorization: Bearer <Supabase access token>`.
