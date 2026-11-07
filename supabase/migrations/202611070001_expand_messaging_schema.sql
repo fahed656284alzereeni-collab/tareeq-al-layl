@@ -112,10 +112,56 @@ begin
   ) then
     alter table public.messages
       add constraint message_body_or_attachment_length
-      check (char_length(body) <= 10000 and (char_length(body) >= 1 or attachment is not null));
+      check (char_length(body) <= 4000 and (char_length(body) >= 1 or attachment is not null));
+  else
+    alter table public.messages drop constraint message_body_or_attachment_length;
+    alter table public.messages
+      add constraint message_body_or_attachment_length
+      check (char_length(body) <= 4000 and (char_length(body) >= 1 or attachment is not null));
   end if;
 end;
 $$;
+
+-- Validate message metadata on every insert, including inserts that bypass
+-- the application server and use the Supabase Data API directly.
+create or replace function private.validate_message_insert()
+returns trigger language plpgsql security definer set search_path = ''
+as $fn$
+declare v_reply_conversation uuid;
+begin
+  if char_length(coalesce(new.body,''))>4000 then
+    raise exception 'Message body is too long' using errcode='22023';
+  end if;
+  if char_length(coalesce(new.body,''))=0 and new.attachment is null then
+    raise exception 'Message body or attachment is required' using errcode='22023';
+  end if;
+  if new.reply_to is not null then
+    select conversation_id into v_reply_conversation
+      from public.messages where id=new.reply_to and not deleted_for_everyone;
+    if not found or v_reply_conversation<>new.conversation_id then
+      raise exception 'Reply target is not in this conversation' using errcode='22023';
+    end if;
+  end if;
+  if new.attachment is not null then
+    if jsonb_typeof(new.attachment)<>'object'
+       or coalesce(new.attachment->>'type','')=''
+       or coalesce(new.attachment->>'name','')=''
+       or coalesce((new.attachment->>'size')::bigint,0)<1
+       or coalesce((new.attachment->>'size')::bigint,0)>52428800
+       or coalesce(new.attachment->>'storagePath','') not like
+          ('conversations/'||new.conversation_id::text||'/'||new.sender_id::text||'/%') then
+      raise exception 'Invalid attachment metadata or storage path' using errcode='22023';
+    end if;
+  end if;
+  return new;
+end;
+$fn$;
+
+revoke all on function private.validate_message_insert() from public,anon,authenticated;
+drop trigger if exists messages_validate_insert on public.messages;
+create trigger messages_validate_insert
+before insert on public.messages
+for each row execute function private.validate_message_insert();
 
 -- Automatically create one receipt per other active member and keep the
 -- conversation's last-message timestamp current in the same transaction.
@@ -1178,6 +1224,17 @@ on public.messages for insert to authenticated
 with check (
   sender_id = (select auth.uid())
   and public.is_conversation_member(conversation_id)
+  and not exists (
+    select 1 from public.conversations c
+    join public.conversation_members other_member
+      on other_member.conversation_id=c.id
+      and other_member.user_id<> (select auth.uid())
+      and other_member.left_at is null
+    join public.user_blocks b
+      on (b.blocker_id=(select auth.uid()) and b.blocked_id=other_member.user_id)
+      or (b.blocker_id=other_member.user_id and b.blocked_id=(select auth.uid()))
+    where c.id=conversation_id and c.type='direct'
+  )
 );
 
 -- Restrict column privileges as well as row policies: otherwise a recipient
@@ -1190,7 +1247,8 @@ grant update (read_at) on public.notifications to authenticated;
 
 -- Explicit Data API grants. RLS remains the row-level authorization boundary.
 grant select on public.conversations to authenticated;
-grant select, insert on public.messages to authenticated;
+grant select on public.messages to authenticated;
+grant insert (conversation_id, sender_id, body, attachment, reply_to) on public.messages to authenticated;
 grant select on public.conversation_members to authenticated;
 grant select on public.message_receipts to authenticated;
 grant select, insert, delete on public.message_user_visibility to authenticated;
