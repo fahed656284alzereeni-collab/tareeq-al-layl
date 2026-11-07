@@ -411,23 +411,6 @@ with check (user_id = (select auth.uid()));
 create schema if not exists private;
 revoke all on schema private from public;
 grant usage on schema private to authenticated;
-revoke all on function private.add_group_members(uuid,uuid[]) from public,anon;
-revoke all on function private.remove_group_member(uuid,uuid) from public,anon;
-revoke all on function private.leave_group(uuid) from public,anon;
-revoke all on function private.rename_group(uuid,text) from public,anon;
-revoke all on function private.update_group_details(uuid,text,text) from public,anon;
-revoke all on function private.update_group_permissions(uuid,text,text) from public,anon;
-revoke all on function private.set_group_moderator(uuid,uuid,boolean) from public,anon;
-revoke all on function private.delete_group(uuid) from public,anon;
-grant execute on function private.add_group_members(uuid,uuid[]) to authenticated;
-grant execute on function private.remove_group_member(uuid,uuid) to authenticated;
-grant execute on function private.leave_group(uuid) to authenticated;
-grant execute on function private.rename_group(uuid,text) to authenticated;
-grant execute on function private.update_group_details(uuid,text,text) to authenticated;
-grant execute on function private.update_group_permissions(uuid,text,text) to authenticated;
-grant execute on function private.set_group_moderator(uuid,uuid,boolean) to authenticated;
-grant execute on function private.delete_group(uuid) to authenticated;
-
 
 create unique index if not exists friend_requests_one_pending_unordered_pair
   on public.friend_requests (least(sender_id, recipient_id), greatest(sender_id, recipient_id))
@@ -799,6 +782,22 @@ grant execute on function private.create_group_conversation(text,uuid[]) to auth
 grant execute on function private.cancel_friend_request(uuid) to authenticated;
 grant execute on function private.accept_friend_request(uuid) to authenticated;
 grant execute on function private.decline_friend_request(uuid) to authenticated;
+revoke all on function private.add_group_members(uuid,uuid[]) from public,anon;
+revoke all on function private.remove_group_member(uuid,uuid) from public,anon;
+revoke all on function private.leave_group(uuid) from public,anon;
+revoke all on function private.rename_group(uuid,text) from public,anon;
+revoke all on function private.update_group_details(uuid,text,text) from public,anon;
+revoke all on function private.update_group_permissions(uuid,text,text) from public,anon;
+revoke all on function private.set_group_moderator(uuid,uuid,boolean) from public,anon;
+revoke all on function private.delete_group(uuid) from public,anon;
+grant execute on function private.add_group_members(uuid,uuid[]) to authenticated;
+grant execute on function private.remove_group_member(uuid,uuid) to authenticated;
+grant execute on function private.leave_group(uuid) to authenticated;
+grant execute on function private.rename_group(uuid,text) to authenticated;
+grant execute on function private.update_group_details(uuid,text,text) to authenticated;
+grant execute on function private.update_group_permissions(uuid,text,text) to authenticated;
+grant execute on function private.set_group_moderator(uuid,uuid,boolean) to authenticated;
+grant execute on function private.delete_group(uuid) to authenticated;
 
 -- Public, invoker-rights entry points for the authenticated Data API.
 -- The privileged work remains isolated in the private SECURITY DEFINER routines.
