@@ -187,7 +187,7 @@ async function searchPeople(event) {
   event.preventDefault();
   const rawQuery = document.querySelector("#people-search").value.trim().replace(/^@/, "");
   // Remove PostgREST filter syntax and LIKE wildcards before interpolating a search value.
-  const query = rawQuery.replace(/[^\\p{L}\\p{N}\\s-]/gu, "").trim();
+  const query = rawQuery.replace(/[^\p{L}\p{N}\s-]/gu, "").trim();
   const results = document.querySelector("#search-results");
   if (query.length < 2) {
     results.innerHTML = '<p class="muted">اكتب حرفين على الأقل للبحث.</p>';
@@ -335,7 +335,7 @@ async function loadMessages() {
     announce(error.message, "error");
     return;
   }
-  node.innerHTML = "";
+  node.querySelector(".muted")?.remove();
   (data || []).forEach(appendMessage);
   node.scrollTop = node.scrollHeight;
 }
