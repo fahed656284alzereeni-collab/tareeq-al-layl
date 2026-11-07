@@ -147,7 +147,11 @@ begin
   end if;
 
   insert into public.messages(conversation_id,sender_id,body,attachment)
-    values (v_direct,v_user1,'Video attachment','{"type":"video/mp4"}'::jsonb)
+    values (v_direct,v_user1,'Video attachment',
+      jsonb_build_object(
+        'type','video/mp4','name','video.mp4','size',12,
+        'storagePath','conversations/'||v_direct::text||'/'||v_user1::text||'/video.mp4'
+      ))
     returning id into v_video;
   perform public.save_video_duration(v_video,90);
   if not exists(select 1 from public.messages
