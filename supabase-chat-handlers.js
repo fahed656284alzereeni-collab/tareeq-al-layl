@@ -50,7 +50,13 @@ function createSupabaseChatHandlers(options = {}) {
     listConversations: (req,res) => run(req,res,async repository => ({ conversations: await repository.listConversations() })),
     getConversation: (req,res) => run(req,res,async repository => {
       const conversation = await repository.getConversationDetails(req.params.conversationId);
-      return conversation ? { conversation } : { success: false, code: "CONVERSATION_NOT_FOUND" };
+      if (!conversation) {
+        const error = new Error("Conversation not found.");
+        error.code = "CONVERSATION_NOT_FOUND";
+        error.status = 404;
+        throw error;
+      }
+      return { conversation };
     }),
     listMessages: (req,res) => run(req,res,async repository => ({
       messages: await repository.getConversationMessages(req.params.conversationId, {
