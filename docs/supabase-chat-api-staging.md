@@ -37,6 +37,8 @@ All endpoints are under `/api/supabase/chat` and require `Authorization: Bearer 
 - `GET /scheduled-messages`
 - `POST /scheduled-messages`
 - `DELETE /scheduled-messages/:scheduledId`
+- `GET /notifications`
+- `POST /notifications/:notificationId/read`
 - `POST /conversations/:conversationId/members`
 - `DELETE /conversations/:conversationId/members/:userId`
 - `POST /conversations/:conversationId/leave`
