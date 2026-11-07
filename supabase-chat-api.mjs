@@ -38,6 +38,42 @@ export function createSupabaseChatApi(options = {}) {
 
   const json = value => JSON.stringify(value);
   const id = value => encodeURIComponent(String(value));
+  async function uploadMedia(conversationId, file) {
+    const token = await getAccessToken();
+    if (!token) {
+      const error = new Error("Authentication is required.");
+      error.code = "AUTH_REQUIRED";
+      error.status = 401;
+      throw error;
+    }
+    if (!file || typeof file.arrayBuffer !== "function" || !file.size) {
+      const error = new Error("A non-empty file is required.");
+      error.code = "UPLOAD_INPUT_INVALID";
+      error.status = 400;
+      throw error;
+    }
+    const response = await fetchImpl(baseUrl + "/upload", {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        Authorization: "Bearer " + token,
+        "Content-Type": "application/octet-stream",
+        "X-Conversation-Id": String(conversationId),
+        "X-File-Type": String(file.type || "application/octet-stream"),
+        "X-File-Name": encodeURIComponent(String(file.name || "file"))
+      },
+      body: await file.arrayBuffer()
+    });
+    let payload = {};
+    try { payload = await response.json(); } catch (_) {}
+    if (!response.ok || payload.success === false) {
+      const error = new Error(payload.message || "Media upload failed.");
+      error.code = payload.code || "MEDIA_UPLOAD_FAILED";
+      error.status = response.status;
+      throw error;
+    }
+    return payload.attachment;
+  }
   return Object.freeze({
     listConversations: () => request("/conversations"),
     getConversation: conversationId => request("/conversations/" + id(conversationId)),
@@ -50,6 +86,7 @@ export function createSupabaseChatApi(options = {}) {
     createDirectConversation: otherUserId => request("/conversations/direct", { method: "POST", body: json({ otherUserId }) }),
     createGroupConversation: (title, memberIds) => request("/conversations/group", { method: "POST", body: json({ title, memberIds }) }),
     sendMessage: message => request("/messages", { method: "POST", body: json(message) }),
+    uploadMedia,
     markMessageRead: messageId => request("/messages/" + id(messageId) + "/read", { method: "POST" }),
     markMessageDelivered: messageId => request("/messages/" + id(messageId) + "/delivered", { method: "POST" }),
     editMessage: (messageId, body) => request("/messages/" + id(messageId) + "/edit", { method: "POST", body: json({ body }) }),
