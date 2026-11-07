@@ -10,6 +10,9 @@ const admin = require("firebase-admin");
 const { createClient } = require("@supabase/supabase-js");
 const webpush = require("web-push");
 const crypto = require("crypto");
+const { createSupabaseAuthVerifier } = require("./supabase-auth-verifier");
+const { createSupabaseUserClient } = require("./supabase-clients");
+const { createSupabaseProfileHandlers } = require("./supabase-profile-handlers");
 
 // Prefer keyless Google Workload Identity Federation when Render configures ADC.
 // Otherwise support a Render Secret File or the legacy JSON environment variable.
@@ -1524,6 +1527,19 @@ app.post("/api/upload-media",mediaUploadCors,express.raw({type:"application/octe
 });
 
 app.use(express.json({ limit: "32kb" }));
+
+// Opt-in Supabase profile API. Firebase routes remain the default until the
+// complete authentication and persistence cutover has been validated.
+if (process.env.SUPABASE_PROFILE_API_ENABLED === "true") {
+  const supabaseProfileHandlers = createSupabaseProfileHandlers({
+    verifier: createSupabaseAuthVerifier(),
+    createUserClient: accessToken => createSupabaseUserClient(accessToken),
+    assertNameAllowed
+  });
+  app.options("/api/supabase/profile/me", pushCors);
+  app.get("/api/supabase/profile/me", pushCors, supabaseProfileHandlers.getProfile);
+  app.post("/api/supabase/profile/me", pushCors, supabaseProfileHandlers.updateProfile);
+}
 
 
 let pushConfigured = false;
