@@ -185,7 +185,9 @@ function renderApp() {
 
 async function searchPeople(event) {
   event.preventDefault();
-  const query = document.querySelector("#people-search").value.trim().replace(/^@/, "");
+  const rawQuery = document.querySelector("#people-search").value.trim().replace(/^@/, "");
+  // Remove PostgREST filter syntax and LIKE wildcards before interpolating a search value.
+  const query = rawQuery.replace(/[^\\p{L}\\p{N}\\s-]/gu, "").trim();
   const results = document.querySelector("#search-results");
   if (query.length < 2) {
     results.innerHTML = '<p class="muted">اكتب حرفين على الأقل للبحث.</p>';
@@ -296,19 +298,29 @@ async function loadConversations() {
 
 async function openConversation(conversation, person) {
   activeConversation = conversation;
+  document.querySelector(".app-shell").classList.add("chat-open");
   document.querySelector("#chat-empty").hidden = true;
   document.querySelector("#chat-view").hidden = false;
   document.querySelector("#chat-person").textContent = person.display_name || person.username || "محادثة";
   const messages = document.querySelector("#messages");
   messages.innerHTML = '<p class="muted">جارٍ تحميل الرسائل…</p>';
   if (messageChannel) await supabase.removeChannel(messageChannel);
-  await loadMessages();
+
+  // Subscribe first, then fetch history so a message cannot slip between the two.
   messageChannel = supabase.channel(`messages:${conversation.id}`)
     .on("postgres_changes", {
       event: "INSERT", schema: "public", table: "messages",
       filter: `conversation_id=eq.${conversation.id}`
-    }, payload => appendMessage(payload.new))
-    .subscribe();
+    }, payload => appendMessage(payload.new));
+  await new Promise((resolve, reject) => {
+    messageChannel.subscribe(status => {
+      if (status === "SUBSCRIBED") resolve();
+      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        reject(new Error("تعذر الاتصال الفوري بالمحادثة. تحقق من اتصال الإنترنت ثم أعد المحاولة."));
+      }
+    });
+  });
+  await loadMessages();
   document.querySelector("#message-input").focus();
 }
 
@@ -369,6 +381,7 @@ function closeConversation() {
   activeConversation = null;
   if (messageChannel) supabase.removeChannel(messageChannel);
   messageChannel = null;
+  document.querySelector(".app-shell").classList.remove("chat-open");
   document.querySelector("#chat-view").hidden = true;
   document.querySelector("#chat-empty").hidden = false;
   document.querySelector("#people-search").focus();
