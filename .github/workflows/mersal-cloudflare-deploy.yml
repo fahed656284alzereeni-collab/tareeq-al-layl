@@ -1,0 +1,57 @@
+name: Deploy Mersal to Cloudflare Pages
+
+on:
+  push:
+    branches:
+      - mersal-cloudflare-migration
+    paths:
+      - "cloud/**"
+      - ".github/workflows/mersal-cloud-build.yml"
+      - ".github/workflows/mersal-cloudflare-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mersal-cloudflare-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        working-directory: cloud
+        run: npm install --no-package-lock
+
+      - name: Build production bundle
+        working-directory: cloud
+        run: npm run build
+
+      - name: Create Pages project if needed
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ] || [ -z "$CLOUDFLARE_ACCOUNT_ID" ]; then
+            echo "Missing CLOUDFLARE_API_TOKEN or CLOUDFLARE_ACCOUNT_ID repository secrets."
+            exit 1
+          fi
+          npx --yes wrangler@4 pages project create mersal --production-branch=mersal-cloudflare-migration || {
+            echo "Pages project may already exist; continuing to deployment."
+          }
+
+      - name: Deploy to Cloudflare Pages
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: npx --yes wrangler@4 pages deploy cloud/dist --project-name=mersal --branch=mersal-cloudflare-migration
