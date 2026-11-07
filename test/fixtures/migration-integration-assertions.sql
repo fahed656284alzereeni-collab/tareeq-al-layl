@@ -18,6 +18,35 @@ begin
 end;
 $helper_security$;
 
+-- Covering indexes and single SELECT policy prevent avoidable scans/policy work.
+do $performance_check$
+declare v_indexes integer; v_select_policies integer;
+begin
+  select count(*) into v_indexes from pg_indexes
+  where schemaname='public' and indexname = any(array[
+    'conversations_created_by_idx','friend_requests_recipient_status_idx',
+    'friendships_friend_id_idx','message_receipts_user_id_idx',
+    'message_user_visibility_user_id_idx','messages_reply_to_idx',
+    'scheduled_messages_conversation_due_idx','scheduled_messages_sender_status_idx',
+    'user_blocks_blocked_id_idx','user_reports_conversation_id_idx',
+    'user_reports_message_id_idx','user_reports_reported_user_id_idx',
+    'user_reports_reporter_id_idx'
+  ]);
+  if v_indexes<>13 then raise exception 'Missing expected foreign-key indexes: %',v_indexes; end if;
+  select count(*) into v_select_policies from pg_policies
+    where schemaname='public' and tablename='message_user_visibility'
+      and cmd='SELECT' and roles @> array['authenticated']::name[];
+  if v_select_policies<>1 then
+    raise exception 'Expected one authenticated SELECT policy on message_user_visibility, found %',v_select_policies;
+  end if;
+  if exists(select 1 from pg_policies where schemaname='public'
+    and tablename='message_user_visibility'
+    and policyname='Users can manage own message visibility') then
+    raise exception 'Duplicate permissive message visibility policy remains';
+  end if;
+end;
+$performance_check$;
+
 -- Realtime publication includes the additional messaging and social tables.
 do $realtime_check$
 declare v_count integer;
