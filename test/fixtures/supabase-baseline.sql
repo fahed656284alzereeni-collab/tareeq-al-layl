@@ -130,6 +130,20 @@ insert into public.messages(id,conversation_id,sender_id,body) values
  '00000000-0000-0000-0000-000000000001',
  'Legacy message');
 
+-- Mirror the existing public SECURITY DEFINER profile bootstrap function.
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path=''
+as $function$
+begin
+  insert into public.profiles(id,display_name,avatar_url)
+  values (new.id,coalesce(new.raw_user_meta_data->>'full_name',''),new.raw_user_meta_data->>'avatar_url')
+  on conflict(id) do nothing;
+  return new;
+end;
+$function$;
+create trigger on_auth_user_created after insert on auth.users
+for each row execute function public.handle_new_user();
+
 -- Mirror the existing Supabase Realtime publication for the migration test.
 create publication supabase_realtime;
 alter publication supabase_realtime add table public.conversations, public.messages;
