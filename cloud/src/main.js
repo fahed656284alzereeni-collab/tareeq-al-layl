@@ -231,18 +231,21 @@ async function startConversation(otherUserId) {
       .eq("user_one", userOne).eq("user_two", userTwo).maybeSingle();
     if (error) throw error;
     if (!conversation) {
-      const created = await supabase.from("conversations")
-        .insert({ user_one: userOne, user_two: userTwo })
-        .select("id, user_one, user_two, created_at").single();
-      if (created.error && created.error.code === "23505") {
-        const retry = await supabase.from("conversations").select("id, user_one, user_two, created_at")
-          .eq("user_one", userOne).eq("user_two", userTwo).single();
-        if (retry.error) throw retry.error;
-        conversation = retry.data;
-      } else {
-        if (created.error) throw created.error;
-        conversation = created.data;
-      }
+      // Conversation creation is intentionally exposed through a guarded RPC.
+      // Direct INSERT is blocked by RLS; the RPC validates both users, checks
+      // blocking, and creates the conversation membership rows atomically.
+      const { data: conversationId, error: createError } = await supabase.rpc(
+        "create_direct_conversation",
+        { p_other_user: otherUserId }
+      );
+      if (createError) throw createError;
+      const { data: createdConversation, error: fetchError } = await supabase
+        .from("conversations")
+        .select("id, user_one, user_two, created_at")
+        .eq("id", conversationId)
+        .single();
+      if (fetchError) throw fetchError;
+      conversation = createdConversation;
     }
     const { data: otherProfile, error: profileError } = await supabase.from("profiles")
       .select("id, username, display_name").eq("id", otherUserId).single();
