@@ -71,12 +71,26 @@ test("transactional public RPC wrappers exist for social and conversation action
     "send_friend_request", "cancel_friend_request", "accept_friend_request", "decline_friend_request",
     "remove_friendship", "create_direct_conversation", "create_group_conversation",
     "add_group_members", "remove_group_member", "leave_group", "rename_group",
-    "update_group_details", "update_group_permissions", "set_group_moderator", "delete_group"
+    "update_group_details", "update_group_permissions", "set_group_moderator", "delete_group",
+    "hide_conversation_for_me", "clear_conversation_for_me", "clear_conversation_for_everyone",
+    "delete_direct_conversation", "edit_message", "delete_message_for_everyone",
+    "mark_message_delivered", "mark_message_read", "save_video_duration", "cancel_scheduled_message"
   ]) {
     assert.match(migration, new RegExp("create or replace function public\\." + name + "\\(", "i"));
     assert.match(migration, new RegExp("grant execute on function public\\." + name + "\\(", "i"));
     assert.match(migration, new RegExp("revoke all on function public\\." + name + "\\([^;]* from public,anon;", "i"));
   }
+});
+
+test("message lifecycle writes are restricted to narrow RPCs", () => {
+  assert.match(migration, /revoke update on public\.messages from authenticated;/i);
+  assert.match(migration, /revoke update on public\.message_receipts from authenticated;/i);
+  assert.match(migration, /revoke update on public\.scheduled_messages from authenticated;/i);
+  assert.doesNotMatch(migration, /grant update \([^)]*\) on public\.messages/i);
+  assert.doesNotMatch(migration, /grant update \([^)]*\) on public\.message_receipts/i);
+  assert.doesNotMatch(migration, /grant update \(status\) on public\.scheduled_messages/i);
+  assert.match(migration, /scheduled_for > now\(\)/i);
+  assert.match(migration, /set is_hidden = false, cleared_at = null/i);
 });
 
 test("profiles support the account screen with scoped update grants", () => {
