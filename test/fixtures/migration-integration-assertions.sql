@@ -1,5 +1,22 @@
 \set ON_ERROR_STOP on
 
+-- Realtime publication includes the additional messaging and social tables.
+do $realtime_check$
+declare v_count integer;
+begin
+  select count(*) into v_count
+  from pg_publication_tables
+  where pubname='supabase_realtime' and schemaname='public'
+    and tablename = any(array[
+      'conversations','messages','conversation_members','message_receipts',
+      'notifications','friend_requests','friendships','user_blocks','scheduled_messages'
+    ]);
+  if v_count <> 9 then
+    raise exception 'Realtime publication is missing expected tables: %',v_count;
+  end if;
+end;
+$realtime_check$;
+
 -- The migration must backfill the pre-existing direct conversation.
 do $backfill$
 begin
