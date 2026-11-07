@@ -112,6 +112,54 @@ function createSupabaseChatHandlers(options = {}) {
     }),
     unblockUser: (req,res) => run(req,res,async repository => {
       await repository.unblockUser(req.params.userId); return {};
+    }),
+    getFriendData: (req,res) => run(req,res,async repository => ({
+      friendData: await repository.getFriendData()
+    })),
+    searchUsers: (req,res) => run(req,res,async repository => ({
+      users: await repository.searchUsers(req.query.q, req.query.limit)
+    })),
+    reportUser: (req,res) => run(req,res,async repository => ({
+      report: await repository.reportUser(req.body || {})
+    })),
+    scheduleMessage: (req,res) => run(req,res,async repository => ({
+      scheduledMessage: await repository.scheduleMessage(req.body || {})
+    })),
+    listScheduledMessages: (req,res) => run(req,res,async repository => ({
+      scheduledMessages: await repository.listScheduledMessages()
+    })),
+    cancelScheduledMessage: (req,res) => run(req,res,async repository => {
+      await repository.cancelScheduledMessage(req.params.scheduledId); return {};
+    }),
+    addGroupMembers: (req,res) => run(req,res,async repository => ({
+      addedCount: await repository.addGroupMembers(req.params.conversationId, req.body?.memberIds || [])
+    })),
+    removeGroupMember: (req,res) => run(req,res,async repository => {
+      await repository.removeGroupMember(req.params.conversationId, req.params.userId); return {};
+    }),
+    leaveGroup: (req,res) => run(req,res,async repository => {
+      await repository.leaveGroup(req.params.conversationId); return {};
+    }),
+    renameGroup: (req,res) => run(req,res,async repository => {
+      await repository.renameGroup(req.params.conversationId, req.body?.title); return {};
+    }),
+    updateGroupDetails: (req,res) => run(req,res,async repository => {
+      await repository.updateGroupDetails(req.params.conversationId, req.body?.description, req.body?.announcement); return {};
+    }),
+    updateGroupPermissions: (req,res) => run(req,res,async repository => {
+      await repository.updateGroupPermissions(req.params.conversationId, req.body?.editInfo, req.body?.addMembers); return {};
+    }),
+    setGroupModerator: (req,res) => run(req,res,async repository => {
+      await repository.setGroupModerator(req.params.conversationId, req.params.userId, req.body?.isModerator); return {};
+    }),
+    deleteGroup: (req,res) => run(req,res,async repository => {
+      await repository.deleteGroup(req.params.conversationId); return {};
+    }),
+    deleteMessageForMe: (req,res) => run(req,res,async repository => {
+      await repository.deleteMessageForMe(req.params.messageId); return {};
+    }),
+    saveVideoDuration: (req,res) => run(req,res,async repository => {
+      await repository.saveVideoDuration(req.params.messageId, req.body?.durationSeconds); return {};
     })
   });
 }
