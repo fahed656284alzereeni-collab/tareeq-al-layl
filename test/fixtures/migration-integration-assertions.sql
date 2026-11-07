@@ -179,6 +179,16 @@ begin
     raise exception 'Scheduled message cancellation RPC failed';
   end if;
 
+  begin
+    insert into public.scheduled_messages(conversation_id,sender_id,body,attachment,scheduled_for)
+      values (v_direct,v_user1,'',
+        jsonb_build_object('type','image/png','name','bad.png','size',10,
+          'storagePath','conversations/someone-else/file.png'),
+        now()+interval '2 hours');
+    raise exception 'Unexpected invalid scheduled attachment';
+  exception when invalid_parameter_value then null;
+  end;
+
   insert into public.messages(conversation_id,sender_id,body)
     values (v_direct,v_user1,'Final RLS probe') returning id into v_final;
 
