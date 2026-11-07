@@ -1567,6 +1567,8 @@ if (process.env.SUPABASE_CHAT_API_ENABLED === "true") {
   app.post("/api/supabase/chat/friend-requests", supabaseChatHandlers.sendFriendRequest);
   app.post("/api/supabase/chat/friend-requests/:requestId/accept", supabaseChatHandlers.acceptFriendRequest);
   app.post("/api/supabase/chat/friend-requests/:requestId/decline", supabaseChatHandlers.declineFriendRequest);
+  app.post("/api/supabase/chat/friend-requests/:requestId/cancel", supabaseChatHandlers.cancelFriendRequest);
+  app.delete("/api/supabase/chat/friends/:userId", supabaseChatHandlers.removeFriendship);
   app.post("/api/supabase/chat/blocks", supabaseChatHandlers.blockUser);
   app.delete("/api/supabase/chat/blocks/:userId", supabaseChatHandlers.unblockUser);
   app.get("/api/supabase/chat/friends", supabaseChatHandlers.getFriendData);
