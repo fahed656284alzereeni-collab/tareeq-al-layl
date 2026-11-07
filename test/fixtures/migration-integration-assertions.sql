@@ -213,6 +213,16 @@ begin
   delete from public.user_blocks where blocker_id=v_user2 and blocked_id=v_user1;
   perform set_config('request.jwt.claim.sub',v_user1::text,false);
 
+  -- Attachment paths must be scoped to the sender and current conversation.
+  begin
+    insert into public.messages(conversation_id,sender_id,body,attachment)
+      values (v_direct,v_user1,'Invalid attachment',
+        jsonb_build_object('type','image/png','name','x.png','size',10,
+          'storagePath','conversations/another-user/another-conversation/file.png'));
+    raise exception 'Unexpected cross-user attachment path';
+  exception when check_violation then null;
+  end;
+
   -- Server-controlled timestamps and receipt fields cannot be forged by clients.
   begin
     insert into public.messages(conversation_id,sender_id,body,created_at)
