@@ -37,6 +37,7 @@ jobs:
           node --check supabase-chat-handlers.js
           node --check supabase-media-handlers.js
           node --check supabase-chat-api.mjs
+          node --check supabase-chat-preview.mjs
 
   postgres-migration-test:
     runs-on: ubuntu-latest
