@@ -76,3 +76,10 @@ Do not merge this branch, apply the migration to the live database, deploy to Re
 - The chat HTTP handler module and browser API adapter have automated tests for token verification, request-scoped identity, request authorization headers, direct-conversation creation, message sending, authentication failures, and invalid input. Group, scheduling, social, reporting, moderation, and notification endpoint handlers are mounted behind the same opt-in flag. The API is not yet used by `chat.html`; do not enable its flag in production until frontend compatibility and end-to-end tests are complete.
 - GitHub Actions run 57 passed the expanded Node tests and the PostgreSQL 16 integration suite. The suite applies the migration twice and exercises attachment metadata rejection, block checks, receipts, message lifecycle, and RLS.
 - The current server is a 2,478-line Firebase-dependent service with many socket events and admin workflows. It must be migrated in feature groups with compatibility tests; replacing only its token verifier would break those features.
+
+
+## Authentication bootstrap finding — 7 November 2026
+- A read-only inspection of the live Supabase project found no trigger on `auth.users` to create `public.profiles` after a first Google OAuth signup. The live prototype has zero Auth users and zero profile rows, so no existing user data is affected.
+- Added `202611070002_auth_profile_bootstrap.sql` on the isolated migration branch. It creates a hardened trigger function in the non-exposed `private` schema, validates/bounds the display name, maps Google `full_name`/`name` and `avatar_url`/`picture` metadata, and inserts a profile without overwriting an existing one.
+- Added a PostgreSQL integration assertion that creates a disposable Auth user and verifies the corresponding profile is created. CI now applies both migration files twice to test repeatability.
+- This fix is branch-only and has not been applied to the live Supabase project. Google OAuth cutover and browser integration remain incomplete; Firebase login and chat continue to be the production path.
