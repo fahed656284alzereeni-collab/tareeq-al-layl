@@ -24,8 +24,30 @@ alter table public.conversations
   alter column user_one drop not null,
   alter column user_two drop not null;
 
-alter table public.conversations
-  add constraint conversations_type_check check (type in ('direct','group'));
+do $
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.conversations'::regclass
+      and conname = 'conversations_type_check'
+  ) then
+    alter table public.conversations
+      add constraint conversations_type_check check (type in ('direct','group'));
+  end if;
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.conversations'::regclass
+      and conname = 'conversations_type_participants_check'
+  ) then
+    alter table public.conversations
+      add constraint conversations_type_participants_check check (
+        (type = 'direct' and user_one is not null and user_two is not null and user_one < user_two)
+        or
+        (type = 'group' and user_one is null and user_two is null)
+      );
+  end if;
+end;
+$;
 
 create unique index if not exists conversations_unique_direct_pair
   on public.conversations (user_one, user_two)
@@ -388,11 +410,54 @@ $;
 
 revoke all on function private.create_direct_conversation(uuid) from public,anon;
 revoke all on function private.create_group_conversation(text,uuid[]) from public,anon;
+create or replace function private.decline_friend_request(p_request_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $
+declare v_me uuid := auth.uid();
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  update public.friend_requests set status='declined',responded_at=now()
+    where id=p_request_id and recipient_id=v_me and status='pending';
+  if not found then raise exception 'Pending request not found' using errcode='P0002'; end if;
+end;
+$;
+
+revoke all on function private.create_direct_conversation(uuid) from public,anon;
+revoke all on function private.create_group_conversation(text,uuid[]) from public,anon;
 revoke all on function private.accept_friend_request(uuid) from public,anon;
+revoke all on function private.decline_friend_request(uuid) from public,anon;
 grant usage on schema private to authenticated;
 grant execute on function private.create_direct_conversation(uuid) to authenticated;
 grant execute on function private.create_group_conversation(text,uuid[]) to authenticated;
 grant execute on function private.accept_friend_request(uuid) to authenticated;
+grant execute on function private.decline_friend_request(uuid) to authenticated;
+
+-- Public, invoker-rights entry points for the authenticated Data API.
+-- The privileged work remains isolated in the private SECURITY DEFINER routines.
+create or replace function public.create_direct_conversation(p_other_user uuid)
+returns uuid language sql security invoker set search_path = ''
+as $ select private.create_direct_conversation(p_other_user); $;
+
+create or replace function public.create_group_conversation(p_title text,p_member_ids uuid[])
+returns uuid language sql security invoker set search_path = ''
+as $ select private.create_group_conversation(p_title,p_member_ids); $;
+
+create or replace function public.accept_friend_request(p_request_id uuid)
+returns void language sql security invoker set search_path = ''
+as $ select private.accept_friend_request(p_request_id); $;
+
+create or replace function public.decline_friend_request(p_request_id uuid)
+returns void language sql security invoker set search_path = ''
+as $ select private.decline_friend_request(p_request_id); $;
+
+revoke all on function public.create_direct_conversation(uuid) from public,anon;
+revoke all on function public.create_group_conversation(text,uuid[]) from public,anon;
+revoke all on function public.accept_friend_request(uuid) from public,anon;
+revoke all on function public.decline_friend_request(uuid) from public,anon;
+grant execute on function public.create_direct_conversation(uuid) to authenticated;
+grant execute on function public.create_group_conversation(text,uuid[]) to authenticated;
+grant execute on function public.accept_friend_request(uuid) to authenticated;
+grant execute on function public.decline_friend_request(uuid) to authenticated;
 
 -- 7) Replace pair-only conversation/message authorization with membership checks.
 drop policy if exists "Participants can view conversations" on public.conversations;
@@ -437,7 +502,8 @@ grant select, update (read_at) on public.message_receipts to authenticated;
 grant select, insert, delete on public.message_user_visibility to authenticated;
 grant select, insert on public.friend_requests to authenticated;
 revoke update on public.friend_requests from authenticated;
-grant update (status, responded_at) on public.friend_requests to authenticated;
+-- Friend-request responses must go through the atomic RPC so acceptance
+-- cannot change status without creating both friendship edges.
 grant select, delete on public.friendships to authenticated;
 grant select, insert, delete on public.user_blocks to authenticated;
 grant select, insert on public.user_reports to authenticated;
