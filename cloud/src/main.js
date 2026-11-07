@@ -306,22 +306,32 @@ async function openConversation(conversation, person) {
   messages.innerHTML = '<p class="muted">جارٍ تحميل الرسائل…</p>';
   if (messageChannel) await supabase.removeChannel(messageChannel);
 
+  // Do not announce the whole history as if it were a stream of new messages.
+  messages.setAttribute("aria-live", "off");
+
   // Subscribe first, then fetch history so a message cannot slip between the two.
   messageChannel = supabase.channel(`messages:${conversation.id}`)
     .on("postgres_changes", {
       event: "INSERT", schema: "public", table: "messages",
       filter: `conversation_id=eq.${conversation.id}`
     }, payload => appendMessage(payload.new));
-  await new Promise((resolve, reject) => {
-    messageChannel.subscribe(status => {
-      if (status === "SUBSCRIBED") resolve();
-      if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-        reject(new Error("تعذر الاتصال الفوري بالمحادثة. تحقق من اتصال الإنترنت ثم أعد المحاولة."));
-      }
+  try {
+    await new Promise((resolve, reject) => {
+      messageChannel.subscribe(status => {
+        if (status === "SUBSCRIBED") resolve();
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+          reject(new Error("تعذر الاتصال الفوري بالمحادثة. تحقق من اتصال الإنترنت ثم أعد المحاولة."));
+        }
+      });
     });
-  });
-  await loadMessages();
-  document.querySelector("#message-input").focus();
+    await loadMessages();
+    messages.setAttribute("aria-live", "polite");
+    document.querySelector("#message-input").focus();
+  } catch (error) {
+    if (messageChannel) await supabase.removeChannel(messageChannel);
+    messageChannel = null;
+    announce(error.message, "error");
+  }
 }
 
 async function loadMessages() {
