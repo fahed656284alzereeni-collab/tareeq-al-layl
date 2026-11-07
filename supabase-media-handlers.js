@@ -46,7 +46,10 @@ function createSupabaseMediaHandlers(options = {}) {
       const {error:uploadError}=await storage.upload(storagePath,req.body,{contentType:mimeType,upsert:false,cacheControl:"3600"});
       if(uploadError)throw uploadError;
       const {data:signed,error:signedError}=await storage.createSignedUrl(storagePath,31536000);
-      if(signedError)throw signedError;
+      if(signedError) {
+        await storage.remove([storagePath]).catch(()=>{});
+        throw signedError;
+      }
       res.set("Cache-Control","no-store");
       return res.json({success:true,attachment:{
         name:fileName,type:mimeType,size:req.body.length,url:signed.signedUrl,storagePath
