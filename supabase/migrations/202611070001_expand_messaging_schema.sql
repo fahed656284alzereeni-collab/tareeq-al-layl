@@ -24,7 +24,7 @@ alter table public.conversations
   alter column user_one drop not null,
   alter column user_two drop not null;
 
-do $
+do $$
 begin
   if not exists (
     select 1 from pg_constraint
@@ -47,7 +47,7 @@ begin
       );
   end if;
 end;
-$;
+$$;
 
 create unique index if not exists conversations_unique_direct_pair
   on public.conversations (user_one, user_two)
@@ -323,7 +323,7 @@ grant usage on schema private to authenticated;
 
 create or replace function private.create_direct_conversation(p_other_user uuid)
 returns uuid language plpgsql security definer set search_path = ''
-as $
+as $$
 declare
   v_me uuid := auth.uid();
   v_low uuid;
@@ -356,11 +356,11 @@ begin
   on conflict (conversation_id,user_id) do nothing;
   return v_id;
 end;
-$;
+$$;
 
 create or replace function private.create_group_conversation(p_title text,p_member_ids uuid[])
 returns uuid language plpgsql security definer set search_path = ''
-as $
+as $$
 declare
   v_me uuid := auth.uid();
   v_members uuid[];
@@ -386,11 +386,11 @@ begin
     select v_id,user_id,case when user_id=v_me then 'owner' else 'member' end from unnest(v_members) as members(user_id);
   return v_id;
 end;
-$;
+$$;
 
 create or replace function private.accept_friend_request(p_request_id uuid)
 returns void language plpgsql security definer set search_path = ''
-as $
+as $$
 declare v_me uuid := auth.uid(); v_sender uuid;
 begin
   if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
@@ -406,13 +406,13 @@ begin
   insert into public.friendships(user_id,friend_id)
     values (v_me,v_sender),(v_sender,v_me) on conflict do nothing;
 end;
-$;
+$$;
 
 revoke all on function private.create_direct_conversation(uuid) from public,anon;
 revoke all on function private.create_group_conversation(text,uuid[]) from public,anon;
 create or replace function private.decline_friend_request(p_request_id uuid)
 returns void language plpgsql security definer set search_path = ''
-as $
+as $$
 declare v_me uuid := auth.uid();
 begin
   if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
@@ -420,7 +420,7 @@ begin
     where id=p_request_id and recipient_id=v_me and status='pending';
   if not found then raise exception 'Pending request not found' using errcode='P0002'; end if;
 end;
-$;
+$$;
 
 revoke all on function private.create_direct_conversation(uuid) from public,anon;
 revoke all on function private.create_group_conversation(text,uuid[]) from public,anon;
@@ -436,19 +436,19 @@ grant execute on function private.decline_friend_request(uuid) to authenticated;
 -- The privileged work remains isolated in the private SECURITY DEFINER routines.
 create or replace function public.create_direct_conversation(p_other_user uuid)
 returns uuid language sql security invoker set search_path = ''
-as $ select private.create_direct_conversation(p_other_user); $;
+as $$ select private.create_direct_conversation(p_other_user); $$;
 
 create or replace function public.create_group_conversation(p_title text,p_member_ids uuid[])
 returns uuid language sql security invoker set search_path = ''
-as $ select private.create_group_conversation(p_title,p_member_ids); $;
+as $$ select private.create_group_conversation(p_title,p_member_ids); $$;
 
 create or replace function public.accept_friend_request(p_request_id uuid)
 returns void language sql security invoker set search_path = ''
-as $ select private.accept_friend_request(p_request_id); $;
+as $$ select private.accept_friend_request(p_request_id); $$;
 
 create or replace function public.decline_friend_request(p_request_id uuid)
 returns void language sql security invoker set search_path = ''
-as $ select private.decline_friend_request(p_request_id); $;
+as $$ select private.decline_friend_request(p_request_id); $$;
 
 revoke all on function public.create_direct_conversation(uuid) from public,anon;
 revoke all on function public.create_group_conversation(text,uuid[]) from public,anon;
