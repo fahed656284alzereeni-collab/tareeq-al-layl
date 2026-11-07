@@ -56,7 +56,7 @@ Media upload uses `POST /upload` with an `application/octet-stream` body and `X-
 
 ## Isolated OAuth smoke test
 
-`supabase-auth-preview.html` is an accessible, standalone Google OAuth test page. It checks that Supabase Auth returns a session and that the new auth-user trigger creates a readable profile. It does not replace `login.html`, does not open the Firebase chat UI, and is not linked from the production navigation.
+`supabase-auth-preview.html` is an accessible, standalone Google OAuth test page. It checks that Supabase Auth returns a session and that the new auth-user trigger creates a readable profile, then offers a link to `supabase-chat-preview.html`. The chat preview exercises authenticated conversation listing, user search, direct conversations, messages, realtime refresh, and file uploads. Neither page replaces `login.html` or `chat.html`, and neither is linked from production navigation.
 
 ## Before enabling in a staging deployment
 
