@@ -69,7 +69,10 @@ test("messages are inserted with the verified sender id and attachments", async 
   }), { id: "message-1" });
   const inserted = calls.find(call => call[0] === "insert")[1];
   assert.equal(inserted.sender_id, "verified-user");
-  assert.deepEqual(inserted.attachment, { type: "image/png" });
+  assert.deepEqual(inserted.attachment, {
+    type: "image/png", name: "photo.png", size: 2048,
+    storagePath: "conversations/conversation-1/verified-user/file-1"
+  });
 });
 
 test("message reads hide rows marked invisible to the current user", async () => {
