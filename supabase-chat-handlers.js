@@ -134,6 +134,12 @@ function createSupabaseChatHandlers(options = {}) {
     listScheduledMessages: (req,res) => run(req,res,async repository => ({
       scheduledMessages: await repository.listScheduledMessages()
     })),
+    listNotifications: (req,res) => run(req,res,async repository => ({
+      notifications: await repository.listNotifications(req.query.limit)
+    })),
+    markNotificationRead: (req,res) => run(req,res,async repository => {
+      await repository.markNotificationRead(req.params.notificationId); return {};
+    }),
     cancelScheduledMessage: (req,res) => run(req,res,async repository => {
       await repository.cancelScheduledMessage(req.params.scheduledId); return {};
     }),
