@@ -99,6 +99,60 @@ create table if not exists public.message_user_visibility (
   primary key (message_id,user_id)
 );
 
+-- Permit attachment-only messages while retaining the text length limit.
+alter table public.messages drop constraint if exists message_body_length;
+do $
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.messages'::regclass
+      and conname = 'message_body_or_attachment_length'
+  ) then
+    alter table public.messages
+      add constraint message_body_or_attachment_length
+      check (char_length(body) <= 10000 and (char_length(body) >= 1 or attachment is not null));
+  end if;
+end;
+$;
+
+-- Automatically create one receipt per other active member and keep the
+-- conversation's last-message timestamp current in the same transaction.
+create schema if not exists private;
+revoke all on schema private from public;
+
+create or replace function private.on_message_insert()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $
+begin
+  insert into public.message_receipts(message_id,user_id)
+  select new.id, cm.user_id
+  from public.conversation_members cm
+  where cm.conversation_id = new.conversation_id
+    and cm.user_id <> new.sender_id
+    and cm.left_at is null
+  on conflict (message_id,user_id) do nothing;
+
+  update public.conversations
+  set last_message_at = greatest(
+        coalesce(last_message_at, '-infinity'::timestamptz),
+        coalesce(new.created_at, now())
+      ),
+      updated_at = greatest(updated_at, coalesce(new.created_at, now()))
+  where id = new.conversation_id;
+
+  return new;
+end;
+$;
+
+revoke all on function private.on_message_insert() from public, anon, authenticated;
+drop trigger if exists messages_after_insert on public.messages;
+create trigger messages_after_insert
+after insert on public.messages
+for each row execute function private.on_message_insert();
+
 -- 3) Social graph and safety controls.
 create table if not exists public.friend_requests (
   id uuid primary key default gen_random_uuid(),
