@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node --test"
+    "test": "node --test",
+    "build:pages-preview": "node scripts/build-pages-preview.mjs"
   },
   "dependencies": {
     "express": "^4.21.2",
