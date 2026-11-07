@@ -495,6 +495,9 @@ begin
   if coalesce(cardinality(p_member_ids),0)<1 or cardinality(p_member_ids)>49 then
     raise exception 'Invalid group member count' using errcode='22023';
   end if;
+  if char_length(btrim(coalesce(p_title,'')))<1 or char_length(btrim(p_title))>50 then
+    raise exception 'Invalid group title' using errcode='22023';
+  end if;
   select array_agg(x order by x) into v_members
     from (select distinct unnest(p_member_ids || array[v_me]) as x) d;
   select count(*) into v_count from auth.users u where u.id=any(v_members);
@@ -538,7 +541,7 @@ begin
     where not exists (select 1 from public.conversation_members cm
       where cm.conversation_id=p_conversation_id and cm.user_id=x and cm.left_at is null);
   if coalesce(cardinality(v_new),0)=0 then raise exception 'All selected users are already members' using errcode='22023'; end if;
-  if exists (select 1 from unnest(v_new) x where not exists(select 1 from auth.users u where u.id=x)) then
+  if exists (select 1 from unnest(v_new) as selected(user_id) where not exists(select 1 from auth.users u where u.id=selected.user_id)) then
     raise exception 'Unknown group member' using errcode='22023';
   end if;
   if exists (select 1 from public.user_blocks b
