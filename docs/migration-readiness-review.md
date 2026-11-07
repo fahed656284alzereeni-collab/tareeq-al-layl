@@ -22,12 +22,16 @@ The live RLS policy names were inspected. Existing policies are:
 The expanded migration removes the old pair-based policies and replaces them with active membership checks. It retains the profiles policies unchanged. It adds explicit authenticated table/column grants in addition to RLS.
 
 ## Transactional database APIs
-The migration now defines trusted functions in a non-exposed `private` schema:
-- `create_direct_conversation(uuid)`: canonical participant ordering, advisory transaction lock, duplicate prevention, block checks, and membership insertion.
+The migration now keeps privileged implementations in the non-exposed `private` schema and exposes narrow, invoker-rights wrappers in `public`, with EXECUTE granted only to `authenticated`:
+- `create_direct_conversation(uuid)`: canonical participant ordering, advisory transaction lock, duplicate prevention, block checks, and atomic membership insertion.
 - `create_group_conversation(text, uuid[])`: bounded member count, deduplicated membership, user existence checks, block checks, and atomic creator/member insertion.
-- `accept_friend_request(uuid)`: recipient-only acceptance and reciprocal friendship edges in one transaction.
+- `send_friend_request(uuid)`: rejects self-requests, unknown users, blocks, existing friendships, and pending requests in either direction; uses a pair lock and symmetric uniqueness.
+- `accept_friend_request(uuid)` / `decline_friend_request(uuid)`: recipient-only state changes; acceptance creates both friendship edges in the same transaction.
+- `remove_friendship(uuid)`: removes both reciprocal friendship edges together.
 
-These functions are intentionally not exposed as public Data API RPC endpoints. The server integration must call them through a trusted database connection or an explicitly designed private-schema server path. Do not expose the private schema merely to make browser RPC work.
+Direct client INSERT/UPDATE/DELETE privileges and policies for friend-request creation/responses and one-sided friendship deletion are removed. Message visibility rows are restricted to messages in conversations where the caller is an active member. The message-insert trigger creates recipient receipts and updates conversation activity timestamps.
+
+The private schema is not exposed through the Data API. The public wrappers call the private SECURITY DEFINER functions as invoker, and the private routines use an empty search path plus explicit schema qualification. Do not grant browser users direct write access to membership rows.
 
 ## Required implementation stages before cutover
 1. Validate the SQL migration on an isolated staging database with a disposable Supabase project or local Supabase stack. Run it twice to verify idempotency.
@@ -48,3 +52,19 @@ These functions are intentionally not exposed as public Data API RPC endpoints. 
 
 ## Safety decision
 Do not merge this branch, apply the migration to the live database, deploy to Render, or remove Firebase credentials until the staging migration and end-to-end tests pass.
+
+
+## Security review update — 7 November 2026
+- Fixed malformed dollar-quote delimiters in the SQL draft; a static check now finds no remaining single-dollar function/DO delimiters and an even count of paired `$$` delimiters. This is a textual check, not a PostgreSQL execution test.
+- Added atomic friend-request creation and reciprocal friendship removal RPCs. Direct table writes that could leave friend requests accepted without reciprocal friendship rows, or delete only one friendship edge, are no longer granted.
+- Tightened per-user message visibility to require active membership in the message's conversation.
+- The server-side verifier module `supabase-auth-verifier.js` and Node test file `test/supabase-auth-verifier.test.js` are present. The verifier calls Supabase Auth `getUser(accessToken)`; it does not decode and trust JWT claims locally. It is still staged and not connected to `server.js`.
+- The live Supabase security advisor returned no lints at the last read-only check. That result describes the current live prototype, not the un-applied migration draft.
+- The branch comparison currently shows the migration branch ahead of `main` with no commits behind. Production `main` remains untouched.
+
+## Additional release blockers
+- The SQL has not been executed on a disposable PostgreSQL/Supabase staging database, and idempotency has not been verified by applying it twice.
+- Automated Node tests have not yet been run in a project environment with dependencies installed.
+- The repository has no committed `package-lock.json`; dependency resolution is therefore not reproducible yet. Add and verify a lockfile before release.
+- The login page, chat page, settings page, profile page, Socket.IO middleware, upload route, and the remaining Firestore-backed routes still use Firebase. The presence of Supabase OAuth settings and helper modules does not mean Google login has switched.
+- The current server is a 2,478-line Firebase-dependent service with many socket events and admin workflows. It must be migrated in feature groups with compatibility tests; replacing only its token verifier would break those features.
