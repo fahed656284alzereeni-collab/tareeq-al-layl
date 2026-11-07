@@ -29,6 +29,24 @@ All endpoints are under `/api/supabase/chat` and require `Authorization: Bearer 
 - `POST /friend-requests/:requestId/decline`
 - `POST /blocks` with `{ "otherUserId": "..." }`
 - `DELETE /blocks/:userId`
+- `GET /friends`
+- `GET /users/search?q=...`
+- `POST /reports`
+- `GET /scheduled-messages`
+- `POST /scheduled-messages`
+- `DELETE /scheduled-messages/:scheduledId`
+- `POST /conversations/:conversationId/members`
+- `DELETE /conversations/:conversationId/members/:userId`
+- `POST /conversations/:conversationId/leave`
+- `PATCH /conversations/:conversationId` (rename group)
+- `PATCH /conversations/:conversationId/details`
+- `PATCH /conversations/:conversationId/permissions`
+- `PATCH /conversations/:conversationId/members/:userId/moderator`
+- `DELETE /groups/:conversationId`
+- `POST /messages/:messageId/delete-for-me`
+- `PATCH /messages/:messageId/video-duration`
+- `POST /friend-requests/:requestId/cancel`
+- `DELETE /friends/:userId` (remove friendship)
 
 ## Before enabling in a staging deployment
 
