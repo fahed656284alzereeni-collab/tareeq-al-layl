@@ -200,14 +200,18 @@ begin
   end;
 
   -- A direct conversation cannot be used to bypass a block created by either side.
+  perform set_config('request.jwt.claim.sub',v_user2::text,false);
   insert into public.user_blocks(blocker_id,blocked_id) values (v_user2,v_user1);
+  perform set_config('request.jwt.claim.sub',v_user1::text,false);
   begin
     insert into public.messages(conversation_id,sender_id,body)
       values (v_direct,v_user1,'blocked message');
     raise exception 'Unexpected message send across a block';
   exception when insufficient_privilege then null;
   end;
+  perform set_config('request.jwt.claim.sub',v_user2::text,false);
   delete from public.user_blocks where blocker_id=v_user2 and blocked_id=v_user1;
+  perform set_config('request.jwt.claim.sub',v_user1::text,false);
 
   -- Server-controlled timestamps and receipt fields cannot be forged by clients.
   begin
