@@ -220,7 +220,7 @@ begin
         jsonb_build_object('type','image/png','name','x.png','size',10,
           'storagePath','conversations/another-user/another-conversation/file.png'));
     raise exception 'Unexpected cross-user attachment path';
-  exception when check_violation then null;
+  exception when invalid_parameter_value then null;
   end;
 
   -- Server-controlled timestamps and receipt fields cannot be forged by clients.
