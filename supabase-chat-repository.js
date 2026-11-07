@@ -279,6 +279,25 @@ function createSupabaseChatRepository(client, userId) {
     return data;
   }
 
+  async function listNotifications(limit = 50) {
+    const { data, error } = await client.from("notifications")
+      .select("id,type,title,body,payload,read_at,created_at")
+      .eq("user_id", uid)
+      .order("created_at", { ascending: false })
+      .limit(Math.max(1, Math.min(Number(limit) || 50, 100)));
+    if (error) throw error;
+    return data || [];
+  }
+
+  async function markNotificationRead(notificationId) {
+    const { error } = await client.from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .eq("id", requiredId(notificationId, "Notification id"))
+      .eq("user_id", uid);
+    if (error) throw error;
+    return true;
+  }
+
   async function listScheduledMessages() {
     const { data, error } = await client.from("scheduled_messages")
       .select("id,conversation_id,body,attachment,scheduled_for,status,created_at")
@@ -350,6 +369,8 @@ function createSupabaseChatRepository(client, userId) {
     reportUser,
     scheduleMessage,
     listScheduledMessages,
+    listNotifications,
+    markNotificationRead,
     cancelScheduledMessage: scheduledId => rpc("cancel_scheduled_message", { p_scheduled_id: requiredId(scheduledId, "Scheduled message id") })
   });
 }
