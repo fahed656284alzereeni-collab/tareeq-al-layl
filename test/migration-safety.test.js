@@ -13,9 +13,13 @@ const migration = fs.readFileSync(
 const browserClient = fs.readFileSync(path.join(root, "supabase-client.js"), "utf8");
 
 test("migration has balanced PostgreSQL dollar quoting and transaction boundaries", () => {
-  const delimiters = migration.match(/\$\$/g) || [];
-  assert.equal(delimiters.length % 2, 0, "every $$ delimiter must have a pair");
-  assert.doesNotMatch(migration, /^(?:do|as) \$$|^\$;$/m, "single-dollar delimiters are invalid here");
+  const delimiters = migration.match(/\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/g) || [];
+  const counts = new Map();
+  for (const delimiter of delimiters) counts.set(delimiter, (counts.get(delimiter) || 0) + 1);
+  for (const [delimiter, count] of counts) {
+    assert.equal(count % 2, 0, delimiter + " dollar-quote delimiter must have a pair");
+  }
+  assert.doesNotMatch(migration, /^(?:do|as) \$|^\$;$/m, "single-dollar delimiters are invalid here");
   assert.match(migration, /^begin;/m);
   assert.match(migration, /^commit;/m);
 });
@@ -64,8 +68,10 @@ test("friend requests and friendships cannot be mutated through broad table gran
 
 test("transactional public RPC wrappers exist for social and conversation actions", () => {
   for (const name of [
-    "send_friend_request", "accept_friend_request", "decline_friend_request",
-    "remove_friendship", "create_direct_conversation", "create_group_conversation"
+    "send_friend_request", "cancel_friend_request", "accept_friend_request", "decline_friend_request",
+    "remove_friendship", "create_direct_conversation", "create_group_conversation",
+    "add_group_members", "remove_group_member", "leave_group", "rename_group",
+    "update_group_details", "update_group_permissions", "set_group_moderator", "delete_group"
   ]) {
     assert.match(migration, new RegExp("create or replace function public\\." + name + "\\(", "i"));
     assert.match(migration, new RegExp("grant execute on function public\\." + name + "\\(", "i"));
