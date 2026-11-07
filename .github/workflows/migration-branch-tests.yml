@@ -71,10 +71,10 @@ jobs:
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107100404_mersal_expand_messaging_schema.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107100410_mersal_auth_profile_bootstrap.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107100650_move_auth_helpers_private.sql
-          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107111000_add_fk_indexes_and_rls_cleanup.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107101147_add_fk_indexes_and_rls_cleanup.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107100404_mersal_expand_messaging_schema.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107100410_mersal_auth_profile_bootstrap.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107100650_move_auth_helpers_private.sql
-          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107111000_add_fk_indexes_and_rls_cleanup.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261107101147_add_fk_indexes_and_rls_cleanup.sql
       - name: Verify RPCs, backfill, receipts, profile permissions, and negative RLS cases
         run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f test/fixtures/migration-integration-assertions.sql
