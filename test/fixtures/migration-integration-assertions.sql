@@ -25,6 +25,10 @@ declare
   v_group uuid;
   v_request uuid;
   v_message uuid;
+  v_video uuid;
+  v_after_hide uuid;
+  v_final uuid;
+  v_scheduled uuid;
   v_rows integer;
 begin
   v_direct := public.create_direct_conversation(v_user2);
@@ -99,6 +103,98 @@ begin
     raise exception 'Message insert trigger did not update conversation activity';
   end if;
 
+  -- Per-recipient delivery/read receipts are written only through RPCs.
+  perform set_config('request.jwt.claim.sub',v_user2::text,false);
+  perform public.mark_message_delivered(v_message);
+  perform public.mark_message_read(v_message);
+  if not exists(select 1 from public.message_receipts
+    where message_id=v_message and user_id=v_user2 and delivered_at is not null and read_at is not null) then
+    raise exception 'Message receipt RPCs did not mark delivered/read';
+  end if;
+
+  perform set_config('request.jwt.claim.sub',v_user1::text,false);
+  perform public.edit_message(v_message,'Edited message');
+  if not exists(select 1 from public.messages where id=v_message and body='Edited message' and edited_at is not null) then
+    raise exception 'Message edit RPC failed';
+  end if;
+
+  perform public.hide_conversation_for_me(v_direct);
+  if not exists(select 1 from public.conversation_members
+    where conversation_id=v_direct and user_id=v_user1 and is_hidden) then
+    raise exception 'Hide conversation for me RPC failed';
+  end if;
+  insert into public.messages(conversation_id,sender_id,body)
+    values (v_direct,v_user1,'New message restores hidden conversation') returning id into v_after_hide;
+  if exists(select 1 from public.conversation_members
+    where conversation_id=v_direct and user_id=v_user1 and is_hidden) then
+    raise exception 'New message did not restore hidden conversation';
+  end if;
+
+  perform public.clear_conversation_for_me(v_direct);
+  if not exists(select 1 from public.message_user_visibility
+    where message_id=v_message and user_id=v_user1) then
+    raise exception 'Clear conversation for me did not hide prior messages';
+  end if;
+  insert into public.messages(conversation_id,sender_id,body)
+    values (v_direct,v_user1,'Message after personal clear') returning id into v_final;
+  if exists(select 1 from public.message_user_visibility
+    where message_id=v_final and user_id=v_user1) then
+    raise exception 'New message was incorrectly hidden after personal clear';
+  end if;
+  if not exists(select 1 from public.message_user_visibility
+    where message_id=v_message and user_id=v_user1) then
+    raise exception 'Previously cleared messages became visible again';
+  end if;
+
+  insert into public.messages(conversation_id,sender_id,body,attachment)
+    values (v_direct,v_user1,'Video attachment','{"type":"video/mp4"}'::jsonb)
+    returning id into v_video;
+  perform public.save_video_duration(v_video,90);
+  if not exists(select 1 from public.messages
+    where id=v_video and attachment->>'durationSeconds'='90') then
+    raise exception 'Video duration RPC failed';
+  end if;
+  perform public.delete_message_for_everyone(v_video);
+  if exists(select 1 from public.messages where id=v_video) then
+    raise exception 'Delete message for everyone RPC failed';
+  end if;
+
+  perform public.clear_conversation_for_everyone(v_direct);
+  if exists(select 1 from public.messages where conversation_id=v_direct) then
+    raise exception 'Clear conversation for everyone did not remove messages';
+  end if;
+  if (select last_message_at from public.conversations where id=v_direct) is not null then
+    raise exception 'Clear conversation for everyone did not reset last message time';
+  end if;
+
+  insert into public.scheduled_messages(conversation_id,sender_id,body,scheduled_for)
+    values (v_direct,v_user1,'Scheduled test',now()+interval '1 hour')
+    returning id into v_scheduled;
+  perform public.cancel_scheduled_message(v_scheduled);
+  if (select status from public.scheduled_messages where id=v_scheduled) <> 'cancelled' then
+    raise exception 'Scheduled message cancellation RPC failed';
+  end if;
+
+  insert into public.messages(conversation_id,sender_id,body)
+    values (v_direct,v_user1,'Final RLS probe') returning id into v_final;
+
+  -- Client updates are denied; callers must use the narrow RPCs.
+  begin
+    update public.messages set body='tampered' where id=v_final;
+    raise exception 'Unexpected direct message update success';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.message_receipts set read_at=now() where message_id=v_final and user_id=v_user2;
+    raise exception 'Unexpected direct receipt update success';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    update public.scheduled_messages set status='cancelled' where id=v_scheduled;
+    raise exception 'Unexpected direct scheduled-message update success';
+  exception when insufficient_privilege then null;
+  end;
+
   -- The caller cannot write membership, friendship, or friend-request rows directly.
   begin
     insert into public.conversation_members(conversation_id,user_id)
@@ -136,5 +232,17 @@ begin
   end;
 end;
 $negative_rls$;
+
+-- A participant can delete a direct conversation, but the operation is scoped
+-- to the authenticated member and cascades its messages/receipts.
+select set_config('request.jwt.claim.sub','00000000-0000-0000-0000-000000000001',false);
+do $delete_direct$
+begin
+  perform public.delete_direct_conversation('00000000-0000-0000-0000-000000000101');
+  if exists(select 1 from public.conversations where id='00000000-0000-0000-0000-000000000101') then
+    raise exception 'Direct conversation deletion RPC failed';
+  end if;
+end;
+$delete_direct$;
 
 reset role;
