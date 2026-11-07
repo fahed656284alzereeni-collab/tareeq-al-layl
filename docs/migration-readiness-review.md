@@ -26,8 +26,11 @@ The migration now keeps privileged implementations in the non-exposed `private` 
 - `create_direct_conversation(uuid)`: canonical participant ordering, advisory transaction lock, duplicate prevention, block checks, and atomic membership insertion.
 - `create_group_conversation(text, uuid[])`: bounded member count, deduplicated membership, user existence checks, block checks, and atomic creator/member insertion.
 - `send_friend_request(uuid)`: rejects self-requests, unknown users, blocks, existing friendships, and pending requests in either direction; uses a pair lock and symmetric uniqueness.
+- `cancel_friend_request(uuid)`: sender-only cancellation of a pending outgoing request.
 - `accept_friend_request(uuid)` / `decline_friend_request(uuid)`: recipient-only state changes; acceptance creates both friendship edges in the same transaction.
 - `remove_friendship(uuid)`: removes both reciprocal friendship edges together.
+- `add_group_members(uuid, uuid[])`, `remove_group_member(uuid, uuid)`, and `leave_group(uuid)`: active-membership and role checks, group capacity enforcement, and transactional membership changes.
+- `rename_group(uuid, text)`, `update_group_details(uuid, text, text)`, `update_group_permissions(uuid, text, text)`, `set_group_moderator(uuid, uuid, boolean)`, and `delete_group(uuid)`: group settings and moderator operations with creator/admin permission checks.
 
 Direct client INSERT/UPDATE/DELETE privileges and policies for friend-request creation/responses and one-sided friendship deletion are removed. Message visibility rows are restricted to messages in conversations where the caller is an active member. The message-insert trigger creates recipient receipts and updates conversation activity timestamps.
 
@@ -59,13 +62,14 @@ Do not merge this branch, apply the migration to the live database, deploy to Re
 - Added atomic friend-request creation and reciprocal friendship removal RPCs. Direct table writes that could leave friend requests accepted without reciprocal friendship rows, or delete only one friendship edge, are no longer granted.
 - Tightened per-user message visibility to require active membership in the message's conversation.
 - The server-side verifier module `supabase-auth-verifier.js` and Node test file `test/supabase-auth-verifier.test.js` are present. The verifier calls Supabase Auth `getUser(accessToken)`; it does not decode and trust JWT claims locally. It is still staged and not connected to `server.js`.
+- `supabase-clients.js` now creates a request-scoped user client carrying the caller's bearer token (so RLS applies) and a separate server-only admin client. Both factories have unit tests and neither is wired into production routes yet.
 - The live Supabase security advisor returned no lints at the last read-only check. That result describes the current live prototype, not the un-applied migration draft.
 - The branch comparison currently shows the migration branch ahead of `main` with no commits behind. Production `main` remains untouched.
 
 ## Additional release blockers
 - The SQL has not been executed on a disposable PostgreSQL/Supabase staging database, and idempotency has not been verified by applying it twice.
-- Automated Node tests have not yet been run in a project environment with dependencies installed.
+- GitHub Actions has run the Node test suite successfully on several migration-branch commits, including the verifier, static migration checks, and Supabase client factory tests. The latest cancellation-RPC/test expansion is awaiting its CI result.
 - The repository has no committed `package-lock.json`; dependency resolution is therefore not reproducible yet. Add and verify a lockfile before release.
-- Added `.github/workflows/migration-branch-tests.yml` and static regression checks in `test/migration-safety.test.js`. The initial CI run passed the verifier tests; the migration-safety tests were added immediately afterward and are being exercised by the next branch run.
+- Added `.github/workflows/migration-branch-tests.yml`, static SQL safety checks in `test/migration-safety.test.js`, and request-scoped client tests in `test/supabase-clients.test.js`.
 - The login page, chat page, settings page, profile page, Socket.IO middleware, upload route, and the remaining Firestore-backed routes still use Firebase. The presence of Supabase OAuth settings and helper modules does not mean Google login has switched.
 - The current server is a 2,478-line Firebase-dependent service with many socket events and admin workflows. It must be migrated in feature groups with compatibility tests; replacing only its token verifier would break those features.
