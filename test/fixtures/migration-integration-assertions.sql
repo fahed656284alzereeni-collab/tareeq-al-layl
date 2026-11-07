@@ -1,5 +1,23 @@
 \set ON_ERROR_STOP on
 
+-- Exposed helper functions are invoker-only or absent; definer helpers live privately.
+do $helper_security$
+declare v_is_definer boolean;
+begin
+  if to_regprocedure('public.is_conversation_member(uuid)') is not null then
+    raise exception 'Public SECURITY DEFINER membership helper should be removed';
+  end if;
+  select prosecdef into v_is_definer from pg_proc
+    where oid='public.is_direct_conversation_blocked(uuid)'::regprocedure;
+  if v_is_definer is distinct from false then
+    raise exception 'Public direct-block helper must be SECURITY INVOKER';
+  end if;
+  if to_regprocedure('private.is_conversation_member(uuid)') is null then
+    raise exception 'Private membership helper is missing';
+  end if;
+end;
+$helper_security$;
+
 -- Realtime publication includes the additional messaging and social tables.
 do $realtime_check$
 declare v_count integer;
@@ -320,8 +338,13 @@ begin
   exception when insufficient_privilege then null;
   end;
   begin
-    perform public.is_conversation_member('00000000-0000-0000-0000-000000000101');
-    raise exception 'Unexpected anon membership helper execution';
+    perform private.is_conversation_member('00000000-0000-0000-0000-000000000101');
+    raise exception 'Unexpected anon private membership helper execution';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    perform public.is_direct_conversation_blocked('00000000-0000-0000-0000-000000000101');
+    raise exception 'Unexpected anon direct block helper execution';
   exception when insufficient_privilege then null;
   end;
   begin
