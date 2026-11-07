@@ -64,9 +64,29 @@ function createSupabaseChatRepository(client, userId) {
       .order("last_message_at", { ascending: false });
     if (error) throw error;
     const byId = new Map(rows.map(row => [row.conversation_id, row]));
-    return (conversations || []).map(conversation => ({
-      ...conversation,
-      membership: byId.get(conversation.id)
+    return Promise.all((conversations || []).map(async conversation => {
+      const details = await getConversationDetails(conversation.id);
+      const recent = await getConversationMessages(conversation.id, { limit: 20, latest: true });
+      const lastMessage = recent[0] || null;
+      const members = details?.members || [];
+      const other = members.find(member => member.user_id !== uid);
+      const group = conversation.type === "group";
+      return {
+        ...conversation,
+        membership: byId.get(conversation.id),
+        otherUid: group ? null : (other?.user_id || null),
+        displayName: group
+          ? (conversation.title || "مجموعة")
+          : (other?.profile?.display_name || other?.profile?.username || "مستخدم"),
+        groupName: group ? (conversation.title || "مجموعة") : null,
+        memberNames: group ? members.map(member => member.profile?.display_name || member.profile?.username || "مستخدم") : [],
+        lastMessage: lastMessage
+          ? (lastMessage.deleted_for_everyone ? "تم حذف الرسالة" : (lastMessage.body || (lastMessage.attachment ? "أرسل مرفقًا" : "")))
+          : "",
+        lastMessageAt: lastMessage?.created_at || conversation.last_message_at || null,
+        lastMessageSenderUid: lastMessage?.sender_id || null,
+        unreadCount: 0
+      };
     }));
   }
 
@@ -110,7 +130,7 @@ function createSupabaseChatRepository(client, userId) {
     let query = client.from("messages")
       .select(MESSAGE_COLUMNS + ",message_receipts(user_id,delivered_at,read_at),message_user_visibility(user_id)")
       .eq("conversation_id", id)
-      .order("created_at", { ascending: true })
+      .order("created_at", { ascending: !options.latest })
       .limit(limit);
     if (options.before) query = query.lt("created_at", options.before);
     const { data, error } = await query;
