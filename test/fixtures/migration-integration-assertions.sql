@@ -332,3 +332,26 @@ begin
 end;
 $anon_access$;
 reset role;
+
+
+-- A newly created Supabase Auth user must immediately receive a usable profile.
+insert into auth.users(id, raw_user_meta_data)
+values (
+  '00000000-0000-0000-0000-000000000099',
+  jsonb_build_object(
+    'full_name', 'OAuth New User',
+    'picture', 'https://example.invalid/avatar.png'
+  )
+);
+do $auth_profile_bootstrap$
+begin
+  if not exists (
+    select 1 from public.profiles
+    where id='00000000-0000-0000-0000-000000000099'
+      and display_name='OAuth New User'
+      and avatar_url='https://example.invalid/avatar.png'
+  ) then
+    raise exception 'Supabase Auth signup did not create the expected profile';
+  end if;
+end;
+$auth_profile_bootstrap$;
