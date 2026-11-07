@@ -61,7 +61,7 @@ Media upload uses `POST /upload` with an `application/octet-stream` body and `X-
 ## Before enabling in a staging deployment
 
 1. Configure `SUPABASE_URL` and `SUPABASE_PUBLISHABLE_KEY` in the staging server.
-2. Apply the migration only to a separate Supabase staging project after checking its schema, grants, policies, Auth settings, and Storage bucket.
+2. The three schema migrations are already applied to the live Supabase project. Do not reapply them manually. Keep the API flags disabled until Google OAuth, media upload, and two-user end-to-end behavior have been verified in a separate staging environment or explicitly approved test session.
 3. Set `SUPABASE_CHAT_API_ENABLED=true` only in that staging deployment.
 4. Test Google OAuth, user provisioning, profile completion, direct and group chats, attachments, replies, receipts, friend requests, blocks, scheduled messages, account deletion, and all admin/abuse controls.
 5. Keep the existing Firebase path available for rollback until every screen and socket event has a tested replacement.
