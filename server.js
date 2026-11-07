@@ -1569,6 +1569,22 @@ if (process.env.SUPABASE_CHAT_API_ENABLED === "true") {
   app.post("/api/supabase/chat/friend-requests/:requestId/decline", supabaseChatHandlers.declineFriendRequest);
   app.post("/api/supabase/chat/blocks", supabaseChatHandlers.blockUser);
   app.delete("/api/supabase/chat/blocks/:userId", supabaseChatHandlers.unblockUser);
+  app.get("/api/supabase/chat/friends", supabaseChatHandlers.getFriendData);
+  app.get("/api/supabase/chat/users/search", supabaseChatHandlers.searchUsers);
+  app.post("/api/supabase/chat/reports", supabaseChatHandlers.reportUser);
+  app.get("/api/supabase/chat/scheduled-messages", supabaseChatHandlers.listScheduledMessages);
+  app.post("/api/supabase/chat/scheduled-messages", supabaseChatHandlers.scheduleMessage);
+  app.delete("/api/supabase/chat/scheduled-messages/:scheduledId", supabaseChatHandlers.cancelScheduledMessage);
+  app.post("/api/supabase/chat/conversations/:conversationId/members", supabaseChatHandlers.addGroupMembers);
+  app.delete("/api/supabase/chat/conversations/:conversationId/members/:userId", supabaseChatHandlers.removeGroupMember);
+  app.post("/api/supabase/chat/conversations/:conversationId/leave", supabaseChatHandlers.leaveGroup);
+  app.patch("/api/supabase/chat/conversations/:conversationId", supabaseChatHandlers.renameGroup);
+  app.patch("/api/supabase/chat/conversations/:conversationId/details", supabaseChatHandlers.updateGroupDetails);
+  app.patch("/api/supabase/chat/conversations/:conversationId/permissions", supabaseChatHandlers.updateGroupPermissions);
+  app.patch("/api/supabase/chat/conversations/:conversationId/members/:userId/moderator", supabaseChatHandlers.setGroupModerator);
+  app.delete("/api/supabase/chat/groups/:conversationId", supabaseChatHandlers.deleteGroup);
+  app.post("/api/supabase/chat/messages/:messageId/delete-for-me", supabaseChatHandlers.deleteMessageForMe);
+  app.patch("/api/supabase/chat/messages/:messageId/video-duration", supabaseChatHandlers.saveVideoDuration);
 }
 
 
