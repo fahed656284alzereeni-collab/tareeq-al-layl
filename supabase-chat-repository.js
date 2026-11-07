@@ -85,7 +85,6 @@ function createSupabaseChatRepository(client, userId) {
           : "",
         lastMessageAt: lastMessage?.created_at || conversation.last_message_at || null,
         lastMessageSenderUid: lastMessage?.sender_id || null,
-        unreadCount: 0
       };
     }));
   }
