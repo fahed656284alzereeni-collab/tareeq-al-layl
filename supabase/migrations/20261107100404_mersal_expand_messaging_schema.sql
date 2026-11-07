@@ -1342,9 +1342,8 @@ drop policy if exists "Recipients can mark own incoming messages read" on public
 
 commit;
 
--- IMPORTANT FOLLOW-UP BEFORE APPLYING:
--- Review direct-conversation creation RPC/trigger, group creation and membership
--- RPCs, reciprocal friendship writes, receipt ownership, admin-only policies,
--- attachment Storage policies, and the app's exact legacy field mapping.
--- This draft intentionally does not grant clients arbitrary membership writes,
--- admin table access, or access to service-role credentials.
+-- Remaining release work is outside this schema layer: migrate the existing
+-- Firebase client/socket event flows, admin and moderation workflows, push
+-- fan-out, voice-call signaling, scheduled-message worker, and Storage cleanup.
+-- This migration never grants clients arbitrary membership writes or access
+-- to service-role credentials.
