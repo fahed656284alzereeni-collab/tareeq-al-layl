@@ -80,3 +80,14 @@ Important schema gap: current `conversations` is strictly two-person/direct-mess
 - Therefore the Supabase token verifier must remain staged and must not be enabled by itself. A real cutover requires a persistence adapter and feature-by-feature migration, not a token-only switch.
 - Rechecked the live Supabase public schema: `profiles`, `conversations`, and `messages` remain empty and RLS-enabled; `conversations` remains a two-participant schema. Security advisor currently reports no lints for the live schema only.
 - No live database DDL, production branch change, or Render deployment was performed in this work session.
+
+
+## Isolated Supabase profile API implementation (2026-11-07)
+- Added `supabase-profile-handlers.js` with GET/update handlers that verify Supabase access tokens, derive the profile ID only from the verified identity, and use a request-scoped RLS client.
+- Added `GET/POST /api/supabase/profile/me` to `server.js`, guarded by `SUPABASE_PROFILE_API_ENABLED=true`. The flag is not enabled by this code change; existing Firebase routes remain active.
+- Reused the existing name moderation function for display-name changes.
+- Added handler tests for token verification, scoped client use, user-row scoping, validation, and moderation.
+- Read-only live-schema checks confirmed the profile RLS policies are own-row scoped for updates and that the auth-user trigger creates a profile row. No live DDL or writes were performed.
+- See `docs/supabase-profile-api-staging.md` for the route contract and cutover guardrails.
+- GitHub Actions run for commit `922bc64536010fa68dd3e5b3047df3a105970014`: Node tests passed; disposable PostgreSQL migration integration test was still running at the time of this note.
+- The browser pages and Socket.IO remain Firebase-backed; this is a staged server API slice, not an active authentication cutover.
