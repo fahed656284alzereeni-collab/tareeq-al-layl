@@ -326,7 +326,7 @@ async function openConversation(conversation, person) {
     });
     await loadMessages();
     messages.setAttribute("aria-live", "polite");
-    document.querySelector("#message-input").focus();
+    document.querySelector("#back-to-list").focus();
   } catch (error) {
     if (messageChannel) await supabase.removeChannel(messageChannel);
     messageChannel = null;
