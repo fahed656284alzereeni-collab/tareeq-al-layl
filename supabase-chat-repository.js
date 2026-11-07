@@ -263,6 +263,11 @@ function createSupabaseChatRepository(client, userId) {
     const body = String(input.body ?? "");
     const attachment = validateAttachmentMetadata(input.attachment ?? null, conversationId, uid);
     if (!body.trim() && !attachment) throw new TypeError("A scheduled message needs text or an attachment.");
+    if (body.length > 4000) {
+      const error = new Error("Scheduled message is too long.");
+      error.code = "MESSAGE_TOO_LONG";
+      throw error;
+    }
     const { data, error } = await client.from("scheduled_messages").insert({
       conversation_id: conversationId,
       sender_id: uid,
