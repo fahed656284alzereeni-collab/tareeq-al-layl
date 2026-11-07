@@ -368,7 +368,7 @@ declare
   v_id uuid;
 begin
   if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
-  if coalesce(cardinality(p_member_ids),0)<1 or cardinality(p_member_ids)>100 then
+  if coalesce(cardinality(p_member_ids),0)<1 or cardinality(p_member_ids)>99 then
     raise exception 'Invalid group member count' using errcode='22023';
   end if;
   select array_agg(x order by x) into v_members
