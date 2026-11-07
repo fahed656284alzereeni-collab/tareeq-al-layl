@@ -26,6 +26,17 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Run automated tests
         run: npm test
+      - name: Check server and Supabase module syntax
+        run: |
+          node --check server.js
+          node --check supabase-auth-verifier.js
+          node --check supabase-clients.js
+          node --check supabase-profile-repository.js
+          node --check supabase-profile-handlers.js
+          node --check supabase-chat-repository.js
+          node --check supabase-chat-handlers.js
+          node --check supabase-media-handlers.js
+          node --check supabase-chat-api.mjs
 
   postgres-migration-test:
     runs-on: ubuntu-latest
