@@ -1243,6 +1243,14 @@ with check (
   sender_id = (select auth.uid())
   and public.is_conversation_member(conversation_id)
   and not public.is_direct_conversation_blocked(conversation_id)
+  and (
+    reply_to is null
+    or exists (
+      select 1 from public.messages parent
+      where parent.id = messages.reply_to
+        and parent.conversation_id = messages.conversation_id
+    )
+  )
 );
 
 -- Restrict column privileges as well as row policies: otherwise a recipient
