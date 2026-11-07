@@ -19,7 +19,7 @@ test("migration has balanced PostgreSQL dollar quoting and transaction boundarie
   for (const [delimiter, count] of counts) {
     assert.equal(count % 2, 0, delimiter + " dollar-quote delimiter must have a pair");
   }
-  assert.doesNotMatch(migration, /^(?:do|as) \$|^\$;$/m, "single-dollar delimiters are invalid here");
+  assert.doesNotMatch(migration, /^(?:do|as) \$(?:\s|;|$)|^\$;$/m, "malformed single-dollar delimiters are invalid here");
   assert.match(migration, /^begin;/m);
   assert.match(migration, /^commit;/m);
 });
