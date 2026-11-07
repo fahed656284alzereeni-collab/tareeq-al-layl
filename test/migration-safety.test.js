@@ -79,6 +79,13 @@ test("transactional public RPC wrappers exist for social and conversation action
   }
 });
 
+test("profiles support the account screen with scoped update grants", () => {
+  assert.match(migration, /add column if not exists bio text not null default ''/i);
+  assert.match(migration, /profiles_bio_length/i);
+  assert.match(migration, /grant update \(username, display_name, bio, avatar_url\) on public\.profiles to authenticated;/i);
+  assert.match(migration, /create trigger profiles_touch_updated_at/i);
+});
+
 test("browser Supabase client contains no server secret key", () => {
   assert.match(browserClient, /SUPABASE_PUBLISHABLE_KEY/);
   assert.doesNotMatch(browserClient, /SUPABASE_SECRET_KEY|service_role|sb_secret_/i);
