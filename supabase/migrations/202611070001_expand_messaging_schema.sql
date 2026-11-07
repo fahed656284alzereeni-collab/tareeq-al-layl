@@ -1323,7 +1323,7 @@ begin
   if exists (select 1 from pg_publication where pubname='supabase_realtime') then
     foreach v_table in array array[
       'conversation_members','message_receipts','notifications',
-      'friend_requests','friendships'
+      'friend_requests','friendships','user_blocks','scheduled_messages'
     ] loop
       if not exists (
         select 1 from pg_publication_tables
