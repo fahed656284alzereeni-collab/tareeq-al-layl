@@ -4,6 +4,9 @@
 
 begin;
 
+-- Create the non-exposed helper schema before defining any internal functions.
+create schema if not exists private;
+
 -- 1) Conversation metadata and normalized membership.
 alter table public.conversations
   add column if not exists type text not null default 'direct',
