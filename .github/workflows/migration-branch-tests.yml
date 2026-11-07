@@ -26,3 +26,37 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Run automated tests
         run: npm test
+
+  postgres-migration-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: mersal_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d mersal_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/mersal_test
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Create a disposable Supabase-like baseline
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f test/fixtures/supabase-baseline.sql
+      - name: Apply migration to disposable PostgreSQL twice
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/202611070001_expand_messaging_schema.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/202611070001_expand_messaging_schema.sql
+      - name: Verify RPCs, backfill, receipts, profile permissions, and negative RLS cases
+        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f test/fixtures/migration-integration-assertions.sql
