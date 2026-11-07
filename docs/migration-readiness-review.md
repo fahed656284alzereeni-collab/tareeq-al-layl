@@ -46,7 +46,7 @@ The private schema is not exposed through the Data API. The public wrappers call
 7. Only after all tests pass: switch production traffic, observe logs, and later retire Firebase. Never delete Firebase credentials before this point.
 
 ## Current blockers / not yet complete
-- The expanded SQL passed the disposable PostgreSQL 16 integration job, including two consecutive applications and the included RPC/RLS assertions. It remains unapplied to the real Supabase project; Supabase-specific staging verification and the remaining negative cases are still required.
+- The expanded SQL passed the disposable PostgreSQL 16 integration job, including two consecutive applications and the included RPC/RLS assertions. The later message-lifecycle RPC additions also passed the expanded integration suite. It remains unapplied to the real Supabase project; Supabase-specific staging verification and the remaining negative cases are still required.
 - The conversation, group, and social RPC functions are not yet wired to the Express/Socket.IO chat events. An isolated opt-in profile API has been added, but it does not replace the existing Firebase profile route.
 - `login.html`, `chat.html`, `settings.html`, `profile.html`, and the Firebase-dependent routes have not yet been cut over.
 - Supabase Storage upload still has an existing Firebase conversation membership check in the server route.
@@ -68,7 +68,7 @@ Do not merge this branch, apply the migration to the live database, deploy to Re
 
 ## Additional release blockers
 - The SQL passed on disposable PostgreSQL 16 and was applied twice successfully. It has not yet been applied to a separate Supabase staging project, where Supabase Auth roles, Data API exposure, realtime publication, and Storage policies must also be verified.
-- GitHub Actions Node tests and the disposable PostgreSQL migration/RLS integration job both passed on the latest migration-fix commit. Later opt-in profile API changes also have passing unit tests; their latest full CI runs are being checked.
+- GitHub Actions run 34 (`498350a`) passed both Node tests and the disposable PostgreSQL 16 migration/RPC/RLS integration job. The expanded integration assertions cover receipts, read/delivery status, edit/delete, hide/clear, video duration, scheduled-message cancellation, and denial of direct client writes.
 - The repository has no committed `package-lock.json`; dependency resolution is therefore not reproducible yet. Add and verify a lockfile before release.
 - Added `.github/workflows/migration-branch-tests.yml`, static SQL safety checks, PostgreSQL fixtures/integration assertions, request-scoped client tests, and profile repository/handler tests.
 - `login.html`, `chat.html`, `settings.html`, and `profile.html` still use Firebase. The new `/api/supabase/profile/me` routes are gated behind `SUPABASE_PROFILE_API_ENABLED=true` and are not enabled by default. Socket.IO, uploads, messaging, friends, notifications, and admin workflows still use Firebase/Firestore.
