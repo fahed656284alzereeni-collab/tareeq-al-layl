@@ -12,6 +12,8 @@ A browser adapter is now available in `supabase-chat-api.mjs`. It attaches the c
 
 All endpoints are under `/api/supabase/chat` and require `Authorization: Bearer <Supabase access token>`.
 
+Media upload uses `POST /upload` with an `application/octet-stream` body and `X-Conversation-Id`, `X-File-Type`, and `X-File-Name` headers. The server verifies active conversation membership and direct-message block state before using its private Storage credential; the browser never receives the Storage secret.
+
 - `GET /conversations`
 - `GET /conversations/:conversationId`
 - `GET /conversations/:conversationId/messages?limit=100&before=<timestamp>`
