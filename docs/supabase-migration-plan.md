@@ -89,5 +89,5 @@ Important schema gap: current `conversations` is strictly two-person/direct-mess
 - Added handler tests for token verification, scoped client use, user-row scoping, validation, and moderation.
 - Read-only live-schema checks confirmed the profile RLS policies are own-row scoped for updates and that the auth-user trigger creates a profile row. No live DDL or writes were performed.
 - See `docs/supabase-profile-api-staging.md` for the route contract and cutover guardrails.
-- GitHub Actions run for commit `922bc64536010fa68dd3e5b3047df3a105970014`: Node tests passed; disposable PostgreSQL migration integration test was still running at the time of this note.
+- GitHub Actions run for current commit `e032f0da0a3a9f5280c2362fda24495ec886e4fa`: Node tests passed (23/23), and the disposable PostgreSQL migration was applied twice successfully; RPC, backfill, receipt, profile-permission, and negative RLS assertions all passed.
 - The browser pages and Socket.IO remain Firebase-backed; this is a staged server API slice, not an active authentication cutover.
