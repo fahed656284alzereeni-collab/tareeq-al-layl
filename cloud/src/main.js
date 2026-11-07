@@ -72,6 +72,60 @@ async function loadProfile() {
   if (!profile) throw new Error("لم يتم إنشاء ملف الحساب تلقائيًا. يلزم فحص إعداد إنشاء الملف في قاعدة البيانات.");
 }
 
+function renderProfileSetup() {
+  shell(`
+    <main class="auth-page">
+      <section class="auth-card" aria-labelledby="profile-title">
+        <p class="eyebrow">خطوة واحدة قبل البدء</p>
+        <h1 id="profile-title">ملفك في مرسال</h1>
+        <p class="intro">اختر اسمًا ظاهرًا واسم مستخدم يستطيع الآخرون البحث عنك به.</p>
+        <form id="profile-form" class="search-form">
+          <label for="display-name">الاسم الظاهر</label>
+          <input id="display-name" name="display_name" maxlength="40" required autocomplete="name" value="${escapeHTML(profile?.display_name || "")}" />
+          <label for="username">اسم المستخدم بالإنجليزية</label>
+          <input id="username" name="username" minlength="3" maxlength="24" pattern="[A-Za-z0-9_]{3,24}" required autocomplete="username" value="${escapeHTML(profile?.username || "")}" aria-describedby="username-help" />
+          <p id="username-help" class="small-note">من 3 إلى 24 حرفًا أو رقمًا أو شرطة سفلية، دون مسافات.</p>
+          <button class="primary" type="submit">حفظ ومتابعة</button>
+        </form>
+        <p id="status" class="status" role="status" aria-live="polite">هذه البيانات تساعد الآخرين في العثور عليك.</p>
+      </section>
+    </main>
+  `);
+  document.querySelector("#profile-form").addEventListener("submit", async event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const display_name = form.display_name.value.trim();
+    const username = form.username.value.trim();
+    const button = form.querySelector("button");
+    if (display_name.length < 2 || display_name.length > 40) {
+      announce("الاسم الظاهر يجب أن يكون بين حرفين و40 حرفًا.");
+      form.display_name.focus();
+      return;
+    }
+    if (!/^[A-Za-z0-9_]{3,24}$/.test(username)) {
+      announce("اسم المستخدم يجب أن يكون من 3 إلى 24 حرفًا أو رقمًا أو شرطة سفلية.");
+      form.username.focus();
+      return;
+    }
+    button.disabled = true;
+    announce("جارٍ حفظ ملفك…");
+    const { data, error } = await supabase.from("profiles")
+      .update({ display_name, username, updated_at: new Date().toISOString() })
+      .eq("id", session.user.id)
+      .select("id, username, display_name, avatar_url")
+      .single();
+    button.disabled = false;
+    if (error) {
+      announce(error.code === "23505" ? "اسم المستخدم مستخدم بالفعل. اختر اسمًا آخر." : `تعذر حفظ الملف: ${error.message}`, "error");
+      return;
+    }
+    profile = data;
+    renderApp();
+    announce("تم حفظ ملفك. أهلًا بك في مرسال.");
+  });
+  document.querySelector("#display-name").focus();
+}
+
 function renderApp() {
   shell(`
     <div class="app-shell">
@@ -342,6 +396,10 @@ async function boot() {
   }
   try {
     await loadProfile();
+    if (!profile.username || !profile.display_name) {
+      renderProfileSetup();
+      return;
+    }
     renderApp();
   } catch (profileError) {
     shell(`<main class="boot"><h1>مرسال</h1><p class="error" role="alert">${escapeHTML(profileError.message)}</p><button id="retry" class="primary">إعادة المحاولة</button></main>`);
