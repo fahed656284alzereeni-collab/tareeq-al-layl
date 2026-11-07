@@ -66,5 +66,6 @@ Do not merge this branch, apply the migration to the live database, deploy to Re
 - The SQL has not been executed on a disposable PostgreSQL/Supabase staging database, and idempotency has not been verified by applying it twice.
 - Automated Node tests have not yet been run in a project environment with dependencies installed.
 - The repository has no committed `package-lock.json`; dependency resolution is therefore not reproducible yet. Add and verify a lockfile before release.
+- Added `.github/workflows/migration-branch-tests.yml` and static regression checks in `test/migration-safety.test.js`. The initial CI run passed the verifier tests; the migration-safety tests were added immediately afterward and are being exercised by the next branch run.
 - The login page, chat page, settings page, profile page, Socket.IO middleware, upload route, and the remaining Firestore-backed routes still use Firebase. The presence of Supabase OAuth settings and helper modules does not mean Google login has switched.
 - The current server is a 2,478-line Firebase-dependent service with many socket events and admin workflows. It must be migrated in feature groups with compatibility tests; replacing only its token verifier would break those features.
