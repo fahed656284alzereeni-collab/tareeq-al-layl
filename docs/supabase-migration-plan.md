@@ -51,3 +51,18 @@ Important schema gap: current `conversations` is strictly two-person/direct-mess
 - Do not weaken RLS to make the migration appear to work.
 - Do not remove Firebase credentials or change production deployment settings before a tested replacement is available.
 - No production merge or destructive database change is included in this audit commit.
+
+## Current branch progress (2026-11-07)
+- Expanded messaging migration remains a draft on supabase-migration; it has not been applied to the live Supabase database.
+- Hardened SQL function quoting, made the conversation constraints re-runnable, enforced direct/group participant shape, and added authenticated Data API wrappers around private transactional routines.
+- Direct and group conversation creation is now server-side transactional SQL; friend-request acceptance/decline is routed through atomic functions rather than allowing clients to edit request status directly.
+- Message insert trigger now creates per-recipient receipt rows and updates conversation activity timestamps. Attachment-only messages are permitted subject to the existing 10,000-character cap.
+- Added a server-side Supabase Auth verifier that calls Auth getUser(accessToken), plus unit tests. It is intentionally not connected to current Firebase-dependent routes.
+- Added a Node test command: npm test.
+
+## Remaining blockers before cutover
+- The application still depends heavily on Firebase Auth and Firestore in login.html, chat.html, settings.html, and server.js. The new verifier alone must not be switched on.
+- Complete migration of user profile operations, conversation/message persistence, group membership administration, friend/block workflows, scheduled messages, notifications, media storage, admin actions, account deletion, and Socket.IO identity checks.
+- Add/verify storage bucket policies and attachment validation; define trusted admin authorization in app_metadata or a server-controlled role table.
+- Test the migration SQL against a disposable Supabase staging project, including RLS negative tests and re-run/idempotency checks. The live project's advisor currently reports no security lints for its existing schema; this is not a validation of the unapplied draft.
+- Run browser and Socket.IO end-to-end tests before any Render environment change or production deploy.
