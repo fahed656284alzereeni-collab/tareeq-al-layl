@@ -139,7 +139,7 @@ create index if not exists notifications_user_recent_idx
 
 -- 5) Authorization helper. SECURITY DEFINER avoids recursive RLS evaluation
 -- when membership policies query conversation_members.
-create or replace function public.is_conversation_member(p_conversation_id uuid, p_user_id uuid default auth.uid())
+create or replace function public.is_conversation_member(p_conversation_id uuid)
 returns boolean
 language sql
 stable
@@ -150,13 +150,13 @@ as $$
     select 1
     from public.conversation_members cm
     where cm.conversation_id = p_conversation_id
-      and cm.user_id = p_user_id
+      and cm.user_id = auth.uid()
       and cm.left_at is null
   );
 $$;
 
-revoke all on function public.is_conversation_member(uuid,uuid) from public;
-grant execute on function public.is_conversation_member(uuid,uuid) to authenticated;
+revoke all on function public.is_conversation_member(uuid) from public;
+grant execute on function public.is_conversation_member(uuid) to authenticated;
 
 -- 6) Enable RLS on every newly exposed table.
 alter table public.conversation_members enable row level security;
