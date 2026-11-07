@@ -2530,6 +2530,12 @@ app.post("/api/welcome-email", async (req, res) => {
   }
 });
 
+// Serve the existing entry page so the public site root does not return Express 404.
+app.get(["/", "/index.html"], (req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.sendFile(path.join(__dirname, "index.html"));
+});
+
 app.get("/health", (req, res) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate");
   res.set("Connection", "keep-alive");
