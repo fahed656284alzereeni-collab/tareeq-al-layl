@@ -176,6 +176,10 @@ begin
     and cm.left_at is null
   on conflict (message_id,user_id) do nothing;
 
+  update public.conversation_members
+  set is_hidden = false, cleared_at = null
+  where conversation_id = new.conversation_id and left_at is null;
+
   update public.conversations
   set last_message_at = greatest(
         coalesce(last_message_at, '-infinity'::timestamptz),
@@ -251,6 +255,19 @@ create table if not exists public.scheduled_messages (
 create index if not exists scheduled_messages_due_idx
   on public.scheduled_messages(scheduled_for) where status='pending';
 
+do $scheduled$
+begin
+  if not exists (select 1 from pg_constraint where conrelid='public.scheduled_messages'::regclass and conname='scheduled_message_content_check') then
+    alter table public.scheduled_messages add constraint scheduled_message_content_check
+      check (char_length(body) <= 4000 and (char_length(body) > 0 or attachment is not null));
+  end if;
+  if not exists (select 1 from pg_constraint where conrelid='public.scheduled_messages'::regclass and conname='scheduled_message_after_creation_check') then
+    alter table public.scheduled_messages add constraint scheduled_message_after_creation_check
+      check (scheduled_for > created_at);
+  end if;
+end;
+$scheduled$;
+
 create table if not exists public.notifications (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
@@ -316,10 +333,6 @@ using (
 );
 
 drop policy if exists "Recipients can update own receipts" on public.message_receipts;
-create policy "Recipients can update own receipts"
-on public.message_receipts for update to authenticated
-using (user_id = (select auth.uid()))
-with check (user_id = (select auth.uid()));
 
 drop policy if exists "Users can view own message visibility" on public.message_user_visibility;
 create policy "Users can view own message visibility"
@@ -387,13 +400,15 @@ using (sender_id = (select auth.uid()) and public.is_conversation_member(convers
 drop policy if exists "Users can schedule messages as themselves" on public.scheduled_messages;
 create policy "Users can schedule messages as themselves"
 on public.scheduled_messages for insert to authenticated
-with check (sender_id = (select auth.uid()) and public.is_conversation_member(conversation_id));
+with check (
+  sender_id = (select auth.uid())
+  and public.is_conversation_member(conversation_id)
+  and scheduled_for > now()
+  and char_length(body) <= 4000
+  and (char_length(body) > 0 or attachment is not null)
+);
 
 drop policy if exists "Users can cancel their pending scheduled messages" on public.scheduled_messages;
-create policy "Users can cancel their pending scheduled messages"
-on public.scheduled_messages for update to authenticated
-using (sender_id = (select auth.uid()) and status = 'pending')
-with check (sender_id = (select auth.uid()) and status = 'cancelled');
 
 drop policy if exists "Users can view their notifications" on public.notifications;
 create policy "Users can view their notifications"
@@ -720,6 +735,174 @@ begin
 end;
 $fn$;
 
+create or replace function private.hide_conversation_for_me(p_conversation_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid();
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  update public.conversation_members set is_hidden=true
+    where conversation_id=p_conversation_id and user_id=v_me and left_at is null;
+  if not found then raise exception 'Active conversation membership not found' using errcode='42501'; end if;
+end;
+$fn$;
+
+create or replace function private.clear_conversation_for_me(p_conversation_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid();
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  update public.conversation_members set cleared_at=now()
+    where conversation_id=p_conversation_id and user_id=v_me and left_at is null;
+  if not found then raise exception 'Active conversation membership not found' using errcode='42501'; end if;
+  insert into public.message_user_visibility(message_id,user_id)
+    select m.id,v_me from public.messages m
+    where m.conversation_id=p_conversation_id
+    on conflict (message_id,user_id) do nothing;
+end;
+$fn$;
+
+create or replace function private.clear_conversation_for_everyone(p_conversation_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid();
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  if not exists (select 1 from public.conversation_members cm
+    where cm.conversation_id=p_conversation_id and cm.user_id=v_me and cm.left_at is null) then
+    raise exception 'Active conversation membership not found' using errcode='42501';
+  end if;
+  delete from public.messages where conversation_id=p_conversation_id;
+  update public.conversation_members set is_hidden=false,cleared_at=null
+    where conversation_id=p_conversation_id and left_at is null;
+  update public.conversations set last_message_at=null,updated_at=now() where id=p_conversation_id;
+end;
+$fn$;
+
+create or replace function private.delete_direct_conversation(p_conversation_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid(); v_type text;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  select c.type into v_type
+    from public.conversations c join public.conversation_members cm
+      on cm.conversation_id=c.id and cm.user_id=v_me and cm.left_at is null
+    where c.id=p_conversation_id for update of c;
+  if not found or v_type<>'direct' then raise exception 'Direct conversation not found or access denied' using errcode='42501'; end if;
+  delete from public.conversations where id=p_conversation_id;
+end;
+$fn$;
+
+create or replace function private.edit_message(p_message_id uuid,p_body text)
+returns public.messages language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid(); v_conversation_id uuid; v_message public.messages%rowtype;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  if p_body is null or char_length(btrim(p_body))<1 or char_length(p_body)>4000 then
+    raise exception 'Invalid message body' using errcode='22023';
+  end if;
+  select m.conversation_id into v_conversation_id
+    from public.messages m join public.conversation_members cm
+      on cm.conversation_id=m.conversation_id and cm.user_id=v_me and cm.left_at is null
+    where m.id=p_message_id and m.sender_id=v_me and not m.deleted_for_everyone;
+  if not found then raise exception 'Message not found or access denied' using errcode='42501'; end if;
+  update public.messages set body=btrim(p_body),edited_at=now()
+    where id=p_message_id returning * into v_message;
+  update public.conversations set updated_at=now() where id=v_conversation_id;
+  return v_message;
+end;
+$fn$;
+
+create or replace function private.delete_message_for_everyone(p_message_id uuid)
+returns uuid language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid(); v_conversation_id uuid;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  select m.conversation_id into v_conversation_id
+    from public.messages m join public.conversation_members cm
+      on cm.conversation_id=m.conversation_id and cm.user_id=v_me and cm.left_at is null
+    where m.id=p_message_id and m.sender_id=v_me;
+  if not found then raise exception 'Message not found or access denied' using errcode='42501'; end if;
+  delete from public.messages where id=p_message_id;
+  update public.conversations set
+    last_message_at=(select max(m.created_at) from public.messages m where m.conversation_id=v_conversation_id),
+    updated_at=now()
+    where id=v_conversation_id;
+  return v_conversation_id;
+end;
+$fn$;
+
+create or replace function private.mark_message_delivered(p_message_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid();
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  update public.message_receipts r set delivered_at=coalesce(r.delivered_at,now())
+    from public.messages m
+    join public.conversation_members cm on cm.conversation_id=m.conversation_id
+      and cm.user_id=v_me and cm.left_at is null
+    where r.message_id=p_message_id and r.user_id=v_me
+      and m.id=r.message_id and m.sender_id<>v_me;
+  if not found then raise exception 'Message receipt not found' using errcode='P0002'; end if;
+end;
+$fn$;
+
+create or replace function private.mark_message_read(p_message_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid();
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  update public.message_receipts r
+    set delivered_at=coalesce(r.delivered_at,now()),read_at=coalesce(r.read_at,now())
+    from public.messages m
+    join public.conversation_members cm on cm.conversation_id=m.conversation_id
+      and cm.user_id=v_me and cm.left_at is null
+    where r.message_id=p_message_id and r.user_id=v_me
+      and m.id=r.message_id and m.sender_id<>v_me;
+  if not found then raise exception 'Message receipt not found' using errcode='P0002'; end if;
+end;
+$fn$;
+
+create or replace function private.save_video_duration(p_message_id uuid,p_duration_seconds integer)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid(); v_attachment jsonb;
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  if p_duration_seconds is null or p_duration_seconds<1 or p_duration_seconds>86400 then
+    raise exception 'Invalid video duration' using errcode='22023';
+  end if;
+  select m.attachment into v_attachment
+    from public.messages m join public.conversation_members cm
+      on cm.conversation_id=m.conversation_id and cm.user_id=v_me and cm.left_at is null
+    where m.id=p_message_id and m.sender_id=v_me;
+  if not found or coalesce(v_attachment->>'type','') not like 'video/%' then
+    raise exception 'Video message not found or access denied' using errcode='42501';
+  end if;
+  update public.messages
+    set attachment=jsonb_set(v_attachment,'{durationSeconds}',to_jsonb(p_duration_seconds),true)
+    where id=p_message_id;
+end;
+$fn$;
+
+create or replace function private.cancel_scheduled_message(p_scheduled_id uuid)
+returns void language plpgsql security definer set search_path = ''
+as $fn$
+declare v_me uuid := auth.uid();
+begin
+  if v_me is null then raise exception 'Authentication required' using errcode='28000'; end if;
+  update public.scheduled_messages set status='cancelled'
+    where id=p_scheduled_id and sender_id=v_me and status='pending' and scheduled_for>now();
+  if not found then raise exception 'Pending scheduled message not found or no longer cancellable' using errcode='P0002'; end if;
+end;
+$fn$;
+
 create or replace function private.cancel_friend_request(p_request_id uuid)
 returns void language plpgsql security definer set search_path = ''
 as $$
@@ -798,6 +981,26 @@ grant execute on function private.update_group_details(uuid,text,text) to authen
 grant execute on function private.update_group_permissions(uuid,text,text) to authenticated;
 grant execute on function private.set_group_moderator(uuid,uuid,boolean) to authenticated;
 grant execute on function private.delete_group(uuid) to authenticated;
+revoke all on function private.hide_conversation_for_me(uuid) from public,anon;
+revoke all on function private.clear_conversation_for_me(uuid) from public,anon;
+revoke all on function private.clear_conversation_for_everyone(uuid) from public,anon;
+revoke all on function private.delete_direct_conversation(uuid) from public,anon;
+revoke all on function private.edit_message(uuid,text) from public,anon;
+revoke all on function private.delete_message_for_everyone(uuid) from public,anon;
+revoke all on function private.mark_message_delivered(uuid) from public,anon;
+revoke all on function private.mark_message_read(uuid) from public,anon;
+revoke all on function private.save_video_duration(uuid,integer) from public,anon;
+revoke all on function private.cancel_scheduled_message(uuid) from public,anon;
+grant execute on function private.hide_conversation_for_me(uuid) to authenticated;
+grant execute on function private.clear_conversation_for_me(uuid) to authenticated;
+grant execute on function private.clear_conversation_for_everyone(uuid) to authenticated;
+grant execute on function private.delete_direct_conversation(uuid) to authenticated;
+grant execute on function private.edit_message(uuid,text) to authenticated;
+grant execute on function private.delete_message_for_everyone(uuid) to authenticated;
+grant execute on function private.mark_message_delivered(uuid) to authenticated;
+grant execute on function private.mark_message_read(uuid) to authenticated;
+grant execute on function private.save_video_duration(uuid,integer) to authenticated;
+grant execute on function private.cancel_scheduled_message(uuid) to authenticated;
 
 -- Public, invoker-rights entry points for the authenticated Data API.
 -- The privileged work remains isolated in the private SECURITY DEFINER routines.
@@ -849,6 +1052,46 @@ create or replace function public.delete_group(p_conversation_id uuid)
 returns void language sql security invoker set search_path = ''
 as $fn$ select private.delete_group(p_conversation_id); $fn$;
 
+create or replace function public.hide_conversation_for_me(p_conversation_id uuid)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.hide_conversation_for_me(p_conversation_id); $fn$;
+
+create or replace function public.clear_conversation_for_me(p_conversation_id uuid)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.clear_conversation_for_me(p_conversation_id); $fn$;
+
+create or replace function public.clear_conversation_for_everyone(p_conversation_id uuid)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.clear_conversation_for_everyone(p_conversation_id); $fn$;
+
+create or replace function public.delete_direct_conversation(p_conversation_id uuid)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.delete_direct_conversation(p_conversation_id); $fn$;
+
+create or replace function public.edit_message(p_message_id uuid,p_body text)
+returns public.messages language sql security invoker set search_path = ''
+as $fn$ select private.edit_message(p_message_id,p_body); $fn$;
+
+create or replace function public.delete_message_for_everyone(p_message_id uuid)
+returns uuid language sql security invoker set search_path = ''
+as $fn$ select private.delete_message_for_everyone(p_message_id); $fn$;
+
+create or replace function public.mark_message_delivered(p_message_id uuid)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.mark_message_delivered(p_message_id); $fn$;
+
+create or replace function public.mark_message_read(p_message_id uuid)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.mark_message_read(p_message_id); $fn$;
+
+create or replace function public.save_video_duration(p_message_id uuid,p_duration_seconds integer)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.save_video_duration(p_message_id,p_duration_seconds); $fn$;
+
+create or replace function public.cancel_scheduled_message(p_scheduled_id uuid)
+returns void language sql security invoker set search_path = ''
+as $fn$ select private.cancel_scheduled_message(p_scheduled_id); $fn$;
+
 create or replace function public.cancel_friend_request(p_request_id uuid)
 returns void language sql security invoker set search_path = ''
 as $$ select private.cancel_friend_request(p_request_id); $$;
@@ -891,6 +1134,26 @@ grant execute on function public.update_group_details(uuid,text,text) to authent
 grant execute on function public.update_group_permissions(uuid,text,text) to authenticated;
 grant execute on function public.set_group_moderator(uuid,uuid,boolean) to authenticated;
 grant execute on function public.delete_group(uuid) to authenticated;
+revoke all on function public.hide_conversation_for_me(uuid) from public,anon;
+revoke all on function public.clear_conversation_for_me(uuid) from public,anon;
+revoke all on function public.clear_conversation_for_everyone(uuid) from public,anon;
+revoke all on function public.delete_direct_conversation(uuid) from public,anon;
+revoke all on function public.edit_message(uuid,text) from public,anon;
+revoke all on function public.delete_message_for_everyone(uuid) from public,anon;
+revoke all on function public.mark_message_delivered(uuid) from public,anon;
+revoke all on function public.mark_message_read(uuid) from public,anon;
+revoke all on function public.save_video_duration(uuid,integer) from public,anon;
+revoke all on function public.cancel_scheduled_message(uuid) from public,anon;
+grant execute on function public.hide_conversation_for_me(uuid) to authenticated;
+grant execute on function public.clear_conversation_for_me(uuid) to authenticated;
+grant execute on function public.clear_conversation_for_everyone(uuid) to authenticated;
+grant execute on function public.delete_direct_conversation(uuid) to authenticated;
+grant execute on function public.edit_message(uuid,text) to authenticated;
+grant execute on function public.delete_message_for_everyone(uuid) to authenticated;
+grant execute on function public.mark_message_delivered(uuid) to authenticated;
+grant execute on function public.mark_message_read(uuid) to authenticated;
+grant execute on function public.save_video_duration(uuid,integer) to authenticated;
+grant execute on function public.cancel_scheduled_message(uuid) to authenticated;
 
 
 -- 7) Replace pair-only conversation/message authorization with membership checks.
@@ -920,11 +1183,8 @@ with check (
 -- Restrict column privileges as well as row policies: otherwise a recipient
 -- could alter message body/sender fields while satisfying a broad UPDATE policy.
 revoke update on public.messages from authenticated;
-grant update (read_at) on public.messages to authenticated;
 revoke update on public.message_receipts from authenticated;
-grant update (read_at) on public.message_receipts to authenticated;
 revoke update on public.scheduled_messages from authenticated;
-grant update (status) on public.scheduled_messages to authenticated;
 revoke update on public.notifications from authenticated;
 grant update (read_at) on public.notifications to authenticated;
 
@@ -932,7 +1192,7 @@ grant update (read_at) on public.notifications to authenticated;
 grant select on public.conversations to authenticated;
 grant select, insert on public.messages to authenticated;
 grant select on public.conversation_members to authenticated;
-grant select, update (read_at) on public.message_receipts to authenticated;
+grant select on public.message_receipts to authenticated;
 grant select, insert, delete on public.message_user_visibility to authenticated;
 grant select on public.friend_requests to authenticated;
 revoke update on public.friend_requests from authenticated;
@@ -943,25 +1203,13 @@ grant select, insert, delete on public.user_blocks to authenticated;
 grant select, insert on public.user_reports to authenticated;
 grant select, insert on public.scheduled_messages to authenticated;
 revoke update on public.scheduled_messages from authenticated;
-grant update (status) on public.scheduled_messages to authenticated;
+-- Scheduled-message cancellation is handled by the authenticated RPC.
 grant select on public.notifications to authenticated;
 revoke update on public.notifications from authenticated;
 grant update (read_at) on public.notifications to authenticated;
 
--- Client updates are limited to marking a message read. More privileged
--- edit/delete operations will be exposed through verified server/RPC paths.
+-- All message and receipt updates use narrow authenticated RPCs.
 drop policy if exists "Recipients can mark own incoming messages read" on public.messages;
-create policy "Recipients can mark own incoming messages read"
-on public.messages for update to authenticated
-using (
-  sender_id <> (select auth.uid())
-  and public.is_conversation_member(conversation_id)
-)
-with check (
-  sender_id <> (select auth.uid())
-  and read_at is not null
-  and public.is_conversation_member(conversation_id)
-);
 
 commit;
 
