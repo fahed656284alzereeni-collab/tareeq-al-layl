@@ -4,19 +4,61 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1020">
-  <meta name="description" content="مرسال — تواصل ببساطة وأمان">
+  <meta name="description" content="مرسال — رسائلك ومحادثاتك في مكان واحد">
   <title>مرسال</title>
   <link rel="stylesheet" href="/styles.css">
   <script type="module" src="/app.js"></script>
 </head>
 <body>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="مرسال، الصفحة الرئيسية">مرسال</a>
+    <p id="account" aria-live="polite">جارٍ التحقق من تسجيل الدخول…</p>
+    <button id="logout" type="button" class="quiet-button" hidden>تسجيل الخروج</button>
+  </header>
+
   <main>
-    <h1>مرسال</h1>
-    <p>مساحتك للتواصل مع الآخرين، ببساطة ووضوح.</p>
-    <p id="account" aria-live="polite">جارٍ التحقق من حالة تسجيل الدخول…</p>
-    <button id="google-login" type="button">تسجيل الدخول باستخدام Google</button>
-    <button id="logout" type="button" hidden>تسجيل الخروج</button>
-    <p id="status" role="status" aria-live="polite">جاهز.</p>
+    <section id="auth-panel" class="auth-panel" aria-labelledby="welcome-title">
+      <div class="mark" aria-hidden="true">م</div>
+      <h1 id="welcome-title">أهلًا بك في مرسال</h1>
+      <p>تواصل مع الأشخاص الذين يهمّونك، برسائل خاصة وبسيطة.</p>
+      <button id="google-login" type="button" class="primary-button">تسجيل الدخول باستخدام Google</button>
+      <p id="status" role="status" aria-live="polite">جاهز لتسجيل الدخول.</p>
+    </section>
+
+    <section id="workspace" class="workspace" hidden aria-label="مساحة المحادثات">
+      <aside class="sidebar" aria-label="جهات الاتصال والمحادثات">
+        <section class="people-section">
+          <h2>ابدأ محادثة</h2>
+          <label for="people-search">ابحث عن شخص</label>
+          <input id="people-search" type="search" placeholder="اكتب الاسم للبحث" autocomplete="off">
+          <ul id="people-list" class="people-list" aria-label="الأشخاص"></ul>
+        </section>
+        <section class="chats-section">
+          <h2>محادثاتك</h2>
+          <ul id="conversation-list" class="conversation-list" aria-label="قائمة المحادثات"></ul>
+        </section>
+      </aside>
+
+      <section class="chat-panel" aria-label="المحادثة الحالية">
+        <div id="chat-empty" class="chat-empty">
+          <h2>مرسال يجمعكم</h2>
+          <p>اختر شخصًا من القائمة لبدء محادثة خاصة.</p>
+        </div>
+        <div id="chat-view" class="chat-view" hidden>
+          <header class="chat-header">
+            <h2 id="chat-title">محادثة</h2>
+            <button id="refresh-chat" type="button" class="quiet-button">تحديث الرسائل</button>
+          </header>
+          <ol id="messages" class="messages" aria-label="الرسائل" aria-live="polite"></ol>
+          <form id="message-form" class="message-form">
+            <label class="visually-hidden" for="message-input">اكتب رسالتك</label>
+            <textarea id="message-input" rows="2" maxlength="5000" placeholder="اكتب رسالتك هنا…" required></textarea>
+            <button id="send-button" type="submit" class="primary-button">إرسال</button>
+          </form>
+        </div>
+      </section>
+    </section>
   </main>
+  <footer><p>مرسال V2 · تواصل بوضوح واحترام</p></footer>
 </body>
 </html>
