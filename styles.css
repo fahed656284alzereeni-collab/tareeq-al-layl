@@ -23,7 +23,8 @@ h1, h2, p { line-height: 1.65; }
 .primary-button { min-height: 48px; padding: 12px 18px; border: 0; border-radius: 12px; background: #f5f7ff; color: #111827; font-weight: 750; }
 .auth-panel .primary-button { width: 100%; margin-top: 14px; }
 .primary-button:disabled, button:disabled { opacity: .6; cursor: wait; }
-#status { min-height: 2.5em; margin-top: 18px; overflow-wrap: anywhere; }
+#status { width: min(100%, 900px); min-height: 2em; margin: 0 auto 14px; padding: 8px 12px; color: #c4cce0; overflow-wrap: anywhere; }
+#status:empty { display: none; }
 #status[data-kind="error"] { color: #ffaaaa; }
 .quiet-button { min-height: 40px; padding: 8px 13px; border: 1px solid #405273; border-radius: 10px; background: #202d47; color: #fff; }
 .workspace { min-height: min(720px, 78vh); display: grid; grid-template-columns: minmax(250px, 330px) 1fr; border: 1px solid #33415f; border-radius: 20px; overflow: hidden; background: #111a2dcc; }
