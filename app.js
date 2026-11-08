@@ -34,6 +34,15 @@ function announce(message, kind = "info") {
   status.textContent = message;
   status.dataset.kind = kind;
 }
+function getCallbackParams() {
+  const params = new URLSearchParams(window.location.search);
+  const rawHash = window.location.hash.startsWith("#") ? window.location.hash.slice(1) : window.location.hash;
+  const hashQuery = rawHash.includes("?") ? rawHash.slice(rawHash.indexOf("?") + 1) : rawHash;
+  for (const [key, value] of new URLSearchParams(hashQuery)) {
+    if (!params.has(key)) params.set(key, value);
+  }
+  return params;
+}
 function displayName(profile) {
   return profile?.display_name?.trim() || "مستخدم مرسال";
 }
@@ -66,7 +75,7 @@ async function ensureProfile(user) {
 }
 async function handleSession(session) {
   if (!session?.user) {
-    const callbackParams = new URLSearchParams(window.location.search);
+    const callbackParams = getCallbackParams();
     if (callbackParams.has("code")) {
       showLoggedOut("رجعت من Google، لكن مرسال لم يستلم جلسة الدخول. هذا يعني أن إكمال تسجيل الدخول تعثّر بعد الرجوع من Google.");
     } else {
@@ -287,12 +296,11 @@ messageForm.addEventListener("submit", async (event) => {
 
 const { data: initial, error: initialError } = await supabase.auth.getSession();
 if (initialError) {
-  announce("تعذر التحقق من الجلسة: " + initialError.message, "error");
-  showLoggedOut();
+  showLoggedOut("تعذر التحقق من الجلسة: " + initialError.message);
 } else {
   await handleSession(initial.session);
 }
-const params = new URLSearchParams(window.location.search);
-if (params.has("error")) {
-  announce("فشل تسجيل الدخول: " + (params.get("error_description") || params.get("error") || "رفض Google الطلب"), "error");
+const params = getCallbackParams();
+if (params.has("error") || params.has("error_code")) {
+  announce("فشل تسجيل الدخول: " + (params.get("error_description") || params.get("error_code") || params.get("error") || "رفض Google الطلب"), "error");
 }
