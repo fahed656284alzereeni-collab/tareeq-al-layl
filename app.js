@@ -1,56 +1,99 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.0";
 
 const SUPABASE_URL = "https://nnsleztgbqeuqavkhrpw.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_0V7aL9rnFz5hFjKoPhz2ig_mSbxBK-T";
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    flowType: "pkce"
-  }
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
 });
 
-const status = document.querySelector("#status");
-const googleButton = document.querySelector("#google-login");
-const logoutButton = document.querySelector("#logout");
-const account = document.querySelector("#account");
+const $ = (selector) => document.querySelector(selector);
+const authPanel = $("#auth-panel");
+const workspace = $("#workspace");
+const account = $("#account");
+const status = $("#status");
+const loginButton = $("#google-login");
+const logoutButton = $("#logout");
+const peopleSearch = $("#people-search");
+const peopleList = $("#people-list");
+const conversationList = $("#conversation-list");
+const chatEmpty = $("#chat-empty");
+const chatView = $("#chat-view");
+const chatTitle = $("#chat-title");
+const messagesList = $("#messages");
+const messageForm = $("#message-form");
+const messageInput = $("#message-input");
+const sendButton = $("#send-button");
+let currentUser = null;
+let activeConversation = null;
+let activePartner = null;
+let people = [];
+let conversations = [];
+let realtimeChannel = null;
 
 function announce(message, kind = "info") {
   status.textContent = message;
   status.dataset.kind = kind;
 }
-
-function showUser(user) {
-  if (!user) {
-    account.textContent = "لم يتم تسجيل الدخول";
-    logoutButton.hidden = true;
-    googleButton.hidden = false;
+function displayName(profile) {
+  return profile?.display_name?.trim() || "مستخدم مرسال";
+}
+function safeText(tag, className, value) {
+  const node = document.createElement(tag);
+  if (className) node.className = className;
+  node.textContent = value ?? "";
+  return node;
+}
+function showLoggedOut() {
+  currentUser = null;
+  activeConversation = null;
+  activePartner = null;
+  authPanel.hidden = false;
+  workspace.hidden = true;
+  logoutButton.hidden = true;
+  account.textContent = "غير مسجل الدخول";
+  if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+  realtimeChannel = null;
+}
+async function ensureProfile(user) {
+  const metadata = user.user_metadata || {};
+  const name = metadata.full_name || metadata.name || user.email?.split("@")[0] || "مستخدم مرسال";
+  const avatar = metadata.avatar_url || metadata.picture || null;
+  const { error } = await supabase.from("profiles").upsert({
+    id: user.id, display_name: name, avatar_url: avatar, updated_at: new Date().toISOString()
+  }, { onConflict: "id" });
+  if (error) throw error;
+}
+async function handleSession(session) {
+  if (!session?.user) {
+    showLoggedOut();
     return;
   }
-  account.textContent = user.email || "تم تسجيل الدخول بحساب Google";
+  currentUser = session.user;
+  authPanel.hidden = true;
+  workspace.hidden = false;
   logoutButton.hidden = false;
-  googleButton.hidden = true;
+  account.textContent = "مرحبًا، " + (session.user.email || "في مرسال");
+  try {
+    await ensureProfile(session.user);
+    await Promise.all([loadPeople(), loadConversations()]);
+    announce("تم تسجيل الدخول. يمكنك بدء محادثة جديدة.");
+  } catch (error) {
+    announce("تعذر تحميل الحساب: " + (error.message || "خطأ غير معروف"), "error");
+  }
 }
 
-googleButton.addEventListener("click", async () => {
-  googleButton.disabled = true;
-  announce("جاري تحويلك إلى Google…");
-  try {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: window.location.origin,
-        queryParams: { prompt: "select_account" }
-      }
-    });
-    if (error) throw error;
-  } catch (error) {
-    announce("تعذر بدء تسجيل الدخول: " + (error?.message || "خطأ غير معروف"), "error");
-    googleButton.disabled = false;
+loginButton.addEventListener("click", async () => {
+  loginButton.disabled = true;
+  announce("جارٍ فتح Google لتسجيل الدخول…");
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.origin, queryParams: { prompt: "select_account" } }
+  });
+  if (error) {
+    announce("تعذر بدء تسجيل الدخول: " + error.message, "error");
+    loginButton.disabled = false;
   }
 });
-
 logoutButton.addEventListener("click", async () => {
   logoutButton.disabled = true;
   const { error } = await supabase.auth.signOut();
@@ -58,17 +101,174 @@ logoutButton.addEventListener("click", async () => {
   else announce("تم تسجيل الخروج.");
   logoutButton.disabled = false;
 });
-
 supabase.auth.onAuthStateChange((_event, session) => {
-  showUser(session?.user ?? null);
-  if (session?.user) announce("تم تسجيل الدخول بنجاح.");
+  setTimeout(() => { void handleSession(session); }, 0);
 });
 
-const { data, error } = await supabase.auth.getSession();
-if (error) announce("تعذر التحقق من الجلسة: " + error.message, "error");
-showUser(data?.session?.user ?? null);
+async function loadPeople() {
+  const { data, error } = await supabase.from("profiles")
+    .select("id,display_name,avatar_url")
+    .neq("id", currentUser.id)
+    .order("display_name", { ascending: true })
+    .limit(100);
+  if (error) throw error;
+  people = data || [];
+  renderPeople();
+}
+function renderPeople() {
+  const term = peopleSearch.value.trim().toLocaleLowerCase();
+  peopleList.replaceChildren();
+  const filtered = people.filter(person => displayName(person).toLocaleLowerCase().includes(term));
+  if (!filtered.length) {
+    peopleList.append(safeText("li", "empty-item", term ? "لا توجد نتائج مطابقة." : "سيظهر الأشخاص هنا بعد تسجيلهم في مرسال."));
+    return;
+  }
+  for (const person of filtered) {
+    const item = document.createElement("li");
+    const button = safeText("button", "person-button", displayName(person));
+    button.type = "button";
+    button.addEventListener("click", () => { void openConversation(person); });
+    item.append(button);
+    peopleList.append(item);
+  }
+}
+peopleSearch.addEventListener("input", renderPeople);
 
-if (new URLSearchParams(window.location.search).has("error")) {
-  const reason = new URLSearchParams(window.location.search).get("error_description");
-  announce("فشل تسجيل الدخول: " + (reason || "رفض مزود تسجيل الدخول الطلب"), "error");
+async function loadConversations() {
+  const { data, error } = await supabase.from("conversations")
+    .select("id,user_one,user_two,last_message_at")
+    .or("user_one.eq." + currentUser.id + ",user_two.eq." + currentUser.id)
+    .order("last_message_at", { ascending: false });
+  if (error) throw error;
+  conversations = data || [];
+  const partnerIds = conversations.map(c => c.user_one === currentUser.id ? c.user_two : c.user_one);
+  let profileMap = new Map();
+  if (partnerIds.length) {
+    const { data: profiles, error: profileError } = await supabase.from("profiles")
+      .select("id,display_name").in("id", partnerIds);
+    if (profileError) throw profileError;
+    profileMap = new Map((profiles || []).map(p => [p.id, p]));
+  }
+  conversationList.replaceChildren();
+  if (!conversations.length) {
+    conversationList.append(safeText("li", "empty-item", "لا توجد محادثات بعد."));
+    return;
+  }
+  for (const conversation of conversations) {
+    const partnerId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
+    const person = profileMap.get(partnerId) || { id: partnerId, display_name: "مستخدم مرسال" };
+    const item = document.createElement("li");
+    const button = safeText("button", "conversation-button", displayName(person));
+    button.type = "button";
+    button.addEventListener("click", () => { void selectConversation(conversation, person); });
+    item.append(button);
+    conversationList.append(item);
+  }
+}
+async function openConversation(person) {
+  if (!currentUser || person.id === currentUser.id) return;
+  const [one, two] = [currentUser.id, person.id].sort();
+  let { data, error } = await supabase.from("conversations")
+    .select("id,user_one,user_two,last_message_at")
+    .eq("user_one", one).eq("user_two", two).maybeSingle();
+  if (error) {
+    announce("تعذر فتح المحادثة: " + error.message, "error");
+    return;
+  }
+  if (!data) {
+    const created = await supabase.from("conversations")
+      .insert({ user_one: one, user_two: two })
+      .select("id,user_one,user_two,last_message_at").single();
+    if (created.error && created.error.code !== "23505") {
+      announce("تعذر إنشاء المحادثة: " + created.error.message, "error");
+      return;
+    }
+    data = created.data;
+    if (!data) {
+      const retry = await supabase.from("conversations")
+        .select("id,user_one,user_two,last_message_at")
+        .eq("user_one", one).eq("user_two", two).single();
+      if (retry.error) {
+        announce("تعذر استرجاع المحادثة: " + retry.error.message, "error");
+        return;
+      }
+      data = retry.data;
+    }
+  }
+  await selectConversation(data, person);
+  await loadConversations();
+}
+async function selectConversation(conversation, person) {
+  activeConversation = conversation;
+  activePartner = person;
+  chatEmpty.hidden = true;
+  chatView.hidden = false;
+  chatTitle.textContent = "محادثة مع " + displayName(person);
+  await loadMessages();
+  if (realtimeChannel) await supabase.removeChannel(realtimeChannel);
+  realtimeChannel = supabase.channel("messages-" + conversation.id)
+    .on("postgres_changes", {
+      event: "INSERT", schema: "public", table: "messages",
+      filter: "conversation_id=eq." + conversation.id
+    }, (payload) => appendMessage(payload.new))
+    .subscribe();
+  messageInput.focus();
+}
+function appendMessage(message) {
+  if (!message || document.querySelector('[data-message-id="' + message.id + '"]')) return;
+  const item = document.createElement("li");
+  item.className = message.sender_id === currentUser.id ? "message mine" : "message theirs";
+  item.dataset.messageId = message.id;
+  item.append(safeText("p", "message-body", message.body));
+  const time = new Date(message.created_at).toLocaleString("ar-JO", { dateStyle: "short", timeStyle: "short" });
+  item.append(safeText("time", "message-time", time));
+  messagesList.append(item);
+  messagesList.scrollTop = messagesList.scrollHeight;
+}
+async function loadMessages() {
+  if (!activeConversation) return;
+  messagesList.replaceChildren();
+  const { data, error } = await supabase.from("messages")
+    .select("id,conversation_id,sender_id,body,created_at")
+    .eq("conversation_id", activeConversation.id)
+    .order("created_at", { ascending: true })
+    .limit(200);
+  if (error) {
+    announce("تعذر تحميل الرسائل: " + error.message, "error");
+    return;
+  }
+  if (!data?.length) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
+  for (const message of data || []) appendMessage(message);
+}
+$("#refresh-chat").addEventListener("click", () => { void loadMessages(); });
+messageForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const body = messageInput.value.trim();
+  if (!body || !activeConversation || !currentUser) return;
+  sendButton.disabled = true;
+  const { data, error } = await supabase.from("messages").insert({
+    conversation_id: activeConversation.id, sender_id: currentUser.id, body
+  }).select("id,conversation_id,sender_id,body,created_at").single();
+  if (error) {
+    announce("تعذر إرسال الرسالة: " + error.message, "error");
+  } else {
+    messageInput.value = "";
+    appendMessage(data);
+    await loadConversations();
+    announce("تم إرسال الرسالة.");
+  }
+  sendButton.disabled = false;
+  messageInput.focus();
+});
+
+const { data: initial, error: initialError } = await supabase.auth.getSession();
+if (initialError) {
+  announce("تعذر التحقق من الجلسة: " + initialError.message, "error");
+  showLoggedOut();
+} else {
+  await handleSession(initial.session);
+}
+const params = new URLSearchParams(window.location.search);
+if (params.has("error")) {
+  announce("فشل تسجيل الدخول: " + (params.get("error_description") || "رفض Google الطلب"), "error");
 }
