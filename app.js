@@ -88,12 +88,18 @@ async function handleSession(session) {
 loginButton.addEventListener("click", async () => {
   loginButton.disabled = true;
   announce("جارٍ فتح Google لتسجيل الدخول…");
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: window.location.origin, queryParams: { prompt: "select_account" } }
-  });
-  if (error) {
-    announce("تعذر بدء تسجيل الدخول: " + error.message, "error");
+  try {
+    const redirectTo = new URL("/", window.location.origin).toString();
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+        queryParams: { prompt: "select_account" }
+      }
+    });
+    if (error) throw error;
+  } catch (error) {
+    announce("تعذر بدء تسجيل الدخول: " + (error?.message || "خطأ غير معروف"), "error");
     loginButton.disabled = false;
   }
 });
