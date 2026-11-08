@@ -43,7 +43,7 @@ function safeText(tag, className, value) {
   node.textContent = value ?? "";
   return node;
 }
-function showLoggedOut() {
+function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكنك المحاولة مرة أخرى باستخدام Google.") {
   currentUser = null;
   activeConversation = null;
   activePartner = null;
@@ -53,6 +53,7 @@ function showLoggedOut() {
   account.textContent = "غير مسجل الدخول";
   if (realtimeChannel) supabase.removeChannel(realtimeChannel);
   realtimeChannel = null;
+  announce(message, "error");
 }
 async function ensureProfile(user) {
   const metadata = user.user_metadata || {};
@@ -65,7 +66,12 @@ async function ensureProfile(user) {
 }
 async function handleSession(session) {
   if (!session?.user) {
-    showLoggedOut();
+    const callbackParams = new URLSearchParams(window.location.search);
+    if (callbackParams.has("code")) {
+      showLoggedOut("رجعت من Google، لكن مرسال لم يستلم جلسة الدخول. هذا يعني أن إكمال تسجيل الدخول تعثّر بعد الرجوع من Google.");
+    } else {
+      showLoggedOut();
+    }
     return;
   }
   const alreadyLoadedForThisUser = currentUser?.id === session.user.id && !workspace.hidden;
@@ -110,8 +116,12 @@ logoutButton.addEventListener("click", async () => {
   else announce("تم تسجيل الخروج.");
   logoutButton.disabled = false;
 });
-supabase.auth.onAuthStateChange((_event, session) => {
-  setTimeout(() => { void handleSession(session); }, 0);
+supabase.auth.onAuthStateChange((event, session) => {
+  setTimeout(() => {
+    if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED" || event === "SIGNED_OUT") {
+      void handleSession(session);
+    }
+  }, 0);
 });
 
 async function loadPeople() {
@@ -284,5 +294,5 @@ if (initialError) {
 }
 const params = new URLSearchParams(window.location.search);
 if (params.has("error")) {
-  announce("فشل تسجيل الدخول: " + (params.get("error_description") || "رفض Google الطلب"), "error");
+  announce("فشل تسجيل الدخول: " + (params.get("error_description") || params.get("error") || "رفض Google الطلب"), "error");
 }
