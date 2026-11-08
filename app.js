@@ -68,14 +68,17 @@ async function handleSession(session) {
     showLoggedOut();
     return;
   }
+  const alreadyLoadedForThisUser = currentUser?.id === session.user.id && !workspace.hidden;
   currentUser = session.user;
   authPanel.hidden = true;
   workspace.hidden = false;
   logoutButton.hidden = false;
   account.textContent = "مرحبًا، " + (session.user.email || "في مرسال");
   try {
-    await ensureProfile(session.user);
-    await Promise.all([loadPeople(), loadConversations()]);
+    if (!alreadyLoadedForThisUser) {
+      await ensureProfile(session.user);
+      await Promise.all([loadPeople(), loadConversations()]);
+    }
     announce("تم تسجيل الدخول. يمكنك بدء محادثة جديدة.");
   } catch (error) {
     announce("تعذر تحميل الحساب: " + (error.message || "خطأ غير معروف"), "error");
@@ -211,11 +214,16 @@ async function selectConversation(conversation, person) {
       event: "INSERT", schema: "public", table: "messages",
       filter: "conversation_id=eq." + conversation.id
     }, (payload) => appendMessage(payload.new))
-    .subscribe();
+    .subscribe((state) => {
+      if (state === "CHANNEL_ERROR" || state === "TIMED_OUT") {
+        announce("الاتصال المباشر بالرسائل غير مستقر. استخدم زر تحديث الرسائل للمزامنة.", "error");
+      }
+    });
   messageInput.focus();
 }
 function appendMessage(message) {
   if (!message || document.querySelector('[data-message-id="' + message.id + '"]')) return;
+  messagesList.querySelectorAll(".empty-item").forEach(node => node.remove());
   const item = document.createElement("li");
   item.className = message.sender_id === currentUser.id ? "message mine" : "message theirs";
   item.dataset.messageId = message.id;
