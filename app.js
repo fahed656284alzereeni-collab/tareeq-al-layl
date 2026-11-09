@@ -55,7 +55,6 @@ let lastSeenHeartbeat = null;
 const conversationInfoStatus = $("#conversation-info-status");
 const conversationInfoCreated = $("#conversation-info-created");
 const conversationInfoCount = $("#conversation-info-count");
-const conversationInfoLast = $("#conversation-info-last");
 const messagesList = $("#messages");
 const messageForm = $("#message-form");
 const messageInput = $("#message-input");
@@ -760,10 +759,6 @@ async function updateConversationInfo() {
   setConversationInfoValue(conversationInfoCreated, createdAt
     ? new Date(createdAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" })
     : "غير متوفر");
-  const lastAt = activeConversation.last_message_at;
-  setConversationInfoValue(conversationInfoLast, lastAt
-    ? new Date(lastAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" })
-    : "لا يوجد نشاط سابق");
   setConversationInfoValue(conversationInfoCount, "جارٍ التحميل…");
   const { count, error } = await supabase.from("messages")
     .select("id", { count: "exact", head: true })
