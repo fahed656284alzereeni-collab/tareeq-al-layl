@@ -2,6 +2,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.0";
 
 const SUPABASE_URL = "https://nnsleztgbqeuqavkhrpw.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_0V7aL9rnFz5hFjKoPhz2ig_mSbxBK-T";
+const VAPID_PUBLIC_KEY = "BJ8N8a64oyzKOAgPPRhRU9jiP3XQoe4cXA16ku1Iuf_Mo4Ll2-jtYBLDyx69hZa5YhX1yN0hJ9NZRCX-bqIrHa4";
+const serviceWorkerReady = "serviceWorker" in navigator
+  ? navigator.serviceWorker.register("/sw.js").then(() => navigator.serviceWorker.ready).catch(error => { console.error("Service worker:", error); return null; })
+  : Promise.resolve(null);
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
 });
@@ -25,6 +29,8 @@ const settingsHome = $("#settings-home");
 const accountSettingsView = $("#account-settings-view");
 const accountLogoutButton = $("#account-logout");
 const refreshDataButton = $("#refresh-data");
+const pushNotificationsButton = $("#enable-push-notifications");
+const pushNotificationsHelp = $("#push-notifications-help");
 let settingsReturnFocus = null;
 const peopleSearch = $("#people-search");
 const peopleList = $("#people-list");
@@ -167,6 +173,53 @@ async function startPresence() {
     }
   });
 }
+
+function applicationServerKeyFromBase64(value) {
+  const padding = "=".repeat((4 - value.length % 4) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  return Uint8Array.from(atob(base64), character => character.charCodeAt(0));
+}
+
+pushNotificationsButton.addEventListener("click", async () => {
+  if (!currentUser) return;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  const isInstalled = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  if (isIOS && !isInstalled) {
+    pushNotificationsHelp.textContent = "أضف مرسال إلى الشاشة الرئيسية أولًا، ثم افتحه من الأيقونة وفعّل الإشعارات من هنا.";
+    return;
+  }
+  if (!("Notification" in window) || !("PushManager" in window)) {
+    pushNotificationsHelp.textContent = "هذا المتصفح لا يدعم إشعارات الهاتف.";
+    return;
+  }
+  pushNotificationsButton.disabled = true;
+  try {
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") {
+      pushNotificationsHelp.textContent = "لم يتم السماح بالإشعارات. يمكنك تفعيلها من إعدادات الجهاز.";
+      return;
+    }
+    const registration = await serviceWorkerReady;
+    if (!registration) throw new Error("تعذر تجهيز خدمة الإشعارات.");
+    const subscription = await registration.pushManager.getSubscription()
+      || await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKeyFromBase64(VAPID_PUBLIC_KEY)
+      });
+    const { error } = await supabase.from("push_subscriptions").upsert({
+      user_id: currentUser.id,
+      endpoint: subscription.endpoint,
+      subscription: subscription.toJSON()
+    }, { onConflict: "endpoint" });
+    if (error) throw error;
+    pushNotificationsButton.textContent = "الإشعارات مفعّلة";
+    pushNotificationsHelp.textContent = "تم تفعيل إشعارات الهاتف لهذا الجهاز.";
+    pushNotificationsButton.disabled = true;
+  } catch (error) {
+    pushNotificationsHelp.textContent = "تعذر تفعيل الإشعارات: " + (error.message || "حاول مرة أخرى.");
+    pushNotificationsButton.disabled = false;
+  }
+});
 
 async function loadNotifications() {
   if (!currentUser) return;
@@ -608,6 +661,8 @@ messageForm.addEventListener("submit", async (event) => {
     messageInput.value = "";
     appendMessage(data);
     await loadConversations();
+    const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
+    if (pushError) console.warn("Push notification could not be sent:", pushError.message);
     announce("تم إرسال الرسالة.");
   }
   sendButton.disabled = false;
