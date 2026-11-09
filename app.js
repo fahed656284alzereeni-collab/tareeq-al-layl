@@ -29,6 +29,11 @@ let settingsReturnFocus = null;
 const peopleSearch = $("#people-search");
 const peopleList = $("#people-list");
 const conversationList = $("#conversation-list");
+const notificationsToggle = $("#notifications-toggle");
+const notificationsPanel = $("#notifications-panel");
+const notificationsList = $("#notifications-list");
+const notificationCount = $("#notification-count");
+const markAllReadButton = $("#mark-all-read");
 const chatEmpty = $("#chat-empty");
 const chatView = $("#chat-view");
 const chatTitle = $("#chat-title");
@@ -44,6 +49,8 @@ let conversations = [];
 let realtimeChannel = null;
 let presenceChannel = null;
 let onlineUserIds = new Set();
+let notifications = [];
+let notificationChannel = null;
 
 function announce(message, kind = "info") {
   status.textContent = message;
@@ -79,8 +86,11 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   account.textContent = "غير مسجل الدخول";
   if (realtimeChannel) supabase.removeChannel(realtimeChannel);
   if (presenceChannel) supabase.removeChannel(presenceChannel);
+  if (notificationChannel) supabase.removeChannel(notificationChannel);
   realtimeChannel = null;
   presenceChannel = null;
+  notificationChannel = null;
+  notifications = [];
   onlineUserIds = new Set();
   announce(message, "error");
 }
@@ -117,10 +127,11 @@ async function handleSession(session) {
   try {
     if (!alreadyLoadedForThisUser) {
       await ensureProfile(session.user);
-      await Promise.all([loadPeople(), loadConversations()]);
+      await Promise.all([loadPeople(), loadConversations(), loadNotifications()]);
       await loadOwnProfile();
     }
     await startPresence();
+    startNotificationsRealtime();
     announce("تم تسجيل الدخول. يمكنك بدء محادثة جديدة.");
   } catch (error) {
     announce("تعذر تحميل الحساب: " + (error.message || "خطأ غير معروف"), "error");
@@ -141,6 +152,111 @@ async function startPresence() {
       await presenceChannel.track({ user_id: currentUser.id, display_name: data?.display_name || "مستخدم مرسال" });
     }
   });
+}
+
+async function loadNotifications() {
+  if (!currentUser) return;
+  const { data, error } = await supabase.from("notifications")
+    .select("id,recipient_id,sender_id,conversation_id,message_id,preview,created_at,read_at")
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  notifications = data || [];
+  const senderIds = [...new Set(notifications.map(item => item.sender_id))];
+  let profileMap = new Map();
+  if (senderIds.length) {
+    const { data: profiles, error: profileError } = await supabase.from("profiles")
+      .select("id,display_name").in("id", senderIds);
+    if (profileError) throw profileError;
+    profileMap = new Map((profiles || []).map(profile => [profile.id, profile]));
+  }
+  renderNotifications(profileMap);
+}
+function renderNotifications(profileMap = new Map()) {
+  notificationsList.replaceChildren();
+  const unread = notifications.filter(item => !item.read_at).length;
+  notificationCount.hidden = unread === 0;
+  notificationCount.textContent = String(unread);
+  notificationsToggle.setAttribute("aria-label", unread ? "الإشعارات، " + unread + " غير مقروءة" : "الإشعارات");
+  markAllReadButton.hidden = unread === 0;
+  if (!notifications.length) {
+    notificationsList.append(safeText("li", "empty-item", "لا توجد إشعارات بعد."));
+    return;
+  }
+  for (const notification of notifications) {
+    const sender = profileMap.get(notification.sender_id) || { display_name: "مستخدم مرسال" };
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "notification-item" + (notification.read_at ? " is-read" : " is-unread");
+    button.setAttribute("aria-label", (notification.read_at ? "مقروء: " : "غير مقروء: ") + displayName(sender) + ". " + (notification.preview || "أرسل رسالة جديدة"));
+    button.append(safeText("span", "notification-sender", displayName(sender)));
+    button.append(safeText("span", "notification-preview", notification.preview || "أرسل رسالة جديدة"));
+    button.append(safeText("time", "notification-time", new Date(notification.created_at).toLocaleString("ar-JO", { dateStyle: "short", timeStyle: "short" })));
+    button.addEventListener("click", () => { void openNotification(notification, sender); });
+    item.append(button);
+    notificationsList.append(item);
+  }
+}
+async function openNotification(notification, sender) {
+  if (!currentUser) return;
+  notificationsPanel.hidden = true;
+  notificationsToggle.setAttribute("aria-expanded", "false");
+  const { data: conversation, error } = await supabase.from("conversations")
+    .select("id,user_one,user_two,last_message_at")
+    .eq("id", notification.conversation_id).single();
+  if (error) {
+    announce("تعذر فتح المحادثة من الإشعار: " + error.message, "error");
+    return;
+  }
+  await selectConversation(conversation, sender);
+}
+function startNotificationsRealtime() {
+  if (!currentUser) return;
+  if (notificationChannel) void supabase.removeChannel(notificationChannel);
+  notificationChannel = supabase.channel("notifications-" + currentUser.id)
+    .on("postgres_changes", {
+      event: "INSERT", schema: "public", table: "notifications",
+      filter: "recipient_id=eq." + currentUser.id
+    }, async (payload) => {
+      try {
+        await loadNotifications();
+        const { data } = await supabase.from("profiles").select("display_name")
+          .eq("id", payload.new.sender_id).maybeSingle();
+        announce("إشعار جديد من " + (data?.display_name || "مستخدم مرسال"));
+      } catch (error) {
+        announce("وصلك إشعار جديد، لكن تعذر تحديث القائمة: " + error.message, "error");
+      }
+    })
+    .subscribe();
+}
+notificationsToggle.addEventListener("click", async () => {
+  const opening = notificationsPanel.hidden;
+  notificationsPanel.hidden = !opening;
+  notificationsToggle.setAttribute("aria-expanded", String(opening));
+  if (opening) {
+    try { await loadNotifications(); }
+    catch (error) { announce("تعذر تحميل الإشعارات: " + error.message, "error"); }
+  }
+});
+markAllReadButton.addEventListener("click", async () => {
+  markAllReadButton.disabled = true;
+  const { error } = await supabase.from("notifications")
+    .update({ read_at: new Date().toISOString() }).is("read_at", null);
+  if (error) announce("تعذر تحديث الإشعارات: " + error.message, "error");
+  else {
+    await loadNotifications();
+    announce("تم تحديد الإشعارات كمقروءة.");
+  }
+  markAllReadButton.disabled = false;
+});
+async function markConversationNotificationsRead(conversationId) {
+  if (!currentUser) return;
+  const { error } = await supabase.from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("conversation_id", conversationId).is("read_at", null);
+  if (error) throw error;
+  await loadNotifications();
 }
 
 function applyTextSize(size) {
@@ -371,6 +487,7 @@ async function selectConversation(conversation, person) {
   chatView.hidden = false;
   chatTitle.textContent = "محادثة مع " + displayName(person);
   await loadMessages();
+  await markConversationNotificationsRead(conversation.id);
   if (realtimeChannel) await supabase.removeChannel(realtimeChannel);
   realtimeChannel = supabase.channel("messages-" + conversation.id)
     .on("postgres_changes", {
