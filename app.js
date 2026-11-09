@@ -104,7 +104,7 @@ async function handleSession(session) {
   workspace.hidden = false;
   logoutButton.hidden = false;
   settingsButton.hidden = false;
-  account.textContent = "مرحبًا، " + (session.user.email || "في مرسال");
+  account.textContent = "مرحبًا بك في مرسال";
   try {
     if (!alreadyLoadedForThisUser) {
       await ensureProfile(session.user);
