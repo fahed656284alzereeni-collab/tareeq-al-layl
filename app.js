@@ -704,7 +704,11 @@ $("#refresh-chat").addEventListener("click", () => { void loadMessages(); });
 messageForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const body = messageInput.value.trim();
-  if (!body || !activeConversation || !currentUser) return;
+  if (!body) {
+    announce("اكتب رسالتك قبل الإرسال.");
+    return;
+  }
+  if (!activeConversation || !currentUser) return;
   sendButton.disabled = true;
   const { data, error } = await supabase.from("messages").insert({
     conversation_id: activeConversation.id, sender_id: currentUser.id, body
