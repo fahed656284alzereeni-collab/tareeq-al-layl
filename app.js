@@ -304,24 +304,27 @@ async function syncPushNotificationState() {
         subscription: subscription.toJSON()
       }, { onConflict: "endpoint" });
       if (error) throw error;
-      pushNotificationsButton.textContent = "الإشعارات مفعّلة";
+      pushNotificationsButton.textContent = "إيقاف إشعارات الهاتف";
       pushNotificationsHelp.textContent = "إشعارات الهاتف مفعّلة على هذا الجهاز.";
-      pushNotificationsButton.disabled = true;
+      pushNotificationsButton.disabled = false;
+      pushNotificationsButton.setAttribute("aria-pressed", "true");
       return;
     }
-    pushNotificationsButton.textContent = "تفعيل إشعارات الهاتف";
+    pushNotificationsButton.textContent = "تشغيل إشعارات الهاتف";
     pushNotificationsButton.disabled = false;
+    pushNotificationsButton.setAttribute("aria-pressed", "false");
     if (Notification.permission === "denied") {
       pushNotificationsHelp.textContent = "الإشعارات محظورة من إعدادات الجهاز. اسمح بها لمرسال من إعدادات الإشعارات.";
     } else if (Notification.permission === "granted") {
-      pushNotificationsHelp.textContent = "السماح موجود، لكن اشتراك هذا الجهاز غير موجود. اضغط لتفعيله مجددًا.";
+      pushNotificationsHelp.textContent = "الإشعارات متوقفة على هذا الجهاز. يمكنك تشغيلها من هنا.";
     } else {
-      pushNotificationsHelp.textContent = "لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف مرة واحدة.";
+      pushNotificationsHelp.textContent = "يمكنك تشغيل إشعارات الرسائل أو إيقافها من هذا الزر.";
     }
   } catch (error) {
     console.warn("Could not restore push notification state:", error);
-    pushNotificationsButton.textContent = "تفعيل إشعارات الهاتف";
+    pushNotificationsButton.textContent = "تشغيل إشعارات الهاتف";
     pushNotificationsButton.disabled = false;
+    pushNotificationsButton.setAttribute("aria-pressed", "false");
   }
 }
 
@@ -333,43 +336,72 @@ function applicationServerKeyFromBase64(value) {
 
 pushNotificationsButton.addEventListener("click", async () => {
   if (!currentUser) return;
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
-  const isInstalled = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
-  if (isIOS && !isInstalled) {
-    pushNotificationsHelp.textContent = "أضف مرسال إلى الشاشة الرئيسية أولًا، ثم افتحه من الأيقونة وفعّل الإشعارات من هنا.";
-    return;
-  }
   if (!("Notification" in window) || !("PushManager" in window)) {
     pushNotificationsHelp.textContent = "هذا المتصفح لا يدعم إشعارات الهاتف.";
     return;
   }
   pushNotificationsButton.disabled = true;
   try {
-    const permission = await Notification.requestPermission();
+    const registration = await serviceWorkerReady;
+    if (!registration) throw new Error("تعذر تجهيز خدمة الإشعارات.");
+    const existingSubscription = await registration.pushManager.getSubscription();
+
+    if (existingSubscription) {
+      const { error } = await supabase.from("push_subscriptions")
+        .delete()
+        .eq("user_id", currentUser.id)
+        .eq("endpoint", existingSubscription.endpoint);
+      if (error) throw error;
+      const unsubscribed = await existingSubscription.unsubscribe();
+      if (!unsubscribed) throw new Error("لم يتم إيقاف اشتراك الإشعارات. حاول مرة أخرى.");
+      pushNotificationsButton.textContent = "تشغيل إشعارات الهاتف";
+      pushNotificationsButton.setAttribute("aria-pressed", "false");
+      pushNotificationsHelp.textContent = "تم إيقاف إشعارات الهاتف على هذا الجهاز.";
+      pushNotificationsButton.disabled = false;
+      return;
+    }
+
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    const isInstalled = window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+    if (isIOS && !isInstalled) {
+      pushNotificationsHelp.textContent = "أضف مرسال إلى الشاشة الرئيسية أولًا، ثم افتحه من الأيقونة وشغّل الإشعارات من هنا.";
+      pushNotificationsButton.disabled = false;
+      return;
+    }
+    if (Notification.permission === "denied") {
+      pushNotificationsHelp.textContent = "الإشعارات محظورة من إعدادات الجهاز. اسمح بها لمرسال من إعدادات الإشعارات ثم أعد المحاولة.";
+      pushNotificationsButton.disabled = false;
+      return;
+    }
+    const permission = Notification.permission === "granted"
+      ? "granted"
+      : await Notification.requestPermission();
     if (permission !== "granted") {
       pushNotificationsHelp.textContent = "لم يتم السماح بالإشعارات. يمكنك تفعيلها من إعدادات الجهاز.";
       pushNotificationsButton.disabled = false;
       return;
     }
-    const registration = await serviceWorkerReady;
-    if (!registration) throw new Error("تعذر تجهيز خدمة الإشعارات.");
-    const subscription = await registration.pushManager.getSubscription()
-      || await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: applicationServerKeyFromBase64(VAPID_PUBLIC_KEY)
-      });
+    const subscription = await registration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: applicationServerKeyFromBase64(VAPID_PUBLIC_KEY)
+    });
     const { error } = await supabase.from("push_subscriptions").upsert({
       user_id: currentUser.id,
       endpoint: subscription.endpoint,
       subscription: subscription.toJSON()
     }, { onConflict: "endpoint" });
-    if (error) throw error;
-    pushNotificationsButton.textContent = "الإشعارات مفعّلة";
-    pushNotificationsHelp.textContent = "تم تفعيل إشعارات الهاتف لهذا الجهاز.";
-    pushNotificationsButton.disabled = true;
-  } catch (error) {
-    pushNotificationsHelp.textContent = "تعذر تفعيل الإشعارات: " + (error.message || "حاول مرة أخرى.");
+    if (error) {
+      await subscription.unsubscribe();
+      throw error;
+    }
+    pushNotificationsButton.textContent = "إيقاف إشعارات الهاتف";
+    pushNotificationsButton.setAttribute("aria-pressed", "true");
+    pushNotificationsHelp.textContent = "تم تشغيل إشعارات الهاتف على هذا الجهاز.";
     pushNotificationsButton.disabled = false;
+  } catch (error) {
+    pushNotificationsHelp.textContent = "تعذر تغيير إعداد الإشعارات: " + (error.message || "حاول مرة أخرى.");
+    pushNotificationsButton.disabled = false;
+    await syncPushNotificationState();
   }
 });
 
