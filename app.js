@@ -75,9 +75,21 @@ let onlineUserIds = new Set();
 let notifications = [];
 let notificationChannel = null;
 
+let statusMessageTimer = null;
 function announce(message, kind = "info") {
+  if (statusMessageTimer) clearTimeout(statusMessageTimer);
   status.textContent = message;
   status.dataset.kind = kind;
+  if (kind !== "error" && message) {
+    const announcedMessage = message;
+    statusMessageTimer = setTimeout(() => {
+      if (status.textContent === announcedMessage && status.dataset.kind === kind) {
+        status.textContent = "";
+        status.dataset.kind = "";
+      }
+      statusMessageTimer = null;
+    }, 3000);
+  }
 }
 function getCallbackParams() {
   const params = new URLSearchParams(window.location.search);
