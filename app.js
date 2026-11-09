@@ -158,6 +158,7 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   }
   const alreadyLoadedForThisUser = currentUser?.id === session.user.id && !workspace.hidden;
   currentUser = session.user;
+  void syncPushNotificationState();
   void touchLastSeen();
   if (!lastSeenHeartbeat) lastSeenHeartbeat = window.setInterval(() => { if (document.visibilityState === "visible") void touchLastSeen(); }, 60000);
   authPanel.hidden = true;
@@ -228,6 +229,44 @@ async function startPresence() {
       await presenceChannel.track({ user_id: currentUser.id, display_name: data?.display_name || "مستخدم مرسال" });
     }
   });
+}
+
+async function syncPushNotificationState() {
+  if (!currentUser) return;
+  if (!("Notification" in window) || !("PushManager" in window)) {
+    pushNotificationsButton.textContent = "إشعارات الهاتف غير مدعومة";
+    pushNotificationsButton.disabled = true;
+    return;
+  }
+  try {
+    const registration = await serviceWorkerReady;
+    const subscription = registration ? await registration.pushManager.getSubscription() : null;
+    if (Notification.permission === "granted" && subscription) {
+      const { error } = await supabase.from("push_subscriptions").upsert({
+        user_id: currentUser.id,
+        endpoint: subscription.endpoint,
+        subscription: subscription.toJSON()
+      }, { onConflict: "endpoint" });
+      if (error) throw error;
+      pushNotificationsButton.textContent = "الإشعارات مفعّلة";
+      pushNotificationsHelp.textContent = "إشعارات الهاتف مفعّلة على هذا الجهاز.";
+      pushNotificationsButton.disabled = true;
+      return;
+    }
+    pushNotificationsButton.textContent = "تفعيل إشعارات الهاتف";
+    pushNotificationsButton.disabled = false;
+    if (Notification.permission === "denied") {
+      pushNotificationsHelp.textContent = "الإشعارات محظورة من إعدادات الجهاز. اسمح بها لمرسال من إعدادات الإشعارات.";
+    } else if (Notification.permission === "granted") {
+      pushNotificationsHelp.textContent = "السماح موجود، لكن اشتراك هذا الجهاز غير موجود. اضغط لتفعيله مجددًا.";
+    } else {
+      pushNotificationsHelp.textContent = "لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف مرة واحدة.";
+    }
+  } catch (error) {
+    console.warn("Could not restore push notification state:", error);
+    pushNotificationsButton.textContent = "تفعيل إشعارات الهاتف";
+    pushNotificationsButton.disabled = false;
+  }
 }
 
 function applicationServerKeyFromBase64(value) {
