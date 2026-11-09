@@ -129,7 +129,7 @@ async function startPresence() {
   presenceChannel = supabase.channel("mersal-online", { config: { presence: { key: currentUser.id } } });
   presenceChannel.on("presence", { event: "sync" }, () => {
     onlineUserIds = new Set(Object.keys(presenceChannel.presenceState()));
-    renderPeople();
+    void loadPeople().catch(error => announce("تعذر تحديث الأشخاص المتصلين: " + error.message, "error"));
   });
   presenceChannel.subscribe(async (state) => {
     if (state === "SUBSCRIBED" && currentUser) {
