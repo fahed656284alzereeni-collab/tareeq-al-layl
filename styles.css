@@ -656,3 +656,27 @@ body.conversation-info-fullscreen .conversation-info-list div {
 .deleted-message { font-style: italic; }
 :root[data-theme="light"] .message-options.is-open { background: #f4f7fc; color: #20334d; }
 :root[data-theme="light"] .message-options.is-open .message-delete-everyone-button { color: #a32626; }
+
+
+/* Ensure conversation details remain visible in the full-screen information view */
+body.conversation-info-fullscreen .workspace.chat-open #conversation-info-list,
+body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list > div {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  min-height: 64px;
+  padding: 18px 20px;
+}
+body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list > div > span {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .conversation-info-label {
+  margin-bottom: 6px;
+}
