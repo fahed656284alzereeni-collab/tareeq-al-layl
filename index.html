@@ -14,7 +14,7 @@
 <div class="topbar">
     <a class="brand" href="/" aria-label="مرسال، الصفحة الرئيسية">مرسال</a>
     <p id="account" aria-live="polite" aria-atomic="true">جارٍ التحقق من تسجيل الدخول…</p>
-    <button id="settings-button" type="button" class="quiet-button" aria-haspopup="dialog" aria-controls="settings-panel" hidden>إعدادات الحساب</button>
+    <button id="settings-button" type="button" class="quiet-button" aria-haspopup="dialog" aria-controls="settings-panel" hidden>الإعدادات العامة</button>
     <button id="logout" type="button" class="quiet-button" aria-label="تسجيل الخروج من حساب مرسال" hidden>تسجيل الخروج</button>
   </div>
 
@@ -27,25 +27,32 @@
       <button id="google-login" type="button" class="primary-button">تسجيل الدخول باستخدام Google</button>
     </div>
 
-    <div id="settings-panel" class="settings-overlay" role="dialog" aria-modal="true" aria-label="إعدادات الحساب" hidden>
+    <div id="settings-panel" class="settings-overlay" role="dialog" aria-modal="true" aria-label="الإعدادات العامة" hidden>
       <div class="settings-card">
-        <div class="settings-heading"><button id="close-settings" type="button" class="quiet-button">إغلاق الإعدادات</button></div>
+        <div class="settings-heading"><span class="settings-title">الإعدادات العامة</span><button id="close-settings" type="button" class="quiet-button">إغلاق</button></div>
+        <div id="settings-home" class="settings-menu">
+          <button id="open-account-settings" type="button" class="settings-menu-button">إعدادات الحساب</button>
+          <button id="open-app-settings" type="button" class="settings-menu-button">إعدادات التطبيق</button>
+        </div>
+        <div id="account-settings-view" hidden>
+          <button id="back-settings-home" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات العامة</button>
         <form id="settings-form">
           <label for="settings-display-name">الاسم الظاهر للآخرين</label>
           <input id="settings-display-name" name="display_name" type="text" minlength="2" maxlength="40" autocomplete="name" required>
           <label for="settings-email">البريد الإلكتروني</label>
           <input id="settings-email" type="email" readonly aria-describedby="email-help">
           <p id="email-help" class="settings-help">البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.</p>
-          <label for="settings-text-size">حجم النص في مرسال</label>
-          <select id="settings-text-size" name="text_size">
-            <option value="normal">عادي</option>
-            <option value="large">كبير</option>
-            <option value="xlarge">كبير جدًا</option>
-          </select>
-          <p class="settings-help">يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.</p>
-          <button id="save-settings" type="submit" class="primary-button">حفظ الإعدادات</button>
+          <button id="save-settings" type="submit" class="primary-button">حفظ بيانات الحساب</button>
         </form>
-        <div class="settings-extra"><p>محادثاتك خاصة بالمشاركين فيها. لا تشارك رمز الدخول أو بيانات حسابك مع أحد.</p><button id="refresh-data" type="button" class="quiet-button">تحديث الأشخاص والمحادثات</button></div>
+        <button id="account-logout" type="button" class="quiet-button account-logout">تسجيل الخروج</button>
+        </div>
+        <div id="app-settings-view" hidden>
+          <button id="back-app-home" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات العامة</button>
+          <label for="settings-text-size">حجم النص في مرسال</label>
+          <select id="settings-text-size" name="text_size"><option value="normal">عادي</option><option value="large">كبير</option><option value="xlarge">كبير جدًا</option></select>
+          <p class="settings-help">يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.</p>
+          <div class="settings-extra"><p>محادثاتك خاصة بالمشاركين فيها. لا تشارك رمز الدخول أو بيانات حسابك مع أحد.</p><button id="refresh-data" type="button" class="quiet-button">تحديث الأشخاص والمحادثات</button></div>
+        </div>
       </div>
     </div>
 
