@@ -326,3 +326,130 @@ footer, body > div:last-child {
 @media (prefers-reduced-motion: reduce) {
   .primary-button, .quiet-button, .person-button, .conversation-button { transition: none; }
 }
+
+
+/* Light appearance */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --surface: #ffffff;
+  --surface-raised: #f1f5fb;
+  --border: #bdcbe0;
+  --muted: #43536b;
+  --accent: #245b9a;
+  --focus: #8a4b00;
+  background: #f3f6fb;
+  color: #17243a;
+}
+:root[data-theme="light"] body {
+  color: #17243a;
+  background:
+    radial-gradient(ellipse at 50% -12%, #c9dcf4 0, transparent 48%),
+    linear-gradient(145deg, #f7f9fd 0%, #eaf0f8 55%, #f5f8fc 100%);
+}
+:root[data-theme="light"] .topbar {
+  background: linear-gradient(90deg, #ffffffed, #eaf1fbed, #ffffffed);
+  border-bottom-color: #c7d4e5;
+  box-shadow: 0 8px 25px #30496812;
+}
+:root[data-theme="light"] .brand { color: #18304e; }
+:root[data-theme="light"] #account { color: #43536b; }
+:root[data-theme="light"] .auth-panel {
+  border-color: #c3d2e6;
+  background: linear-gradient(150deg, #ffffff, #edf3fb);
+  box-shadow: 0 24px 70px #29496b1a, inset 0 1px #fff;
+}
+:root[data-theme="light"] .auth-panel > p { color: #4b5d75; }
+:root[data-theme="light"] .primary-button {
+  color: #fff;
+  border-color: #315e91;
+  background: linear-gradient(105deg, #315f99, #287c88);
+}
+:root[data-theme="light"] .primary-button:hover { background: linear-gradient(105deg, #244e82, #216b76); }
+:root[data-theme="light"] .quiet-button {
+  color: #20334d;
+  border-color: #b8c8dc;
+  background: linear-gradient(135deg, #f8fbff, #e7eef7);
+}
+:root[data-theme="light"] .quiet-button:hover { background: #dce8f6; border-color: #7998bd; }
+:root[data-theme="light"] #status { color: #40516a; }
+:root[data-theme="light"] #status[data-kind="error"] {
+  color: #8a2424; background: #fff0f0; border-color: #e7b4b4;
+}
+:root[data-theme="light"] #status[data-kind="success"] {
+  color: #17613a; background: #eaf8ef; border-color: #abd9bb;
+}
+:root[data-theme="light"] .workspace {
+  border-color: #c4d1e2;
+  background: #ffffffed;
+  box-shadow: 0 24px 70px #29496b18;
+}
+:root[data-theme="light"] .sidebar {
+  background: linear-gradient(180deg, #f2f6fc, #eaf0f8);
+  border-left-color: #d0dbea;
+}
+:root[data-theme="light"] input,
+:root[data-theme="light"] textarea,
+:root[data-theme="light"] .app-settings-inline select,
+:root[data-theme="light"] #settings-form select {
+  color: #17243a;
+  border-color: #bdcbe0;
+  background: #fff;
+  box-shadow: inset 0 1px 3px #20334d0a;
+}
+:root[data-theme="light"] input::placeholder,
+:root[data-theme="light"] textarea::placeholder { color: #66758b; }
+:root[data-theme="light"] .sidebar label,
+:root[data-theme="light"] .empty-item { color: #52627a; }
+:root[data-theme="light"] .person-button,
+:root[data-theme="light"] .conversation-button {
+  color: #20334d;
+  border-color: #d0dbea;
+  background: linear-gradient(115deg, #fff, #edf3fa);
+}
+:root[data-theme="light"] .person-button:hover,
+:root[data-theme="light"] .conversation-button:hover {
+  border-color: #7298c5;
+  background: #e4eef9;
+}
+:root[data-theme="light"] .chats-section,
+:root[data-theme="light"] .chat-header,
+:root[data-theme="light"] .message-form { border-color: #d1dce9; }
+:root[data-theme="light"] .chat-header { background: #f2f6fb; }
+:root[data-theme="light"] .chat-empty {
+  color: #4a5c73;
+  border-color: #d0dbea;
+  background: linear-gradient(145deg, #fff, #edf3fa);
+  box-shadow: 0 18px 50px #29496b12;
+}
+:root[data-theme="light"] .chat-empty h2 { color: #20334d; }
+:root[data-theme="light"] .message.mine {
+  color: #fff; border-color: #315f99;
+  background: linear-gradient(135deg, #376da8, #285782);
+}
+:root[data-theme="light"] .message.theirs {
+  color: #20334d; border-color: #d0dbea;
+  background: linear-gradient(135deg, #f1f5fa, #e6edf6);
+}
+:root[data-theme="light"] .message-time { color: inherit; opacity: .78; }
+:root[data-theme="light"] .settings-overlay { background: #e8eef7ed; }
+:root[data-theme="light"] .settings-card {
+  color: #17243a; border-color: #c5d2e3; background: #f7f9fc;
+}
+:root[data-theme="light"] .settings-heading {
+  background: #f7f9fc; border-color: #d1dce9;
+}
+:root[data-theme="light"] .settings-section {
+  border-color: #c5d2e3; background: linear-gradient(145deg, #fff, #edf3fa);
+  box-shadow: 0 12px 35px #29496b12;
+}
+:root[data-theme="light"] .settings-menu-button {
+  color: #20334d; border-color: #bdcbe0;
+  background: linear-gradient(110deg, #edf3fa, #fff);
+}
+:root[data-theme="light"] .app-settings-inline label,
+:root[data-theme="light"] #settings-form label { color: #263c59; }
+:root[data-theme="light"] .settings-help,
+:root[data-theme="light"] .settings-extra p { color: #52627a; }
+:root[data-theme="light"] .settings-extra { border-color: #d1dce9; }
+:root[data-theme="light"] footer,
+:root[data-theme="light"] body > div:last-child { color: #53647b; }
