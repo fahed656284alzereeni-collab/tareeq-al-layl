@@ -99,6 +99,6 @@ footer { padding: 16px 12px; text-align: center; color: #a6b3cb; font-size: .9re
 .settings-extra { margin-top: 24px; padding-top: 18px; border-top: 1px solid #405273; }
 .settings-extra h3 { margin: 0 0 8px; }
 .settings-extra p { color: var(--muted); line-height: 1.8; }
-.text-large { font-size: 112%; }
-.text-xlarge { font-size: 125%; }
+html.text-large { font-size: 112%; }
+html.text-xlarge { font-size: 125%; }
 @media (max-width: 520px) { .settings-card { padding: 18px; } .settings-heading { align-items: flex-start; flex-direction: column; } .settings-heading .quiet-button { width: 100%; } }
