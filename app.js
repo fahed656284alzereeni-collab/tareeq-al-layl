@@ -700,12 +700,18 @@ createGroupButton.addEventListener("click",async()=>{
 
 async function loadConversations() {
   const { data, error } = await supabase.from("conversations")
-    .select("id,user_one,user_two,last_message_at")
+    .select("id,user_one,user_two,last_message_at,is_group,group_name,created_at")
     .or("user_one.eq." + currentUser.id + ",user_two.eq." + currentUser.id)
     .order("last_message_at", { ascending: false });
   if (error) throw error;
   conversations = data || [];
-  const partnerIds = conversations.map(c => c.user_one === currentUser.id ? c.user_two : c.user_one);
+  const {data: memberships, error: membershipError} = await supabase.from("conversation_members").select("conversation_id").eq("user_id",currentUser.id);
+  if(membershipError) throw membershipError;
+  const groupIds=(memberships||[]).map(m=>m.conversation_id);
+  let groupRows=[];
+  if(groupIds.length){const result=await supabase.from("conversations").select("id,user_one,user_two,last_message_at,is_group,group_name,created_at").in("id",groupIds);if(result.error)throw result.error;groupRows=result.data||[];}
+  conversations=[...new Map([...conversations,...groupRows].map(c=>[c.id,c])).values()].sort((a,b)=>new Date(b.last_message_at||b.created_at||0)-new Date(a.last_message_at||a.created_at||0));
+  const partnerIds = conversations.filter(c=>!c.is_group).map(c => c.user_one === currentUser.id ? c.user_two : c.user_one);
   let profileMap = new Map();
   if (partnerIds.length) {
     const { data: profiles, error: profileError } = await supabase.from("profiles")
@@ -720,7 +726,7 @@ async function loadConversations() {
   }
   for (const conversation of conversations) {
     const partnerId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
-    const person = profileMap.get(partnerId) || { id: partnerId, display_name: "مستخدم مرسال" };
+    const person = conversation.is_group ? {id:partnerId,display_name:conversation.group_name||"مجموعة"} : (profileMap.get(partnerId) || { id: partnerId, display_name: "مستخدم مرسال" });
     const item = document.createElement("li");
     const button = document.createElement("button");
     button.type = "button";
@@ -731,7 +737,7 @@ async function loadConversations() {
       const presence = safeText("span", "conversation-presence is-online", "متصل الآن");
       button.append(presence);
     }
-    button.addEventListener("click", () => { void selectConversation(conversation, person); });
+    button.addEventListener("click", () => { void selectConversation(conversation, person).then(()=>{if(conversation.is_group){chatPartnerName.textContent=conversation.group_name||"مجموعة";chatPartnerPresence.textContent="مجموعة";chatPartnerAccessible.setAttribute("aria-label",chatPartnerName.textContent+", مجموعة");}}); });
     item.append(button);
     conversationList.append(item);
   }
