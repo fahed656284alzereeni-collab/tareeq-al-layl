@@ -15,6 +15,7 @@
   <header class="topbar">
     <a class="brand" href="/" aria-label="مرسال، الصفحة الرئيسية">مرسال</a>
     <p id="account" aria-live="polite" aria-atomic="true">جارٍ التحقق من تسجيل الدخول…</p>
+    <button id="settings-button" type="button" class="quiet-button" aria-haspopup="dialog" aria-controls="settings-panel" hidden>إعدادات الحساب</button>
     <button id="logout" type="button" class="quiet-button" aria-label="تسجيل الخروج من حساب مرسال" hidden>تسجيل الخروج</button>
   </header>
 
@@ -25,6 +26,28 @@
       <h1 id="welcome-title">أهلًا بك في مرسال</h1>
       <p>تواصل مع الأشخاص الذين يهمّونك، برسائل خاصة وبسيطة.</p>
       <button id="google-login" type="button" class="primary-button">تسجيل الدخول باستخدام Google</button>
+    </section>
+
+    <section id="settings-panel" class="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+      <div class="settings-card">
+        <header class="settings-heading"><h2 id="settings-title">إعدادات الحساب</h2><button id="close-settings" type="button" class="quiet-button">إغلاق الإعدادات</button></header>
+        <form id="settings-form">
+          <label for="settings-display-name">الاسم الظاهر للآخرين</label>
+          <input id="settings-display-name" name="display_name" type="text" minlength="2" maxlength="40" autocomplete="name" required>
+          <label for="settings-email">البريد الإلكتروني</label>
+          <input id="settings-email" type="email" readonly aria-describedby="email-help">
+          <p id="email-help" class="settings-help">البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.</p>
+          <label for="settings-text-size">حجم النص في مرسال</label>
+          <select id="settings-text-size" name="text_size">
+            <option value="normal">عادي</option>
+            <option value="large">كبير</option>
+            <option value="xlarge">كبير جدًا</option>
+          </select>
+          <p class="settings-help">يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.</p>
+          <button id="save-settings" type="submit" class="primary-button">حفظ الإعدادات</button>
+        </form>
+        <div class="settings-extra"><h3>الخصوصية</h3><p>محادثاتك خاصة بالمشاركين فيها. لا تشارك رمز الدخول أو بيانات حسابك مع أحد.</p><button id="refresh-data" type="button" class="quiet-button">تحديث الأشخاص والمحادثات</button></div>
+      </div>
     </section>
 
     <section id="workspace" class="workspace" hidden aria-label="مساحة المحادثات">
