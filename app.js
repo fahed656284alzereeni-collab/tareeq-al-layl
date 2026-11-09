@@ -18,6 +18,7 @@ const settingsPanel = $("#settings-panel");
 const settingsForm = $("#settings-form");
 const displayNameInput = $("#settings-display-name");
 const textSizeSelect = $("#settings-text-size");
+const themeSelect = $("#settings-theme");
 const settingsEmail = $("#settings-email");
 const closeSettingsButton = $("#close-settings");
 const settingsHome = $("#settings-home");
@@ -147,12 +148,22 @@ function applyTextSize(size) {
   if (size === "large") document.documentElement.classList.add("text-large");
   if (size === "xlarge") document.documentElement.classList.add("text-xlarge");
 }
+
+function applyTheme(choice) {
+  const prefersLight = window.matchMedia?.("(prefers-color-scheme: light)").matches;
+  const resolved = choice === "system" ? (prefersLight ? "light" : "dark") : choice;
+  document.documentElement.dataset.theme = resolved;
+  document.documentElement.dataset.themeChoice = choice;
+}
+
 function openSettings() {
   if (!currentUser) return;
   settingsReturnFocus = document.activeElement;
   settingsEmail.value = currentUser.email || "";
   textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
+  themeSelect.value = localStorage.getItem("mersal-theme") || "system";
   applyTextSize(textSizeSelect.value);
+  applyTheme(themeSelect.value);
   settingsHome.hidden = false;
   accountSettingsView.hidden = true;
   settingsPanel.hidden = false;
@@ -181,6 +192,13 @@ closeSettingsButton.addEventListener("click", () => {
 textSizeSelect.addEventListener("change", () => {
   applyTextSize(textSizeSelect.value);
   localStorage.setItem("mersal-text-size", textSizeSelect.value);
+});
+themeSelect.addEventListener("change", () => {
+  applyTheme(themeSelect.value);
+  localStorage.setItem("mersal-theme", themeSelect.value);
+});
+window.matchMedia?.("(prefers-color-scheme: light)").addEventListener?.("change", () => {
+  if ((localStorage.getItem("mersal-theme") || "system") === "system") applyTheme("system");
 });
 settingsForm.addEventListener("submit", async (event) => {
   event.preventDefault();
@@ -218,6 +236,7 @@ refreshDataButton.addEventListener("click", async () => {
   refreshDataButton.disabled = false;
 });
 applyTextSize(localStorage.getItem("mersal-text-size") || "normal");
+applyTheme(localStorage.getItem("mersal-theme") || "system");
 
 loginButton.addEventListener("click", async () => {
   loginButton.disabled = true;
