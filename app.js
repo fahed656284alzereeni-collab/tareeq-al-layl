@@ -47,6 +47,10 @@ const conversationInfoToggle = $("#conversation-info-toggle");
 const conversationInfoPanel = $("#conversation-info");
 const closeConversationInfoButton = $("#close-conversation-info");
 const conversationInfoName = $("#conversation-info-name");
+const chatPartnerName = $("#chat-partner-name");
+const chatPartnerPresence = $("#chat-partner-presence");
+let activePartnerLastSeenAt = null;
+let lastSeenHeartbeat = null;
 const conversationInfoStatus = $("#conversation-info-status");
 const conversationInfoCreated = $("#conversation-info-created");
 const conversationInfoCount = $("#conversation-info-count");
@@ -137,6 +141,8 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   }
   const alreadyLoadedForThisUser = currentUser?.id === session.user.id && !workspace.hidden;
   currentUser = session.user;
+  void touchLastSeen();
+  if (!lastSeenHeartbeat) lastSeenHeartbeat = window.setInterval(() => { if (document.visibilityState === "visible") void touchLastSeen(); }, 60000);
   authPanel.hidden = true;
   workspace.hidden = false;
   logoutButton.hidden = true;
@@ -158,12 +164,45 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   }
 }
 
+async function touchLastSeen() {
+  if (!currentUser) return;
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("profiles").update({ last_seen_at: now }).eq("id", currentUser.id);
+  if (error) console.warn("تعذر تحديث آخر ظهور:", error.message);
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") void touchLastSeen();
+});
+
+function formatLastSeen(value) {
+  if (!value) return "آخر ظهور غير متوفر";
+  const date = new Date(value);
+  const now = new Date();
+  const sameDay = date.toDateString() === now.toDateString();
+  const yesterday = new Date(now);
+  yesterday.setDate(now.getDate() - 1);
+  const sameYesterday = date.toDateString() === yesterday.toDateString();
+  const time = date.toLocaleTimeString("ar-JO", { hour: "numeric", minute: "2-digit" });
+  if (sameDay) return "آخر ظهور اليوم الساعة " + time;
+  if (sameYesterday) return "آخر ظهور أمس الساعة " + time;
+  return "آخر ظهور " + date.toLocaleDateString("ar-JO", { day: "numeric", month: "long" }) + " الساعة " + time;
+}
+function updateChatPartnerPresence() {
+  if (!activePartner || !chatPartnerPresence) return;
+  const online = onlineUserIds.has(activePartner.id);
+  chatPartnerPresence.textContent = online ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt);
+  chatPartnerPresence.classList.toggle("is-online", online);
+  chatPartnerPresence.classList.toggle("is-offline", !online);
+  chatPartnerPresence.setAttribute("aria-label", chatPartnerPresence.textContent);
+}
+
 async function startPresence() {
   if (!currentUser) return;
   if (presenceChannel) await supabase.removeChannel(presenceChannel);
   presenceChannel = supabase.channel("mersal-online", { config: { presence: { key: currentUser.id } } });
   presenceChannel.on("presence", { event: "sync" }, () => {
     onlineUserIds = new Set(Object.keys(presenceChannel.presenceState()));
+    updateChatPartnerPresence();
     void Promise.all([loadPeople(), loadConversations()]).catch(error => announce("تعذر تحديث حالة الاتصال: " + error.message, "error"));
   });
   presenceChannel.subscribe(async (state) => {
@@ -555,6 +594,11 @@ async function selectConversation(conversation, person) {
   status.textContent = "";
   activeConversation = conversation;
   activePartner = person;
+  chatPartnerName.textContent = displayName(person);
+  const { data: partnerProfile } = await supabase.from("profiles")
+    .select("last_seen_at").eq("id", person.id).maybeSingle();
+  activePartnerLastSeenAt = partnerProfile?.last_seen_at || null;
+  updateChatPartnerPresence();
   chatEmpty.hidden = true;
   chatView.hidden = false;
   workspace.classList.add("chat-open");
@@ -581,7 +625,7 @@ async function selectConversation(conversation, person) {
 async function updateConversationInfo() {
   if (!activeConversation || !activePartner) return;
   conversationInfoName.textContent = displayName(activePartner);
-  conversationInfoStatus.textContent = onlineUserIds.has(activePartner.id) ? "متصل الآن" : "غير متصل";
+  conversationInfoStatus.textContent = onlineUserIds.has(activePartner.id) ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt);
   const createdAt = activeConversation.created_at;
   conversationInfoCreated.textContent = createdAt
     ? new Date(createdAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" })
