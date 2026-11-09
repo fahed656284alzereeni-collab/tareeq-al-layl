@@ -11,26 +11,25 @@
   <script type="module" src="/app.js"></script>
 </head>
 <body>
-  <a class="skip-link" href="#main-content">انتقل إلى المحتوى الرئيسي</a>
-  <header class="topbar">
+<div class="topbar">
     <a class="brand" href="/" aria-label="مرسال، الصفحة الرئيسية">مرسال</a>
     <p id="account" aria-live="polite" aria-atomic="true">جارٍ التحقق من تسجيل الدخول…</p>
     <button id="settings-button" type="button" class="quiet-button" aria-haspopup="dialog" aria-controls="settings-panel" hidden>إعدادات الحساب</button>
     <button id="logout" type="button" class="quiet-button" aria-label="تسجيل الخروج من حساب مرسال" hidden>تسجيل الخروج</button>
-  </header>
+  </div>
 
-  <main id="main-content" tabindex="-1">
+  <div id="main-content" tabindex="-1">
     <p id="status" role="status" aria-live="polite" aria-atomic="true">جارٍ تجهيز مرسال…</p>
-    <section id="auth-panel" class="auth-panel" aria-labelledby="welcome-title">
+    <div id="auth-panel" class="auth-panel" >
       <div class="mark" aria-hidden="true">م</div>
-      <h1 id="welcome-title">أهلًا بك في مرسال</h1>
-      <p>تواصل مع الأشخاص الذين يهمّونك، برسائل خاصة وبسيطة.</p>
+      
+      
       <button id="google-login" type="button" class="primary-button">تسجيل الدخول باستخدام Google</button>
-    </section>
+    </div>
 
-    <section id="settings-panel" class="settings-overlay" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+    <div id="settings-panel" class="settings-overlay" role="dialog" aria-modal="true" aria-label="إعدادات الحساب" hidden>
       <div class="settings-card">
-        <header class="settings-heading"><h2 id="settings-title">إعدادات الحساب</h2><button id="close-settings" type="button" class="quiet-button">إغلاق الإعدادات</button></header>
+        <div class="settings-heading"><button id="close-settings" type="button" class="quiet-button">إغلاق الإعدادات</button></div>
         <form id="settings-form">
           <label for="settings-display-name">الاسم الظاهر للآخرين</label>
           <input id="settings-display-name" name="display_name" type="text" minlength="2" maxlength="40" autocomplete="name" required>
@@ -46,35 +45,35 @@
           <p class="settings-help">يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.</p>
           <button id="save-settings" type="submit" class="primary-button">حفظ الإعدادات</button>
         </form>
-        <div class="settings-extra"><h3>الخصوصية</h3><p>محادثاتك خاصة بالمشاركين فيها. لا تشارك رمز الدخول أو بيانات حسابك مع أحد.</p><button id="refresh-data" type="button" class="quiet-button">تحديث الأشخاص والمحادثات</button></div>
+        <div class="settings-extra"><p>محادثاتك خاصة بالمشاركين فيها. لا تشارك رمز الدخول أو بيانات حسابك مع أحد.</p><button id="refresh-data" type="button" class="quiet-button">تحديث الأشخاص والمحادثات</button></div>
       </div>
-    </section>
+    </div>
 
-    <section id="workspace" class="workspace" hidden aria-label="مساحة المحادثات">
-      <aside class="sidebar" aria-label="جهات الاتصال والمحادثات">
-        <section class="people-section" aria-labelledby="people-heading">
-          <h2 id="people-heading">ابدأ محادثة</h2>
+    <div id="workspace" class="workspace" hidden aria-label="المحادثات">
+      <div class="sidebar" aria-label="الأشخاص والمحادثات">
+        <div class="people-section" >
+          
           <label for="people-search">ابحث عن شخص</label>
           <input id="people-search" type="search" placeholder="اكتب الاسم للبحث" autocomplete="off" enterkeyhint="search" aria-describedby="people-help">
           <p id="people-help" class="visually-hidden">اكتب اسم الشخص المسجل في مرسال لتصفية قائمة الأشخاص.</p>
-          <ul id="people-list" class="people-list" aria-label="الأشخاص المسجلون في مرسال"></ul>
-        </section>
-        <section class="chats-section" aria-labelledby="chats-heading">
-          <h2 id="chats-heading">محادثاتك</h2>
+          <ul id="people-list" class="people-list" aria-label="الأشخاص المتصلون الآن"></ul>
+        </div>
+        <div class="chats-section" >
+          
           <ul id="conversation-list" class="conversation-list" aria-label="محادثاتك الخاصة"></ul>
-        </section>
-      </aside>
+        </div>
+      </div>
 
-      <section class="chat-panel" aria-label="المحادثة الحالية">
+      <div class="chat-panel" aria-label="المحادثة">
         <div id="chat-empty" class="chat-empty">
-          <h2>مرسال يجمعكم</h2>
+          
           <p>اختر شخصًا من القائمة لبدء محادثة خاصة.</p>
         </div>
         <div id="chat-view" class="chat-view" hidden>
-          <header class="chat-header">
-            <h2 id="chat-title" aria-live="polite" aria-atomic="true">محادثة</h2>
+          <div class="chat-header">
+            <span id="chat-title" class="visually-hidden" aria-live="polite" aria-atomic="true">المحادثة</span>
             <button id="refresh-chat" type="button" class="quiet-button">تحديث الرسائل</button>
-          </header>
+          </div>
           <ol id="messages" class="messages" aria-label="رسائل المحادثة" aria-live="polite" aria-relevant="additions text"></ol>
           <form id="message-form" class="message-form" aria-label="إرسال رسالة">
             <label class="visually-hidden" for="message-input">اكتب رسالتك</label>
@@ -82,9 +81,9 @@
             <button id="send-button" type="submit" class="primary-button">إرسال</button>
           </form>
         </div>
-      </section>
-    </section>
-  </main>
-  <footer><p>مرسال V2 · تواصل بوضوح واحترام</p></footer>
+      </div>
+    </div>
+  </div>
+  <div><p>مرسال V2 · تواصل بوضوح واحترام</p></div>
 </body>
 </html>
