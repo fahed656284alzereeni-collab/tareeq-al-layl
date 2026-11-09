@@ -610,3 +610,24 @@ body.conversation-info-fullscreen .conversation-info-list div {
 :root[data-theme="light"] .message-options-toggle,
 :root[data-theme="light"] .message-option-button { background: #fff; color: #20334d; border-color: #bdcde1; }
 :root[data-theme="light"] .replying-to { background: #edf3fa; color: #20334d; }
+
+
+/* Full-screen, VoiceOver-friendly message options */
+.message-options.is-open {
+  position: fixed; inset: 0; z-index: 220;
+  display: flex; flex-direction: column; justify-content: center; align-items: stretch;
+  gap: 14px; padding: max(24px, env(safe-area-inset-top)) 22px max(24px, env(safe-area-inset-bottom));
+  overflow-y: auto; background: #101a2c; color: #f5f7ff;
+}
+.message-options.is-open[hidden] { display: none !important; }
+.message-options-title { margin: 0 0 8px; font-size: 1.25rem; }
+.message-options.is-open .message-option-button {
+  width: 100%; min-height: 56px; padding: 14px 18px; text-align: right; font-size: 1rem;
+}
+.message-options.is-open .message-options-close { margin-bottom: 8px; }
+.message-options.is-open .message-delete-button { border-color: #bd8956; }
+.message-options.is-open .message-delete-everyone-button { border-color: #bd5555; color: #ffb9b9; }
+.message-deleted { opacity: .78; }
+.deleted-message { font-style: italic; }
+:root[data-theme="light"] .message-options.is-open { background: #f4f7fc; color: #20334d; }
+:root[data-theme="light"] .message-options.is-open .message-delete-everyone-button { color: #a32626; }
