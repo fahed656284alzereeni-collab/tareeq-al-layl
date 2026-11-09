@@ -164,7 +164,7 @@ async function startPresence() {
   presenceChannel = supabase.channel("mersal-online", { config: { presence: { key: currentUser.id } } });
   presenceChannel.on("presence", { event: "sync" }, () => {
     onlineUserIds = new Set(Object.keys(presenceChannel.presenceState()));
-    void loadPeople().catch(error => announce("تعذر تحديث الأشخاص المتصلين: " + error.message, "error"));
+    void Promise.all([loadPeople(), loadConversations()]).catch(error => announce("تعذر تحديث حالة الاتصال: " + error.message, "error"));
   });
   presenceChannel.subscribe(async (state) => {
     if (state === "SUBSCRIBED" && currentUser) {
@@ -506,8 +506,13 @@ async function loadConversations() {
     const partnerId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
     const person = profileMap.get(partnerId) || { id: partnerId, display_name: "مستخدم مرسال" };
     const item = document.createElement("li");
-    const button = safeText("button", "conversation-button", displayName(person));
+    const button = document.createElement("button");
     button.type = "button";
+    button.className = "conversation-button";
+    button.append(safeText("span", "conversation-person-name", displayName(person)));
+    const isOnline = onlineUserIds.has(partnerId);
+    const presence = safeText("span", "conversation-presence " + (isOnline ? "is-online" : "is-offline"), isOnline ? "متصل الآن" : "غير متصل");
+    button.append(presence);
     button.addEventListener("click", () => { void selectConversation(conversation, person); });
     item.append(button);
     conversationList.append(item);
