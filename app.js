@@ -833,17 +833,20 @@ function appendMessage(message) {
         video.src = data.signedUrl;
         video.controls = true;
         video.playsInline = true;
+        video.setAttribute("playsinline", "");
+        video.setAttribute("webkit-playsinline", "");
         video.preload = "metadata";
-        video.setAttribute("aria-label", "فيديو مرفق: " + fileName);
+        video.setAttribute("aria-label", "تشغيل الفيديو داخل المحادثة: " + fileName);
         video.className = "attachment-video";
         attachmentView.insertBefore(video, fileInfo);
+      } else {
+        const link = safeText("a", "attachment-download", "فتح أو تنزيل الملف");
+        link.href = data.signedUrl;
+        link.target = "_blank";
+        link.rel = "noopener";
+        link.setAttribute("aria-label", "فتح أو تنزيل " + fileName);
+        attachmentView.append(link);
       }
-      const link = safeText("a", "attachment-download", "فتح أو تنزيل الملف");
-      link.href = data.signedUrl;
-      link.target = "_blank";
-      link.rel = "noopener";
-      link.setAttribute("aria-label", "فتح أو تنزيل " + fileName);
-      attachmentView.append(link);
     }).catch(() => attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق.")));
     item.append(attachmentView);
   } else {
