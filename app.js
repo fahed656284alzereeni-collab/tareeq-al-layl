@@ -753,7 +753,7 @@ function appendMessage(message) {
   menu.className = "message-options";
   menu.hidden = true;
   menu._home = actions;
-  const menuTitle = safeText("h2", "message-options-title", "خيارات الرسالة");
+  const menuTitle = safeText("div", "message-options-title", "خيارات الرسالة");
   menuTitle.id = "message-options-title-" + message.id;
   const closeButton = safeText("button", "message-option-button message-options-close", "إغلاق الخيارات");
   closeButton.type = "button";
