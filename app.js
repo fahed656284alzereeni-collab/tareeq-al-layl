@@ -120,7 +120,7 @@ async function ensureProfile(user) {
   });
   if (error && error.code !== "23505") throw error;
 }
-async function handleSession(session) {
+async function handleSession(session, authEvent = "UNKNOWN") {
   if (!session?.user) {
     const callbackParams = getCallbackParams();
     if (callbackParams.has("code")) {
@@ -145,7 +145,9 @@ async function handleSession(session) {
     }
     await startPresence();
     startNotificationsRealtime();
-    announce("تم تسجيل الدخول. يمكنك بدء محادثة جديدة.");
+    if (!alreadyLoadedForThisUser && authEvent !== "TOKEN_REFRESHED") {
+      announce("تم تسجيل الدخول. يمكنك بدء محادثة جديدة.");
+    }
   } catch (error) {
     announce("تعذر تحميل الحساب: " + (error.message || "خطأ غير معروف"), "error");
   }
@@ -395,7 +397,7 @@ logoutButton.addEventListener("click", async () => {
 supabase.auth.onAuthStateChange((event, session) => {
   setTimeout(() => {
     if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED" || event === "SIGNED_OUT") {
-      void handleSession(session);
+      void handleSession(session, event);
     }
   }, 0);
 });
@@ -494,6 +496,7 @@ async function openConversation(person) {
   await loadConversations();
 }
 async function selectConversation(conversation, person) {
+  status.textContent = "";
   activeConversation = conversation;
   activePartner = person;
   chatEmpty.hidden = true;
@@ -554,6 +557,7 @@ backToChatsButton.addEventListener("click", () => {
 });
 conversationInfoToggle.addEventListener("click", async () => {
   const opening = conversationInfoPanel.hidden;
+  if (opening) status.textContent = "";
   conversationInfoPanel.hidden = !opening;
   document.body.classList.toggle("conversation-info-fullscreen", opening);
   conversationInfoToggle.setAttribute("aria-expanded", String(opening));
