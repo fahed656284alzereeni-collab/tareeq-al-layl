@@ -38,6 +38,8 @@ let activePartner = null;
 let people = [];
 let conversations = [];
 let realtimeChannel = null;
+let presenceChannel = null;
+let onlineUserIds = new Set();
 
 function announce(message, kind = "info") {
   status.textContent = message;
@@ -72,7 +74,10 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   logoutButton.hidden = true;
   account.textContent = "غير مسجل الدخول";
   if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+  if (presenceChannel) supabase.removeChannel(presenceChannel);
   realtimeChannel = null;
+  presenceChannel = null;
+  onlineUserIds = new Set();
   announce(message, "error");
 }
 async function ensureProfile(user) {
@@ -111,10 +116,27 @@ async function handleSession(session) {
       await Promise.all([loadPeople(), loadConversations()]);
       await loadOwnProfile();
     }
+    await startPresence();
     announce("تم تسجيل الدخول. يمكنك بدء محادثة جديدة.");
   } catch (error) {
     announce("تعذر تحميل الحساب: " + (error.message || "خطأ غير معروف"), "error");
   }
+}
+
+async function startPresence() {
+  if (!currentUser) return;
+  if (presenceChannel) await supabase.removeChannel(presenceChannel);
+  presenceChannel = supabase.channel("mersal-online", { config: { presence: { key: currentUser.id } } });
+  presenceChannel.on("presence", { event: "sync" }, () => {
+    onlineUserIds = new Set(Object.keys(presenceChannel.presenceState()));
+    renderPeople();
+  });
+  presenceChannel.subscribe(async (state) => {
+    if (state === "SUBSCRIBED" && currentUser) {
+      const { data } = await supabase.from("profiles").select("display_name").eq("id", currentUser.id).maybeSingle();
+      await presenceChannel.track({ user_id: currentUser.id, display_name: data?.display_name || "مستخدم مرسال" });
+    }
+  });
 }
 
 function applyTextSize(size) {
@@ -236,14 +258,14 @@ async function loadPeople() {
 function renderPeople() {
   const term = peopleSearch.value.trim().toLocaleLowerCase();
   peopleList.replaceChildren();
-  const filtered = people.filter(person => displayName(person).toLocaleLowerCase().includes(term));
+  const filtered = people.filter(person => onlineUserIds.has(person.id) && displayName(person).toLocaleLowerCase().includes(term));
   if (!filtered.length) {
-    peopleList.append(safeText("li", "empty-item", term ? "لا توجد نتائج مطابقة." : "سيظهر الأشخاص هنا بعد تسجيلهم في مرسال."));
+    peopleList.append(safeText("li", "empty-item", term ? "لا يوجد شخص متصل بهذا الاسم." : "لا يوجد أشخاص متصلون الآن."));
     return;
   }
   for (const person of filtered) {
     const item = document.createElement("li");
-    const button = safeText("button", "person-button", displayName(person));
+    const button = safeText("button", "person-button", displayName(person) + " · متصل الآن");
     button.type = "button";
     button.addEventListener("click", () => { void openConversation(person); });
     item.append(button);
