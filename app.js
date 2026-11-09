@@ -37,6 +37,7 @@ const peopleList = $("#people-list");
 const conversationList = $("#conversation-list");
 const notificationsToggle = $("#notifications-toggle");
 const notificationsPanel = $("#notifications-panel");
+const closeNotificationsButton = $("#close-notifications");
 const notificationsList = $("#notifications-list");
 const notificationCount = $("#notification-count");
 const markAllReadButton = $("#mark-all-read");
@@ -447,12 +448,25 @@ function startNotificationsRealtime() {
     })
     .subscribe();
 }
+function closeNotifications() {
+  if (notificationsPanel.hidden) return;
+  notificationsPanel.hidden = true;
+  notificationsToggle.focus();
+}
 notificationsToggle.addEventListener("click", async () => {
   const opening = notificationsPanel.hidden;
   notificationsPanel.hidden = !opening;
   if (opening) {
+    closeNotificationsButton.focus();
     try { await loadNotifications(); }
     catch (error) { announce("تعذر تحميل الإشعارات: " + error.message, "error"); }
+  }
+});
+closeNotificationsButton.addEventListener("click", closeNotifications);
+notificationsPanel.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeNotifications();
   }
 });
 markAllReadButton.addEventListener("click", async () => {
