@@ -48,6 +48,7 @@ const conversationInfoPanel = $("#conversation-info");
 const closeConversationInfoButton = $("#close-conversation-info");
 const conversationInfoName = $("#conversation-info-name");
 const chatPartnerName = $("#chat-partner-name");
+const chatPartnerAccessible = $("#chat-partner-accessible");
 const chatPartnerPresence = $("#chat-partner-presence");
 let activePartnerLastSeenAt = null;
 let lastSeenHeartbeat = null;
@@ -193,7 +194,7 @@ function updateChatPartnerPresence() {
   chatPartnerPresence.textContent = online ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt);
   chatPartnerPresence.classList.toggle("is-online", online);
   chatPartnerPresence.classList.toggle("is-offline", !online);
-  chatPartnerPresence.setAttribute("aria-label", chatPartnerPresence.textContent);
+  chatPartnerAccessible.setAttribute("aria-label", `${chatPartnerName.textContent}، ${chatPartnerPresence.textContent}`);
 }
 
 async function startPresence() {
@@ -595,6 +596,7 @@ async function selectConversation(conversation, person) {
   activeConversation = conversation;
   activePartner = person;
   chatPartnerName.textContent = displayName(person);
+  chatPartnerAccessible.setAttribute("aria-label", `${chatPartnerName.textContent}، جاري تحديث حالة الظهور`);
   const { data: partnerProfile } = await supabase.from("profiles")
     .select("last_seen_at").eq("id", person.id).maybeSingle();
   activePartnerLastSeenAt = partnerProfile?.last_seen_at || null;
