@@ -575,3 +575,18 @@ body.conversation-info-fullscreen .conversation-info-list div {
 .conversation-presence.is-offline { color: #aebbd3; }
 :root[data-theme="light"] .conversation-presence.is-online { color: #16834e; }
 :root[data-theme="light"] .conversation-presence.is-offline { color: #66758b; }
+
+
+/* Partner name and live / last-seen status in the chat header */
+.chat-partner-heading { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 3px; min-width: 0; margin-inline-start: auto; }
+.chat-partner-name { color: #fff; font-weight: 800; font-size: 1rem; }
+.chat-partner-presence { color: #aebbd3; font-size: .8rem; line-height: 1.4; }
+.chat-partner-presence.is-online { color: #54d69a; }
+:root[data-theme="light"] .chat-partner-name { color: #20334d; }
+:root[data-theme="light"] .chat-partner-presence { color: #66758b; }
+:root[data-theme="light"] .chat-partner-presence.is-online { color: #16834e; }
+@media (max-width: 720px) {
+  .workspace.chat-open .chat-header { align-items: center; }
+  .workspace.chat-open .chat-partner-heading { flex: 1 1 auto; order: 0; margin: 0; }
+  .workspace.chat-open .chat-actions { flex: 0 0 auto; }
+}
