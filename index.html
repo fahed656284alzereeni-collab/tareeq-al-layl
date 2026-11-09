@@ -88,13 +88,7 @@
             <ul id="notifications-list" class="notifications-list" aria-live="polite"></ul>
           </div>
         </section>
-        <div class="people-section" >
-          
-          <label for="people-search">ابحث عن شخص</label>
-          <input id="people-search" type="search" placeholder="اكتب الاسم للبحث" autocomplete="off" enterkeyhint="search" aria-describedby="people-help">
-          <p id="people-help" class="visually-hidden">ابحث عن شخص بالاسم.</p>
-          <ul id="people-list" class="people-list" aria-label="الأشخاص المتصلون الآن"></ul>
-        </div>
+        <div class="people-section"><button id="new-chat-button" type="button" class="primary-button new-chat-button">دردشة جديدة</button></div>
         <div class="chats-section" >
           
           <ul id="conversation-list" class="conversation-list" aria-label="محادثاتك الخاصة"></ul>
@@ -142,6 +136,15 @@
       </div>
     </div>
   </div>
+    <section id="new-chat-panel" class="new-chat-panel" role="dialog" aria-modal="true" aria-label="دردشة جديدة" hidden>
+      <div class="new-chat-card">
+        <button id="close-new-chat" type="button" class="quiet-button">إغلاق</button>
+        <button id="new-private-chat" type="button" class="primary-button">محادثة جديدة</button>
+        <button id="new-group-chat" type="button" class="quiet-button">مجموعة جديدة</button>
+        <div id="private-chat-view" hidden><label for="people-search">ابحث عن شخص</label><input id="people-search" type="search" placeholder="اكتب الاسم للبحث" autocomplete="off"><ul id="people-list" class="people-list" aria-label="الأشخاص"></ul></div>
+        <div id="group-chat-view" hidden><label for="group-name">اسم المجموعة</label><input id="group-name" type="text" maxlength="60" placeholder="اكتب اسم المجموعة"><label for="group-people-search">ابحث عن أعضاء</label><input id="group-people-search" type="search" placeholder="اكتب اسم الشخص" autocomplete="off"><ul id="group-people-list" class="people-list" aria-label="اختيار أعضاء المجموعة"></ul><button id="create-group-button" type="button" class="primary-button">إنشاء المجموعة</button></div>
+      </div>
+    </section>
   <footer class="brand-tagline"><p>مرسال · تواصل بوضوح واحترام</p></footer>
   <section id="attachment-chooser" class="attachment-chooser" role="dialog" aria-modal="true" aria-label="إرفاق ملف" hidden>
     <div class="attachment-chooser-card">
