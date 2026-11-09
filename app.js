@@ -36,7 +36,6 @@ const notificationCount = $("#notification-count");
 const markAllReadButton = $("#mark-all-read");
 const chatEmpty = $("#chat-empty");
 const chatView = $("#chat-view");
-const chatTitle = $("#chat-title");
 const backToChatsButton = $("#back-to-chats");
 const conversationInfoToggle = $("#conversation-info-toggle");
 const conversationInfoPanel = $("#conversation-info");
@@ -89,6 +88,7 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   document.body.classList.remove("chat-fullscreen");
   workspace.classList.remove("chat-open");
   conversationInfoPanel.hidden = true;
+  document.body.classList.remove("conversation-info-fullscreen");
   conversationInfoToggle.setAttribute("aria-expanded", "false");
   currentUser = null;
   activeConversation = null;
@@ -501,8 +501,8 @@ async function selectConversation(conversation, person) {
   workspace.classList.add("chat-open");
   document.body.classList.add("chat-fullscreen");
   conversationInfoPanel.hidden = true;
+  document.body.classList.remove("conversation-info-fullscreen");
   conversationInfoToggle.setAttribute("aria-expanded", "false");
-  chatTitle.textContent = "محادثة مع " + displayName(person);
   await loadMessages();
   await updateConversationInfo();
   await markConversationNotificationsRead(conversation.id);
@@ -548,17 +548,23 @@ backToChatsButton.addEventListener("click", () => {
   chatView.hidden = true;
   chatEmpty.hidden = false;
   conversationInfoPanel.hidden = true;
+  document.body.classList.remove("conversation-info-fullscreen");
   conversationInfoToggle.setAttribute("aria-expanded", "false");
   peopleSearch.focus();
 });
 conversationInfoToggle.addEventListener("click", async () => {
   const opening = conversationInfoPanel.hidden;
   conversationInfoPanel.hidden = !opening;
+  document.body.classList.toggle("conversation-info-fullscreen", opening);
   conversationInfoToggle.setAttribute("aria-expanded", String(opening));
-  if (opening) await updateConversationInfo();
+  if (opening) {
+    await updateConversationInfo();
+    closeConversationInfoButton.focus();
+  }
 });
 closeConversationInfoButton.addEventListener("click", () => {
   conversationInfoPanel.hidden = true;
+  document.body.classList.remove("conversation-info-fullscreen");
   conversationInfoToggle.setAttribute("aria-expanded", "false");
   conversationInfoToggle.focus();
 });
