@@ -782,3 +782,60 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 :root[data-theme="light"] .attachment-viewer { background: #edf3fbed; }
 :root[data-theme="light"] .attachment-viewer-title { color: #17243a; }
 :root[data-theme="light"] .attachment-open-button { color: #20334d; border-color: #bdcbe0; background: #fff; }
+
+
+/* Full-screen in-app notifications */
+.notifications-panel:not([hidden]) {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147482500 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: max(18px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom)) !important;
+  background: var(--panel-bg, #111a2d);
+  color: var(--text, #f5f7ff);
+}
+.notifications-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 16px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid #405273;
+}
+.notifications-panel-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+}
+.close-notifications {
+  min-height: 46px;
+  padding: 10px 16px;
+  border: 1px solid #7890b2;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 800;
+}
+.notifications-panel .notifications-list {
+  max-width: 760px;
+  margin: 12px auto 0;
+}
+.notifications-panel #mark-all-read {
+  max-width: 760px;
+  display: block;
+  margin: 0 auto;
+}
+:root[data-theme="light"] .notifications-panel:not([hidden]) {
+  background: #f4f7fc;
+  color: #20334d;
+}
+:root[data-theme="light"] .notifications-panel-header {
+  border-color: #d1dce9;
+}
