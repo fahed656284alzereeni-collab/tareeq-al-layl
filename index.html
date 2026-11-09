@@ -106,13 +106,13 @@
           </div>
           <section id="conversation-info" class="conversation-info" hidden>
             <button id="close-conversation-info" type="button" class="quiet-button">إغلاق المعلومات</button>
-            <dl class="conversation-info-list">
-              <div><dt>الاسم</dt><dd id="conversation-info-name">—</dd></div>
-              <div><dt>الحالة</dt><dd id="conversation-info-status">—</dd></div>
-              <div><dt>بدأت المحادثة</dt><dd id="conversation-info-created">—</dd></div>
-              <div><dt>عدد الرسائل</dt><dd id="conversation-info-count">—</dd></div>
-              <div><dt>آخر نشاط</dt><dd id="conversation-info-last">—</dd></div>
-            </dl>
+            <div class="conversation-info-list">
+              <div><span class="conversation-info-label">الاسم</span><span class="conversation-info-value" id="conversation-info-name">—</span></div>
+              <div><span class="conversation-info-label">الحالة</span><span class="conversation-info-value" id="conversation-info-status">—</span></div>
+              <div><span class="conversation-info-label">بدأت المحادثة</span><span class="conversation-info-value" id="conversation-info-created">—</span></div>
+              <div><span class="conversation-info-label">عدد الرسائل</span><span class="conversation-info-value" id="conversation-info-count">—</span></div>
+              <div><span class="conversation-info-label">آخر نشاط</span><span class="conversation-info-value" id="conversation-info-last">—</span></div>
+            </div>
           </section>
           <ol id="messages" class="messages" aria-label="رسائل المحادثة" aria-live="polite" aria-relevant="additions text"></ol>
           <form id="message-form" class="message-form" aria-label="إرسال رسالة">
