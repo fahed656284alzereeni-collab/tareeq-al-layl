@@ -750,7 +750,7 @@ messageForm.addEventListener("submit", async (event) => {
     return;
   }
   if (!activeConversation || !currentUser) return;
-  const body = replyingToMessage ? "ردًا على: " + replyingToMessage.body + "\\n\\n" + typedBody : typedBody;
+  const body = replyingToMessage ? "ردًا على: " + replyingToMessage.body + "\n\n" + typedBody : typedBody;
   sendButton.disabled = true;
   const { data, error } = await supabase.from("messages").insert({
     conversation_id: activeConversation.id, sender_id: currentUser.id, body
