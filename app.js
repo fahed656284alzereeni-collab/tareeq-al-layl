@@ -13,6 +13,15 @@ const account = $("#account");
 const status = $("#status");
 const loginButton = $("#google-login");
 const logoutButton = $("#logout");
+const settingsButton = $("#settings-button");
+const settingsPanel = $("#settings-panel");
+const settingsForm = $("#settings-form");
+const displayNameInput = $("#settings-display-name");
+const textSizeSelect = $("#settings-text-size");
+const settingsEmail = $("#settings-email");
+const closeSettingsButton = $("#close-settings");
+const refreshDataButton = $("#refresh-data");
+let settingsReturnFocus = null;
 const peopleSearch = $("#people-search");
 const peopleList = $("#people-list");
 const conversationList = $("#conversation-list");
@@ -53,6 +62,8 @@ function safeText(tag, className, value) {
   return node;
 }
 function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكنك المحاولة مرة أخرى باستخدام Google.") {
+  settingsPanel.hidden = true;
+  settingsButton.hidden = true;
   currentUser = null;
   activeConversation = null;
   activePartner = null;
@@ -65,13 +76,17 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   announce(message, "error");
 }
 async function ensureProfile(user) {
+  const { data: existing, error: readError } = await supabase.from("profiles")
+    .select("id").eq("id", user.id).maybeSingle();
+  if (readError) throw readError;
+  if (existing) return;
   const metadata = user.user_metadata || {};
   const name = metadata.full_name || metadata.name || user.email?.split("@")[0] || "مستخدم مرسال";
   const avatar = metadata.avatar_url || metadata.picture || null;
-  const { error } = await supabase.from("profiles").upsert({
+  const { error } = await supabase.from("profiles").insert({
     id: user.id, display_name: name, avatar_url: avatar, updated_at: new Date().toISOString()
-  }, { onConflict: "id" });
-  if (error) throw error;
+  });
+  if (error && error.code !== "23505") throw error;
 }
 async function handleSession(session) {
   if (!session?.user) {
@@ -88,17 +103,86 @@ async function handleSession(session) {
   authPanel.hidden = true;
   workspace.hidden = false;
   logoutButton.hidden = false;
+  settingsButton.hidden = false;
   account.textContent = "مرحبًا، " + (session.user.email || "في مرسال");
   try {
     if (!alreadyLoadedForThisUser) {
       await ensureProfile(session.user);
       await Promise.all([loadPeople(), loadConversations()]);
+      await loadOwnProfile();
     }
     announce("تم تسجيل الدخول. يمكنك بدء محادثة جديدة.");
   } catch (error) {
     announce("تعذر تحميل الحساب: " + (error.message || "خطأ غير معروف"), "error");
   }
 }
+
+function applyTextSize(size) {
+  document.body.classList.remove("text-large", "text-xlarge");
+  if (size === "large") document.body.classList.add("text-large");
+  if (size === "xlarge") document.body.classList.add("text-xlarge");
+}
+function openSettings() {
+  if (!currentUser) return;
+  settingsReturnFocus = document.activeElement;
+  settingsEmail.value = currentUser.email || "";
+  textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
+  applyTextSize(textSizeSelect.value);
+  settingsPanel.hidden = false;
+  displayNameInput.focus();
+}
+async function loadOwnProfile() {
+  const { data, error } = await supabase.from("profiles")
+    .select("display_name").eq("id", currentUser.id).maybeSingle();
+  if (error) throw error;
+  displayNameInput.value = data?.display_name || currentUser.email?.split("@")[0] || "";
+}
+settingsButton.addEventListener("click", openSettings);
+closeSettingsButton.addEventListener("click", () => {
+  settingsPanel.hidden = true;
+  if (settingsReturnFocus?.focus) settingsReturnFocus.focus();
+});
+textSizeSelect.addEventListener("change", () => {
+  applyTextSize(textSizeSelect.value);
+});
+settingsForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!currentUser) return;
+  const name = displayNameInput.value.trim();
+  if (name.length < 2 || name.length > 40) {
+    announce("الاسم يجب أن يكون بين حرفين و40 حرفًا.", "error");
+    displayNameInput.focus();
+    return;
+  }
+  const saveButton = $("#save-settings");
+  saveButton.disabled = true;
+  announce("جارٍ حفظ إعدادات الحساب…");
+  const { error } = await supabase.from("profiles").update({
+    display_name: name, updated_at: new Date().toISOString()
+  }).eq("id", currentUser.id);
+  if (error) {
+    announce("تعذر حفظ الاسم: " + error.message, "error");
+  } else {
+    localStorage.setItem("mersal-text-size", textSizeSelect.value);
+    applyTextSize(textSizeSelect.value);
+    await Promise.all([loadPeople(), loadConversations()]);
+    announce("تم حفظ إعداداتك بنجاح.", "success");
+    settingsPanel.hidden = true;
+    settingsReturnFocus?.focus?.();
+  }
+  saveButton.disabled = false;
+});
+refreshDataButton.addEventListener("click", async () => {
+  refreshDataButton.disabled = true;
+  try {
+    await Promise.all([loadPeople(), loadConversations()]);
+    announce("تم تحديث الأشخاص والمحادثات.", "success");
+  } catch (error) {
+    announce("تعذر تحديث البيانات: " + error.message, "error");
+  }
+  refreshDataButton.disabled = false;
+});
+applyTextSize(localStorage.getItem("mersal-text-size") || "normal");
 
 loginButton.addEventListener("click", async () => {
   loginButton.disabled = true;
