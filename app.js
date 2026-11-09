@@ -144,7 +144,7 @@ function announce(message, kind = "info") {
         status.dataset.kind = "";
       }
       statusMessageTimer = null;
-    }, 3000);
+    }, 2000);
   }
 }
 function getCallbackParams() {
@@ -508,7 +508,7 @@ markAllReadButton.addEventListener("click", async () => {
   if (error) announce("تعذر تحديث الإشعارات: " + error.message, "error");
   else {
     await loadNotifications();
-    announce("تم تحديد الإشعارات كمقروءة.");
+    announce("تم التحديد.", "success");
   }
   markAllReadButton.disabled = false;
 });
@@ -597,7 +597,7 @@ settingsForm.addEventListener("submit", async (event) => {
     announce("تعذر حفظ الاسم: " + error.message, "error");
   } else {
     await Promise.all([loadPeople(), loadConversations()]);
-    announce("تم حفظ إعداداتك بنجاح.", "success");
+    announce("تم الحفظ.", "success");
     settingsPanel.hidden = true;
     settingsReturnFocus?.focus?.();
   }
@@ -607,7 +607,7 @@ refreshDataButton.addEventListener("click", async () => {
   refreshDataButton.disabled = true;
   try {
     await Promise.all([loadPeople(), loadConversations()]);
-    announce("تم تحديث الأشخاص والمحادثات.", "success");
+    announce("تم التحديث.", "success");
   } catch (error) {
     announce("تعذر تحديث البيانات: " + error.message, "error");
   }
@@ -862,7 +862,7 @@ async function deleteMessageForMe(message, item, menu, toggle) {
   item.remove();
   closeMessageOptions(menu, toggle);
   if (!messagesList.querySelector(".message")) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
-  announce("تم حذف الرسالة من محادثتك فقط.");
+  announce("تم الحذف.", "success");
 }
 async function deleteMessageForEveryone(message, item, menu, toggle) {
   if (!currentUser || message.sender_id !== currentUser.id) {
@@ -880,7 +880,7 @@ async function deleteMessageForEveryone(message, item, menu, toggle) {
   item.replaceChildren(safeText("p", "message-body deleted-message", "تم حذف هذه الرسالة."));
   item.classList.add("message-deleted");
   closeMessageOptions(menu, toggle);
-  announce("تم حذف الرسالة لدى الجميع.");
+  announce("تم الحذف.", "success");
 }
 function appendMessage(message) {
   if (!message || document.querySelector('[data-message-id="' + message.id + '"]')) return;
@@ -1070,7 +1070,7 @@ async function uploadAttachments(fileList) {
       await loadConversations();
       const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
       if (pushError) console.warn("Push notification could not be sent:", pushError.message);
-      announce("تم إرسال المرفق.");
+      announce("تم الإرسال.", "success");
     } catch (error) {
       announce("تعذر إرسال الملف " + file.name + ": " + (error.message || "حاول مرة أخرى."), "error");
     } finally {
@@ -1109,7 +1109,7 @@ messageForm.addEventListener("submit", async (event) => {
     await loadConversations();
     const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
     if (pushError) console.warn("Push notification could not be sent:", pushError.message);
-    announce("تم إرسال الرسالة.");
+    announce("تم الإرسال.", "success");
   }
   sendButton.disabled = false;
   messageInput.focus();
