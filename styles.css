@@ -564,3 +564,14 @@ body.conversation-info-fullscreen .conversation-info-list div {
 
 .push-notifications-button { width: 100%; margin: 8px 0; }
 .push-notifications-button:disabled { opacity: .72; cursor: default; }
+
+
+/* Presence status beside each conversation name */
+.conversation-button { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.conversation-person-name { min-width: 0; overflow-wrap: anywhere; }
+.conversation-presence { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 6px; font-size: .82rem; font-weight: 700; }
+.conversation-presence::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.conversation-presence.is-online { color: #54d69a; }
+.conversation-presence.is-offline { color: #aebbd3; }
+:root[data-theme="light"] .conversation-presence.is-online { color: #16834e; }
+:root[data-theme="light"] .conversation-presence.is-offline { color: #66758b; }
