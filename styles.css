@@ -839,3 +839,11 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 :root[data-theme="light"] .notifications-panel-header {
   border-color: #d1dce9;
 }
+
+.new-chat-button{width:100%;min-height:54px}.new-chat-panel[hidden]{display:none!important}
+.new-chat-panel{position:fixed;inset:0;z-index:2147482600;width:100vw;height:100vh;height:100dvh;overflow-y:auto;background:var(--surface,#111a2d);color:var(--text,#f5f7ff)}
+.new-chat-card{display:flex;flex-direction:column;gap:14px;min-height:100%;box-sizing:border-box;padding:max(22px,env(safe-area-inset-top)) 18px max(24px,env(safe-area-inset-bottom))}
+.new-chat-card>button{width:100%;min-height:54px;text-align:right}.new-chat-card label{display:block;margin:8px 0;font-weight:700}
+.new-chat-card input[type=search],.new-chat-card input[type=text]{width:100%;min-height:50px;padding:12px;border-radius:10px;font:inherit}
+.new-chat-card [hidden]{display:none!important}.group-person-choice{display:flex!important;align-items:center;gap:14px;min-height:54px;padding:8px 12px;border-bottom:1px solid var(--border)}.group-person-choice input{width:22px;height:22px}
+:root[data-theme=light] .new-chat-panel{background:#f4f7fc;color:#20334d}
