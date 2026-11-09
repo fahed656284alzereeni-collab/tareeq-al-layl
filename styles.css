@@ -453,3 +453,24 @@ footer, body > div:last-child {
 :root[data-theme="light"] .settings-extra { border-color: #d1dce9; }
 :root[data-theme="light"] footer,
 :root[data-theme="light"] body > div:last-child { color: #53647b; }
+
+/* In-app notifications */
+.notifications-section { margin-bottom: 18px; padding-bottom: 16px; border-bottom: 1px solid #405273; }
+.notifications-toggle { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #49658b; border-radius: 13px; background: linear-gradient(115deg, #213754, #1a2b45); color: #fff; font: inherit; font-weight: 800; text-align: right; }
+.notification-count { min-width: 26px; min-height: 26px; display: inline-grid; place-items: center; padding: 2px 7px; border-radius: 99px; background: #f0b45b; color: #182235; font-size: .85rem; font-weight: 900; }
+.notifications-panel { padding-top: 10px; }
+.notifications-list { list-style: none; padding: 0; margin: 8px 0 0; }
+.notifications-list li { margin: 8px 0; }
+.notification-item { width: 100%; display: grid; gap: 5px; padding: 12px; border: 1px solid #405a7e; border-radius: 12px; background: #1b2942; color: #f5f7ff; text-align: right; font: inherit; }
+.notification-item.is-unread { border-right: 4px solid #f0b45b; background: #223653; }
+.notification-item.is-read { opacity: .78; }
+.notification-sender { font-weight: 800; }
+.notification-preview { overflow-wrap: anywhere; color: #d5dfef; line-height: 1.55; }
+.notification-time { color: #aebbd3; font-size: .78rem; }
+.mark-all-read { width: 100%; min-height: 42px; border: 1px solid #49658b; border-radius: 10px; background: transparent; color: inherit; font: inherit; }
+:root[data-theme="light"] .notifications-section { border-color: #d1dce9; }
+:root[data-theme="light"] .notifications-toggle { color: #20334d; border-color: #d0dbea; background: linear-gradient(115deg, #fff, #edf3fa); }
+:root[data-theme="light"] .notification-item { color: #20334d; border-color: #d0dbea; background: #fff; }
+:root[data-theme="light"] .notification-item.is-unread { background: #eef4fc; }
+:root[data-theme="light"] .notification-preview { color: #43536b; }
+:root[data-theme="light"] .notification-time { color: #66758b; }
