@@ -60,6 +60,12 @@ const messagesList = $("#messages");
 const messageForm = $("#message-form");
 const messageInput = $("#message-input");
 const sendButton = $("#send-button");
+const attachButton = $("#attach-button");
+const attachmentChooser = $("#attachment-chooser");
+const closeAttachmentChooserButton = $("#close-attachment-chooser");
+const imageFileInput = $("#image-file-input");
+const videoFileInput = $("#video-file-input");
+const documentFileInput = $("#document-file-input");
 const replyingTo = $("#replying-to");
 const replyingToText = $("#replying-to-text");
 const cancelReplyButton = $("#cancel-reply");
@@ -798,7 +804,51 @@ function appendMessage(message) {
     messagesList.scrollTop = messagesList.scrollHeight;
     return;
   }
-  item.append(safeText("p", "message-body", message.body));
+  const attachmentPrefix = "MERSAL_ATTACHMENT:";
+  const attachmentIndex = (message.body || "").indexOf(attachmentPrefix);
+  let attachment = null;
+  if (attachmentIndex >= 0) {
+    try { attachment = JSON.parse(message.body.slice(attachmentIndex + attachmentPrefix.length)); } catch { attachment = null; }
+  }
+  if (attachment?.path) {
+    const attachmentView = document.createElement("div");
+    attachmentView.className = "message-attachment";
+    const fileName = attachment.name || "ملف مرفق";
+    const fileInfo = safeText("p", "attachment-file-name", "📎 " + fileName);
+    attachmentView.append(fileInfo);
+    void supabase.storage.from("mersal-attachments").createSignedUrl(attachment.path, 3600).then(({ data, error }) => {
+      if (error || !data?.signedUrl) {
+        attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق."));
+        return;
+      }
+      if (attachment.type?.startsWith("image/")) {
+        const preview = document.createElement("img");
+        preview.src = data.signedUrl;
+        preview.alt = "صورة مرفقة: " + fileName;
+        preview.loading = "lazy";
+        preview.className = "attachment-image";
+        attachmentView.insertBefore(preview, fileInfo);
+      } else if (attachment.type?.startsWith("video/")) {
+        const video = document.createElement("video");
+        video.src = data.signedUrl;
+        video.controls = true;
+        video.playsInline = true;
+        video.preload = "metadata";
+        video.setAttribute("aria-label", "فيديو مرفق: " + fileName);
+        video.className = "attachment-video";
+        attachmentView.insertBefore(video, fileInfo);
+      }
+      const link = safeText("a", "attachment-download", "فتح أو تنزيل الملف");
+      link.href = data.signedUrl;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.setAttribute("aria-label", "فتح أو تنزيل " + fileName);
+      attachmentView.append(link);
+    }).catch(() => attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق.")));
+    item.append(attachmentView);
+  } else {
+    item.append(safeText("p", "message-body", message.body));
+  }
   const time = new Date(message.created_at).toLocaleString("ar-JO", { dateStyle: "short", timeStyle: "short" });
   item.append(safeText("time", "message-time", time));
   const actions = document.createElement("div");
@@ -886,6 +936,73 @@ async function loadMessages() {
 }
 cancelReplyButton.addEventListener("click", () => { replyingToMessage = null; replyingTo.hidden = true; messageInput.focus(); });
 $("#refresh-chat").addEventListener("click", () => { void loadMessages(); });
+
+function closeAttachmentChooser() {
+  attachmentChooser.hidden = true;
+  attachButton.focus();
+}
+attachButton.addEventListener("click", () => {
+  attachmentChooser.hidden = false;
+  closeAttachmentChooserButton.focus();
+});
+closeAttachmentChooserButton.addEventListener("click", closeAttachmentChooser);
+attachmentChooser.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeAttachmentChooser();
+});
+$("#choose-images").addEventListener("click", () => imageFileInput.click());
+$("#choose-videos").addEventListener("click", () => videoFileInput.click());
+$("#choose-files").addEventListener("click", () => documentFileInput.click());
+
+async function uploadAttachments(fileList) {
+  const files = [...(fileList || [])];
+  if (!files.length || !currentUser || !activeConversation) return;
+  closeAttachmentChooser();
+  for (const file of files) {
+    if (file.size > 50 * 1024 * 1024) {
+      announce("حجم الملف " + file.name + " أكبر من 50 ميغابايت.", "error");
+      continue;
+    }
+    sendButton.disabled = true;
+    attachButton.disabled = true;
+    announce("جارٍ رفع " + file.name + "…");
+    try {
+      const safeName = file.name.replace(/[^\\p{L}\\p{N}._-]/gu, "_").slice(-120) || "file";
+      const unique = (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2));
+      const path = activeConversation.id + "/" + currentUser.id + "/" + unique + "-" + safeName;
+      const { data: uploaded, error: uploadError } = await supabase.storage.from("mersal-attachments").upload(path, file, {
+        contentType: file.type || "application/octet-stream",
+        upsert: false
+      });
+      if (uploadError) throw uploadError;
+      const attachment = { path: uploaded.path, name: file.name, type: file.type || "application/octet-stream", size: file.size };
+      const body = "📎 " + file.name + "\\nMERSAL_ATTACHMENT:" + JSON.stringify(attachment);
+      const { data, error } = await supabase.from("messages").insert({
+        conversation_id: activeConversation.id, sender_id: currentUser.id, body
+      }).select("id,conversation_id,sender_id,body,created_at").single();
+      if (error) {
+        await supabase.storage.from("mersal-attachments").remove([uploaded.path]);
+        throw error;
+      }
+      appendMessage(data);
+      await loadConversations();
+      const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
+      if (pushError) console.warn("Push notification could not be sent:", pushError.message);
+      announce("تم إرسال المرفق.");
+    } catch (error) {
+      announce("تعذر إرسال الملف " + file.name + ": " + (error.message || "حاول مرة أخرى."), "error");
+    } finally {
+      sendButton.disabled = false;
+      attachButton.disabled = false;
+    }
+  }
+}
+for (const input of [imageFileInput, videoFileInput, documentFileInput]) {
+  input.addEventListener("change", () => {
+    void uploadAttachments(input.files);
+    input.value = "";
+  });
+}
+
 messageForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   const typedBody = messageInput.value.trim();
