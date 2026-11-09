@@ -37,6 +37,15 @@ const markAllReadButton = $("#mark-all-read");
 const chatEmpty = $("#chat-empty");
 const chatView = $("#chat-view");
 const chatTitle = $("#chat-title");
+const backToChatsButton = $("#back-to-chats");
+const conversationInfoToggle = $("#conversation-info-toggle");
+const conversationInfoPanel = $("#conversation-info");
+const closeConversationInfoButton = $("#close-conversation-info");
+const conversationInfoName = $("#conversation-info-name");
+const conversationInfoStatus = $("#conversation-info-status");
+const conversationInfoCreated = $("#conversation-info-created");
+const conversationInfoCount = $("#conversation-info-count");
+const conversationInfoLast = $("#conversation-info-last");
 const messagesList = $("#messages");
 const messageForm = $("#message-form");
 const messageInput = $("#message-input");
@@ -77,6 +86,10 @@ function safeText(tag, className, value) {
 function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكنك المحاولة مرة أخرى باستخدام Google.") {
   settingsPanel.hidden = true;
   settingsButton.hidden = true;
+  document.body.classList.remove("chat-fullscreen");
+  workspace.classList.remove("chat-open");
+  conversationInfoPanel.hidden = true;
+  conversationInfoToggle.setAttribute("aria-expanded", "false");
   currentUser = null;
   activeConversation = null;
   activePartner = null;
@@ -203,7 +216,7 @@ async function openNotification(notification, sender) {
   notificationsPanel.hidden = true;
   notificationsToggle.setAttribute("aria-expanded", "false");
   const { data: conversation, error } = await supabase.from("conversations")
-    .select("id,user_one,user_two,last_message_at")
+    .select("id,user_one,user_two,created_at,last_message_at")
     .eq("id", notification.conversation_id).single();
   if (error) {
     announce("تعذر فتح المحادثة من الإشعار: " + error.message, "error");
@@ -485,8 +498,13 @@ async function selectConversation(conversation, person) {
   activePartner = person;
   chatEmpty.hidden = true;
   chatView.hidden = false;
+  workspace.classList.add("chat-open");
+  document.body.classList.add("chat-fullscreen");
+  conversationInfoPanel.hidden = true;
+  conversationInfoToggle.setAttribute("aria-expanded", "false");
   chatTitle.textContent = "محادثة مع " + displayName(person);
   await loadMessages();
+  await updateConversationInfo();
   await markConversationNotificationsRead(conversation.id);
   if (realtimeChannel) await supabase.removeChannel(realtimeChannel);
   realtimeChannel = supabase.channel("messages-" + conversation.id)
@@ -501,6 +519,50 @@ async function selectConversation(conversation, person) {
     });
   messageInput.focus();
 }
+
+async function updateConversationInfo() {
+  if (!activeConversation || !activePartner) return;
+  conversationInfoName.textContent = displayName(activePartner);
+  conversationInfoStatus.textContent = onlineUserIds.has(activePartner.id) ? "متصل الآن" : "غير متصل";
+  const createdAt = activeConversation.created_at;
+  conversationInfoCreated.textContent = createdAt
+    ? new Date(createdAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" })
+    : "غير متوفر";
+  const lastAt = activeConversation.last_message_at;
+  conversationInfoLast.textContent = lastAt
+    ? new Date(lastAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" })
+    : "لا يوجد نشاط سابق";
+  conversationInfoCount.textContent = "جارٍ التحميل…";
+  const { count, error } = await supabase.from("messages")
+    .select("id", { count: "exact", head: true })
+    .eq("conversation_id", activeConversation.id);
+  if (error) {
+    conversationInfoCount.textContent = "تعذر تحميل العدد";
+  } else {
+    conversationInfoCount.textContent = new Intl.NumberFormat("ar-JO").format(count || 0);
+  }
+}
+backToChatsButton.addEventListener("click", () => {
+  document.body.classList.remove("chat-fullscreen");
+  workspace.classList.remove("chat-open");
+  chatView.hidden = true;
+  chatEmpty.hidden = false;
+  conversationInfoPanel.hidden = true;
+  conversationInfoToggle.setAttribute("aria-expanded", "false");
+  peopleSearch.focus();
+});
+conversationInfoToggle.addEventListener("click", async () => {
+  const opening = conversationInfoPanel.hidden;
+  conversationInfoPanel.hidden = !opening;
+  conversationInfoToggle.setAttribute("aria-expanded", String(opening));
+  if (opening) await updateConversationInfo();
+});
+closeConversationInfoButton.addEventListener("click", () => {
+  conversationInfoPanel.hidden = true;
+  conversationInfoToggle.setAttribute("aria-expanded", "false");
+  conversationInfoToggle.focus();
+});
+
 function appendMessage(message) {
   if (!message || document.querySelector('[data-message-id="' + message.id + '"]')) return;
   messagesList.querySelectorAll(".empty-item").forEach(node => node.remove());
