@@ -102,3 +102,11 @@ footer { padding: 16px 12px; text-align: center; color: #a6b3cb; font-size: .9re
 html.text-large { font-size: 112%; }
 html.text-xlarge { font-size: 125%; }
 @media (max-width: 520px) { .settings-card { padding: 18px; } .settings-heading { align-items: flex-start; flex-direction: column; } .settings-heading .quiet-button { width: 100%; } }
+
+/* General settings navigation */
+.settings-title { font-size: 1.3rem; font-weight: 800; }
+.settings-menu { display: grid; gap: 12px; }
+.settings-menu-button { width: 100%; min-height: 56px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 13px; background: #202d47; color: #fff; text-align: right; font: inherit; font-weight: 750; }
+.settings-menu-button:focus-visible, .settings-back:focus-visible, .account-logout:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.settings-back { width: 100%; margin-bottom: 18px; }
+.account-logout { width: 100%; margin-top: 16px; }
