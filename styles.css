@@ -680,3 +680,21 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list >
 body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .conversation-info-label {
   margin-bottom: 6px;
 }
+
+
+/* Attachments */
+.message-form { grid-template-columns: minmax(0, 1fr) auto auto; }
+.attachment-chooser { position: fixed; inset: 0; z-index: 120; display: grid; place-items: center; padding: 18px; background: #050914e8; }
+.attachment-chooser-card { display: grid; gap: 12px; width: min(100%, 440px); padding: 22px; border: 1px solid var(--border); border-radius: 18px; background: var(--surface); box-shadow: 0 24px 80px #0009; }
+.attachment-chooser-card > button { width: 100%; min-height: 54px; }
+.attachment-choice { padding: 13px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised); color: #fff; text-align: right; font: inherit; font-weight: 700; }
+.message-attachment { display: grid; gap: 9px; min-width: 0; }
+.attachment-file-name { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.attachment-image, .attachment-video { display: block; width: min(100%, 360px); max-height: 360px; border-radius: 12px; object-fit: contain; background: #080f1e; }
+.attachment-download { display: inline-block; width: fit-content; color: #dce7ff; text-decoration: underline; line-height: 1.8; }
+.attachment-unavailable { margin: 0; color: var(--muted); }
+@media (max-width: 720px) {
+  .message-form { grid-template-columns: minmax(0, 1fr) auto; }
+  .message-form textarea { grid-column: 1 / -1; }
+  .message-form #attach-button, .message-form #send-button { width: 100%; }
+}
