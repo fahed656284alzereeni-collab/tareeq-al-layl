@@ -126,14 +126,6 @@
             </div>
           </section>
           <ol id="messages" class="messages" aria-label="رسائل المحادثة" aria-live="polite" aria-relevant="additions text"></ol>
-          <section id="attachment-chooser" class="attachment-chooser" role="dialog" aria-modal="true" aria-label="إرفاق ملف" hidden>
-            <div class="attachment-chooser-card">
-              <button id="close-attachment-chooser" type="button" class="quiet-button">إغلاق</button>
-              <button id="choose-images" type="button" class="attachment-choice">إرسال الصور</button>
-              <button id="choose-videos" type="button" class="attachment-choice">إرسال الفيديوهات</button>
-              <button id="choose-files" type="button" class="attachment-choice">إرسال الملفات</button>
-            </div>
-          </section>
           <input id="image-file-input" class="visually-hidden" type="file" accept="image/*" multiple tabindex="-1" aria-label="اختيار الصور">
           <input id="video-file-input" class="visually-hidden" type="file" accept="video/*" multiple tabindex="-1" aria-label="اختيار الفيديوهات">
           <input id="document-file-input" class="visually-hidden" type="file" multiple tabindex="-1" aria-label="اختيار الملفات">
@@ -149,5 +141,13 @@
     </div>
   </div>
   <footer class="brand-tagline"><p>مرسال · تواصل بوضوح واحترام</p></footer>
+  <section id="attachment-chooser" class="attachment-chooser" role="dialog" aria-modal="true" aria-label="إرفاق ملف" hidden>
+    <div class="attachment-chooser-card">
+      <button id="close-attachment-chooser" type="button" class="quiet-button">إغلاق</button>
+      <button id="choose-images" type="button" class="attachment-choice">إرسال الصور</button>
+      <button id="choose-videos" type="button" class="attachment-choice">إرسال الفيديوهات</button>
+      <button id="choose-files" type="button" class="attachment-choice">إرسال الملفات</button>
+    </div>
+  </section>
 </body>
 </html>
