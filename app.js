@@ -32,6 +32,11 @@ const refreshDataButton = $("#refresh-data");
 const pushNotificationsButton = $("#enable-push-notifications");
 const pushNotificationsHelp = $("#push-notifications-help");
 let settingsReturnFocus = null;
+const newChatButton=$("#new-chat-button"),newChatPanel=$("#new-chat-panel"),closeNewChatButton=$("#close-new-chat");
+const privateChatView=$("#private-chat-view"),groupChatView=$("#group-chat-view"),groupNameInput=$("#group-name");
+const groupPeopleSearch=$("#group-people-search"),groupPeopleList=$("#group-people-list"),createGroupButton=$("#create-group-button");
+const newPrivateChatButton=$("#new-private-chat"),newGroupChatButton=$("#new-group-chat");
+let selectedGroupMembers=new Set(),newChatReturnFocus=null;
 const peopleSearch = $("#people-search");
 const peopleList = $("#people-list");
 const conversationList = $("#conversation-list");
@@ -659,24 +664,39 @@ async function loadPeople() {
   people = data || [];
   renderPeople();
 }
+
 function renderPeople() {
-  const term = peopleSearch.value.trim().toLocaleLowerCase();
-  peopleList.replaceChildren();
-  const filtered = people.filter(person => onlineUserIds.has(person.id) && displayName(person).toLocaleLowerCase().includes(term));
-  if (!filtered.length) {
-    peopleList.append(safeText("li", "empty-item", term ? "لا يوجد شخص متصل بهذا الاسم." : "لا يوجد أشخاص متصلون الآن."));
-    return;
-  }
-  for (const person of filtered) {
-    const item = document.createElement("li");
-    const button = safeText("button", "person-button", displayName(person) + " · متصل الآن");
-    button.type = "button";
-    button.addEventListener("click", () => { void openConversation(person); });
-    item.append(button);
-    peopleList.append(item);
-  }
+ const term=peopleSearch.value.trim().toLocaleLowerCase();peopleList.replaceChildren();
+ const filtered=people.filter(p=>displayName(p).toLocaleLowerCase().includes(term));
+ if(!filtered.length){peopleList.append(safeText("li","empty-item","لا يوجد أشخاص بهذا الاسم."));return;}
+ for(const person of filtered){const item=document.createElement("li"),button=safeText("button","person-button",displayName(person)+(onlineUserIds.has(person.id)?" · متصل الآن":""));button.type="button";button.addEventListener("click",()=>{closeNewChat();void openConversation(person);});item.append(button);peopleList.append(item);}
 }
-peopleSearch.addEventListener("input", renderPeople);
+function renderGroupPeople(){
+ const term=groupPeopleSearch.value.trim().toLocaleLowerCase();groupPeopleList.replaceChildren();
+ const filtered=people.filter(p=>displayName(p).toLocaleLowerCase().includes(term));
+ if(!filtered.length){groupPeopleList.append(safeText("li","empty-item","لا يوجد أشخاص بهذا الاسم."));return;}
+ for(const person of filtered){const item=document.createElement("li"),label=document.createElement("label");label.className="group-person-choice";const cb=document.createElement("input");cb.type="checkbox";cb.checked=selectedGroupMembers.has(person.id);cb.addEventListener("change",()=>{if(cb.checked)selectedGroupMembers.add(person.id);else selectedGroupMembers.delete(person.id);});label.append(cb,document.createTextNode(displayName(person)));item.append(label);groupPeopleList.append(item);}
+}
+function openNewChat(){newChatReturnFocus=newChatButton;newChatPanel.hidden=false;privateChatView.hidden=true;groupChatView.hidden=true;newPrivateChatButton.hidden=false;newGroupChatButton.hidden=false;closeNewChatButton.focus();}
+function closeNewChat(){newChatPanel.hidden=true;if(newChatReturnFocus?.isConnected)newChatReturnFocus.focus();}
+newChatButton.addEventListener("click",openNewChat);closeNewChatButton.addEventListener("click",closeNewChat);
+newChatPanel.addEventListener("keydown",e=>{if(e.key==="Escape")closeNewChat();});
+newPrivateChatButton.addEventListener("click",()=>{privateChatView.hidden=false;groupChatView.hidden=true;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;peopleSearch.value="";renderPeople();peopleSearch.focus();});
+newGroupChatButton.addEventListener("click",()=>{selectedGroupMembers.clear();groupNameInput.value="";groupPeopleSearch.value="";privateChatView.hidden=true;groupChatView.hidden=false;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;renderGroupPeople();groupNameInput.focus();});
+peopleSearch.addEventListener("input",renderPeople);groupPeopleSearch.addEventListener("input",renderGroupPeople);
+createGroupButton.addEventListener("click",async()=>{
+ if(!currentUser)return;const ids=[...selectedGroupMembers],name=groupNameInput.value.trim();
+ if(!name){announce("اكتب اسم المجموعة.","error");groupNameInput.focus();return;}
+ if(ids.length<2){announce("اختر شخصين على الأقل لإنشاء مجموعة.","error");return;}
+ createGroupButton.disabled=true;
+ try{
+  const {data:conv,error}=await supabase.from("conversations").insert({user_one:currentUser.id,user_two:ids[0],is_group:true,group_name:name}).select("id,user_one,user_two,last_message_at,is_group,group_name,created_at").single();if(error)throw error;
+  const rows=[currentUser.id,...ids].map(user_id=>({conversation_id:conv.id,user_id,role:user_id===currentUser.id?"admin":"member"}));
+  const {error:memberError}=await supabase.from("conversation_members").insert(rows);if(memberError)throw memberError;
+  const {data:person,error:profileError}=await supabase.from("profiles").select("id,display_name,avatar_url").eq("id",ids[0]).single();if(profileError)throw profileError;
+  await selectConversation(conv,person);await loadConversations();closeNewChat();announce("تم إنشاء المجموعة.","success");
+ }catch(error){announce("تعذر إنشاء المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}finally{createGroupButton.disabled=false;}
+});
 
 async function loadConversations() {
   const { data, error } = await supabase.from("conversations")
