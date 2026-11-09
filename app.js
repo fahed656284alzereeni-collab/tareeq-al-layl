@@ -118,9 +118,9 @@ async function handleSession(session) {
 }
 
 function applyTextSize(size) {
-  document.body.classList.remove("text-large", "text-xlarge");
-  if (size === "large") document.body.classList.add("text-large");
-  if (size === "xlarge") document.body.classList.add("text-xlarge");
+  document.documentElement.classList.remove("text-large", "text-xlarge");
+  if (size === "large") document.documentElement.classList.add("text-large");
+  if (size === "xlarge") document.documentElement.classList.add("text-xlarge");
 }
 function openSettings() {
   if (!currentUser) return;
@@ -138,6 +138,12 @@ async function loadOwnProfile() {
   displayNameInput.value = data?.display_name || currentUser.email?.split("@")[0] || "";
 }
 settingsButton.addEventListener("click", openSettings);
+settingsPanel.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    settingsPanel.hidden = true;
+    settingsReturnFocus?.focus?.();
+  }
+});
 closeSettingsButton.addEventListener("click", () => {
   settingsPanel.hidden = true;
   if (settingsReturnFocus?.focus) settingsReturnFocus.focus();
