@@ -698,3 +698,45 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
   .message-form textarea { grid-column: 1 / -1; }
   .message-form #attach-button, .message-form #send-button { width: 100%; }
 }
+
+
+/* Attachment chooser: true full-screen view */
+.attachment-chooser {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483001 !important;
+  display: block !important;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: 0 !important;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--surface) !important;
+}
+.attachment-chooser-card {
+  display: flex !important;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 16px !important;
+  width: 100% !important;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: max(24px, env(safe-area-inset-top)) clamp(18px, 4vw, 36px) max(24px, env(safe-area-inset-bottom)) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: var(--surface) !important;
+}
+.attachment-chooser-card > button {
+  flex: 0 0 auto;
+  min-height: 64px !important;
+  text-align: right;
+}
+.attachment-chooser-card > :first-child {
+  margin-top: 12px;
+}
+:root[data-theme="light"] .attachment-chooser,
+:root[data-theme="light"] .attachment-chooser-card { background: #f4f7fc !important; }
