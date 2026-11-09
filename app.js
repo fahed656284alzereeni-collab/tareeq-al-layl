@@ -60,6 +60,10 @@ const messagesList = $("#messages");
 const messageForm = $("#message-form");
 const messageInput = $("#message-input");
 const sendButton = $("#send-button");
+const replyingTo = $("#replying-to");
+const replyingToText = $("#replying-to-text");
+const cancelReplyButton = $("#cancel-reply");
+let replyingToMessage = null;
 let currentUser = null;
 let activeConversation = null;
 let activePartner = null;
@@ -682,6 +686,42 @@ function appendMessage(message) {
   item.append(safeText("p", "message-body", message.body));
   const time = new Date(message.created_at).toLocaleString("ar-JO", { dateStyle: "short", timeStyle: "short" });
   item.append(safeText("time", "message-time", time));
+  const actions = document.createElement("div");
+  actions.className = "message-actions";
+  const toggle = safeText("button", "message-options-toggle", "خيارات الرسالة");
+  toggle.type = "button";
+  const menu = document.createElement("div");
+  menu.className = "message-options";
+  menu.hidden = true;
+  toggle.addEventListener("click", () => {
+    menu.hidden = !menu.hidden;
+    if (!menu.hidden) menu.querySelector("button")?.focus();
+  });
+  const copyButton = safeText("button", "message-option-button", "نسخ الرسالة");
+  copyButton.type = "button";
+  copyButton.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(message.body || "");
+      announce("تم نسخ الرسالة.");
+    } catch {
+      announce("تعذر نسخ الرسالة من هذا المتصفح.", "error");
+    }
+    menu.hidden = true;
+    toggle.focus();
+  });
+  const replyButton = safeText("button", "message-option-button", "الرد على الرسالة");
+  replyButton.type = "button";
+  replyButton.addEventListener("click", () => {
+    replyingToMessage = { id: message.id, body: message.body || "" };
+    replyingToText.textContent = "الرد على: " + (message.body || "");
+    replyingTo.hidden = false;
+    menu.hidden = true;
+    messageInput.focus();
+    announce("اكتب ردك على الرسالة المحددة.");
+  });
+  menu.append(copyButton, replyButton);
+  actions.append(toggle, menu);
+  item.append(actions);
   messagesList.append(item);
   messagesList.scrollTop = messagesList.scrollHeight;
 }
@@ -700,15 +740,17 @@ async function loadMessages() {
   if (!data?.length) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
   for (const message of data || []) appendMessage(message);
 }
+cancelReplyButton.addEventListener("click", () => { replyingToMessage = null; replyingTo.hidden = true; messageInput.focus(); });
 $("#refresh-chat").addEventListener("click", () => { void loadMessages(); });
 messageForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  const body = messageInput.value.trim();
-  if (!body) {
+  const typedBody = messageInput.value.trim();
+  if (!typedBody) {
     announce("اكتب رسالتك قبل الإرسال.");
     return;
   }
   if (!activeConversation || !currentUser) return;
+  const body = replyingToMessage ? "ردًا على: " + replyingToMessage.body + "\\n\\n" + typedBody : typedBody;
   sendButton.disabled = true;
   const { data, error } = await supabase.from("messages").insert({
     conversation_id: activeConversation.id, sender_id: currentUser.id, body
@@ -717,6 +759,8 @@ messageForm.addEventListener("submit", async (event) => {
     announce("تعذر إرسال الرسالة: " + error.message, "error");
   } else {
     messageInput.value = "";
+    replyingToMessage = null;
+    replyingTo.hidden = true;
     appendMessage(data);
     await loadConversations();
     const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
