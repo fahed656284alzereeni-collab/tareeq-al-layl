@@ -740,3 +740,9 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 }
 :root[data-theme="light"] .attachment-chooser,
 :root[data-theme="light"] .attachment-chooser-card { background: #f4f7fc !important; }
+
+
+/* Keep the attachment screen closed until the user explicitly opens it. */
+.attachment-chooser[hidden] {
+  display: none !important;
+}
