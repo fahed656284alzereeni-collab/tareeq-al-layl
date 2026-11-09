@@ -126,9 +126,9 @@
             </div>
           </section>
           <ol id="messages" class="messages" aria-label="رسائل المحادثة" aria-live="polite" aria-relevant="additions text"></ol>
-          <input id="image-file-input" class="visually-hidden" type="file" accept="image/*" multiple tabindex="-1" aria-label="اختيار الصور">
-          <input id="video-file-input" class="visually-hidden" type="file" accept="video/*" multiple tabindex="-1" aria-label="اختيار الفيديوهات">
-          <input id="document-file-input" class="visually-hidden" type="file" multiple tabindex="-1" aria-label="اختيار الملفات">
+          <input id="image-file-input" type="file" accept="image/*" multiple hidden aria-hidden="true" tabindex="-1">
+          <input id="video-file-input" type="file" accept="video/*" multiple hidden aria-hidden="true" tabindex="-1">
+          <input id="document-file-input" type="file" multiple hidden aria-hidden="true" tabindex="-1">
           <form id="message-form" class="message-form" aria-label="إرسال رسالة">
             <div id="replying-to" class="replying-to" hidden><span id="replying-to-text"></span><button id="cancel-reply" type="button" class="quiet-button">إلغاء الرد</button></div>
             <label class="visually-hidden" for="message-input">اكتب رسالتك</label>
