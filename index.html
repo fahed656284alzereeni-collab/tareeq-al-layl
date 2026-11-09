@@ -127,6 +127,7 @@
           </section>
           <ol id="messages" class="messages" aria-label="رسائل المحادثة" aria-live="polite" aria-relevant="additions text"></ol>
           <form id="message-form" class="message-form" aria-label="إرسال رسالة">
+            <div id="replying-to" class="replying-to" hidden><span id="replying-to-text"></span><button id="cancel-reply" type="button" class="quiet-button">إلغاء الرد</button></div>
             <label class="visually-hidden" for="message-input">اكتب رسالتك</label>
             <textarea id="message-input" rows="2" maxlength="5000" placeholder="اكتب رسالتك هنا…" aria-label="نص الرسالة" enterkeyhint="send"></textarea>
             <button id="send-button" type="submit" class="primary-button">إرسال</button>
