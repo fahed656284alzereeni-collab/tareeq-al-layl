@@ -700,12 +700,12 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 }
 
 
-/* Attachment chooser: true full-screen view */
+/* Attachment chooser: only appears after pressing the single Attach button */
 .attachment-chooser {
   position: fixed !important;
   inset: 0 !important;
   z-index: 2147483001 !important;
-  display: block !important;
+  display: grid !important;
   width: 100vw;
   height: 100vh;
   height: 100dvh;
@@ -743,6 +743,9 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 
 
 /* Keep the attachment screen closed until the user explicitly opens it. */
-.attachment-chooser[hidden] {
+.attachment-chooser[hidden],
+#attachment-chooser[hidden] {
   display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
