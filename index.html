@@ -106,9 +106,9 @@
         <div id="chat-view" class="chat-view" hidden>
           <div class="chat-header">
             <button id="back-to-chats" type="button" class="quiet-button">العودة للمحادثات</button>
-            <div class="chat-partner-heading">
-              <span id="chat-partner-name" class="chat-partner-name"></span>
-              <span id="chat-partner-presence" class="chat-partner-presence" aria-live="polite"></span>
+            <div class="chat-partner-heading" id="chat-partner-accessible" role="text" aria-live="polite" aria-label="">
+              <span id="chat-partner-name" class="chat-partner-name" aria-hidden="true"></span>
+              <span id="chat-partner-presence" class="chat-partner-presence" aria-hidden="true"></span>
             </div>
             <div class="chat-actions">
               <button id="conversation-info-toggle" type="button" class="quiet-button" aria-controls="conversation-info">معلومات المحادثة</button>
