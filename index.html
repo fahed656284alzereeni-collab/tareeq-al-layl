@@ -31,8 +31,19 @@
       <div class="settings-card">
         <div class="settings-heading"><span class="settings-title">الإعدادات</span><button id="close-settings" type="button" class="quiet-button">إغلاق</button></div>
         <div id="settings-home" class="settings-menu">
-          <button id="open-account-settings" type="button" class="settings-menu-button">إعدادات الحساب</button>
-          <button id="open-app-settings" type="button" class="settings-menu-button">إعدادات التطبيق</button>
+          <section class="settings-section account-settings-entry">
+            <button id="open-account-settings" type="button" class="settings-menu-button">إعدادات الحساب</button>
+          </section>
+          <section class="settings-section app-settings-inline" aria-label="إعدادات التطبيق">
+            <h2 class="settings-section-title">إعدادات التطبيق</h2>
+            <label for="settings-text-size">حجم النص في مرسال</label>
+            <select id="settings-text-size" name="text_size"><option value="normal">عادي</option><option value="large">كبير</option><option value="xlarge">كبير جدًا</option></select>
+            <p class="settings-help">يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.</p>
+            <div class="settings-extra">
+              <p>محادثاتك خاصة بالمشاركين فيها. لا تشارك رمز الدخول أو بيانات حسابك مع أحد.</p>
+              <button id="refresh-data" type="button" class="quiet-button">تحديث الأشخاص والمحادثات</button>
+            </div>
+          </section>
         </div>
         <div id="account-settings-view" hidden>
           <button id="back-settings-home" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
@@ -45,13 +56,6 @@
           <button id="save-settings" type="submit" class="primary-button">حفظ بيانات الحساب</button>
         </form>
         <button id="account-logout" type="button" class="quiet-button account-logout">تسجيل الخروج</button>
-        </div>
-        <div id="app-settings-view" hidden>
-          <button id="back-app-home" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
-          <label for="settings-text-size">حجم النص في مرسال</label>
-          <select id="settings-text-size" name="text_size"><option value="normal">عادي</option><option value="large">كبير</option><option value="xlarge">كبير جدًا</option></select>
-          <p class="settings-help">يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.</p>
-          <div class="settings-extra"><p>محادثاتك خاصة بالمشاركين فيها. لا تشارك رمز الدخول أو بيانات حسابك مع أحد.</p><button id="refresh-data" type="button" class="quiet-button">تحديث الأشخاص والمحادثات</button></div>
         </div>
       </div>
     </div>
