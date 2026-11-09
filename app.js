@@ -20,6 +20,10 @@ const displayNameInput = $("#settings-display-name");
 const textSizeSelect = $("#settings-text-size");
 const settingsEmail = $("#settings-email");
 const closeSettingsButton = $("#close-settings");
+const settingsHome = $("#settings-home");
+const accountSettingsView = $("#account-settings-view");
+const appSettingsView = $("#app-settings-view");
+const accountLogoutButton = $("#account-logout");
 const refreshDataButton = $("#refresh-data");
 let settingsReturnFocus = null;
 const peopleSearch = $("#people-search");
@@ -107,7 +111,7 @@ async function handleSession(session) {
   currentUser = session.user;
   authPanel.hidden = true;
   workspace.hidden = false;
-  logoutButton.hidden = false;
+  logoutButton.hidden = true;
   settingsButton.hidden = false;
   account.textContent = "مرحبًا بك في مرسال";
   try {
@@ -150,6 +154,9 @@ function openSettings() {
   settingsEmail.value = currentUser.email || "";
   textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
   applyTextSize(textSizeSelect.value);
+  settingsHome.hidden = false;
+  accountSettingsView.hidden = true;
+  appSettingsView.hidden = true;
   settingsPanel.hidden = false;
   displayNameInput.focus();
 }
@@ -160,6 +167,11 @@ async function loadOwnProfile() {
   displayNameInput.value = data?.display_name || currentUser.email?.split("@")[0] || "";
 }
 settingsButton.addEventListener("click", openSettings);
+$("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
+$("#open-app-settings").addEventListener("click", () => { settingsHome.hidden = true; appSettingsView.hidden = false; textSizeSelect.focus(); });
+$("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
+$("#back-app-home").addEventListener("click", () => { appSettingsView.hidden = true; settingsHome.hidden = false; $("#open-app-settings").focus(); });
+accountLogoutButton.addEventListener("click", async () => { accountLogoutButton.disabled = true; const { error } = await supabase.auth.signOut(); if (error) announce("تعذر تسجيل الخروج: " + error.message, "error"); else { settingsPanel.hidden = true; announce("تم تسجيل الخروج."); } accountLogoutButton.disabled = false; });
 settingsPanel.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     settingsPanel.hidden = true;
@@ -191,8 +203,6 @@ settingsForm.addEventListener("submit", async (event) => {
   if (error) {
     announce("تعذر حفظ الاسم: " + error.message, "error");
   } else {
-    localStorage.setItem("mersal-text-size", textSizeSelect.value);
-    applyTextSize(textSizeSelect.value);
     await Promise.all([loadPeople(), loadConversations()]);
     announce("تم حفظ إعداداتك بنجاح.", "success");
     settingsPanel.hidden = true;
