@@ -66,16 +66,16 @@
       </div>
     </div>
 
-    <div id="workspace" class="workspace" hidden aria-label="المحادثات">
-      <div class="sidebar" aria-label="الأشخاص والمحادثات">
-        <section class="notifications-section" aria-label="الإشعارات">
+    <div id="workspace" class="workspace" hidden >
+      <div class="sidebar" >
+        <section class="notifications-section" >
           <button id="notifications-toggle" class="notifications-toggle" type="button" aria-expanded="false" aria-controls="notifications-panel" aria-label="الإشعارات">
             <span>الإشعارات</span>
             <span id="notification-count" class="notification-count" hidden>0</span>
           </button>
           <div id="notifications-panel" class="notifications-panel" hidden>
             <button id="mark-all-read" class="mark-all-read" type="button" hidden>تحديد الكل كمقروء</button>
-            <ul id="notifications-list" class="notifications-list" aria-label="قائمة الإشعارات" aria-live="polite"></ul>
+            <ul id="notifications-list" class="notifications-list" aria-live="polite"></ul>
           </div>
         </section>
         <div class="people-section" >
@@ -91,7 +91,7 @@
         </div>
       </div>
 
-      <div class="chat-panel" aria-label="المحادثة">
+      <div class="chat-panel" >
         <div id="chat-empty" class="chat-empty">
           
           <p>اختر شخصًا من القائمة لبدء محادثة خاصة.</p>
@@ -99,13 +99,12 @@
         <div id="chat-view" class="chat-view" hidden>
           <div class="chat-header">
             <button id="back-to-chats" type="button" class="quiet-button">العودة للمحادثات</button>
-            <h2 id="chat-title" class="chat-title" aria-live="polite" aria-atomic="true">المحادثة</h2>
             <div class="chat-actions">
               <button id="conversation-info-toggle" type="button" class="quiet-button" aria-expanded="false" aria-controls="conversation-info">معلومات المحادثة</button>
               <button id="refresh-chat" type="button" class="quiet-button">تحديث الرسائل</button>
             </div>
           </div>
-          <section id="conversation-info" class="conversation-info" aria-label="معلومات المحادثة" hidden>
+          <section id="conversation-info" class="conversation-info" hidden>
             <button id="close-conversation-info" type="button" class="quiet-button">إغلاق المعلومات</button>
             <dl class="conversation-info-list">
               <div><dt>الاسم</dt><dd id="conversation-info-name">—</dd></div>
