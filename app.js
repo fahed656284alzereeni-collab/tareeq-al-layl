@@ -66,6 +66,56 @@ const closeAttachmentChooserButton = $("#close-attachment-chooser");
 const imageFileInput = $("#image-file-input");
 const videoFileInput = $("#video-file-input");
 const documentFileInput = $("#document-file-input");
+const attachmentViewer = document.createElement("section");
+attachmentViewer.className = "attachment-viewer";
+attachmentViewer.hidden = true;
+attachmentViewer.setAttribute("role", "dialog");
+attachmentViewer.setAttribute("aria-modal", "true");
+attachmentViewer.setAttribute("aria-label", "عرض المرفق داخل المحادثة");
+const attachmentViewerClose = safeText("button", "quiet-button attachment-viewer-close", "إغلاق العرض");
+attachmentViewerClose.type = "button";
+const attachmentViewerContent = document.createElement("div");
+attachmentViewerContent.className = "attachment-viewer-content";
+attachmentViewer.append(attachmentViewerClose, attachmentViewerContent);
+document.body.append(attachmentViewer);
+let attachmentViewerReturnFocus = null;
+function closeAttachmentViewer() {
+  attachmentViewer.hidden = true;
+  attachmentViewerContent.replaceChildren();
+  if (attachmentViewerReturnFocus?.isConnected) attachmentViewerReturnFocus.focus();
+}
+function openAttachmentViewer(url, type, name, trigger) {
+  attachmentViewerReturnFocus = trigger;
+  attachmentViewerContent.replaceChildren();
+  const title = safeText("p", "attachment-viewer-title", name || "مرفق");
+  attachmentViewerContent.append(title);
+  if (type.startsWith("image/")) {
+    const media = document.createElement("img");
+    media.src = url; media.alt = name || "صورة مرفقة"; media.className = "attachment-viewer-image";
+    attachmentViewerContent.append(media);
+  } else if (type.startsWith("video/")) {
+    const media = document.createElement("video");
+    media.src = url; media.controls = true; media.playsInline = true; media.preload = "metadata";
+    media.setAttribute("playsinline", ""); media.setAttribute("webkit-playsinline", "");
+    media.setAttribute("aria-label", "تشغيل الفيديو داخل المحادثة");
+    media.className = "attachment-viewer-video";
+    attachmentViewerContent.append(media);
+  } else {
+    const frame = document.createElement("iframe");
+    frame.src = url; frame.title = "عرض الملف داخل المحادثة: " + (name || "ملف مرفق");
+    frame.className = "attachment-viewer-frame";
+    attachmentViewerContent.append(frame);
+    const download = safeText("a", "attachment-download", "تنزيل الملف");
+    download.href = url; download.download = name || "attachment";
+    attachmentViewerContent.append(download);
+  }
+  attachmentViewer.hidden = false;
+  attachmentViewerClose.focus();
+}
+attachmentViewerClose.addEventListener("click", closeAttachmentViewer);
+attachmentViewer.addEventListener("keydown", event => { if (event.key === "Escape") closeAttachmentViewer(); });
+attachmentViewer.addEventListener("click", event => { if (event.target === attachmentViewer) closeAttachmentViewer(); });
+
 const replyingTo = $("#replying-to");
 const replyingToText = $("#replying-to-text");
 const cancelReplyButton = $("#cancel-reply");
@@ -821,32 +871,19 @@ function appendMessage(message) {
         attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق."));
         return;
       }
+      const previewButton = safeText("button", "attachment-open-button", attachment.type?.startsWith("image/") ? "عرض الصورة داخل المحادثة" : attachment.type?.startsWith("video/") ? "تشغيل الفيديو داخل المحادثة" : "عرض الملف داخل المحادثة");
+      previewButton.type = "button";
+      previewButton.setAttribute("aria-label", (attachment.type?.startsWith("image/") ? "عرض الصورة " : attachment.type?.startsWith("video/") ? "تشغيل الفيديو " : "عرض الملف ") + fileName + " داخل المحادثة");
+      previewButton.addEventListener("click", () => openAttachmentViewer(data.signedUrl, attachment.type || "", fileName, previewButton));
       if (attachment.type?.startsWith("image/")) {
         const preview = document.createElement("img");
-        preview.src = data.signedUrl;
-        preview.alt = "صورة مرفقة: " + fileName;
-        preview.loading = "lazy";
-        preview.className = "attachment-image";
-        attachmentView.insertBefore(preview, fileInfo);
-      } else if (attachment.type?.startsWith("video/")) {
-        const video = document.createElement("video");
-        video.src = data.signedUrl;
-        video.controls = true;
-        video.playsInline = true;
-        video.setAttribute("playsinline", "");
-        video.setAttribute("webkit-playsinline", "");
-        video.preload = "metadata";
-        video.setAttribute("aria-label", "تشغيل الفيديو داخل المحادثة: " + fileName);
-        video.className = "attachment-video";
-        attachmentView.insertBefore(video, fileInfo);
+        preview.src = data.signedUrl; preview.alt = "صورة مرفقة: " + fileName;
+        preview.loading = "lazy"; preview.className = "attachment-image";
+        previewButton.prepend(preview);
       } else {
-        const link = safeText("a", "attachment-download", "فتح أو تنزيل الملف");
-        link.href = data.signedUrl;
-        link.target = "_blank";
-        link.rel = "noopener";
-        link.setAttribute("aria-label", "فتح أو تنزيل " + fileName);
-        attachmentView.append(link);
+        previewButton.prepend(safeText("span", "attachment-preview-icon", attachment.type?.startsWith("video/") ? "▶" : "📄"));
       }
+      attachmentView.insertBefore(previewButton, fileInfo);
     }).catch(() => attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق.")));
     item.append(attachmentView);
   } else {
