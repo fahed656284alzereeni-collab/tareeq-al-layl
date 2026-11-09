@@ -112,7 +112,7 @@ async function handleSession(session) {
   workspace.hidden = false;
   logoutButton.hidden = true;
   settingsButton.hidden = false;
-  account.textContent = "مرحبًا بك في مرسال";
+  account.textContent = "مرحبًا بك في مرسال · متصل الآن";
   try {
     if (!alreadyLoadedForThisUser) {
       await ensureProfile(session.user);
