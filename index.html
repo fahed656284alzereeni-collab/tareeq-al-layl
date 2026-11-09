@@ -118,11 +118,11 @@
           <section id="conversation-info" class="conversation-info" hidden>
             <button id="close-conversation-info" type="button" class="quiet-button">إغلاق المعلومات</button>
             <div class="conversation-info-list">
-              <div><span class="conversation-info-label">الاسم</span><span class="conversation-info-value" id="conversation-info-name">—</span></div>
-              <div><span class="conversation-info-label">الحالة</span><span class="conversation-info-value" id="conversation-info-status">—</span></div>
-              <div><span class="conversation-info-label">بدأت المحادثة</span><span class="conversation-info-value" id="conversation-info-created">—</span></div>
-              <div><span class="conversation-info-label">عدد الرسائل</span><span class="conversation-info-value" id="conversation-info-count">—</span></div>
-              <div><span class="conversation-info-label">آخر نشاط</span><span class="conversation-info-value" id="conversation-info-last">—</span></div>
+              <div role="group" aria-labelledby="conversation-info-label-name" aria-describedby="conversation-info-name"><span class="conversation-info-label" id="conversation-info-label-name">الاسم</span><span class="conversation-info-value" id="conversation-info-name">—</span></div>
+              <div role="group" aria-labelledby="conversation-info-label-status" aria-describedby="conversation-info-status"><span class="conversation-info-label" id="conversation-info-label-status">الحالة</span><span class="conversation-info-value" id="conversation-info-status">—</span></div>
+              <div role="group" aria-labelledby="conversation-info-label-created" aria-describedby="conversation-info-created"><span class="conversation-info-label" id="conversation-info-label-created">بدأت المحادثة</span><span class="conversation-info-value" id="conversation-info-created">—</span></div>
+              <div role="group" aria-labelledby="conversation-info-label-count" aria-describedby="conversation-info-count"><span class="conversation-info-label" id="conversation-info-label-count">عدد الرسائل</span><span class="conversation-info-value" id="conversation-info-count">—</span></div>
+              <div role="group" aria-labelledby="conversation-info-label-last" aria-describedby="conversation-info-last"><span class="conversation-info-label" id="conversation-info-label-last">آخر نشاط</span><span class="conversation-info-value" id="conversation-info-last">—</span></div>
             </div>
           </section>
           <ol id="messages" class="messages" aria-label="رسائل المحادثة" aria-live="polite" aria-relevant="additions text"></ol>
