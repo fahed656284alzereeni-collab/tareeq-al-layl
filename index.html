@@ -68,6 +68,16 @@
 
     <div id="workspace" class="workspace" hidden aria-label="المحادثات">
       <div class="sidebar" aria-label="الأشخاص والمحادثات">
+        <section class="notifications-section" aria-label="الإشعارات">
+          <button id="notifications-toggle" class="notifications-toggle" type="button" aria-expanded="false" aria-controls="notifications-panel" aria-label="الإشعارات">
+            <span>الإشعارات</span>
+            <span id="notification-count" class="notification-count" hidden>0</span>
+          </button>
+          <div id="notifications-panel" class="notifications-panel" hidden>
+            <button id="mark-all-read" class="mark-all-read" type="button" hidden>تحديد الكل كمقروء</button>
+            <ul id="notifications-list" class="notifications-list" aria-label="قائمة الإشعارات" aria-live="polite"></ul>
+          </div>
+        </section>
         <div class="people-section" >
           
           <label for="people-search">ابحث عن شخص</label>
