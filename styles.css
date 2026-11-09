@@ -110,3 +110,22 @@ html.text-xlarge { font-size: 125%; }
 .settings-menu-button:focus-visible, .settings-back:focus-visible, .account-logout:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
 .settings-back { width: 100%; margin-bottom: 18px; }
 .account-logout { width: 100%; margin-top: 16px; }
+
+
+/* Full-screen settings with account and app options side by side */
+.settings-overlay { display: block; padding: 0; background: #0b1020; }
+.settings-card { width: 100%; min-height: 100vh; max-height: none; height: 100vh; overflow-y: auto; padding: clamp(20px, 4vw, 42px); border: 0; border-radius: 0; box-shadow: none; }
+.settings-heading { position: sticky; top: calc(-1 * clamp(20px, 4vw, 42px)); z-index: 2; padding: 12px 0 18px; margin-bottom: 22px; background: #111a2d; border-bottom: 1px solid #405273; }
+.settings-menu { grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.2fr); align-items: start; gap: 22px; }
+.settings-section { min-width: 0; padding: 20px; border: 1px solid #405273; border-radius: 16px; background: #17233a; }
+.settings-menu-button { margin: 0; }
+.settings-section-title { margin: 0 0 18px; font-size: 1.15rem; }
+.app-settings-inline label { display: block; margin: 12px 0 8px; color: #e5ebf8; font-weight: 700; }
+.app-settings-inline select { width: 100%; min-height: 50px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: #0b1427; color: #fff; font: inherit; }
+.app-settings-inline .settings-extra { margin-top: 18px; }
+@media (max-width: 720px) {
+  .settings-card { padding: 18px; }
+  .settings-heading { top: -18px; }
+  .settings-menu { grid-template-columns: minmax(0, 1fr); }
+  .settings-section { padding: 16px; }
+}
