@@ -98,9 +98,23 @@
         </div>
         <div id="chat-view" class="chat-view" hidden>
           <div class="chat-header">
-            <span id="chat-title" class="visually-hidden" aria-live="polite" aria-atomic="true">المحادثة</span>
-            <button id="refresh-chat" type="button" class="quiet-button">تحديث الرسائل</button>
+            <button id="back-to-chats" type="button" class="quiet-button">العودة للمحادثات</button>
+            <h2 id="chat-title" class="chat-title" aria-live="polite" aria-atomic="true">المحادثة</h2>
+            <div class="chat-actions">
+              <button id="conversation-info-toggle" type="button" class="quiet-button" aria-expanded="false" aria-controls="conversation-info">معلومات المحادثة</button>
+              <button id="refresh-chat" type="button" class="quiet-button">تحديث الرسائل</button>
+            </div>
           </div>
+          <section id="conversation-info" class="conversation-info" aria-label="معلومات المحادثة" hidden>
+            <button id="close-conversation-info" type="button" class="quiet-button">إغلاق المعلومات</button>
+            <dl class="conversation-info-list">
+              <div><dt>الاسم</dt><dd id="conversation-info-name">—</dd></div>
+              <div><dt>الحالة</dt><dd id="conversation-info-status">—</dd></div>
+              <div><dt>بدأت المحادثة</dt><dd id="conversation-info-created">—</dd></div>
+              <div><dt>عدد الرسائل</dt><dd id="conversation-info-count">—</dd></div>
+              <div><dt>آخر نشاط</dt><dd id="conversation-info-last">—</dd></div>
+            </dl>
+          </section>
           <ol id="messages" class="messages" aria-label="رسائل المحادثة" aria-live="polite" aria-relevant="additions text"></ol>
           <form id="message-form" class="message-form" aria-label="إرسال رسالة">
             <label class="visually-hidden" for="message-input">اكتب رسالتك</label>
