@@ -197,6 +197,7 @@ pushNotificationsButton.addEventListener("click", async () => {
     const permission = await Notification.requestPermission();
     if (permission !== "granted") {
       pushNotificationsHelp.textContent = "لم يتم السماح بالإشعارات. يمكنك تفعيلها من إعدادات الجهاز.";
+      pushNotificationsButton.disabled = false;
       return;
     }
     const registration = await serviceWorkerReady;
