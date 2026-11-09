@@ -966,9 +966,11 @@ async function uploadAttachments(fileList) {
     attachButton.disabled = true;
     announce("جارٍ رفع " + file.name + "…");
     try {
-      const safeName = file.name.replaceAll("/", "_").replaceAll(String.fromCharCode(92), "_").replace(/[\x00-\x1f]/g, "_").slice(-120) || "file";
+      // Use an ASCII-only storage object key. Keep the original filename only as message metadata.
+      const extensionMatch = String(file.name || "").match(/\.([a-zA-Z0-9]{1,10})$/);
+      const safeExtension = extensionMatch ? "." + extensionMatch[1].toLowerCase() : "";
       const unique = (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2));
-      const path = activeConversation.id + "/" + currentUser.id + "/" + unique + "-" + safeName;
+      const path = activeConversation.id + "/" + currentUser.id + "/" + unique + safeExtension;
       const { data: uploaded, error: uploadError } = await supabase.storage.from("mersal-attachments").upload(path, file, {
         contentType: file.type || "application/octet-stream",
         upsert: false
