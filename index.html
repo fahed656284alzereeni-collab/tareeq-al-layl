@@ -4,20 +4,22 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b1020">
-  <meta name="description" content="مرسال — رسائلك ومحادثاتك في مكان واحد">
+  <meta name="description" content="مرسال — رسائلك ومحادثاتك الخاصة في مكان واحد">
+  <meta name="color-scheme" content="dark">
   <title>مرسال</title>
   <link rel="stylesheet" href="/styles.css">
   <script type="module" src="/app.js"></script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">انتقل إلى المحتوى الرئيسي</a>
   <header class="topbar">
     <a class="brand" href="/" aria-label="مرسال، الصفحة الرئيسية">مرسال</a>
-    <p id="account" aria-live="polite">جارٍ التحقق من تسجيل الدخول…</p>
-    <button id="logout" type="button" class="quiet-button" hidden>تسجيل الخروج</button>
+    <p id="account" aria-live="polite" aria-atomic="true">جارٍ التحقق من تسجيل الدخول…</p>
+    <button id="logout" type="button" class="quiet-button" aria-label="تسجيل الخروج من حساب مرسال" hidden>تسجيل الخروج</button>
   </header>
 
-  <main>
-    <p id="status" role="status" aria-live="polite">جارٍ تجهيز مرسال…</p>
+  <main id="main-content" tabindex="-1">
+    <p id="status" role="status" aria-live="polite" aria-atomic="true">جارٍ تجهيز مرسال…</p>
     <section id="auth-panel" class="auth-panel" aria-labelledby="welcome-title">
       <div class="mark" aria-hidden="true">م</div>
       <h1 id="welcome-title">أهلًا بك في مرسال</h1>
@@ -27,15 +29,16 @@
 
     <section id="workspace" class="workspace" hidden aria-label="مساحة المحادثات">
       <aside class="sidebar" aria-label="جهات الاتصال والمحادثات">
-        <section class="people-section">
-          <h2>ابدأ محادثة</h2>
+        <section class="people-section" aria-labelledby="people-heading">
+          <h2 id="people-heading">ابدأ محادثة</h2>
           <label for="people-search">ابحث عن شخص</label>
-          <input id="people-search" type="search" placeholder="اكتب الاسم للبحث" autocomplete="off">
-          <ul id="people-list" class="people-list" aria-label="الأشخاص"></ul>
+          <input id="people-search" type="search" placeholder="اكتب الاسم للبحث" autocomplete="off" enterkeyhint="search" aria-describedby="people-help">
+          <p id="people-help" class="visually-hidden">اكتب اسم الشخص المسجل في مرسال لتصفية قائمة الأشخاص.</p>
+          <ul id="people-list" class="people-list" aria-label="الأشخاص المسجلون في مرسال"></ul>
         </section>
-        <section class="chats-section">
-          <h2>محادثاتك</h2>
-          <ul id="conversation-list" class="conversation-list" aria-label="قائمة المحادثات"></ul>
+        <section class="chats-section" aria-labelledby="chats-heading">
+          <h2 id="chats-heading">محادثاتك</h2>
+          <ul id="conversation-list" class="conversation-list" aria-label="محادثاتك الخاصة"></ul>
         </section>
       </aside>
 
@@ -46,13 +49,13 @@
         </div>
         <div id="chat-view" class="chat-view" hidden>
           <header class="chat-header">
-            <h2 id="chat-title">محادثة</h2>
+            <h2 id="chat-title" aria-live="polite" aria-atomic="true">محادثة</h2>
             <button id="refresh-chat" type="button" class="quiet-button">تحديث الرسائل</button>
           </header>
-          <ol id="messages" class="messages" aria-label="الرسائل" aria-live="polite"></ol>
-          <form id="message-form" class="message-form">
+          <ol id="messages" class="messages" aria-label="رسائل المحادثة" aria-live="polite" aria-relevant="additions text"></ol>
+          <form id="message-form" class="message-form" aria-label="إرسال رسالة">
             <label class="visually-hidden" for="message-input">اكتب رسالتك</label>
-            <textarea id="message-input" rows="2" maxlength="5000" placeholder="اكتب رسالتك هنا…" required></textarea>
+            <textarea id="message-input" rows="2" maxlength="5000" placeholder="اكتب رسالتك هنا…" required aria-label="نص الرسالة" enterkeyhint="send"></textarea>
             <button id="send-button" type="submit" class="primary-button">إرسال</button>
           </form>
         </div>
