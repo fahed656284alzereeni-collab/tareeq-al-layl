@@ -551,8 +551,10 @@ async function loadConversations() {
     button.className = "conversation-button";
     button.append(safeText("span", "conversation-person-name", displayName(person)));
     const isOnline = onlineUserIds.has(partnerId);
-    const presence = safeText("span", "conversation-presence " + (isOnline ? "is-online" : "is-offline"), isOnline ? "متصل الآن" : "غير متصل");
-    button.append(presence);
+    if (isOnline) {
+      const presence = safeText("span", "conversation-presence is-online", "متصل الآن");
+      button.append(presence);
+    }
     button.addEventListener("click", () => { void selectConversation(conversation, person); });
     item.append(button);
     conversationList.append(item);
