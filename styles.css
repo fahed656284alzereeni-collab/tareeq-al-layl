@@ -749,3 +749,36 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
   visibility: hidden !important;
   pointer-events: none !important;
 }
+
+/* In-chat attachment viewer */
+.attachment-viewer[hidden] { display: none !important; }
+.attachment-viewer {
+  position: fixed; inset: 0; z-index: 2147483100;
+  display: flex; flex-direction: column; gap: 14px;
+  padding: max(16px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom));
+  background: #080f1eF7; overflow: auto;
+}
+.attachment-viewer-close { flex: 0 0 auto; align-self: flex-start; min-width: 100px; }
+.attachment-viewer-content {
+  flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 12px; width: 100%;
+}
+.attachment-viewer-title { max-width: 100%; color: #fff; overflow-wrap: anywhere; text-align: center; }
+.attachment-viewer-image, .attachment-viewer-video {
+  display: block; max-width: 100%; max-height: 78vh; width: auto; height: auto;
+  object-fit: contain; border-radius: 12px;
+}
+.attachment-viewer-video { width: min(100%, 1000px); background: #000; }
+.attachment-viewer-frame { width: 100%; height: 72vh; border: 1px solid #52698f; border-radius: 10px; background: #fff; }
+.attachment-open-button {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  max-width: 100%; min-width: 150px; padding: 10px;
+  border: 1px solid #607da6; border-radius: 12px;
+  background: #172945; color: #fff; font: inherit; cursor: pointer;
+}
+.attachment-open-button:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+.attachment-open-button .attachment-image { display: block; max-width: min(100%, 300px); max-height: 220px; object-fit: contain; border-radius: 8px; }
+.attachment-preview-icon { font-size: 2rem; }
+:root[data-theme="light"] .attachment-viewer { background: #edf3fbed; }
+:root[data-theme="light"] .attachment-viewer-title { color: #17243a; }
+:root[data-theme="light"] .attachment-open-button { color: #20334d; border-color: #bdcbe0; background: #fff; }
