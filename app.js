@@ -89,7 +89,6 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   workspace.classList.remove("chat-open");
   conversationInfoPanel.hidden = true;
   document.body.classList.remove("conversation-info-fullscreen");
-  conversationInfoToggle.setAttribute("aria-expanded", "false");
   currentUser = null;
   activeConversation = null;
   activePartner = null;
@@ -216,7 +215,6 @@ function renderNotifications(profileMap = new Map()) {
 async function openNotification(notification, sender) {
   if (!currentUser) return;
   notificationsPanel.hidden = true;
-  notificationsToggle.setAttribute("aria-expanded", "false");
   const { data: conversation, error } = await supabase.from("conversations")
     .select("id,user_one,user_two,created_at,last_message_at")
     .eq("id", notification.conversation_id).single();
@@ -248,7 +246,6 @@ function startNotificationsRealtime() {
 notificationsToggle.addEventListener("click", async () => {
   const opening = notificationsPanel.hidden;
   notificationsPanel.hidden = !opening;
-  notificationsToggle.setAttribute("aria-expanded", String(opening));
   if (opening) {
     try { await loadNotifications(); }
     catch (error) { announce("تعذر تحميل الإشعارات: " + error.message, "error"); }
@@ -505,7 +502,6 @@ async function selectConversation(conversation, person) {
   document.body.classList.add("chat-fullscreen");
   conversationInfoPanel.hidden = true;
   document.body.classList.remove("conversation-info-fullscreen");
-  conversationInfoToggle.setAttribute("aria-expanded", "false");
   await loadMessages();
   await updateConversationInfo();
   await markConversationNotificationsRead(conversation.id);
@@ -552,7 +548,6 @@ backToChatsButton.addEventListener("click", () => {
   chatEmpty.hidden = false;
   conversationInfoPanel.hidden = true;
   document.body.classList.remove("conversation-info-fullscreen");
-  conversationInfoToggle.setAttribute("aria-expanded", "false");
   peopleSearch.focus();
 });
 conversationInfoToggle.addEventListener("click", async () => {
@@ -560,7 +555,6 @@ conversationInfoToggle.addEventListener("click", async () => {
   if (opening) status.textContent = "";
   conversationInfoPanel.hidden = !opening;
   document.body.classList.toggle("conversation-info-fullscreen", opening);
-  conversationInfoToggle.setAttribute("aria-expanded", String(opening));
   if (opening) {
     await updateConversationInfo();
     closeConversationInfoButton.focus();
@@ -569,7 +563,6 @@ conversationInfoToggle.addEventListener("click", async () => {
 closeConversationInfoButton.addEventListener("click", () => {
   conversationInfoPanel.hidden = true;
   document.body.classList.remove("conversation-info-fullscreen");
-  conversationInfoToggle.setAttribute("aria-expanded", "false");
   conversationInfoToggle.focus();
 });
 
