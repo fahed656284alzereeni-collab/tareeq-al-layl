@@ -621,7 +621,15 @@ async function selectConversation(conversation, person) {
     .on("postgres_changes", {
       event: "INSERT", schema: "public", table: "messages",
       filter: "conversation_id=eq." + conversation.id
-    }, (payload) => appendMessage(payload.new))
+    }, async (payload) => {
+      const { data: hidden } = await supabase.from("message_hidden_for").select("message_id")
+        .eq("message_id", payload.new.id).eq("user_id", currentUser.id).maybeSingle();
+      if (!hidden) appendMessage(payload.new);
+    })
+    .on("postgres_changes", {
+      event: "UPDATE", schema: "public", table: "messages",
+      filter: "conversation_id=eq." + conversation.id
+    }, () => { void loadMessages(); })
     .subscribe((state) => {
       if (state === "CHANNEL_ERROR" || state === "TIMED_OUT") {
         announce("الاتصال المباشر بالرسائل غير مستقر. استخدم زر تحديث الرسائل للمزامنة.", "error");
@@ -677,12 +685,54 @@ closeConversationInfoButton.addEventListener("click", () => {
   conversationInfoToggle.focus();
 });
 
+function closeMessageOptions(menu, toggle) {
+  menu.classList.remove("is-open");
+  menu.hidden = true;
+  toggle.focus();
+}
+async function deleteMessageForMe(message, item, menu, toggle) {
+  if (!currentUser || !activeConversation) return;
+  if (!window.confirm("هل تريد حذف هذه الرسالة من محادثتك فقط؟")) return;
+  const { error } = await supabase.from("message_hidden_for").insert({
+    message_id: message.id, user_id: currentUser.id
+  });
+  if (error && error.code !== "23505") {
+    announce("تعذر حذف الرسالة لديك: " + error.message, "error");
+    return;
+  }
+  item.remove();
+  closeMessageOptions(menu, toggle);
+  if (!messagesList.querySelector(".message")) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
+  announce("تم حذف الرسالة من محادثتك فقط.");
+}
+async function deleteMessageForEveryone(message, item, menu, toggle) {
+  if (!currentUser || message.sender_id !== currentUser.id) return;
+  if (!window.confirm("سيتم حذف الرسالة من محادثتك ومحادثة الطرف الآخر. هل تريد المتابعة؟")) return;
+  const { data, error } = await supabase.from("messages")
+    .update({ is_deleted: true }).eq("id", message.id).eq("sender_id", currentUser.id)
+    .select("id").maybeSingle();
+  if (error || !data) {
+    announce("تعذر حذف الرسالة لدى الجميع: " + (error?.message || "لا تملك صلاحية حذفها."), "error");
+    return;
+  }
+  item.replaceChildren(safeText("p", "message-body deleted-message", "تم حذف هذه الرسالة."));
+  item.classList.add("message-deleted");
+  closeMessageOptions(menu, toggle);
+  announce("تم حذف الرسالة لدى الجميع.");
+}
 function appendMessage(message) {
   if (!message || document.querySelector('[data-message-id="' + message.id + '"]')) return;
   messagesList.querySelectorAll(".empty-item").forEach(node => node.remove());
   const item = document.createElement("li");
   item.className = message.sender_id === currentUser.id ? "message mine" : "message theirs";
   item.dataset.messageId = message.id;
+  if (message.is_deleted) {
+    item.classList.add("message-deleted");
+    item.append(safeText("p", "message-body deleted-message", "تم حذف هذه الرسالة."));
+    messagesList.append(item);
+    messagesList.scrollTop = messagesList.scrollHeight;
+    return;
+  }
   item.append(safeText("p", "message-body", message.body));
   const time = new Date(message.created_at).toLocaleString("ar-JO", { dateStyle: "short", timeStyle: "short" });
   item.append(safeText("time", "message-time", time));
@@ -690,12 +740,20 @@ function appendMessage(message) {
   actions.className = "message-actions";
   const toggle = safeText("button", "message-options-toggle", "خيارات الرسالة");
   toggle.type = "button";
+  toggle.setAttribute("aria-haspopup", "true");
+  toggle.setAttribute("aria-expanded", "false");
   const menu = document.createElement("div");
   menu.className = "message-options";
   menu.hidden = true;
+  const menuTitle = safeText("h2", "message-options-title", "خيارات الرسالة");
+  const closeButton = safeText("button", "message-option-button message-options-close", "إغلاق الخيارات");
+  closeButton.type = "button";
+  closeButton.addEventListener("click", () => closeMessageOptions(menu, toggle));
   toggle.addEventListener("click", () => {
     menu.hidden = !menu.hidden;
-    if (!menu.hidden) menu.querySelector("button")?.focus();
+    menu.classList.toggle("is-open", !menu.hidden);
+    toggle.setAttribute("aria-expanded", String(!menu.hidden));
+    if (!menu.hidden) closeButton.focus();
   });
   const copyButton = safeText("button", "message-option-button", "نسخ الرسالة");
   copyButton.type = "button";
@@ -706,8 +764,7 @@ function appendMessage(message) {
     } catch {
       announce("تعذر نسخ الرسالة من هذا المتصفح.", "error");
     }
-    menu.hidden = true;
-    toggle.focus();
+    closeMessageOptions(menu, toggle);
   });
   const replyButton = safeText("button", "message-option-button", "الرد على الرسالة");
   replyButton.type = "button";
@@ -715,11 +772,20 @@ function appendMessage(message) {
     replyingToMessage = { id: message.id, body: message.body || "" };
     replyingToText.textContent = "الرد على: " + (message.body || "");
     replyingTo.hidden = false;
-    menu.hidden = true;
+    closeMessageOptions(menu, toggle);
     messageInput.focus();
     announce("اكتب ردك على الرسالة المحددة.");
   });
-  menu.append(copyButton, replyButton);
+  const deleteMineButton = safeText("button", "message-option-button message-delete-button", "حذف لدي");
+  deleteMineButton.type = "button";
+  deleteMineButton.addEventListener("click", () => { void deleteMessageForMe(message, item, menu, toggle); });
+  menu.append(menuTitle, closeButton, copyButton, replyButton, deleteMineButton);
+  if (message.sender_id === currentUser.id) {
+    const deleteEveryoneButton = safeText("button", "message-option-button message-delete-everyone-button", "حذف لدى الجميع");
+    deleteEveryoneButton.type = "button";
+    deleteEveryoneButton.addEventListener("click", () => { void deleteMessageForEveryone(message, item, menu, toggle); });
+    menu.append(deleteEveryoneButton);
+  }
   actions.append(toggle, menu);
   item.append(actions);
   messagesList.append(item);
@@ -729,7 +795,7 @@ async function loadMessages() {
   if (!activeConversation) return;
   messagesList.replaceChildren();
   const { data, error } = await supabase.from("messages")
-    .select("id,conversation_id,sender_id,body,created_at")
+    .select("id,conversation_id,sender_id,body,created_at,is_deleted")
     .eq("conversation_id", activeConversation.id)
     .order("created_at", { ascending: true })
     .limit(200);
@@ -737,8 +803,16 @@ async function loadMessages() {
     announce("تعذر تحميل الرسائل: " + error.message, "error");
     return;
   }
-  if (!data?.length) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
-  for (const message of data || []) appendMessage(message);
+  const { data: hiddenRows, error: hiddenError } = await supabase.from("message_hidden_for")
+    .select("message_id").eq("user_id", currentUser.id);
+  if (hiddenError) {
+    announce("تعذر تحميل إعدادات إخفاء الرسائل: " + hiddenError.message, "error");
+    return;
+  }
+  const hiddenIds = new Set((hiddenRows || []).map(row => row.message_id));
+  const visibleMessages = (data || []).filter(message => !hiddenIds.has(message.id));
+  if (!visibleMessages.length) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
+  for (const message of visibleMessages) appendMessage(message);
 }
 cancelReplyButton.addEventListener("click", () => { replyingToMessage = null; replyingTo.hidden = true; messageInput.focus(); });
 $("#refresh-chat").addEventListener("click", () => { void loadMessages(); });
