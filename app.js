@@ -650,26 +650,33 @@ async function selectConversation(conversation, person) {
   messageInput.focus();
 }
 
+function setConversationInfoValue(element, value) {
+  element.textContent = value;
+  const group = element.parentElement;
+  const label = group?.querySelector(".conversation-info-label")?.textContent?.trim();
+  if (group && label) group.setAttribute("aria-label", label + "، " + value);
+}
+
 async function updateConversationInfo() {
   if (!activeConversation || !activePartner) return;
-  conversationInfoName.textContent = displayName(activePartner);
-  conversationInfoStatus.textContent = onlineUserIds.has(activePartner.id) ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt);
+  setConversationInfoValue(conversationInfoName, displayName(activePartner));
+  setConversationInfoValue(conversationInfoStatus, onlineUserIds.has(activePartner.id) ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt));
   const createdAt = activeConversation.created_at;
-  conversationInfoCreated.textContent = createdAt
+  setConversationInfoValue(conversationInfoCreated, createdAt
     ? new Date(createdAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" })
-    : "غير متوفر";
+    : "غير متوفر");
   const lastAt = activeConversation.last_message_at;
-  conversationInfoLast.textContent = lastAt
+  setConversationInfoValue(conversationInfoLast, lastAt
     ? new Date(lastAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" })
-    : "لا يوجد نشاط سابق";
-  conversationInfoCount.textContent = "جارٍ التحميل…";
+    : "لا يوجد نشاط سابق");
+  setConversationInfoValue(conversationInfoCount, "جارٍ التحميل…");
   const { count, error } = await supabase.from("messages")
     .select("id", { count: "exact", head: true })
     .eq("conversation_id", activeConversation.id);
   if (error) {
-    conversationInfoCount.textContent = "تعذر تحميل العدد";
+    setConversationInfoValue(conversationInfoCount, "تعذر تحميل العدد");
   } else {
-    conversationInfoCount.textContent = new Intl.NumberFormat("ar-JO").format(count || 0);
+    setConversationInfoValue(conversationInfoCount, new Intl.NumberFormat("ar-JO").format(count || 0));
   }
 }
 backToChatsButton.addEventListener("click", () => {
