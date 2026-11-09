@@ -22,7 +22,6 @@ const settingsEmail = $("#settings-email");
 const closeSettingsButton = $("#close-settings");
 const settingsHome = $("#settings-home");
 const accountSettingsView = $("#account-settings-view");
-const appSettingsView = $("#app-settings-view");
 const accountLogoutButton = $("#account-logout");
 const refreshDataButton = $("#refresh-data");
 let settingsReturnFocus = null;
@@ -156,7 +155,6 @@ function openSettings() {
   applyTextSize(textSizeSelect.value);
   settingsHome.hidden = false;
   accountSettingsView.hidden = true;
-  appSettingsView.hidden = true;
   settingsPanel.hidden = false;
   displayNameInput.focus();
 }
@@ -168,9 +166,7 @@ async function loadOwnProfile() {
 }
 settingsButton.addEventListener("click", openSettings);
 $("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
-$("#open-app-settings").addEventListener("click", () => { settingsHome.hidden = true; appSettingsView.hidden = false; textSizeSelect.focus(); });
 $("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
-$("#back-app-home").addEventListener("click", () => { appSettingsView.hidden = true; settingsHome.hidden = false; $("#open-app-settings").focus(); });
 accountLogoutButton.addEventListener("click", async () => { accountLogoutButton.disabled = true; const { error } = await supabase.auth.signOut(); if (error) announce("تعذر تسجيل الخروج: " + error.message, "error"); else { settingsPanel.hidden = true; announce("تم تسجيل الخروج."); } accountLogoutButton.disabled = false; });
 settingsPanel.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
@@ -184,6 +180,7 @@ closeSettingsButton.addEventListener("click", () => {
 });
 textSizeSelect.addEventListener("change", () => {
   applyTextSize(textSizeSelect.value);
+  localStorage.setItem("mersal-text-size", textSizeSelect.value);
 });
 settingsForm.addEventListener("submit", async (event) => {
   event.preventDefault();
