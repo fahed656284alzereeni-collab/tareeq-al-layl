@@ -688,6 +688,10 @@ closeConversationInfoButton.addEventListener("click", () => {
 function closeMessageOptions(menu, toggle) {
   menu.classList.remove("is-open");
   menu.hidden = true;
+  menu.removeAttribute("role");
+  menu.removeAttribute("aria-modal");
+  if (menu._home && menu.parentElement !== menu._home) menu._home.append(menu);
+  toggle.setAttribute("aria-expanded", "false");
   toggle.focus();
 }
 async function deleteMessageForMe(message, item, menu, toggle) {
@@ -706,13 +710,16 @@ async function deleteMessageForMe(message, item, menu, toggle) {
   announce("تم حذف الرسالة من محادثتك فقط.");
 }
 async function deleteMessageForEveryone(message, item, menu, toggle) {
-  if (!currentUser || message.sender_id !== currentUser.id) return;
-  if (!window.confirm("سيتم حذف الرسالة من محادثتك ومحادثة الطرف الآخر. هل تريد المتابعة؟")) return;
+  if (!currentUser || message.sender_id !== currentUser.id) {
+    announce("يمكنك حذف رسائلك أنت لدى الجميع فقط.", "error");
+    return;
+  }
+  if (!window.confirm("سيتم حذف محتوى الرسالة من محادثتك ومحادثة الطرف الآخر. هل تريد المتابعة؟")) return;
   const { data, error } = await supabase.from("messages")
     .update({ is_deleted: true }).eq("id", message.id).eq("sender_id", currentUser.id)
     .select("id").maybeSingle();
   if (error || !data) {
-    announce("تعذر حذف الرسالة لدى الجميع: " + (error?.message || "لا تملك صلاحية حذفها."), "error");
+    announce("تعذر حذف الرسالة لدى الجميع: " + (error?.message || "لم يتم تحديث الرسالة."), "error");
     return;
   }
   item.replaceChildren(safeText("p", "message-body deleted-message", "تم حذف هذه الرسالة."));
@@ -740,20 +747,26 @@ function appendMessage(message) {
   actions.className = "message-actions";
   const toggle = safeText("button", "message-options-toggle", "خيارات الرسالة");
   toggle.type = "button";
-  toggle.setAttribute("aria-haspopup", "true");
+  toggle.setAttribute("aria-haspopup", "dialog");
   toggle.setAttribute("aria-expanded", "false");
   const menu = document.createElement("div");
   menu.className = "message-options";
   menu.hidden = true;
+  menu._home = actions;
   const menuTitle = safeText("h2", "message-options-title", "خيارات الرسالة");
+  menuTitle.id = "message-options-title-" + message.id;
   const closeButton = safeText("button", "message-option-button message-options-close", "إغلاق الخيارات");
   closeButton.type = "button";
   closeButton.addEventListener("click", () => closeMessageOptions(menu, toggle));
   toggle.addEventListener("click", () => {
-    menu.hidden = !menu.hidden;
-    menu.classList.toggle("is-open", !menu.hidden);
-    toggle.setAttribute("aria-expanded", String(!menu.hidden));
-    if (!menu.hidden) closeButton.focus();
+    menu.hidden = false;
+    menu.classList.add("is-open");
+    menu.setAttribute("role", "dialog");
+    menu.setAttribute("aria-modal", "true");
+    menu.setAttribute("aria-labelledby", menuTitle.id);
+    toggle.setAttribute("aria-expanded", "true");
+    document.body.append(menu);
+    closeButton.focus();
   });
   const copyButton = safeText("button", "message-option-button", "نسخ الرسالة");
   copyButton.type = "button";
@@ -779,13 +792,12 @@ function appendMessage(message) {
   const deleteMineButton = safeText("button", "message-option-button message-delete-button", "حذف لدي");
   deleteMineButton.type = "button";
   deleteMineButton.addEventListener("click", () => { void deleteMessageForMe(message, item, menu, toggle); });
-  menu.append(menuTitle, closeButton, copyButton, replyButton, deleteMineButton);
-  if (message.sender_id === currentUser.id) {
-    const deleteEveryoneButton = safeText("button", "message-option-button message-delete-everyone-button", "حذف لدى الجميع");
-    deleteEveryoneButton.type = "button";
-    deleteEveryoneButton.addEventListener("click", () => { void deleteMessageForEveryone(message, item, menu, toggle); });
-    menu.append(deleteEveryoneButton);
-  }
+  const deleteEveryoneButton = safeText("button", "message-option-button message-delete-everyone-button", "حذف لدى الجميع");
+  deleteEveryoneButton.type = "button";
+  deleteEveryoneButton.disabled = message.sender_id !== currentUser.id;
+  deleteEveryoneButton.setAttribute("aria-label", message.sender_id === currentUser.id ? "حذف هذه الرسالة لدى الجميع" : "حذف لدى الجميع، متاح لرسائلك أنت فقط");
+  deleteEveryoneButton.addEventListener("click", () => { void deleteMessageForEveryone(message, item, menu, toggle); });
+  menu.append(menuTitle, closeButton, copyButton, replyButton, deleteMineButton, deleteEveryoneButton);
   actions.append(toggle, menu);
   item.append(actions);
   messagesList.append(item);
