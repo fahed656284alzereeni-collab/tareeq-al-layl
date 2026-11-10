@@ -114,7 +114,6 @@ const conversationInfoCreated = $("#conversation-info-created");
 const conversationInfoCount = $("#conversation-info-count");
 const conversationInfoNameLabel = $("#conversation-info-name-label");
 const conversationInfoStatusRow = $("#conversation-info-status-row");
-const conversationInfoSearchButton = $("#conversation-info-search");
 const conversationInfoExportButton = $("#conversation-info-export");
 const conversationInfoMuteButton = $("#conversation-info-mute");
 const conversationInfoClearButton = $("#conversation-info-clear");
@@ -1508,17 +1507,15 @@ conversationInfoClearButton.addEventListener("click",async()=>{
   }catch(error){announce("تعذر مسح المحادثة: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{conversationInfoClearButton.disabled=false;}
 });
-conversationInfoSearchButton.addEventListener("click", () => {
-  conversationSearchArea.hidden = false;
-  conversationSearchInput.focus();
-});
 conversationSearchInput.addEventListener("input", () => {
   const term = conversationSearchInput.value.trim().toLocaleLowerCase();
   conversationSearchResults.replaceChildren();
   if (!term) {
+    conversationSearchArea.hidden = true;
     conversationSearchStatus.textContent = "اكتب كلمة لعرض النتائج.";
     return;
   }
+  conversationSearchArea.hidden = false;
   const matches = [...messagesList.querySelectorAll(".message")].filter(item => {
     const text = [...item.querySelectorAll(".message-body, .attachment-file-name")]
       .map(node => node.textContent || "").join(" ").toLocaleLowerCase();
