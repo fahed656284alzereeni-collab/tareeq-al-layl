@@ -1175,6 +1175,9 @@ body.conversation-info-fullscreen .workspace.chat-open #conversation-info-status
 /* Developer credit at the bottom of settings */
 .settings-credit { margin: 28px 0 0; padding: 18px 0 4px; border-top: 1px solid var(--border); color: var(--muted); text-align: center; font-size: 0.9rem; }
 
+/* Keep the contact panel hidden until opened. */
+.developer-contact-overlay[hidden] { display: none !important; }
+
 /* Developer contact panel */
 body.developer-contact-open { overflow: hidden; }
 .developer-contact-overlay {
