@@ -1170,3 +1170,7 @@ body.conversation-info-fullscreen .workspace.chat-open #conversation-info-status
   display: none !important;
   visibility: hidden !important;
 }
+
+
+/* Developer credit at the bottom of settings */
+.settings-credit { margin: 28px 0 0; padding: 18px 0 4px; border-top: 1px solid var(--border); color: var(--muted); text-align: center; font-size: 0.9rem; }
