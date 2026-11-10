@@ -54,7 +54,6 @@ const markAllReadButton = $("#mark-all-read");
 const chatEmpty = $("#chat-empty");
 const chatView = $("#chat-view");
 const backToChatsButton = $("#back-to-chats");
-const conversationInfoToggle = $("#conversation-info-toggle");
 const conversationInfoPanel = $("#conversation-info");
 const closeConversationInfoButton = $("#close-conversation-info");
 const conversationInfoName = $("#conversation-info-name");
@@ -80,6 +79,17 @@ const groupAddPeople = $("#group-add-people");
 const groupAddSelectedButton = $("#group-add-selected");
 const groupMemberList = $("#group-member-list");
 const groupLeaveButton = $("#group-leave");
+const voiceCallButton = $("#voice-call-button");
+const voiceCallPanel = $("#voice-call-panel");
+const voiceCallStatus = $("#voice-call-status");
+const voiceCallParticipants = $("#voice-call-participants");
+const voiceCallAudio = $("#voice-call-audio");
+const voiceCallAcceptButton = $("#voice-call-accept");
+const voiceCallRejectButton = $("#voice-call-reject");
+const voiceCallMuteButton = $("#voice-call-mute");
+const voiceCallEndButton = $("#voice-call-end");
+let callChannel = null, callChannelConversationId = null, callChannelReady = false, callChannelPromise = null;
+let activeCall = null;
 let activeGroupMemberIds = new Set();
 let selectedAdditionalMembers = new Set();
 const conversationSearchArea = $("#conversation-search-area");
@@ -212,6 +222,8 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   if (realtimeChannel) supabase.removeChannel(realtimeChannel);
   if (presenceChannel) supabase.removeChannel(presenceChannel);
   if (notificationChannel) supabase.removeChannel(notificationChannel);
+  void endVoiceCall(false);
+  void closeCallChannel();
   realtimeChannel = null;
   presenceChannel = null;
   notificationChannel = null;
@@ -759,14 +771,14 @@ peopleSearch.addEventListener("input",renderPeople);groupPeopleSearch.addEventLi
 createGroupButton.addEventListener("click",async()=>{
  if(!currentUser)return;const ids=[...selectedGroupMembers],name=groupNameInput.value.trim();
  if(!name){announce("اكتب اسم المجموعة.","error");groupNameInput.focus();return;}
- if(ids.length<2){announce("اختر شخصين على الأقل لإنشاء مجموعة.","error");return;}
+ if(ids.length<1){announce("اختر شخصًا واحدًا على الأقل لإنشاء المجموعة.","error");return;}
  createGroupButton.disabled=true;
  try{
   const {data:conv,error}=await supabase.from("conversations").insert({user_one:currentUser.id,user_two:ids[0],is_group:true,group_name:name}).select("id,user_one,user_two,last_message_at,is_group,group_name,created_at").single();if(error)throw error;
   const rows=[currentUser.id,...ids].map(user_id=>({conversation_id:conv.id,user_id,role:user_id===currentUser.id?"admin":"member"}));
   const {error:memberError}=await supabase.from("conversation_members").insert(rows);if(memberError)throw memberError;
   const {data:person,error:profileError}=await supabase.from("profiles").select("id,display_name,avatar_url").eq("id",ids[0]).single();if(profileError)throw profileError;
-  await selectConversation(conv,person);await loadConversations();closeNewChat();announce("تم إنشاء المجموعة.","success");
+  await selectConversation(conv,{...person,display_name:name});await loadConversations();closeNewChat();announce("تم إنشاء المجموعة.","success");
  }catch(error){announce("تعذر إنشاء المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}finally{createGroupButton.disabled=false;}
 });
 
@@ -848,6 +860,7 @@ async function openConversation(person) {
   await loadConversations();
 }
 async function selectConversation(conversation, person) {
+  if (activeCall && activeCall.conversationId !== conversation.id) await endVoiceCall(true);
   status.textContent = "";
   activeConversation = conversation;
   activePartner = person;
@@ -885,6 +898,10 @@ async function selectConversation(conversation, person) {
         announce("الاتصال المباشر بالرسائل غير مستقر. استخدم زر تحديث الرسائل للمزامنة.", "error");
       }
     });
+  await ensureCallChannel(conversation.id).catch(error => {
+    console.warn("Voice call channel:", error);
+    announce("تعذر تجهيز المكالمات الصوتية لهذه المحادثة.", "error");
+  });
   messageInput.focus();
 }
 
@@ -1098,7 +1115,9 @@ conversationInfoExportButton.addEventListener("click", async () => {
     conversationInfoExportButton.disabled = false;
   }
 });
-backToChatsButton.addEventListener("click", () => {
+backToChatsButton.addEventListener("click", async () => {
+  if (activeCall) await endVoiceCall(true);
+  await closeCallChannel();
   document.body.classList.remove("chat-fullscreen");
   workspace.classList.remove("chat-open");
   chatView.hidden = true;
@@ -1107,20 +1126,314 @@ backToChatsButton.addEventListener("click", () => {
   document.body.classList.remove("conversation-info-fullscreen");
   peopleSearch.focus();
 });
-conversationInfoToggle.addEventListener("click", async () => {
-  const opening = conversationInfoPanel.hidden;
-  if (opening) status.textContent = "";
-  conversationInfoPanel.hidden = !opening;
-  document.body.classList.toggle("conversation-info-fullscreen", opening);
-  if (opening) {
-    await updateConversationInfo();
-    closeConversationInfoButton.focus();
-  }
+chatPartnerAccessible.addEventListener("click", async () => {
+  if (!activeConversation) return;
+  if (status.textContent) status.textContent = "";
+  conversationInfoPanel.hidden = false;
+  document.body.classList.add("conversation-info-fullscreen");
+  await updateConversationInfo();
+  closeConversationInfoButton.focus();
 });
 closeConversationInfoButton.addEventListener("click", () => {
   conversationInfoPanel.hidden = true;
   document.body.classList.remove("conversation-info-fullscreen");
-  conversationInfoToggle.focus();
+  chatPartnerAccessible.focus();
+});
+
+
+function updateVoiceCallPanel() {
+  if (!activeCall) { voiceCallPanel.hidden = true; return; }
+  voiceCallPanel.hidden = false;
+  voiceCallAcceptButton.hidden = activeCall.accepted || !activeCall.incoming;
+  voiceCallRejectButton.hidden = activeCall.accepted || !activeCall.incoming;
+  voiceCallMuteButton.hidden = !activeCall.accepted;
+  voiceCallEndButton.hidden = !activeCall.accepted;
+  voiceCallMuteButton.textContent = activeCall.muted ? "تشغيل الميكروفون" : "كتم الميكروفون";
+  voiceCallEndButton.textContent = activeConversation?.is_group && activeCall.initiatorId !== currentUser.id ? "مغادرة المكالمة" : "إنهاء المكالمة";
+  voiceCallParticipants.replaceChildren();
+  for (const id of activeCall.participants) {
+    const profile = people.find(person => person.id === id);
+    const name = id === currentUser.id ? "أنت" : (profile ? displayName(profile) : "مشارك في المكالمة");
+    voiceCallParticipants.append(safeText("li", "voice-call-participant", name));
+  }
+}
+function setVoiceCallStatus(message) {
+  voiceCallStatus.textContent = message;
+}
+async function ensureCallChannel(conversationId) {
+  if (callChannel && callChannelConversationId === conversationId && callChannelReady) return;
+  if (callChannel) await closeCallChannel();
+  callChannelConversationId = conversationId;
+  callChannelReady = false;
+  const channel = supabase.channel("mersal-call:" + conversationId, { config: { private: true } });
+  callChannel = channel;
+  const ready = new Promise((resolve, reject) => {
+    let settled = false;
+    channel.on("broadcast", { event: "call-signal" }, message => {
+      void handleCallSignal(message?.payload || message);
+    });
+    channel.subscribe(state => {
+      if (state === "SUBSCRIBED" && !settled) {
+        settled = true; callChannelReady = true; resolve();
+      } else if ((state === "CHANNEL_ERROR" || state === "TIMED_OUT" || state === "CLOSED") && !settled) {
+        settled = true; callChannelReady = false; reject(new Error("تعذر الاتصال بقناة المكالمة."));
+      }
+    });
+  });
+  callChannelPromise = ready;
+  return ready;
+}
+async function closeCallChannel() {
+  const channel = callChannel;
+  callChannel = null; callChannelConversationId = null; callChannelReady = false; callChannelPromise = null;
+  if (channel) await supabase.removeChannel(channel);
+}
+async function sendCallSignal(type, to, details = {}, callId = activeCall?.id) {
+  if (!callChannel || !callChannelReady || !activeCall || !callId) throw new Error("قناة المكالمة غير جاهزة.");
+  const result = await callChannel.send({
+    type: "broadcast",
+    event: "call-signal",
+    payload: { type, callId, conversationId: activeCall.conversationId, from: currentUser.id, to, details }
+  });
+  if (result !== "ok") throw new Error("تعذر إرسال إشارة المكالمة.");
+}
+async function sendCallSignalToAll(type, details = {}) {
+  if (!activeCall) return;
+  const targets = [...activeCall.participants].filter(id => id !== currentUser.id);
+  await Promise.all(targets.map(id => sendCallSignal(type, id, details)));
+}
+async function getVoiceCallParticipantIds() {
+  if (!activeConversation || !activePartner) return [];
+  if (!activeConversation.is_group) return [activePartner.id].filter(id => id && id !== currentUser.id);
+  const { data, error } = await supabase.from("conversation_members")
+    .select("user_id").eq("conversation_id", activeConversation.id);
+  if (error) throw error;
+  return [...new Set((data || []).map(row => row.user_id).filter(id => id && id !== currentUser.id))];
+}
+async function startVoiceCall() {
+  if (!activeConversation || !currentUser || activeCall) return;
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
+    announce("المكالمات الصوتية تحتاج متصفحًا آمنًا يدعم الميكروفون.", "error"); return;
+  }
+  voiceCallButton.disabled = true;
+  try {
+    if (!callChannelReady) await callChannelPromise;
+    const participants = await getVoiceCallParticipantIds();
+    if (!participants.length) throw new Error("لا يوجد مشاركون متاحون في هذه المحادثة.");
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: false
+    });
+    const participantSet = new Set([currentUser.id, ...participants]);
+    activeCall = {
+      id: crypto.randomUUID(), conversationId: activeConversation.id,
+      initiatorId: currentUser.id, participants: participantSet, accepted: true,
+      incoming: false, muted: false, localStream: stream, peers: new Map(),
+      readyUsers: new Set([currentUser.id]), pendingOffers: new Map(), pendingIce: new Map()
+    };
+    updateVoiceCallPanel();
+    setVoiceCallStatus("جارٍ الاتصال بالمشاركين…");
+    await Promise.all(participants.map(id => sendCallSignal("invite", id, {
+      participants: [...participantSet], initiatorId: currentUser.id
+    })));
+    await sendCallSignalToAll("ready");
+  } catch (error) {
+    await finishVoiceCall();
+    announce("تعذر بدء المكالمة: " + (error.message || "تحقق من إذن الميكروفون."), "error");
+  } finally {
+    voiceCallButton.disabled = false;
+  }
+}
+function createVoicePeer(peerId) {
+  if (!activeCall || activeCall.peers.has(peerId)) return activeCall?.peers.get(peerId) || null;
+  const pc = new RTCPeerConnection({
+    iceServers: [
+      { urls: "stun:stun.l.google.com:19302" },
+      { urls: "stun:stun1.l.google.com:19302" }
+    ]
+  });
+  activeCall.peers.set(peerId, pc);
+  for (const track of activeCall.localStream.getAudioTracks()) pc.addTrack(track, activeCall.localStream);
+  pc.onicecandidate = event => {
+    if (event.candidate && activeCall?.peers.get(peerId) === pc) {
+      void sendCallSignal("ice", peerId, { candidate: event.candidate.toJSON() }).catch(error => console.warn(error));
+    }
+  };
+  pc.ontrack = event => {
+    if (activeCall?.peers.get(peerId) !== pc) return;
+    let audio = voiceCallAudio.querySelector('[data-peer-id="' + peerId + '"]');
+    if (!audio) {
+      audio = document.createElement("audio");
+      audio.autoplay = true; audio.playsInline = true;
+      audio.dataset.peerId = peerId;
+      voiceCallAudio.append(audio);
+    }
+    audio.srcObject = event.streams[0];
+    void audio.play().catch(() => setVoiceCallStatus("المكالمة متصلة. اضغط على الشاشة للسماح بتشغيل الصوت."));
+  };
+  pc.onconnectionstatechange = () => {
+    if (activeCall?.peers.get(peerId) !== pc) return;
+    const states = [...activeCall.peers.values()].map(peer => peer.connectionState);
+    if (states.includes("connected")) setVoiceCallStatus("المكالمة الصوتية متصلة.");
+    else if (states.some(state => state === "failed" || state === "disconnected")) {
+      setVoiceCallStatus("الاتصال بأحد المشاركين غير مستقر. تحقق من الشبكة.");
+    }
+  };
+  return pc;
+}
+async function flushVoiceIce(peerId, pc) {
+  const pending = activeCall?.pendingIce.get(peerId) || [];
+  if (!activeCall) return;
+  activeCall.pendingIce.delete(peerId);
+  for (const candidate of pending) {
+    try { await pc.addIceCandidate(candidate); } catch (error) { console.warn("ICE candidate:", error); }
+  }
+}
+async function maybeCreateVoiceOffer(peerId) {
+  if (!activeCall?.accepted || !activeCall.readyUsers.has(peerId) || currentUser.id.localeCompare(peerId) >= 0) return;
+  if (activeCall.peers.has(peerId)) return;
+  const pc = createVoicePeer(peerId);
+  if (!pc) return;
+  const offer = await pc.createOffer();
+  await pc.setLocalDescription(offer);
+  await sendCallSignal("offer", peerId, { description: pc.localDescription.toJSON() });
+}
+async function handleVoiceOffer(from, description) {
+  if (!activeCall?.accepted) { activeCall?.pendingOffers.set(from, description); return; }
+  const pc = createVoicePeer(from);
+  if (!pc || pc.remoteDescription) return;
+  await pc.setRemoteDescription(description);
+  await flushVoiceIce(from, pc);
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  await sendCallSignal("answer", from, { description: pc.localDescription.toJSON() });
+}
+async function handleCallSignal(signal) {
+  if (!signal || !currentUser || signal.conversationId !== activeConversation?.id || signal.to !== currentUser.id || signal.from === currentUser.id) return;
+  const from = signal.from, details = signal.details || {};
+  if (signal.type === "invite") {
+    if (activeCall) {
+      if (activeCall.id !== signal.callId) {
+        try { await sendCallSignal("busy", from, {}, signal.callId); } catch {}
+      }
+      return;
+    }
+    activeCall = {
+      id: signal.callId, conversationId: signal.conversationId,
+      initiatorId: details.initiatorId || from,
+      participants: new Set(details.participants || [from, currentUser.id]),
+      accepted: false, incoming: true, muted: false, localStream: null,
+      peers: new Map(), readyUsers: new Set([from]),
+      pendingOffers: new Map(), pendingIce: new Map()
+    };
+    updateVoiceCallPanel();
+    setVoiceCallStatus((people.find(person => person.id === from) ? displayName(people.find(person => person.id === from)) : "أحد المشاركين") + " يتصل بك صوتيًا.");
+    voiceCallAcceptButton.focus();
+    return;
+  }
+  if (!activeCall || activeCall.id !== signal.callId) return;
+  if (signal.type === "ready") {
+    activeCall.readyUsers.add(from);
+    if (activeCall.accepted) await maybeCreateVoiceOffer(from);
+  } else if (signal.type === "offer") {
+    if (!activeCall.accepted) activeCall.pendingOffers.set(from, details.description);
+    else await handleVoiceOffer(from, details.description);
+  } else if (signal.type === "answer") {
+    const pc = activeCall.peers.get(from);
+    if (pc && !pc.remoteDescription) {
+      await pc.setRemoteDescription(details.description);
+      await flushVoiceIce(from, pc);
+    }
+  } else if (signal.type === "ice") {
+    const pc = activeCall.peers.get(from);
+    if (pc?.remoteDescription) {
+      try { await pc.addIceCandidate(details.candidate); } catch (error) { console.warn("ICE candidate:", error); }
+    } else {
+      const queue = activeCall.pendingIce.get(from) || [];
+      queue.push(details.candidate); activeCall.pendingIce.set(from, queue);
+    }
+  } else if (signal.type === "decline") {
+    setVoiceCallStatus("رفض أحد المشاركين المكالمة.");
+    if (!activeConversation?.is_group) await finishVoiceCall();
+  } else if (signal.type === "busy") {
+    setVoiceCallStatus("أحد المشاركين مشغول حاليًا.");
+  } else if (signal.type === "leave") {
+    const pc = activeCall.peers.get(from); if (pc) pc.close();
+    activeCall.peers.delete(from); activeCall.participants.delete(from); activeCall.readyUsers.delete(from);
+    voiceCallAudio.querySelector('[data-peer-id="' + from + '"]')?.remove();
+    updateVoiceCallPanel();
+    if (activeCall.participants.size <= 1) await finishVoiceCall();
+  } else if (signal.type === "end") {
+    await finishVoiceCall();
+  }
+}
+async function acceptVoiceCall() {
+  if (!activeCall?.incoming || activeCall.accepted) return;
+  voiceCallAcceptButton.disabled = true;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+      video: false
+    });
+    activeCall.localStream = stream;
+    activeCall.accepted = true;
+    activeCall.readyUsers.add(currentUser.id);
+    updateVoiceCallPanel();
+    setVoiceCallStatus("تم الانضمام. جارٍ توصيل الصوت…");
+    await sendCallSignalToAll("ready");
+    for (const [peerId, description] of [...activeCall.pendingOffers]) {
+      activeCall.pendingOffers.delete(peerId);
+      await handleVoiceOffer(peerId, description);
+    }
+    for (const peerId of activeCall.readyUsers) await maybeCreateVoiceOffer(peerId);
+  } catch (error) {
+    announce("تعذر الرد على المكالمة: " + (error.message || "تحقق من إذن الميكروفون."), "error");
+    await rejectVoiceCall();
+  } finally {
+    voiceCallAcceptButton.disabled = false;
+  }
+}
+async function rejectVoiceCall() {
+  if (!activeCall) return;
+  const caller = activeCall.initiatorId;
+  try { await sendCallSignal("decline", caller); } catch {}
+  await finishVoiceCall();
+}
+function toggleVoiceCallMute() {
+  if (!activeCall?.localStream) return;
+  activeCall.muted = !activeCall.muted;
+  for (const track of activeCall.localStream.getAudioTracks()) track.enabled = !activeCall.muted;
+  updateVoiceCallPanel();
+  setVoiceCallStatus(activeCall.muted ? "الميكروفون مكتوم." : "الميكروفون يعمل.");
+}
+async function endVoiceCall() {
+  if (!activeCall) { voiceCallPanel.hidden = true; return; }
+  const wasAccepted = activeCall.accepted;
+  const caller = activeCall.initiatorId;
+  const shouldEndForEveryone = !activeConversation?.is_group || caller === currentUser?.id;
+  try {
+    if (wasAccepted && shouldEndForEveryone) await sendCallSignalToAll("end");
+    else if (wasAccepted) await sendCallSignalToAll("leave");
+    else await sendCallSignal("decline", caller);
+  } catch (error) { console.warn("End call signal:", error); }
+  await finishVoiceCall();
+}
+async function finishVoiceCall() {
+  const call = activeCall;
+  activeCall = null;
+  if (call?.peers) for (const pc of call.peers.values()) pc.close();
+  if (call?.localStream) for (const track of call.localStream.getTracks()) track.stop();
+  voiceCallAudio.replaceChildren();
+  voiceCallPanel.hidden = true;
+  if (voiceCallButton?.isConnected && !chatView.hidden) voiceCallButton.focus();
+}
+voiceCallButton.addEventListener("click", () => { void startVoiceCall(); });
+voiceCallAcceptButton.addEventListener("click", () => { void acceptVoiceCall(); });
+voiceCallRejectButton.addEventListener("click", () => { void rejectVoiceCall(); });
+voiceCallMuteButton.addEventListener("click", toggleVoiceCallMute);
+voiceCallEndButton.addEventListener("click", () => { void endVoiceCall(); });
+voiceCallPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape" && activeCall) { event.preventDefault(); void endVoiceCall(); }
 });
 
 function closeMessageOptions(menu, toggle) {
