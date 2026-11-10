@@ -1847,6 +1847,23 @@ function resetVoiceRecorderUi(message = "") {
   voiceRecordingStatus.hidden = !message;
   voiceRecordingStatus.textContent = message;
 }
+
+// iOS browsers can change the system audio session when microphone capture
+// starts. Set the intended capture mode first, then release it after stopping
+// the microphone so VoiceOver and other device audio can return to normal.
+function prepareVoiceCaptureAudioSession() {
+  try {
+    if (navigator.audioSession) navigator.audioSession.type = "play-and-record";
+  } catch { /* Audio Session API is not available in every iOS browser. */ }
+}
+function restoreVoiceCaptureAudioSession() {
+  try {
+    if (navigator.audioSession) {
+      navigator.audioSession.type = "playback";
+      navigator.audioSession.type = "auto";
+    }
+  } catch { /* Keep recording usable when the browser does not expose this API. */ }
+}
 async function startVoiceMessageRecording() {
   if (!activeConversation || !currentUser) return;
   if (isPrivateConversationBlocked()) { announce("لا يمكنك إرسال مرفقات في هذه المحادثة بسبب الحظر.", "error"); return; }
@@ -1854,6 +1871,7 @@ async function startVoiceMessageRecording() {
     announce("تسجيل الرسائل الصوتية يحتاج متصفحًا آمنًا يدعم الميكروفون والتسجيل.", "error"); return;
   }
   voiceMessageButton.disabled = true;
+  prepareVoiceCaptureAudioSession();
   try {
     // Capture microphone only; do not request or mix device/system audio.
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -1880,6 +1898,7 @@ async function startVoiceMessageRecording() {
     voiceRecorder.addEventListener("error", () => {
       voiceRecordingStream?.getTracks().forEach(track => track.stop());
       voiceRecordingStream = null;
+      restoreVoiceCaptureAudioSession();
       resetVoiceRecorderUi();
       announce("حدث خطأ أثناء تسجيل الرسالة الصوتية.", "error");
     }, { once: true });
@@ -1889,6 +1908,7 @@ async function startVoiceMessageRecording() {
       const blob = new Blob(voiceRecordingChunks, { type: mimeType });
       voiceRecordingStream?.getTracks().forEach(track => track.stop());
       voiceRecordingStream = null;
+      restoreVoiceCaptureAudioSession();
       resetVoiceRecorderUi();
       if (!blob.size) { announce("لم يتم تسجيل صوت. حاول مرة أخرى.", "error"); return; }
       const voiceFile = new File([blob], "voice-message-" + Date.now() + "." + extension, { type: mimeType });
@@ -1903,6 +1923,7 @@ async function startVoiceMessageRecording() {
   } catch (error) {
     voiceRecordingStream?.getTracks().forEach(track => track.stop());
     voiceRecordingStream = null;
+    restoreVoiceCaptureAudioSession();
     resetVoiceRecorderUi();
     announce(error?.name === "NotAllowedError"
       ? "لم يُسمح باستخدام الميكروفون. فعّل الإذن من إعدادات مرسال أو إعدادات الموقع."
