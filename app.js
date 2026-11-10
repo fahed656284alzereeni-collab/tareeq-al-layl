@@ -275,28 +275,32 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   }
   const alreadyLoadedForThisUser = currentUser?.id === session.user.id && !workspace.hidden;
   currentUser = session.user;
-  void syncPushNotificationState();
-  void touchLastSeen();
-  if (!lastSeenHeartbeat) lastSeenHeartbeat = window.setInterval(() => { if (document.visibilityState === "visible") void touchLastSeen(); }, 60000);
   authPanel.hidden = true;
   workspace.hidden = false;
   settingsButton.hidden = false;
   account.textContent = "مرحبًا بك في مرسال · متصل الآن";
+
+  // Reveal the usable app immediately; load account data and live updates in the background.
+  finishStartup();
+  if (status.textContent === "جارٍ تجهيز مرسال…") status.textContent = "";
+
+  void syncPushNotificationState();
+  void touchLastSeen();
+  if (!lastSeenHeartbeat) lastSeenHeartbeat = window.setInterval(() => { if (document.visibilityState === "visible") void touchLastSeen(); }, 60000);
+
   try {
     if (!alreadyLoadedForThisUser) {
       await ensureProfile(session.user);
-      await Promise.all([loadPeople(), loadConversations(), loadNotifications()]);
-      await loadOwnProfile();
+      await Promise.all([loadPeople(), loadConversations(), loadNotifications(), loadOwnProfile()]);
     }
     await startPresence();
     startNotificationsRealtime();
-    finishStartup();
     if (!alreadyLoadedForThisUser && authEvent !== "TOKEN_REFRESHED") {
       announce("تم تسجيل الدخول. يمكنك بدء محادثة جديدة.");
     }
   } catch (error) {
     finishStartup();
-    announce("تعذر تحميل الحساب: " + (error.message || "خطأ غير معروف"), "error");
+    announce("تعذر تحميل بعض بيانات الحساب: " + (error.message || "خطأ غير معروف"), "error");
   }
 }
 
