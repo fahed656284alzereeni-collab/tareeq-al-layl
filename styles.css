@@ -1163,3 +1163,10 @@ body.status-open #workspace .sidebar, body.status-open #workspace .chat-panel { 
 body.status-open { overflow: hidden; }
 :root[data-theme="light"] .status-view:not([hidden]),
 :root[data-theme="light"] .status-fullscreen-panel { background: #f4f7fc; color: #20334d; }
+
+
+/* Keep the group status row hidden when JavaScript marks it hidden. */
+body.conversation-info-fullscreen .workspace.chat-open #conversation-info-status-row[hidden] {
+  display: none !important;
+  visibility: hidden !important;
+}
