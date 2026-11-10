@@ -889,7 +889,8 @@ async function openConversation(person) {
 async function selectConversation(conversation, person) {
   if (activeCall && activeCall.conversationId !== conversation.id) await endVoiceCall(true);
   if (!groupAddPanel.hidden) { groupAddPanel.hidden=true; document.body.classList.remove("group-add-fullscreen"); }
-  void supabase.from("conversation_hidden_for").delete().eq("conversation_id",conversation.id).eq("user_id",currentUser.id);
+  const {error:hiddenConversationError}=await supabase.from("conversation_hidden_for").delete().eq("conversation_id",conversation.id).eq("user_id",currentUser.id);
+  if(hiddenConversationError)console.warn("Could not unhide conversation:",hiddenConversationError.message);
   status.textContent = "";
   activeConversation = conversation;
   activePartner = person;
@@ -1100,6 +1101,7 @@ groupDeleteEveryoneButton.addEventListener("click",()=>{deleteActiveGroup(true);
 
 blockPersonButton.addEventListener("click",async()=>{
   if(!activeConversation||activeConversation.is_group||!activePartner||!currentUser||activeBlockState.blockedByThem&&!activeBlockState.blockedByMe)return;
+  if(!activeBlockState.blockedByMe&&!window.confirm("لن يتمكن هذا الشخص من مراسلتك أو الاتصال بك عبر مرسال. هل تريد حظره؟"))return;
   blockPersonButton.disabled=true;
   try{
     if(activeBlockState.blockedByMe){
