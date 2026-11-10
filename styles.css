@@ -901,10 +901,9 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 /* Conversation information tools and search */
 .conversation-info-tools { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; width: 100%; max-width: 760px; margin: 24px auto 0; }
 .conversation-info-tools button { width: 100%; min-height: 52px; text-align: right; }
-.conversation-search-area { width: 100%; max-width: 760px; margin: 22px auto 0; }
+.conversation-info-tools .conversation-search-input { width: 100%; min-height: 52px; box-sizing: border-box; padding: 12px 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-raised); color: var(--text); font: inherit; text-align: right; }
+.conversation-search-area { width: 100%; max-width: 760px; margin: 12px auto 0; }
 .conversation-search-area[hidden] { display: none !important; }
-.conversation-search-area label { display: block; margin-bottom: 9px; font-weight: 800; }
-.conversation-search-area input { width: 100%; min-height: 52px; box-sizing: border-box; padding: 12px 14px; border: 1px solid var(--border); border-radius: 11px; background: var(--surface-raised); color: var(--text); font: inherit; }
 .conversation-search-area p { line-height: 1.7; }
 .conversation-search-results { display: grid; gap: 8px; list-style: none; margin: 12px 0 0; padding: 0; }
 .conversation-search-result { width: 100%; min-height: 48px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-raised); color: var(--text); text-align: right; font: inherit; line-height: 1.6; }
