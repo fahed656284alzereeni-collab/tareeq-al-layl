@@ -1214,3 +1214,8 @@ body.developer-contact-open { overflow: hidden; }
 .developer-contact-link:focus-visible, .developer-contact-close:focus-visible {
   outline: 3px solid #8db8ff; outline-offset: 3px;
 }
+
+
+/* Keep audio and unsupported attachment previews inside the Mersal viewer. */
+.attachment-viewer-audio { width: min(100%, 720px); }
+.attachment-viewer-message { max-width: 38rem; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised); color: var(--text); line-height: 1.8; text-align: center; }
