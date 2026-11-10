@@ -24,6 +24,20 @@
 
   <div id="main-content" tabindex="-1">
     <p id="status" role="status" aria-live="polite" aria-atomic="true">جارٍ تجهيز مرسال…</p>
+    <button id="startup-retry" type="button" class="quiet-button" hidden>إعادة المحاولة</button>
+    <script>
+      window.__mersalStartupTimer = window.setTimeout(() => {
+        const status = document.getElementById("status");
+        const retry = document.getElementById("startup-retry");
+        if (status && retry) {
+          status.textContent = "تأخر الاتصال بمرسال. تحقق من الإنترنت ثم أعد المحاولة.";
+          retry.hidden = false;
+        }
+      }, 15000);
+      document.addEventListener("click", event => {
+        if (event.target?.id === "startup-retry") window.location.reload();
+      });
+    </script>
     <div id="auth-panel" class="auth-panel" >
       <div class="mark" aria-hidden="true">م</div>
       
