@@ -1655,3 +1655,83 @@ button .icon, button svg { flex: 0 0 auto; }
 @media (prefers-reduced-motion: reduce) {
   button { transition: none !important; }
 }
+
+
+/* Scheduled messages: full-screen, accessible panels and clear pending items. */
+.message-schedule-panel,
+.scheduled-messages-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 145;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  padding: max(20px, env(safe-area-inset-top)) clamp(18px, 4vw, 42px) max(28px, env(safe-area-inset-bottom));
+  background: #0b1020;
+}
+.message-schedule-card,
+.scheduled-messages-card {
+  width: min(100%, 760px);
+  min-height: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 18px;
+}
+.message-schedule-card > .quiet-button,
+.scheduled-messages-card > .quiet-button { width: 100%; }
+.message-schedule-preview {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 16px;
+  border: 1px solid #49658b;
+  border-radius: 14px;
+  background: #14243a;
+  color: #f5f7ff;
+  line-height: 1.8;
+}
+.message-schedule-card label { color: var(--muted); font-weight: 750; }
+.message-schedule-card input[type="datetime-local"] { min-height: 56px; }
+#confirm-message-schedule { width: 100%; }
+.scheduled-messages-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 14px;
+}
+.scheduled-message-item {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid #49658b;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #172b47, #101d32);
+}
+.scheduled-message-body {
+  margin: 0;
+  color: #f5f7ff;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+}
+.scheduled-message-time { margin: 0; color: #c5d2e8; font-size: .92rem; }
+.scheduled-message-item .danger-button { width: 100%; }
+:root[data-theme="light"] .message-schedule-panel,
+:root[data-theme="light"] .scheduled-messages-panel { background: #f4f7fc; }
+:root[data-theme="light"] .message-schedule-preview {
+  color: #17243a;
+  background: #fff;
+  border-color: #bdcbe0;
+}
+:root[data-theme="light"] .scheduled-message-item {
+  background: linear-gradient(145deg, #fff, #edf3fb);
+  border-color: #bdcbe0;
+}
+:root[data-theme="light"] .scheduled-message-body { color: #17243a; }
+:root[data-theme="light"] .scheduled-message-time { color: #43536b; }
+@media (prefers-reduced-motion: reduce) {
+  .message-schedule-panel, .scheduled-messages-panel { scroll-behavior: auto; }
+}
