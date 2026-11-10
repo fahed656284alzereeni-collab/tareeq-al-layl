@@ -651,7 +651,7 @@ function openSettings() {
   settingsPanel.hidden = false;
   document.body.classList.add("settings-open");
   setActiveBottomTab("settings");
-  displayNameInput.focus();
+  $("#open-account-settings").focus();
 }
 async function loadOwnProfile() {
   const { data, error } = await supabase.from("profiles")
