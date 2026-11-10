@@ -472,7 +472,7 @@ function formatLastSeen(value) {
   return "آخر ظهور " + date.toLocaleDateString("ar-JO", { day: "numeric", month: "long" }) + " الساعة " + time;
 }
 function updateChatPartnerPresence() {
-  if (!activePartner || !chatPartnerPresence) return;
+  if ((!activePartner && !activeConversation?.is_group) || !chatPartnerPresence) return;
   if (activeConversation?.is_group) {
     chatPartnerPresence.textContent = "مجموعة";
     chatPartnerPresence.classList.remove("is-online", "is-offline");
