@@ -188,25 +188,35 @@ function openAttachmentViewer(url, type, name, trigger) {
   attachmentViewerContent.replaceChildren();
   const title = safeText("p", "attachment-viewer-title", name || "مرفق");
   attachmentViewerContent.append(title);
-  if (type.startsWith("image/")) {
+  const mime = String(type || "").toLowerCase().split(";")[0].trim();
+  if (mime.startsWith("image/")) {
     const media = document.createElement("img");
     media.src = url; media.alt = name || "صورة مرفقة"; media.className = "attachment-viewer-image";
     attachmentViewerContent.append(media);
-  } else if (type.startsWith("video/")) {
+  } else if (mime.startsWith("video/")) {
     const media = document.createElement("video");
     media.src = url; media.controls = true; media.playsInline = true; media.preload = "metadata";
     media.setAttribute("playsinline", ""); media.setAttribute("webkit-playsinline", "");
-    media.setAttribute("aria-label", "تشغيل الفيديو داخل المحادثة");
+    media.setAttribute("aria-label", "تشغيل الفيديو داخل مرسال");
     media.className = "attachment-viewer-video";
     attachmentViewerContent.append(media);
-  } else {
+  } else if (mime.startsWith("audio/")) {
+    const media = document.createElement("audio");
+    media.src = url; media.controls = true; media.preload = "metadata";
+    media.setAttribute("aria-label", "تشغيل الملف الصوتي داخل مرسال");
+    media.className = "attachment-viewer-audio";
+    attachmentViewerContent.append(media);
+  } else if (mime === "application/pdf" || mime.startsWith("text/")) {
     const frame = document.createElement("iframe");
-    frame.src = url; frame.title = "عرض الملف داخل المحادثة: " + (name || "ملف مرفق");
+    frame.src = url;
+    frame.title = "معاينة الملف داخل مرسال: " + (name || "ملف مرفق");
     frame.className = "attachment-viewer-frame";
+    frame.setAttribute("sandbox", "allow-same-origin");
+    frame.setAttribute("referrerpolicy", "no-referrer");
     attachmentViewerContent.append(frame);
-    const download = safeText("a", "attachment-download", "تنزيل الملف");
-    download.href = url; download.download = name || "attachment";
-    attachmentViewerContent.append(download);
+  } else {
+    attachmentViewerContent.append(safeText("p", "attachment-viewer-message",
+      "هذا النوع من الملفات لا يدعم المعاينة داخل مرسال حاليًا. لم يتم فتحه في تطبيق أو موقع خارجي."));
   }
   attachmentViewer.hidden = false;
   attachmentViewerClose.focus();
@@ -1030,6 +1040,7 @@ async function openStatusViewer(row, name, trigger) {
       } else {
         const media = document.createElement("video"); media.src = signed.data.signedUrl;
         media.controls = true; media.playsInline = true; media.preload = "metadata";
+        media.setAttribute("playsinline", ""); media.setAttribute("webkit-playsinline", "");
         media.setAttribute("aria-label", "فيديو الحالة من " + name); media.className = "status-viewer-video";
         $("#status-viewer-content").append(media);
       }
@@ -2028,19 +2039,13 @@ function appendMessage(message) {
         attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق."));
         return;
       }
-      if (attachment.kind === "voice" || attachment.type?.startsWith("audio/")) {
-        const audio = document.createElement("audio");
-        audio.controls = true;
-        audio.preload = "metadata";
-        audio.src = data.signedUrl;
-        audio.setAttribute("aria-label", attachment.kind === "voice" ? "تشغيل الرسالة الصوتية" : "تشغيل الملف الصوتي");
-        audio.className = "message-audio";
-        attachmentView.append(audio);
-        return;
-      }
-      const previewButton = safeText("button", "attachment-open-button", attachment.type?.startsWith("image/") ? "عرض الصورة داخل المحادثة" : attachment.type?.startsWith("video/") ? "تشغيل الفيديو داخل المحادثة" : "عرض الملف داخل المحادثة");
+      const previewButton = safeText("button", "attachment-open-button",
+        attachment.type?.startsWith("image/") ? "عرض الصورة داخل مرسال" :
+        attachment.type?.startsWith("video/") ? "تشغيل الفيديو داخل مرسال" :
+        attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "تشغيل الصوت داخل مرسال" :
+        "عرض الملف داخل مرسال");
       previewButton.type = "button";
-      previewButton.setAttribute("aria-label", (attachment.type?.startsWith("image/") ? "عرض الصورة " : attachment.type?.startsWith("video/") ? "تشغيل الفيديو " : "عرض الملف ") + fileName + " داخل المحادثة");
+      previewButton.setAttribute("aria-label", (attachment.type?.startsWith("image/") ? "عرض الصورة " : attachment.type?.startsWith("video/") ? "تشغيل الفيديو " : attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "تشغيل الصوت " : "عرض الملف ") + fileName + " داخل المحادثة");
       previewButton.addEventListener("click", () => openAttachmentViewer(data.signedUrl, attachment.type || "", fileName, previewButton));
       if (attachment.type?.startsWith("image/")) {
         const preview = document.createElement("img");
@@ -2048,7 +2053,7 @@ function appendMessage(message) {
         preview.loading = "lazy"; preview.className = "attachment-image";
         previewButton.prepend(preview);
       } else {
-        previewButton.prepend(safeText("span", "attachment-preview-icon", attachment.type?.startsWith("video/") ? "▶" : "📄"));
+        previewButton.prepend(safeText("span", "attachment-preview-icon", attachment.type?.startsWith("video/") ? "▶" : attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "♫" : "📄"));
       }
       attachmentView.insertBefore(previewButton, fileInfo);
     }).catch(() => attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق.")));
