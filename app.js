@@ -70,7 +70,18 @@ const conversationInfoNameLabel = $("#conversation-info-name-label");
 const conversationInfoStatusRow = $("#conversation-info-status-row");
 const conversationInfoSearchButton = $("#conversation-info-search");
 const conversationInfoExportButton = $("#conversation-info-export");
-const conversationInfoCopyNameButton = $("#conversation-info-copy-name");
+const conversationInfoMuteButton = $("#conversation-info-mute");
+const conversationInfoClearButton = $("#conversation-info-clear");
+const groupAdminTools = $("#group-admin-tools");
+const groupRenameInput = $("#group-rename-input");
+const groupRenameSaveButton = $("#group-rename-save");
+const groupAddSearch = $("#group-add-search");
+const groupAddPeople = $("#group-add-people");
+const groupAddSelectedButton = $("#group-add-selected");
+const groupMemberList = $("#group-member-list");
+const groupLeaveButton = $("#group-leave");
+let activeGroupMemberIds = new Set();
+let selectedAdditionalMembers = new Set();
 const conversationSearchArea = $("#conversation-search-area");
 const conversationSearchInput = $("#conversation-search-input");
 const conversationSearchStatus = $("#conversation-search-status");
@@ -142,6 +153,7 @@ let replyingToMessage = null;
 let currentUser = null;
 let activeConversation = null;
 let activePartner = null;
+let activeConversationMuted = false;
 let people = [];
 let conversations = [];
 let realtimeChannel = null;
@@ -880,33 +892,112 @@ function setConversationInfoValue(element, value) {
 
 async function updateConversationInfo() {
   if (!activeConversation || !activePartner) return;
-  const isGroup = Boolean(activeConversation.is_group);
-  const displayLabel = isGroup ? "اسم المجموعة" : "اسم الشخص";
-  conversationInfoNameLabel.textContent = displayLabel;
+  const isGroup = Boolean(activeConversation.is_group), isAdmin = isGroup && activeConversation.user_one === currentUser.id;
+  conversationInfoNameLabel.textContent = isGroup ? "اسم المجموعة" : "اسم الشخص";
   conversationInfoStatusRow.hidden = isGroup;
-  setConversationInfoValue(conversationInfoName, isGroup
-    ? (activeConversation.group_name || "مجموعة")
-    : displayName(activePartner));
-  if (!isGroup) {
-    setConversationInfoValue(conversationInfoStatus, onlineUserIds.has(activePartner.id)
-      ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt));
-  }
+  setConversationInfoValue(conversationInfoName, isGroup ? (activeConversation.group_name || "مجموعة") : displayName(activePartner));
+  if (!isGroup) setConversationInfoValue(conversationInfoStatus, onlineUserIds.has(activePartner.id) ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt));
   const createdAt = activeConversation.created_at;
-  setConversationInfoValue(conversationInfoCreated, createdAt
-    ? new Date(createdAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" })
-    : "غير متوفر");
+  setConversationInfoValue(conversationInfoCreated, createdAt ? new Date(createdAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" }) : "غير متوفر");
   setConversationInfoValue(conversationInfoCount, "جارٍ التحميل…");
-  conversationSearchArea.hidden = true;
-  conversationSearchInput.value = "";
-  conversationSearchResults.replaceChildren();
+  conversationSearchArea.hidden = true; conversationSearchInput.value = ""; conversationSearchResults.replaceChildren();
   conversationSearchStatus.textContent = "اكتب كلمة لعرض النتائج.";
-  conversationInfoCopyNameButton.textContent = isGroup ? "نسخ اسم المجموعة" : "نسخ اسم الشخص";
-  const { count, error } = await supabase.from("messages")
-    .select("id", { count: "exact", head: true })
-    .eq("conversation_id", activeConversation.id);
-  if (error) setConversationInfoValue(conversationInfoCount, "تعذر تحميل العدد");
-  else setConversationInfoValue(conversationInfoCount, new Intl.NumberFormat("ar-JO").format(count || 0));
+  groupAdminTools.hidden = !isAdmin; groupLeaveButton.hidden = !isGroup || isAdmin;
+  groupMemberList.replaceChildren(); groupAddPeople.replaceChildren(); groupAddSearch.value = "";
+  selectedAdditionalMembers.clear(); groupRenameInput.value = activeConversation.group_name || "";
+  const [{count,error},{data:preference,error:preferenceError}] = await Promise.all([
+    supabase.from("messages").select("id",{count:"exact",head:true}).eq("conversation_id",activeConversation.id),
+    supabase.from("conversation_preferences").select("muted").eq("conversation_id",activeConversation.id).eq("user_id",currentUser.id).maybeSingle()
+  ]);
+  if(error)setConversationInfoValue(conversationInfoCount,"تعذر تحميل العدد");
+  else setConversationInfoValue(conversationInfoCount,new Intl.NumberFormat("ar-JO").format(count||0));
+  if(preferenceError){activeConversationMuted=false;announce("تعذر تحميل إعداد الإشعارات لهذه المحادثة.","error");}
+  else activeConversationMuted=Boolean(preference?.muted);
+  conversationInfoMuteButton.textContent=activeConversationMuted?"تشغيل إشعارات المحادثة":"كتم إشعارات المحادثة";
+  if(isAdmin)await loadGroupManagement();
 }
+async function loadGroupManagement(){
+  if(!activeConversation?.is_group||activeConversation.user_one!==currentUser.id)return;
+  const {data:members,error}=await supabase.from("conversation_members").select("user_id,role").eq("conversation_id",activeConversation.id);
+  if(error){announce("تعذر تحميل أعضاء المجموعة: "+error.message,"error");return;}
+  activeGroupMemberIds=new Set((members||[]).map(member=>member.user_id));
+  const ids=[...activeGroupMemberIds];let profiles=[];
+  if(ids.length){const result=await supabase.from("profiles").select("id,display_name").in("id",ids);if(result.error){announce("تعذر تحميل أسماء الأعضاء.","error");return;}profiles=result.data||[];}
+  const profileMap=new Map(profiles.map(profile=>[profile.id,profile]));groupMemberList.replaceChildren();
+  for(const member of members||[]){
+    const item=document.createElement("li"),name=profileMap.get(member.user_id)?.display_name||"مستخدم مرسال";
+    item.append(safeText("span","group-member-name",name+(member.user_id===currentUser.id?" (أنت)":"")));
+    if(member.user_id!==currentUser.id){const remove=safeText("button","danger-button group-member-remove","إزالة العضو "+name);remove.type="button";remove.addEventListener("click",()=>{void removeGroupMember(member.user_id,name);});item.append(remove);}
+    groupMemberList.append(item);
+  }
+  renderGroupAddPeople();
+}
+function renderGroupAddPeople(){
+  const term=groupAddSearch.value.trim().toLocaleLowerCase();groupAddPeople.replaceChildren();
+  const available=people.filter(person=>!activeGroupMemberIds.has(person.id)&&displayName(person).toLocaleLowerCase().includes(term));
+  if(!available.length){groupAddPeople.append(safeText("li","empty-item","لا يوجد أشخاص متاحون للإضافة."));return;}
+  for(const person of available){
+    const item=document.createElement("li"),label=document.createElement("label"),checkbox=document.createElement("input");
+    label.className="group-person-choice";checkbox.type="checkbox";checkbox.checked=selectedAdditionalMembers.has(person.id);
+    checkbox.addEventListener("change",()=>{if(checkbox.checked)selectedAdditionalMembers.add(person.id);else selectedAdditionalMembers.delete(person.id);});
+    label.append(checkbox,document.createTextNode(displayName(person)));item.append(label);groupAddPeople.append(item);
+  }
+}
+async function removeGroupMember(userId,name){
+  if(!activeConversation||activeConversation.user_one!==currentUser.id)return;
+  if(!window.confirm("هل تريد إزالة "+name+" من المجموعة؟"))return;
+  const {error}=await supabase.from("conversation_members").delete().eq("conversation_id",activeConversation.id).eq("user_id",userId);
+  if(error){announce("تعذرت إزالة العضو: "+error.message,"error");return;}
+  await loadGroupManagement();announce("تمت إزالة العضو.");
+}
+groupAddSearch.addEventListener("input",renderGroupAddPeople);
+groupAddSelectedButton.addEventListener("click",async()=>{
+  if(!activeConversation?.is_group||activeConversation.user_one!==currentUser.id)return;
+  const ids=[...selectedAdditionalMembers].filter(id=>!activeGroupMemberIds.has(id));
+  if(!ids.length){announce("اختر شخصًا واحدًا على الأقل.","error");return;}
+  groupAddSelectedButton.disabled=true;
+  try{const rows=ids.map(user_id=>({conversation_id:activeConversation.id,user_id,role:"member"}));const {error}=await supabase.from("conversation_members").insert(rows);if(error)throw error;selectedAdditionalMembers.clear();await loadGroupManagement();await loadConversations();announce("تمت إضافة الأعضاء.");}
+  catch(error){announce("تعذرت إضافة الأعضاء: "+(error.message||"حاول مرة أخرى."),"error");}
+  finally{groupAddSelectedButton.disabled=false;}
+});
+groupRenameSaveButton.addEventListener("click",async()=>{
+  if(!activeConversation?.is_group||activeConversation.user_one!==currentUser.id)return;
+  const name=groupRenameInput.value.trim();
+  if(name.length<2){announce("اسم المجموعة يجب أن يتكون من حرفين على الأقل.","error");groupRenameInput.focus();return;}
+  groupRenameSaveButton.disabled=true;
+  try{const {data,error}=await supabase.from("conversations").update({group_name:name}).eq("id",activeConversation.id).eq("user_one",currentUser.id).select("id").maybeSingle();if(error||!data)throw error||new Error("لا تملك صلاحية تغيير الاسم.");activeConversation.group_name=name;chatPartnerName.textContent=name;chatPartnerAccessible.setAttribute("aria-label",name+"، مجموعة");await loadConversations();await updateConversationInfo();announce("تم تغيير اسم المجموعة.");}
+  catch(error){announce("تعذر تغيير اسم المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}
+  finally{groupRenameSaveButton.disabled=false;}
+});
+groupLeaveButton.addEventListener("click",async()=>{
+  if(!activeConversation?.is_group||activeConversation.user_one===currentUser.id)return;
+  if(!window.confirm("هل تريد مغادرة هذه المجموعة؟ لن تظهر لك رسائلها بعد المغادرة."))return;
+  groupLeaveButton.disabled=true;
+  try{const id=activeConversation.id;const {error}=await supabase.from("conversation_members").delete().eq("conversation_id",id).eq("user_id",currentUser.id);if(error)throw error;conversationInfoPanel.hidden=true;document.body.classList.remove("conversation-info-fullscreen","chat-fullscreen");workspace.classList.remove("chat-open");chatView.hidden=true;chatEmpty.hidden=false;activeConversation=null;activePartner=null;await loadConversations();announce("غادرت المجموعة.");}
+  catch(error){announce("تعذرت مغادرة المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}
+  finally{groupLeaveButton.disabled=false;}
+});
+conversationInfoMuteButton.addEventListener("click",async()=>{
+  if(!activeConversation||!currentUser)return;
+  conversationInfoMuteButton.disabled=true;const muted=!activeConversationMuted;
+  try{const {error}=await supabase.from("conversation_preferences").upsert({conversation_id:activeConversation.id,user_id:currentUser.id,muted,updated_at:new Date().toISOString()},{onConflict:"conversation_id,user_id"});if(error)throw error;activeConversationMuted=muted;conversationInfoMuteButton.textContent=muted?"تشغيل إشعارات المحادثة":"كتم إشعارات المحادثة";announce(muted?"تم كتم إشعارات المحادثة.":"تم تشغيل إشعارات المحادثة.");}
+  catch(error){announce("تعذر تغيير الإشعارات: "+(error.message||"حاول مرة أخرى."),"error");}
+  finally{conversationInfoMuteButton.disabled=false;}
+});
+conversationInfoClearButton.addEventListener("click",async()=>{
+  if(!activeConversation||!currentUser)return;
+  if(!window.confirm("سيتم إخفاء رسائل هذه المحادثة من جهازك فقط، ولن تُحذف عند الطرف الآخر. هل تريد المتابعة؟"))return;
+  conversationInfoClearButton.disabled=true;
+  try{
+    const id=activeConversation.id;let all=[];
+    for(let offset=0;;offset+=500){const {data,error}=await supabase.from("messages").select("id").eq("conversation_id",id).order("created_at",{ascending:true}).range(offset,offset+499);if(error)throw error;all=all.concat(data||[]);if(!data||data.length<500)break;}
+    const {data:hidden,error:hiddenError}=await supabase.from("message_hidden_for").select("message_id").eq("user_id",currentUser.id);if(hiddenError)throw hiddenError;
+    const hiddenIds=new Set((hidden||[]).map(row=>row.message_id)),rows=all.filter(message=>!hiddenIds.has(message.id)).map(message=>({message_id:message.id,user_id:currentUser.id}));
+    for(let i=0;i<rows.length;i+=100){const {error}=await supabase.from("message_hidden_for").insert(rows.slice(i,i+100));if(error)throw error;}
+    await loadMessages();conversationInfoPanel.hidden=true;document.body.classList.remove("conversation-info-fullscreen");announce("تم مسح المحادثة من جهازك.");
+  }catch(error){announce("تعذر مسح المحادثة: "+(error.message||"حاول مرة أخرى."),"error");}
+  finally{conversationInfoClearButton.disabled=false;}
+});
 conversationInfoSearchButton.addEventListener("click", () => {
   conversationSearchArea.hidden = false;
   conversationSearchInput.focus();
@@ -942,17 +1033,6 @@ conversationSearchInput.addEventListener("input", () => {
     });
     result.append(button);
     conversationSearchResults.append(result);
-  }
-});
-conversationInfoCopyNameButton.addEventListener("click", async () => {
-  const value = activeConversation?.is_group
-    ? (activeConversation.group_name || "مجموعة")
-    : displayName(activePartner);
-  try {
-    await navigator.clipboard.writeText(value);
-    announce("تم نسخ الاسم.");
-  } catch {
-    announce("تعذر نسخ الاسم من هذا المتصفح.", "error");
   }
 });
 conversationInfoExportButton.addEventListener("click", async () => {

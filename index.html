@@ -123,8 +123,20 @@
             <div class="conversation-info-tools">
               <button id="conversation-info-search" type="button" class="quiet-button">البحث في الرسائل</button>
               <button id="conversation-info-export" type="button" class="quiet-button">تنزيل سجل المحادثة</button>
-              <button id="conversation-info-copy-name" type="button" class="quiet-button">نسخ الاسم</button>
+              <button id="conversation-info-mute" type="button" class="quiet-button">كتم إشعارات المحادثة</button>
+              <button id="conversation-info-clear" type="button" class="danger-button">مسح المحادثة من جهازي</button>
             </div>
+            <div id="group-admin-tools" class="group-admin-tools" hidden>
+              <label for="group-rename-input">اسم المجموعة الجديد</label>
+              <input id="group-rename-input" type="text" maxlength="60" autocomplete="off">
+              <button id="group-rename-save" type="button" class="quiet-button">حفظ اسم المجموعة</button>
+              <label for="group-add-search">إضافة أعضاء</label>
+              <input id="group-add-search" type="search" placeholder="ابحث عن شخص" autocomplete="off">
+              <ul id="group-add-people" class="people-list" aria-label="الأشخاص المتاحون للإضافة"></ul>
+              <button id="group-add-selected" type="button" class="quiet-button">إضافة المحددين</button>
+              <ul id="group-member-list" class="people-list" aria-label="أعضاء المجموعة"></ul>
+            </div>
+            <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
             <div id="conversation-search-area" class="conversation-search-area" hidden>
               <label for="conversation-search-input">ابحث في الرسائل المحمّلة</label>
               <input id="conversation-search-input" type="search" autocomplete="off" placeholder="اكتب كلمة للبحث">

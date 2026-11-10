@@ -874,3 +874,14 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 .conversation-search-results { display: grid; gap: 8px; list-style: none; margin: 12px 0 0; padding: 0; }
 .conversation-search-result { width: 100%; min-height: 48px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-raised); color: var(--text); text-align: right; font: inherit; line-height: 1.6; }
 .conversation-info-tools button:disabled { opacity: .6; }
+
+.group-admin-tools{display:grid;gap:10px;width:100%;max-width:760px;margin:24px auto 0}
+.group-admin-tools[hidden]{display:none!important}
+.group-admin-tools label{display:block;margin-top:10px;font-weight:800}
+.group-admin-tools input{width:100%}
+.group-member-name{display:block;padding:10px 12px;line-height:1.6}
+.group-member-remove{width:100%;margin-top:6px}
+.group-admin-tools .people-list{margin:8px 0}
+.danger-button{min-height:48px;padding:11px 15px;border:1px solid #a44e59;border-radius:11px;background:#542631;color:#fff;font:inherit;font-weight:750;text-align:right}
+.danger-button:hover{background:#71313d}
+.conversation-info-tools .danger-button{width:100%}
