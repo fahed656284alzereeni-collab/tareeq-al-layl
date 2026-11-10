@@ -976,7 +976,7 @@ function updateBlockedControls(){
   blockPersonButton.setAttribute("aria-label",blockPersonButton.textContent);
 }
 async function updateConversationInfo() {
-  if (!activeConversation || !activePartner) return;
+  if (!activeConversation || (!activePartner && !activeConversation.is_group)) return;
   const isGroup = Boolean(activeConversation.is_group);
   const { isOwner, isAdmin } = isGroup ? await getCurrentGroupPermissions() : { isOwner: false, isAdmin: false };
   groupAddMembersButton.hidden=!isAdmin;
