@@ -482,13 +482,18 @@ async function openNotification(notification, sender) {
   if (!currentUser) return;
   notificationsPanel.hidden = true;
   const { data: conversation, error } = await supabase.from("conversations")
-    .select("id,user_one,user_two,created_at,last_message_at")
+    .select("id,user_one,user_two,created_at,last_message_at,is_group,group_name")
     .eq("id", notification.conversation_id).single();
   if (error) {
     announce("تعذر فتح المحادثة من الإشعار: " + error.message, "error");
     return;
   }
   await selectConversation(conversation, sender);
+  if (conversation.is_group) {
+    chatPartnerName.textContent = conversation.group_name || "مجموعة";
+    chatPartnerPresence.textContent = "مجموعة";
+    chatPartnerAccessible.setAttribute("aria-label", chatPartnerName.textContent + "، مجموعة");
+  }
 }
 function startNotificationsRealtime() {
   if (!currentUser) return;
