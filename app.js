@@ -270,6 +270,8 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   statusView.hidden = true;
   statusComposerPanel.hidden = true;
   statusViewerPanel.hidden = true;
+  if (statusExpiryTimer) clearTimeout(statusExpiryTimer);
+  statusExpiryTimer = null;
   document.body.classList.remove("status-open");
   document.body.classList.remove("chat-fullscreen");
   workspace.classList.remove("chat-open");
@@ -965,7 +967,9 @@ $("#publish-status-button").addEventListener("click", async () => {
     });
     if (error) throw error;
     statusComposerPanel.hidden = true;
-    await loadStatuses(); announce("تم نشر الحالة.");
+    await loadStatuses();
+    $("#add-status-button").focus();
+    announce("تم نشر الحالة.");
   } catch (error) {
     if (uploadedPath) await supabase.storage.from("mersal-attachments").remove([uploadedPath]);
     announce("تعذر نشر الحالة: " + (error.message || "حاول مرة أخرى."), "error");
@@ -1038,7 +1042,10 @@ $("#delete-status-button").addEventListener("click", async () => {
       const removed = await supabase.storage.from("mersal-attachments").remove([row.media_path]);
       if (removed.error) console.warn("تعذر حذف ملف الحالة:", removed.error.message);
     }
-    closeStatusViewer(); await loadStatuses(); announce("تم حذف الحالة.");
+    closeStatusViewer();
+    await loadStatuses();
+    $("#add-status-button").focus();
+    announce("تم حذف الحالة.");
   } catch (error) { announce("تعذر حذف الحالة: " + (error.message || "حاول مرة أخرى."), "error"); }
   finally { button.disabled = false; }
 });
