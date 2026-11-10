@@ -38,6 +38,7 @@ const pushNotificationsButton = $("#enable-push-notifications");
 const pushNotificationsHelp = $("#push-notifications-help");
 const microphonePermissionButton = $("#microphone-permission-button");
 const microphonePermissionHelp = $("#microphone-permission-help");
+const voiceAudioCompatibilityToggle = $("#voice-audio-compatibility-toggle");
 let settingsReturnFocus = null;
 const newChatButton=$("#new-chat-button"),newChatPanel=$("#new-chat-panel"),closeNewChatButton=$("#close-new-chat");
 const privateChatView=$("#private-chat-view"),groupChatView=$("#group-chat-view"),groupNameInput=$("#group-name");
@@ -606,6 +607,7 @@ function openSettings() {
   settingsEmail.value = currentUser.email || "";
   textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
   themeSelect.value = localStorage.getItem("mersal-theme") || "system";
+  voiceAudioCompatibilityToggle.checked = localStorage.getItem("mersal-voice-audio-compatibility") === "enabled";
   void refreshMicrophonePermissionStatus();
   applyTextSize(textSizeSelect.value);
   applyTheme(themeSelect.value);
@@ -640,6 +642,12 @@ async function refreshMicrophonePermissionStatus() {
     microphonePermissionButton.disabled = false;
   }
 }
+voiceAudioCompatibilityToggle.addEventListener("change", () => {
+  localStorage.setItem("mersal-voice-audio-compatibility", voiceAudioCompatibilityToggle.checked ? "enabled" : "disabled");
+  announce(voiceAudioCompatibilityToggle.checked
+    ? "تم تفعيل وضع الصوت التجريبي."
+    : "تم إيقاف وضع الصوت التجريبي.");
+});
 microphonePermissionButton.addEventListener("click", async () => {
   if (!navigator.mediaDevices?.getUserMedia) {
     microphonePermissionHelp.textContent = "هذا المتصفح لا يدعم الوصول إلى الميكروفون من الموقع.";
@@ -1851,10 +1859,24 @@ function resetVoiceRecorderUi(message = "") {
 // iOS browsers can change the system audio session when microphone capture
 // starts. Set the intended capture mode first, then release it after stopping
 // the microphone so VoiceOver and other device audio can return to normal.
+function voiceAudioCompatibilityEnabled() {
+  return localStorage.getItem("mersal-voice-audio-compatibility") === "enabled";
+}
 function prepareVoiceCaptureAudioSession() {
   try {
-    if (navigator.audioSession) navigator.audioSession.type = "play-and-record";
+    if (navigator.audioSession) {
+      // Experimental WebKit workaround: reset the session before capture.
+      navigator.audioSession.type = voiceAudioCompatibilityEnabled() ? "auto" : "play-and-record";
+    }
   } catch { /* Audio Session API is not available in every iOS browser. */ }
+}
+function activateVoiceCaptureAudioSession() {
+  if (!voiceAudioCompatibilityEnabled()) return;
+  try {
+    // WebKit reports better routing after getUserMedia when play-and-record
+    // is selected immediately after the microphone stream is acquired.
+    if (navigator.audioSession) navigator.audioSession.type = "play-and-record";
+  } catch { /* The microphone stream must remain usable if unsupported. */ }
 }
 function restoreVoiceCaptureAudioSession() {
   try {
@@ -1885,6 +1907,7 @@ async function startVoiceMessageRecording() {
       video: false
     });
     voiceRecordingStream = stream;
+    activateVoiceCaptureAudioSession();
     localStorage.setItem("mersal-microphone-permission", "granted");
     const mimeCandidates = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"];
     const preferredMime = mimeCandidates.find(type => MediaRecorder.isTypeSupported?.(type));
