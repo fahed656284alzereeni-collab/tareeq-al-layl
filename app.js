@@ -857,6 +857,7 @@ createGroupButton.addEventListener("click",async()=>{
 
 let selectedStatusKind = "text";
 let selectedStatusFile = null;
+let statusExpiryTimer = null;
 let statusViewerReturnFocus = null;
 let activeViewedStatus = null;
 function statusKindLabel(kind) { return kind === "image" ? "صورة" : kind === "video" ? "فيديو" : "نص"; }
@@ -865,11 +866,18 @@ function statusTimeLabel(value) {
 }
 async function loadStatuses() {
   if (!currentUser || !statusList) return;
+  if (statusExpiryTimer) clearTimeout(statusExpiryTimer);
   const { data, error } = await supabase.from("statuses")
     .select("id,user_id,kind,content,media_path,media_type,created_at,expires_at")
     .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false });
   if (error) throw error;
   const rows = data || [];
+  const nextExpiry = rows.reduce((nearest, row) => Math.min(nearest, new Date(row.expires_at).getTime()), Infinity);
+  if (Number.isFinite(nextExpiry)) {
+    statusExpiryTimer = setTimeout(() => {
+      void loadStatuses().catch(error => announce("تعذر تحديث الحالات: " + error.message, "error"));
+    }, Math.max(1000, nextExpiry - Date.now() + 1000));
+  }
   const ids = [...new Set(rows.map(row => row.user_id))];
   let profiles = new Map();
   if (ids.length) {
@@ -964,6 +972,11 @@ $("#publish-status-button").addEventListener("click", async () => {
   } finally { button.disabled = false; }
 });
 async function openStatusViewer(row, name, trigger) {
+  if (new Date(row.expires_at).getTime() <= Date.now()) {
+    await loadStatuses();
+    announce("انتهت صلاحية هذه الحالة.");
+    return;
+  }
   statusViewerReturnFocus = trigger; activeViewedStatus = row;
   $("#status-viewer-content").replaceChildren(); $("#status-viewer-views").replaceChildren();
   $("#status-viewer-caption").textContent = row.content || "";
