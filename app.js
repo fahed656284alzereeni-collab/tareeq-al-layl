@@ -304,6 +304,12 @@ function formatLastSeen(value) {
 }
 function updateChatPartnerPresence() {
   if (!activePartner || !chatPartnerPresence) return;
+  if (activeConversation?.is_group) {
+    chatPartnerPresence.textContent = "مجموعة";
+    chatPartnerPresence.classList.remove("is-online", "is-offline");
+    chatPartnerAccessible.setAttribute("aria-label", `${chatPartnerName.textContent}، مجموعة`);
+    return;
+  }
   const online = onlineUserIds.has(activePartner.id);
   chatPartnerPresence.textContent = online ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt);
   chatPartnerPresence.classList.toggle("is-online", online);
@@ -1232,13 +1238,15 @@ async function startVoiceCall() {
       readyUsers: new Set([currentUser.id]), pendingOffers: new Map(), pendingIce: new Map()
     };
     updateVoiceCallPanel();
+    voiceCallEndButton.focus();
     setVoiceCallStatus("جارٍ الاتصال بالمشاركين…");
     await Promise.all(participants.map(id => sendCallSignal("invite", id, {
       participants: [...participantSet], initiatorId: currentUser.id
     })));
     await sendCallSignalToAll("ready");
   } catch (error) {
-    await finishVoiceCall();
+    if (activeCall) await endVoiceCall(true);
+    else await finishVoiceCall();
     announce("تعذر بدء المكالمة: " + (error.message || "تحقق من إذن الميكروفون."), "error");
   } finally {
     voiceCallButton.disabled = false;
@@ -1379,6 +1387,7 @@ async function acceptVoiceCall() {
     activeCall.accepted = true;
     activeCall.readyUsers.add(currentUser.id);
     updateVoiceCallPanel();
+    voiceCallMuteButton.focus();
     setVoiceCallStatus("تم الانضمام. جارٍ توصيل الصوت…");
     await sendCallSignalToAll("ready");
     for (const [peerId, description] of [...activeCall.pendingOffers]) {
