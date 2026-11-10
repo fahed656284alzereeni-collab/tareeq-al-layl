@@ -885,3 +885,82 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 .danger-button{min-height:48px;padding:11px 15px;border:1px solid #a44e59;border-radius:11px;background:#542631;color:#fff;font:inherit;font-weight:750;text-align:right}
 .danger-button:hover{background:#71313d}
 .conversation-info-tools .danger-button{width:100%}
+
+
+/* Conversation name is the information control; keep it clear for keyboard and VoiceOver. */
+.chat-partner-heading {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  text-align: right;
+  cursor: pointer;
+  font: inherit;
+}
+.chat-partner-heading:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 5px;
+  border-radius: 8px;
+}
+.chat-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+.voice-call-panel[hidden] { display: none !important; }
+.voice-call-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483200;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: #0b1425;
+  color: #f5f7ff;
+}
+.voice-call-card {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  padding: max(28px, env(safe-area-inset-top)) clamp(20px, 5vw, 48px) max(28px, env(safe-area-inset-bottom));
+}
+#voice-call-status {
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+.voice-call-participants {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 18px;
+}
+.voice-call-participant {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid #49658b;
+  border-radius: 13px;
+  background: #172945;
+  overflow-wrap: anywhere;
+}
+.voice-call-audio { display: none; }
+.voice-call-card > button {
+  width: 100%;
+  min-height: 58px;
+  flex: 0 0 auto;
+  text-align: right;
+}
+:root[data-theme="light"] .voice-call-panel { background: #f4f7fc; color: #20334d; }
+:root[data-theme="light"] .voice-call-participant { background: #fff; color: #20334d; border-color: #bdcde1; }
+@media (max-width: 720px) {
+  .chat-actions { width: 100%; }
+  .chat-actions > button { flex: 1 1 auto; }
+}
