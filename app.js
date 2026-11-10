@@ -666,7 +666,7 @@ $("#open-account-settings").addEventListener("click", () => { settingsHome.hidde
 $("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
 accountLogoutButton.addEventListener("click", async () => {
   accountLogoutButton.disabled = true;
-  const { error } = await supabase.auth.signOut();
+  const { error } = await supabase.auth.signOut({ scope: "local" });
   if (error) announce("تعذر تسجيل الخروج: " + error.message, "error");
   else {
     settingsPanel.hidden = true;
