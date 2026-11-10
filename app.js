@@ -161,6 +161,16 @@ const messageForm = $("#message-form");
 const messageInput = $("#message-input");
 const sendButton = $("#send-button");
 const attachButton = $("#attach-button");
+const scheduledMessagesButton = $("#scheduled-messages-button");
+const scheduledMessagesPanel = $("#scheduled-messages-panel");
+const closeScheduledMessagesButton = $("#close-scheduled-messages");
+const scheduledMessagesList = $("#scheduled-messages-list");
+const messageSchedulePanel = $("#message-schedule-panel");
+const closeMessageScheduleButton = $("#close-message-schedule");
+const messageScheduleTimeInput = $("#message-schedule-time");
+const messageSchedulePreview = $("#message-schedule-preview");
+const confirmMessageScheduleButton = $("#confirm-message-schedule");
+const messageScheduleHelp = $("#message-schedule-help");
 const attachmentChooser = $("#attachment-chooser");
 const closeAttachmentChooserButton = $("#close-attachment-chooser");
 const imageFileInput = $("#image-file-input");
@@ -1304,6 +1314,8 @@ async function selectConversation(conversation, person) {
   bottomNavigation.hidden = true;
   conversationInfoPanel.hidden = true;
   document.body.classList.remove("conversation-info-fullscreen");
+  messageSchedulePanel.hidden = true;
+  scheduledMessagesPanel.hidden = true;
   await loadMessages();
   await updateConversationInfo();
   await markConversationNotificationsRead(conversation.id);
@@ -1361,6 +1373,7 @@ function updateBlockedControls(){
   messageInput.disabled=blocked;
   sendButton.disabled=blocked;
   attachButton.disabled=blocked;
+  if (confirmMessageScheduleButton) confirmMessageScheduleButton.disabled=blocked;
   voiceCallButton.disabled=blocked;
   messageInput.placeholder=blocked?"لا يمكن إرسال الرسائل بسبب الحظر.":"اكتب رسالتك هنا…";
   blockPersonButton.textContent=activeBlockState.blockedByMe?"إلغاء الحظر":activeBlockState.blockedByThem?"هذا الشخص حظرك":"حظر الشخص";
@@ -1732,6 +1745,8 @@ backToChatsButton.addEventListener("click", async () => {
   chatView.hidden = true;
   chatEmpty.hidden = false;
   conversationInfoPanel.hidden = true;
+  messageSchedulePanel.hidden = true;
+  scheduledMessagesPanel.hidden = true;
   document.body.classList.remove("conversation-info-fullscreen");
   peopleSearch.focus();
 });
@@ -2262,6 +2277,187 @@ async function loadMessages() {
 }
 cancelReplyButton.addEventListener("click", () => { replyingToMessage = null; replyingTo.hidden = true; messageInput.focus(); });
 $("#refresh-chat").addEventListener("click", () => { void loadMessages(); });
+
+function localDateTimeValue(date) {
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+  return local.toISOString().slice(0, 16);
+}
+function currentMessageBody() {
+  const typedBody = messageInput.value.trim();
+  return typedBody ? (replyingToMessage ? "ردًا على: " + replyingToMessage.body + "\n\n" + typedBody : typedBody) : "";
+}
+function openMessageSchedulePanel() {
+  if (!activeConversation || !currentUser) return;
+  if (isPrivateConversationBlocked()) {
+    announce("لا يمكنك جدولة رسائل في هذه المحادثة بسبب الحظر.", "error");
+    return;
+  }
+  const body = currentMessageBody();
+  if (!body) {
+    announce("اكتب الرسالة أولًا ثم اضغط مطولًا على زر الإرسال لجدولتها.", "error");
+    messageInput.focus();
+    return;
+  }
+  const minDate = new Date(Date.now() + 60 * 1000);
+  const defaultDate = new Date(Date.now() + 10 * 60 * 1000);
+  messageScheduleTimeInput.min = localDateTimeValue(minDate);
+  messageScheduleTimeInput.value = localDateTimeValue(defaultDate);
+  messageSchedulePreview.textContent = body;
+  messageScheduleHelp.textContent = "اختر التاريخ والوقت، وسيتم إرسال الرسالة تلقائيًا حتى لو أغلقت مرسال.";
+  messageSchedulePanel.hidden = false;
+  closeMessageScheduleButton.focus();
+}
+function closeMessageSchedulePanel() {
+  messageSchedulePanel.hidden = true;
+  sendButton.focus();
+}
+closeMessageScheduleButton.addEventListener("click", closeMessageSchedulePanel);
+messageSchedulePanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeMessageSchedulePanel();
+  }
+});
+confirmMessageScheduleButton.addEventListener("click", async () => {
+  if (!activeConversation || !currentUser) return;
+  const body = currentMessageBody();
+  const scheduledAt = new Date(messageScheduleTimeInput.value);
+  if (!body) {
+    announce("اكتب الرسالة أولًا.", "error");
+    closeMessageSchedulePanel();
+    messageInput.focus();
+    return;
+  }
+  if (!messageScheduleTimeInput.value || Number.isNaN(scheduledAt.getTime()) || scheduledAt.getTime() <= Date.now() + 30000) {
+    messageScheduleHelp.textContent = "اختر وقتًا لاحقًا من الوقت الحالي بدقيقة على الأقل.";
+    messageScheduleTimeInput.focus();
+    return;
+  }
+  if (isPrivateConversationBlocked()) {
+    announce("لا يمكنك جدولة رسائل في هذه المحادثة بسبب الحظر.", "error");
+    return;
+  }
+  confirmMessageScheduleButton.disabled = true;
+  try {
+    const { error } = await supabase.from("scheduled_messages").insert({
+      conversation_id: activeConversation.id,
+      sender_id: currentUser.id,
+      body,
+      scheduled_at: scheduledAt.toISOString()
+    });
+    if (error) throw error;
+    messageInput.value = "";
+    replyingToMessage = null;
+    replyingTo.hidden = true;
+    closeMessageSchedulePanel();
+    announce("تمت جدولة الرسالة.", "success");
+  } catch (error) {
+    messageScheduleHelp.textContent = "تعذرت جدولة الرسالة: " + (error.message || "حاول مرة أخرى.");
+  } finally {
+    confirmMessageScheduleButton.disabled = isPrivateConversationBlocked();
+  }
+});
+async function loadScheduledMessages() {
+  if (!activeConversation || !currentUser) return;
+  scheduledMessagesList.replaceChildren();
+  const { data, error } = await supabase.from("scheduled_messages")
+    .select("id,body,scheduled_at,status")
+    .eq("conversation_id", activeConversation.id)
+    .eq("sender_id", currentUser.id)
+    .eq("status", "pending")
+    .order("scheduled_at", { ascending: true });
+  if (error) {
+    scheduledMessagesList.append(safeText("li", "empty-item", "تعذر تحميل الرسائل المجدولة: " + error.message));
+    return;
+  }
+  if (!data?.length) {
+    scheduledMessagesList.append(safeText("li", "empty-item", "لا توجد رسائل مجدولة في هذه المحادثة."));
+    return;
+  }
+  for (const scheduled of data) {
+    const item = document.createElement("li");
+    item.className = "scheduled-message-item";
+    const body = safeText("p", "scheduled-message-body", scheduled.body);
+    const time = safeText("p", "scheduled-message-time", "موعد الإرسال: " + new Intl.DateTimeFormat("ar-JO", { dateStyle: "long", timeStyle: "short" }).format(new Date(scheduled.scheduled_at)));
+    const cancel = safeText("button", "danger-button", "إلغاء الجدولة");
+    cancel.type = "button";
+    cancel.addEventListener("click", async () => {
+      cancel.disabled = true;
+      const { data: updated, error: updateError } = await supabase.from("scheduled_messages")
+        .update({ status: "cancelled" })
+        .eq("id", scheduled.id)
+        .eq("sender_id", currentUser.id)
+        .eq("status", "pending")
+        .select("id")
+        .maybeSingle();
+      if (updateError || !updated) {
+        cancel.disabled = false;
+        announce("تعذر إلغاء جدولة الرسالة: " + (updateError?.message || "ربما حان موعد إرسالها."), "error");
+        return;
+      }
+      announce("تم إلغاء جدولة الرسالة.", "success");
+      await loadScheduledMessages();
+    });
+    item.append(body, time, cancel);
+    scheduledMessagesList.append(item);
+  }
+}
+scheduledMessagesButton.addEventListener("click", async () => {
+  if (!activeConversation) return;
+  scheduledMessagesPanel.hidden = false;
+  await loadScheduledMessages();
+  closeScheduledMessagesButton.focus();
+});
+closeScheduledMessagesButton.addEventListener("click", () => {
+  scheduledMessagesPanel.hidden = true;
+  scheduledMessagesButton.focus();
+});
+scheduledMessagesPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    scheduledMessagesPanel.hidden = true;
+    scheduledMessagesButton.focus();
+  }
+});
+let sendLongPressTimer = null;
+let suppressScheduledSendClick = false;
+function clearSendLongPress() {
+  if (sendLongPressTimer !== null) clearTimeout(sendLongPressTimer);
+  sendLongPressTimer = null;
+}
+sendButton.addEventListener("pointerdown", event => {
+  if (sendButton.disabled || event.button !== 0) return;
+  suppressScheduledSendClick = false;
+  clearSendLongPress();
+  sendLongPressTimer = window.setTimeout(() => {
+    suppressScheduledSendClick = true;
+    openMessageSchedulePanel();
+  }, 650);
+});
+for (const eventName of ["pointerup", "pointercancel", "pointerleave"]) {
+  sendButton.addEventListener(eventName, clearSendLongPress);
+}
+sendButton.addEventListener("contextmenu", event => {
+  event.preventDefault();
+  clearSendLongPress();
+  suppressScheduledSendClick = true;
+  openMessageSchedulePanel();
+});
+sendButton.addEventListener("keydown", event => {
+  if (event.key === "ContextMenu" || (event.altKey && event.key === "ArrowDown") || (event.shiftKey && event.key === "F10")) {
+    event.preventDefault();
+    suppressScheduledSendClick = true;
+    openMessageSchedulePanel();
+  }
+});
+sendButton.addEventListener("click", event => {
+  if (suppressScheduledSendClick) {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    suppressScheduledSendClick = false;
+  }
+});
+
 
 function closeAttachmentChooser() {
   attachmentChooser.hidden = true;
