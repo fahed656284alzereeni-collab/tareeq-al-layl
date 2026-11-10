@@ -79,6 +79,7 @@ const groupAddPeople = $("#group-add-people");
 const groupAddSelectedButton = $("#group-add-selected");
 const groupMemberList = $("#group-member-list");
 const groupLeaveButton = $("#group-leave");
+const groupDeleteEveryoneButton = $("#group-delete-everyone");
 const voiceCallButton = $("#voice-call-button");
 const voiceCallPanel = $("#voice-call-panel");
 const voiceCallStatus = $("#voice-call-status");
@@ -930,7 +931,7 @@ async function updateConversationInfo() {
   setConversationInfoValue(conversationInfoCount, "جارٍ التحميل…");
   conversationSearchArea.hidden = true; conversationSearchInput.value = ""; conversationSearchResults.replaceChildren();
   conversationSearchStatus.textContent = "اكتب كلمة لعرض النتائج.";
-  groupAdminTools.hidden = !isAdmin; groupLeaveButton.hidden = !isGroup || isAdmin;
+  groupAdminTools.hidden = !isAdmin; groupLeaveButton.hidden = !isGroup; groupDeleteEveryoneButton.hidden = !isAdmin;
   groupMemberList.replaceChildren(); groupAddPeople.replaceChildren(); groupAddSearch.value = "";
   selectedAdditionalMembers.clear(); groupRenameInput.value = activeConversation.group_name || "";
   const [{count,error},{data:preference,error:preferenceError}] = await Promise.all([
@@ -997,14 +998,36 @@ groupRenameSaveButton.addEventListener("click",async()=>{
   catch(error){announce("تعذر تغيير اسم المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{groupRenameSaveButton.disabled=false;}
 });
-groupLeaveButton.addEventListener("click",async()=>{
-  if(!activeConversation?.is_group||activeConversation.user_one===currentUser.id)return;
-  if(!window.confirm("هل تريد مغادرة هذه المجموعة؟ لن تظهر لك رسائلها بعد المغادرة."))return;
-  groupLeaveButton.disabled=true;
-  try{const id=activeConversation.id;const {error}=await supabase.from("conversation_members").delete().eq("conversation_id",id).eq("user_id",currentUser.id);if(error)throw error;conversationInfoPanel.hidden=true;document.body.classList.remove("conversation-info-fullscreen","chat-fullscreen");workspace.classList.remove("chat-open");chatView.hidden=true;chatEmpty.hidden=false;activeConversation=null;activePartner=null;await loadConversations();announce("غادرت المجموعة.");}
-  catch(error){announce("تعذرت مغادرة المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}
-  finally{groupLeaveButton.disabled=false;}
-});
+async function deleteActiveGroup(deleteForEveryone){
+  if(!activeConversation?.is_group||!currentUser)return;
+  if(deleteForEveryone&&activeConversation.user_one!==currentUser.id)return;
+  const confirmation=deleteForEveryone
+    ?"سيتم حذف المجموعة نهائيًا من عند جميع الأعضاء، بما في ذلك الرسائل والملفات. لا يمكن التراجع. هل تريد المتابعة؟"
+    :"سيتم حذف المجموعة من قائمتك وإزالتك منها فقط. ستبقى المجموعة وباقي الرسائل متاحة للأعضاء الآخرين. هل تريد المتابعة؟";
+  if(!window.confirm(confirmation))return;
+  const button=deleteForEveryone?groupDeleteEveryoneButton:groupLeaveButton;
+  button.disabled=true;
+  try{
+    const id=activeConversation.id;
+    const result=await supabase.rpc("delete_group",{p_conversation_id:id,p_delete_for_everyone:deleteForEveryone});
+    if(result.error)throw result.error;
+    if(activeCall)await endVoiceCall(true);
+    if(messageChannel){await supabase.removeChannel(messageChannel);messageChannel=null;}
+    if(callChannel){await supabase.removeChannel(callChannel);callChannel=null;}
+    conversationInfoPanel.hidden=true;
+    document.body.classList.remove("conversation-info-fullscreen","chat-fullscreen");
+    workspace.classList.remove("chat-open");
+    chatView.hidden=true;chatEmpty.hidden=false;
+    activeConversation=null;activePartner=null;
+    await loadConversations();
+    announce(deleteForEveryone?"تم حذف المجموعة للجميع.":"تم حذف المجموعة من عندك.");
+  }catch(error){
+    announce("تعذر حذف المجموعة: "+(error.message||"حاول مرة أخرى."),"error");
+  }finally{button.disabled=false;}
+}
+groupLeaveButton.addEventListener("click",()=>{deleteActiveGroup(false);});
+groupDeleteEveryoneButton.addEventListener("click",()=>{deleteActiveGroup(true);});
+
 conversationInfoMuteButton.addEventListener("click",async()=>{
   if(!activeConversation||!currentUser)return;
   conversationInfoMuteButton.disabled=true;const muted=!activeConversationMuted;
