@@ -377,6 +377,8 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   statusView.hidden = true;
   statusComposerPanel.hidden = true;
   statusViewerPanel.hidden = true;
+  messageSchedulePanel.hidden = true;
+  scheduledMessagesPanel.hidden = true;
   if (statusExpiryTimer) clearTimeout(statusExpiryTimer);
   statusExpiryTimer = null;
   document.body.classList.remove("status-open");
@@ -2431,6 +2433,7 @@ sendButton.addEventListener("pointerdown", event => {
   clearSendLongPress();
   sendLongPressTimer = window.setTimeout(() => {
     suppressScheduledSendClick = true;
+    window.setTimeout(() => { suppressScheduledSendClick = false; }, 1000);
     openMessageSchedulePanel();
   }, 650);
 });
