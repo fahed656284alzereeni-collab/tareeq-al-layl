@@ -103,12 +103,12 @@
         <div id="chat-view" class="chat-view" hidden>
           <div class="chat-header">
             <button id="back-to-chats" type="button" class="quiet-button">العودة للمحادثات</button>
-            <div class="chat-partner-heading" id="chat-partner-accessible" role="group" tabindex="0" aria-live="polite" aria-label="">
+            <button id="chat-partner-accessible" class="chat-partner-heading" type="button" aria-live="polite" aria-label="">
               <span id="chat-partner-name" class="chat-partner-name" aria-hidden="true"></span>
               <span id="chat-partner-presence" class="chat-partner-presence" aria-hidden="true"></span>
-            </div>
+            </button>
             <div class="chat-actions">
-              <button id="conversation-info-toggle" type="button" class="quiet-button" aria-controls="conversation-info">معلومات المحادثة</button>
+              <button id="voice-call-button" type="button" class="quiet-button">اتصال صوتي</button>
               <button id="refresh-chat" type="button" class="quiet-button">تحديث الرسائل</button>
             </div>
           </div>
@@ -168,6 +168,17 @@
         <div id="group-chat-view" hidden><label for="group-name">اسم المجموعة</label><input id="group-name" type="text" maxlength="60" placeholder="اكتب اسم المجموعة"><label for="group-people-search">ابحث عن أعضاء</label><input id="group-people-search" type="search" placeholder="اكتب اسم الشخص" autocomplete="off"><ul id="group-people-list" class="people-list" aria-label="اختيار أعضاء المجموعة"></ul><button id="create-group-button" type="button" class="primary-button">إنشاء المجموعة</button></div>
       </div>
     </section>
+  <section id="voice-call-panel" class="voice-call-panel" role="dialog" aria-modal="true" aria-label="المكالمة الصوتية" hidden>
+    <div class="voice-call-card">
+      <p id="voice-call-status" role="status" aria-live="polite">جارٍ تجهيز المكالمة…</p>
+      <ul id="voice-call-participants" class="voice-call-participants"></ul>
+      <div id="voice-call-audio" class="voice-call-audio" aria-hidden="true"></div>
+      <button id="voice-call-accept" type="button" class="primary-button" hidden>الرد على المكالمة</button>
+      <button id="voice-call-reject" type="button" class="danger-button" hidden>رفض المكالمة</button>
+      <button id="voice-call-mute" type="button" class="quiet-button" hidden>كتم الميكروفون</button>
+      <button id="voice-call-end" type="button" class="danger-button" hidden>إنهاء المكالمة</button>
+    </div>
+  </section>
   <section id="delete-account-panel" class="delete-account-panel" role="dialog" aria-modal="true" aria-label="تأكيد حذف الحساب" hidden>
     <div class="delete-account-card">
       <button id="close-delete-account" type="button" class="quiet-button">إغلاق</button>
@@ -178,7 +189,7 @@
       <button id="cancel-delete-account" type="button" class="quiet-button">إلغاء</button>
     </div>
   </section>
-  <div class="brand-tagline"><p>مرسال · تواصل بوضوح واحترام</p></div><section id="attachment-chooser" class="attachment-chooser" role="dialog" aria-modal="true" aria-label="إرفاق ملف" hidden>
+  <section id="attachment-chooser" class="attachment-chooser" role="dialog" aria-modal="true" aria-label="إرفاق ملف" hidden>
     <div class="attachment-chooser-card">
       <button id="close-attachment-chooser" type="button" class="quiet-button">إغلاق</button>
       <button id="choose-images" type="button" class="attachment-choice">إرسال الصور</button>
