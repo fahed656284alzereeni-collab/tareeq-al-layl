@@ -1428,16 +1428,22 @@ async function loadGroupManagement(){
   const permissions=await getCurrentGroupPermissions();
   const {data:members,error}=await supabase.from("conversation_members").select("user_id,role").eq("conversation_id",activeConversation.id);
   if(error){announce("تعذر تحميل أعضاء المجموعة: "+error.message,"error");return;}
-  activeGroupMemberIds=new Set((members||[]).map(member=>member.user_id));
+  // The group creator is a participant even when they do not have a row in conversation_members.
+  const displayMembers=[...(members||[])];
+  const ownerId=activeConversation.user_one;
+  if(ownerId&&!displayMembers.some(member=>member.user_id===ownerId)){
+    displayMembers.unshift({user_id:ownerId,role:"owner"});
+  }
+  activeGroupMemberIds=new Set(displayMembers.map(member=>member.user_id));
   if (activeConversation?.id) {
-    activeGroupMemberCount = members?.length || 0;
+    activeGroupMemberCount = displayMembers.length;
     updateGroupHeaderAccessibleLabel();
   }
   const ids=[...activeGroupMemberIds];let profiles=[];
   if(ids.length){const result=await supabase.from("profiles").select("id,display_name").in("id",ids);if(result.error){announce("تعذر تحميل أسماء الأعضاء.","error");return;}profiles=result.data||[];}
   const profileMap=new Map(profiles.map(profile=>[profile.id,profile]));groupMemberList.replaceChildren();
-  for(const member of members||[]){
-    const isSelf=member.user_id===currentUser.id,isGroupOwner=member.user_id===activeConversation.user_one;
+  for(const member of displayMembers){
+    const isSelf=member.user_id===currentUser.id,isGroupOwner=member.user_id===ownerId;
     const name=profileMap.get(member.user_id)?.display_name||"مستخدم مرسال";
     const roleLabel=isGroupOwner?"منشئ المجموعة":member.role==="admin"?"مشرف":"عضو";
     const item=document.createElement("li");
