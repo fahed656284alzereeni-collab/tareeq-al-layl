@@ -66,6 +66,15 @@ let lastSeenHeartbeat = null;
 const conversationInfoStatus = $("#conversation-info-status");
 const conversationInfoCreated = $("#conversation-info-created");
 const conversationInfoCount = $("#conversation-info-count");
+const conversationInfoNameLabel = $("#conversation-info-name-label");
+const conversationInfoStatusRow = $("#conversation-info-status-row");
+const conversationInfoSearchButton = $("#conversation-info-search");
+const conversationInfoExportButton = $("#conversation-info-export");
+const conversationInfoCopyNameButton = $("#conversation-info-copy-name");
+const conversationSearchArea = $("#conversation-search-area");
+const conversationSearchInput = $("#conversation-search-input");
+const conversationSearchStatus = $("#conversation-search-status");
+const conversationSearchResults = $("#conversation-search-results");
 const messagesList = $("#messages");
 const messageForm = $("#message-form");
 const messageInput = $("#message-input");
@@ -871,22 +880,139 @@ function setConversationInfoValue(element, value) {
 
 async function updateConversationInfo() {
   if (!activeConversation || !activePartner) return;
-  setConversationInfoValue(conversationInfoName, displayName(activePartner));
-  setConversationInfoValue(conversationInfoStatus, onlineUserIds.has(activePartner.id) ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt));
+  const isGroup = Boolean(activeConversation.is_group);
+  const displayLabel = isGroup ? "اسم المجموعة" : "اسم الشخص";
+  conversationInfoNameLabel.textContent = displayLabel;
+  conversationInfoStatusRow.hidden = isGroup;
+  setConversationInfoValue(conversationInfoName, isGroup
+    ? (activeConversation.group_name || "مجموعة")
+    : displayName(activePartner));
+  if (!isGroup) {
+    setConversationInfoValue(conversationInfoStatus, onlineUserIds.has(activePartner.id)
+      ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt));
+  }
   const createdAt = activeConversation.created_at;
   setConversationInfoValue(conversationInfoCreated, createdAt
     ? new Date(createdAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" })
     : "غير متوفر");
   setConversationInfoValue(conversationInfoCount, "جارٍ التحميل…");
+  conversationSearchArea.hidden = true;
+  conversationSearchInput.value = "";
+  conversationSearchResults.replaceChildren();
+  conversationSearchStatus.textContent = "اكتب كلمة لعرض النتائج.";
+  conversationInfoCopyNameButton.textContent = isGroup ? "نسخ اسم المجموعة" : "نسخ اسم الشخص";
   const { count, error } = await supabase.from("messages")
     .select("id", { count: "exact", head: true })
     .eq("conversation_id", activeConversation.id);
-  if (error) {
-    setConversationInfoValue(conversationInfoCount, "تعذر تحميل العدد");
-  } else {
-    setConversationInfoValue(conversationInfoCount, new Intl.NumberFormat("ar-JO").format(count || 0));
-  }
+  if (error) setConversationInfoValue(conversationInfoCount, "تعذر تحميل العدد");
+  else setConversationInfoValue(conversationInfoCount, new Intl.NumberFormat("ar-JO").format(count || 0));
 }
+conversationInfoSearchButton.addEventListener("click", () => {
+  conversationSearchArea.hidden = false;
+  conversationSearchInput.focus();
+});
+conversationSearchInput.addEventListener("input", () => {
+  const term = conversationSearchInput.value.trim().toLocaleLowerCase();
+  conversationSearchResults.replaceChildren();
+  if (!term) {
+    conversationSearchStatus.textContent = "اكتب كلمة لعرض النتائج.";
+    return;
+  }
+  const matches = [...messagesList.querySelectorAll(".message")].filter(item => {
+    const text = [...item.querySelectorAll(".message-body, .attachment-file-name")]
+      .map(node => node.textContent || "").join(" ").toLocaleLowerCase();
+    return text.includes(term);
+  });
+  conversationSearchStatus.textContent = matches.length
+    ? "عدد النتائج: " + new Intl.NumberFormat("ar-JO").format(matches.length)
+    : "لا توجد نتائج ضمن الرسائل المحمّلة حاليًا.";
+  for (const item of matches) {
+    const messageText = [...item.querySelectorAll(".message-body, .attachment-file-name")]
+      .map(node => node.textContent || "").join(" ").trim() || "مرفق";
+    const time = item.querySelector(".message-time")?.textContent || "";
+    const result = document.createElement("li");
+    const button = safeText("button", "conversation-search-result", messageText.slice(0, 180) + (time ? "، " + time : ""));
+    button.type = "button";
+    button.addEventListener("click", () => {
+      conversationInfoPanel.hidden = true;
+      document.body.classList.remove("conversation-info-fullscreen");
+      item.tabIndex = -1;
+      item.scrollIntoView({ behavior: "smooth", block: "center" });
+      item.focus();
+    });
+    result.append(button);
+    conversationSearchResults.append(result);
+  }
+});
+conversationInfoCopyNameButton.addEventListener("click", async () => {
+  const value = activeConversation?.is_group
+    ? (activeConversation.group_name || "مجموعة")
+    : displayName(activePartner);
+  try {
+    await navigator.clipboard.writeText(value);
+    announce("تم نسخ الاسم.");
+  } catch {
+    announce("تعذر نسخ الاسم من هذا المتصفح.", "error");
+  }
+});
+conversationInfoExportButton.addEventListener("click", async () => {
+  if (!activeConversation || !currentUser) return;
+  conversationInfoExportButton.disabled = true;
+  try {
+    const { data, error } = await supabase.from("messages")
+      .select("id,sender_id,body,created_at,is_deleted")
+      .eq("conversation_id", activeConversation.id)
+      .order("created_at", { ascending: true })
+      .limit(200);
+    if (error) throw error;
+    const rows = data || [];
+    const { data: hiddenRows, error: hiddenError } = await supabase.from("message_hidden_for")
+      .select("message_id").eq("user_id", currentUser.id);
+    if (hiddenError) throw hiddenError;
+    const hiddenIds = new Set((hiddenRows || []).map(row => row.message_id));
+    const visible = rows.filter(row => !hiddenIds.has(row.id));
+    const senderIds = [...new Set(visible.map(row => row.sender_id).filter(Boolean))];
+    let names = new Map();
+    if (senderIds.length) {
+      const { data: profiles, error: profileError } = await supabase.from("profiles")
+        .select("id,display_name").in("id", senderIds);
+      if (profileError) throw profileError;
+      names = new Map((profiles || []).map(profile => [profile.id, profile.display_name || "مستخدم مرسال"]));
+    }
+    const title = activeConversation.is_group
+      ? (activeConversation.group_name || "مجموعة")
+      : displayName(activePartner);
+    const lines = ["مرسال - " + title, "آخر " + visible.length + " رسالة", ""];
+    for (const message of visible) {
+      const date = new Date(message.created_at).toLocaleString("ar-JO");
+      let body = message.is_deleted ? "تم حذف هذه الرسالة." : (message.body || "");
+      const marker = "MERSAL_ATTACHMENT:";
+      const markerIndex = body.indexOf(marker);
+      if (markerIndex >= 0) {
+        try {
+          const attachment = JSON.parse(body.slice(markerIndex + marker.length));
+          body = "[مرفق: " + (attachment.name || "ملف") + "]";
+        } catch { body = "[مرفق]"; }
+      }
+      const sender = message.sender_id === currentUser.id ? "أنت" : (names.get(message.sender_id) || "مستخدم مرسال");
+      lines.push(date + " — " + sender + ": " + body);
+    }
+    const blob = new Blob(["\uFEFF" + lines.join("\n")], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "mersal-conversation-" + new Date().toISOString().slice(0, 10) + ".txt";
+    document.body.append(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(url), 2000);
+    announce("تم تجهيز سجل المحادثة.");
+  } catch (error) {
+    announce("تعذر تجهيز سجل المحادثة: " + (error.message || "حاول مرة أخرى."), "error");
+  } finally {
+    conversationInfoExportButton.disabled = false;
+  }
+});
 backToChatsButton.addEventListener("click", () => {
   document.body.classList.remove("chat-fullscreen");
   workspace.classList.remove("chat-open");
