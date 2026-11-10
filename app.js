@@ -58,13 +58,9 @@ const notificationCount = $("#notification-count");
 
 function setActiveBottomTab(tab) {
   if (!homeTabButton || !settingsTabButton) return;
-  if (tab === "settings") {
-    homeTabButton.removeAttribute("aria-current");
-    settingsTabButton.setAttribute("aria-current", "page");
-  } else {
-    settingsTabButton.removeAttribute("aria-current");
-    homeTabButton.setAttribute("aria-current", "page");
-  }
+  const settingsActive = tab === "settings";
+  homeTabButton.setAttribute("aria-selected", String(!settingsActive));
+  settingsTabButton.setAttribute("aria-selected", String(settingsActive));
 }
 
 function returnToHomeTab() {
