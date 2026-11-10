@@ -2440,13 +2440,11 @@ for (const eventName of ["pointerup", "pointercancel", "pointerleave"]) {
 sendButton.addEventListener("contextmenu", event => {
   event.preventDefault();
   clearSendLongPress();
-  suppressScheduledSendClick = true;
   openMessageSchedulePanel();
 });
 sendButton.addEventListener("keydown", event => {
   if (event.key === "ContextMenu" || (event.altKey && event.key === "ArrowDown") || (event.shiftKey && event.key === "F10")) {
     event.preventDefault();
-    suppressScheduledSendClick = true;
     openMessageSchedulePanel();
   }
 });
