@@ -183,6 +183,90 @@ function closeAttachmentViewer() {
   attachmentViewerContent.replaceChildren();
   if (attachmentViewerReturnFocus?.isConnected) attachmentViewerReturnFocus.focus();
 }
+
+function createInlineVideoPlayer(media, label) {
+  const player = document.createElement("div");
+  player.className = "inline-video-player";
+  media.controls = false;
+  media.playsInline = true;
+  media.preload = "metadata";
+  media.disablePictureInPicture = true;
+  media.disableRemotePlayback = true;
+  media.setAttribute("playsinline", "");
+  media.setAttribute("webkit-playsinline", "");
+  media.setAttribute("controlslist", "nodownload noremoteplayback nofullscreen");
+  media.setAttribute("aria-label", label);
+  media.classList.add("inline-video-media");
+
+  const controls = document.createElement("div");
+  controls.className = "inline-video-controls";
+  const rewind = safeText("button", "inline-video-action", "ترجيع 10 ثوانٍ");
+  rewind.type = "button";
+  rewind.setAttribute("aria-label", "ترجيع 10 ثوانٍ في " + label);
+  const play = safeText("button", "inline-video-action", "تشغيل");
+  play.type = "button";
+  play.setAttribute("aria-label", "تشغيل " + label);
+  const forward = safeText("button", "inline-video-action", "تقديم 10 ثوانٍ");
+  forward.type = "button";
+  forward.setAttribute("aria-label", "تقديم 10 ثوانٍ في " + label);
+  const seek = document.createElement("input");
+  seek.type = "range";
+  seek.min = "0";
+  seek.max = "0";
+  seek.step = "0.1";
+  seek.value = "0";
+  seek.className = "inline-video-seek";
+  seek.setAttribute("aria-label", "موضع التشغيل في " + label);
+  const time = safeText("span", "inline-video-time", "0:00 / 0:00");
+  time.setAttribute("aria-live", "off");
+
+  const formatTime = value => {
+    if (!Number.isFinite(value) || value < 0) value = 0;
+    const seconds = Math.floor(value);
+    return Math.floor(seconds / 60) + ":" + String(seconds % 60).padStart(2, "0");
+  };
+  const update = () => {
+    const duration = Number.isFinite(media.duration) ? media.duration : 0;
+    seek.max = String(duration);
+    seek.value = String(Math.min(media.currentTime || 0, duration));
+    time.textContent = formatTime(media.currentTime) + " / " + formatTime(duration);
+    const playing = !media.paused && !media.ended;
+    play.textContent = playing ? "إيقاف مؤقت" : "تشغيل";
+    play.setAttribute("aria-label", (playing ? "إيقاف " : "تشغيل ") + label);
+  };
+  rewind.addEventListener("click", () => {
+    media.currentTime = Math.max(0, (media.currentTime || 0) - 10);
+    update();
+  });
+  forward.addEventListener("click", () => {
+    const duration = Number.isFinite(media.duration) ? media.duration : Infinity;
+    media.currentTime = Math.min(duration, (media.currentTime || 0) + 10);
+    update();
+  });
+  play.addEventListener("click", async () => {
+    if (media.paused || media.ended) {
+      try { await media.play(); } catch { play.textContent = "تعذر التشغيل"; }
+    } else {
+      media.pause();
+    }
+    update();
+  });
+  seek.addEventListener("input", () => {
+    media.currentTime = Number(seek.value) || 0;
+    update();
+  });
+  media.addEventListener("loadedmetadata", update);
+  media.addEventListener("durationchange", update);
+  media.addEventListener("timeupdate", update);
+  media.addEventListener("play", update);
+  media.addEventListener("pause", update);
+  media.addEventListener("ended", update);
+  controls.append(rewind, play, forward, seek, time);
+  player.append(media, controls);
+  update();
+  return player;
+}
+
 function openAttachmentViewer(url, type, name, trigger) {
   attachmentViewerReturnFocus = trigger;
   attachmentViewerContent.replaceChildren();
@@ -195,11 +279,9 @@ function openAttachmentViewer(url, type, name, trigger) {
     attachmentViewerContent.append(media);
   } else if (mime.startsWith("video/")) {
     const media = document.createElement("video");
-    media.src = url; media.controls = true; media.playsInline = true; media.preload = "metadata";
-    media.setAttribute("playsinline", ""); media.setAttribute("webkit-playsinline", "");
-    media.setAttribute("aria-label", "تشغيل الفيديو داخل مرسال");
+    media.src = url;
     media.className = "attachment-viewer-video";
-    attachmentViewerContent.append(media);
+    attachmentViewerContent.append(createInlineVideoPlayer(media, "الفيديو المرفق داخل المحادثة"));
   } else if (mime.startsWith("audio/")) {
     const media = document.createElement("audio");
     media.src = url; media.controls = true; media.preload = "metadata";
@@ -1039,10 +1121,8 @@ async function openStatusViewer(row, name, trigger) {
         $("#status-viewer-content").append(media);
       } else {
         const media = document.createElement("video"); media.src = signed.data.signedUrl;
-        media.controls = true; media.playsInline = true; media.preload = "metadata";
-        media.setAttribute("playsinline", ""); media.setAttribute("webkit-playsinline", "");
-        media.setAttribute("aria-label", "فيديو الحالة من " + name); media.className = "status-viewer-video";
-        $("#status-viewer-content").append(media);
+        media.className = "status-viewer-video";
+        $("#status-viewer-content").append(createInlineVideoPlayer(media, "فيديو الحالة من " + name));
       }
     }
   }
