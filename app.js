@@ -21,7 +21,6 @@ function finishStartup() {
   if (startupRetryButton) startupRetryButton.hidden = true;
 }
 const loginButton = $("#google-login");
-const settingsButton = $("#settings-button");
 const bottomNavigation = $("#bottom-navigation");
 const homeTabButton = $("#home-tab");
 const settingsTabButton = $("#settings-tab");
@@ -31,7 +30,6 @@ const displayNameInput = $("#settings-display-name");
 const textSizeSelect = $("#settings-text-size");
 const themeSelect = $("#settings-theme");
 const settingsEmail = $("#settings-email");
-const closeSettingsButton = $("#close-settings");
 const settingsHome = $("#settings-home");
 const accountSettingsView = $("#account-settings-view");
 const accountLogoutButton = $("#account-logout-button");
@@ -252,7 +250,6 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   settingsPanel.hidden = true;
   document.body.classList.remove("settings-open");
   bottomNavigation.hidden = true;
-  settingsButton.hidden = true;
   document.body.classList.remove("chat-fullscreen");
   workspace.classList.remove("chat-open");
   conversationInfoPanel.hidden = true;
@@ -302,7 +299,6 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   currentUser = session.user;
   authPanel.hidden = true;
   workspace.hidden = false;
-  settingsButton.hidden = false;
   bottomNavigation.hidden = false;
   setActiveBottomTab("home");
   account.textContent = "مرحبًا بك في مرسال · متصل الآن";
@@ -659,7 +655,6 @@ async function loadOwnProfile() {
   if (error) throw error;
   displayNameInput.value = data?.display_name || currentUser.email?.split("@")[0] || "";
 }
-settingsButton.addEventListener("click", openSettings);
 settingsTabButton.addEventListener("click", openSettings);
 homeTabButton.addEventListener("click", returnToHomeTab);
 $("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
@@ -721,12 +716,6 @@ settingsPanel.addEventListener("keydown", (event) => {
     setActiveBottomTab("home");
     settingsReturnFocus?.focus?.();
   }
-});
-closeSettingsButton.addEventListener("click", () => {
-  settingsPanel.hidden = true;
-  document.body.classList.remove("settings-open");
-  setActiveBottomTab("home");
-  if (settingsReturnFocus?.focus) settingsReturnFocus.focus();
 });
 textSizeSelect.addEventListener("change", () => {
   applyTextSize(textSizeSelect.value);
