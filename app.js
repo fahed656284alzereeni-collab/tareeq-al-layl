@@ -33,6 +33,10 @@ const statusTextInput = $("#status-text-input");
 const statusImageInput = $("#status-image-input");
 const statusVideoInput = $("#status-video-input");
 const settingsPanel = $("#settings-panel");
+const developerContactPanel = $("#developer-contact-panel");
+const openDeveloperContactButton = $("#open-developer-contact");
+const closeDeveloperContactButton = $("#close-developer-contact");
+let developerContactReturnFocus = null;
 const settingsForm = $("#settings-form");
 const displayNameInput = $("#settings-display-name");
 const textSizeSelect = $("#settings-text-size");
@@ -682,6 +686,24 @@ async function loadOwnProfile() {
   if (error) throw error;
   displayNameInput.value = data?.display_name || currentUser.email?.split("@")[0] || "";
 }
+openDeveloperContactButton.addEventListener("click", () => {
+  developerContactReturnFocus = document.activeElement;
+  developerContactPanel.hidden = false;
+  document.body.classList.add("developer-contact-open");
+  closeDeveloperContactButton.focus();
+});
+closeDeveloperContactButton.addEventListener("click", () => {
+  developerContactPanel.hidden = true;
+  document.body.classList.remove("developer-contact-open");
+  (developerContactReturnFocus || openDeveloperContactButton).focus();
+});
+developerContactPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    developerContactPanel.hidden = true;
+    document.body.classList.remove("developer-contact-open");
+    (developerContactReturnFocus || openDeveloperContactButton).focus();
+  }
+});
 settingsTabButton.addEventListener("click", openSettings);
 statusTabButton.addEventListener("click", openStatusTab);
 homeTabButton.addEventListener("click", returnToHomeTab);
