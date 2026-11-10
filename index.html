@@ -133,8 +133,8 @@
               <label for="group-rename-input">اسم المجموعة الجديد</label>
               <input id="group-rename-input" type="text" maxlength="60" autocomplete="off">
               <button id="group-rename-save" type="button" class="quiet-button">حفظ اسم المجموعة</button>
-              <ul id="group-member-list" class="people-list" aria-label="أعضاء المجموعة"></ul>
             </div>
+            <ul id="group-member-list" class="people-list group-member-list" aria-label="أعضاء المجموعة" hidden></ul>
             <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
             <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
             <div id="conversation-search-area" class="conversation-search-area" hidden>
@@ -142,6 +142,14 @@
               <input id="conversation-search-input" type="search" autocomplete="off" placeholder="اكتب كلمة للبحث">
               <p id="conversation-search-status" role="status" aria-live="polite">اكتب كلمة لعرض النتائج.</p>
               <ul id="conversation-search-results" class="conversation-search-results"></ul>
+            </div>
+          </section>
+          <section id="group-member-options-panel" class="group-member-options-panel" role="dialog" aria-modal="true" aria-label="خيارات عضو المجموعة" hidden>
+            <div class="group-member-options-card">
+              <button id="close-group-member-options" type="button" class="quiet-button">إغلاق</button>
+              <p id="group-member-options-name" class="group-member-options-name"></p>
+              <p id="group-member-options-role" class="group-member-options-role"></p>
+              <div id="group-member-options-actions" class="group-member-options-actions"></div>
             </div>
           </section>
           <section id="group-add-panel" class="group-add-panel" role="dialog" aria-modal="true" aria-label="إضافة أعضاء للمجموعة" hidden>
