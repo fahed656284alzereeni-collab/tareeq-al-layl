@@ -430,9 +430,6 @@ footer, body > div:last-child {
 :root[data-theme="light"] .settings-card {
   color: #17243a; border-color: #c5d2e3; background: #f7f9fc;
 }
-:root[data-theme="light"] .settings-heading {
-  background: #f7f9fc; border-color: #d1dce9;
-}
 :root[data-theme="light"] .settings-section {
   border-color: #c5d2e3; background: linear-gradient(145deg, #fff, #edf3fa);
   box-shadow: 0 12px 35px #29496b12;
