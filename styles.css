@@ -967,3 +967,13 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 
 .conversation-info > #group-leave,
 .conversation-info > #group-delete-everyone { display:block; width:100%; max-width:760px; min-height:54px; margin:12px auto 0; }
+
+/* Dedicated full-screen group member picker */
+.group-add-panel[hidden]{display:none!important}
+.group-add-panel{position:fixed;inset:0;z-index:2147483150;width:100vw;height:100vh;height:100dvh;overflow-y:auto;overscroll-behavior:contain;background:var(--surface,#111a2d);color:var(--text,#f5f7ff)}
+.group-add-card{box-sizing:border-box;display:flex;flex-direction:column;gap:16px;min-height:100%;padding:max(24px,env(safe-area-inset-top)) 18px max(24px,env(safe-area-inset-bottom))}
+.group-add-card>button{width:100%;min-height:58px;text-align:right}
+.group-add-card label{font-weight:800}
+.group-add-card input{box-sizing:border-box;width:100%;min-height:54px;padding:12px;border:1px solid var(--border);border-radius:11px;background:var(--surface-raised);color:var(--text);font:inherit}
+.group-add-card .people-list{flex:1 0 auto;max-width:760px;width:100%;margin:0 auto}
+:root[data-theme=light] .group-add-panel{background:#f4f7fc;color:#20334d}
