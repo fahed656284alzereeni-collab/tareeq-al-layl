@@ -83,6 +83,12 @@ const groupAddSearch = $("#group-add-search");
 const groupAddPeople = $("#group-add-people");
 const groupAddSelectedButton = $("#group-add-selected");
 const groupMemberList = $("#group-member-list");
+const groupMemberOptionsPanel = $("#group-member-options-panel");
+const closeGroupMemberOptionsButton = $("#close-group-member-options");
+const groupMemberOptionsName = $("#group-member-options-name");
+const groupMemberOptionsRole = $("#group-member-options-role");
+const groupMemberOptionsActions = $("#group-member-options-actions");
+let groupMemberOptionsReturnFocus = null;
 const groupLeaveButton = $("#group-leave");
 const groupDeleteEveryoneButton = $("#group-delete-everyone");
 const voiceCallButton = $("#voice-call-button");
@@ -985,7 +991,7 @@ async function updateConversationInfo() {
   setConversationInfoValue(conversationInfoCount, "جارٍ التحميل…");
   conversationSearchArea.hidden = true; conversationSearchInput.value = ""; conversationSearchResults.replaceChildren();
   conversationSearchStatus.textContent = "اكتب كلمة لعرض النتائج.";
-  groupAdminTools.hidden = !isAdmin; groupLeaveButton.hidden = !isGroup; groupDeleteEveryoneButton.hidden = !isOwner;
+  groupAdminTools.hidden = !isOwner; groupMemberList.hidden = !isGroup; groupLeaveButton.hidden = !isGroup; groupDeleteEveryoneButton.hidden = !isOwner;
   groupRenameInput.hidden = !isOwner; groupRenameInput.previousElementSibling.hidden = !isOwner; groupRenameSaveButton.hidden = !isOwner;
   groupMemberList.replaceChildren(); groupAddPeople.replaceChildren(); groupAddSearch.value = "";
   if(isGroup){activeBlockState={blockedByMe:false,blockedByThem:false};updateBlockedControls();}
@@ -1000,7 +1006,7 @@ async function updateConversationInfo() {
   if(preferenceError){activeConversationMuted=false;announce("تعذر تحميل إعداد الإشعارات لهذه المحادثة.","error");}
   else activeConversationMuted=Boolean(preference?.muted);
   conversationInfoMuteButton.textContent=activeConversationMuted?"تشغيل إشعارات المحادثة":"كتم إشعارات المحادثة";
-  if(isAdmin)await loadGroupManagement();
+  if(isGroup)await loadGroupManagement();
 }
 async function getCurrentGroupPermissions(){
   if(!activeConversation?.is_group||!currentUser)return {isOwner:false,isAdmin:false};
@@ -1013,7 +1019,6 @@ async function getCurrentGroupPermissions(){
 async function loadGroupManagement(){
   if(!activeConversation?.is_group||!currentUser)return;
   const permissions=await getCurrentGroupPermissions();
-  if(!permissions.isAdmin)return;
   const {data:members,error}=await supabase.from("conversation_members").select("user_id,role").eq("conversation_id",activeConversation.id);
   if(error){announce("تعذر تحميل أعضاء المجموعة: "+error.message,"error");return;}
   activeGroupMemberIds=new Set((members||[]).map(member=>member.user_id));
@@ -1023,24 +1028,13 @@ async function loadGroupManagement(){
   for(const member of members||[]){
     const isSelf=member.user_id===currentUser.id,isGroupOwner=member.user_id===activeConversation.user_one;
     const name=profileMap.get(member.user_id)?.display_name||"مستخدم مرسال";
-    const item=document.createElement("li"),roleLabel=isGroupOwner?"منشئ المجموعة":member.role==="admin"?"مشرف":"عضو";
-    item.append(safeText("span","group-member-name",name+(isSelf?" (أنت)":"")+"، "+roleLabel));
-    if(!isSelf&&!isGroupOwner){
-      const actions=document.createElement("div");actions.className="group-member-actions";
-      if(permissions.isOwner){
-        const roleButton=safeText("button","quiet-button group-member-action",member.role==="admin"?"إزالة صفة المشرف عن "+name:"تعيين "+name+" مشرفًا");
-        roleButton.type="button";roleButton.setAttribute("aria-label",roleButton.textContent);
-        roleButton.addEventListener("click",()=>{void manageGroupMember(member.user_id,name,member.role==="admin"?"demote":"promote");});
-        actions.append(roleButton);
-      }
-      if(permissions.isOwner||member.role!=="admin"){
-        const remove=safeText("button","danger-button group-member-remove","إزالة "+name+" من المجموعة");
-        remove.type="button";remove.setAttribute("aria-label",remove.textContent);
-        remove.addEventListener("click",()=>{void manageGroupMember(member.user_id,name,"remove");});
-        actions.append(remove);
-      }
-      item.append(actions);
-    }
+    const roleLabel=isGroupOwner?"منشئ المجموعة":member.role==="admin"?"مشرف":"عضو";
+    const item=document.createElement("li");
+    const memberButton=safeText("button","group-member-name",name+(isSelf?" (أنت)":""));
+    memberButton.type="button";
+    memberButton.setAttribute("aria-label","خيارات "+name+(isSelf?"، أنت":""));
+    memberButton.addEventListener("click",()=>openGroupMemberOptions(member.user_id,name,roleLabel,member.role,isGroupOwner,permissions,memberButton));
+    item.append(memberButton,safeText("span","group-member-role",roleLabel));
     groupMemberList.append(item);
   }
   renderGroupAddPeople();
@@ -1056,12 +1050,47 @@ function renderGroupAddPeople(){
     label.append(checkbox,document.createTextNode(displayName(person)));item.append(label);groupAddPeople.append(item);
   }
 }
+function openGroupMemberOptions(userId,name,roleLabel,role,isGroupOwner,permissions,returnFocus){
+  groupMemberOptionsReturnFocus=returnFocus;
+  groupMemberOptionsName.textContent=name;
+  groupMemberOptionsRole.textContent=roleLabel;
+  groupMemberOptionsActions.replaceChildren();
+  const isSelf=userId===currentUser?.id;
+  if(!isSelf&&!isGroupOwner){
+    if(permissions.isOwner){
+      const roleButton=safeText("button","quiet-button group-member-action",role==="admin"?"إزالة صفة المشرف":"تعيين مشرف");
+      roleButton.type="button";
+      roleButton.addEventListener("click",()=>{void manageGroupMember(userId,name,role==="admin"?"demote":"promote");});
+      groupMemberOptionsActions.append(roleButton);
+    }
+    if(permissions.isOwner||role!=="admin"){
+      const remove=safeText("button","danger-button group-member-remove","إزالة من المجموعة");
+      remove.type="button";
+      remove.addEventListener("click",()=>{void manageGroupMember(userId,name,"remove");});
+      groupMemberOptionsActions.append(remove);
+    }
+  }
+  if(!groupMemberOptionsActions.childElementCount){
+    groupMemberOptionsActions.append(safeText("p","group-member-no-actions","لا توجد إجراءات متاحة لهذا العضو."));
+  }
+  groupMemberOptionsPanel.hidden=false;
+  document.body.classList.add("group-member-options-fullscreen");
+  closeGroupMemberOptionsButton.focus();
+}
+function closeGroupMemberOptions(){
+  groupMemberOptionsPanel.hidden=true;
+  document.body.classList.remove("group-member-options-fullscreen");
+  if(groupMemberOptionsReturnFocus?.isConnected)groupMemberOptionsReturnFocus.focus();
+}
+closeGroupMemberOptionsButton.addEventListener("click",closeGroupMemberOptions);
+groupMemberOptionsPanel.addEventListener("keydown",event=>{if(event.key==="Escape")closeGroupMemberOptions();});
 async function manageGroupMember(userId,name,action){
   if(!activeConversation?.is_group||!currentUser)return;
   const prompts={promote:"هل تريد تعيين "+name+" مشرفًا في المجموعة؟",demote:"هل تريد إزالة صفة المشرف عن "+name+"؟",remove:"هل تريد إزالة "+name+" من المجموعة؟"};
   if(!window.confirm(prompts[action]||"تأكيد الإجراء؟"))return;
   const {error}=await supabase.rpc("manage_group_member",{p_conversation_id:activeConversation.id,p_target_user_id:userId,p_action:action});
   if(error){announce("تعذر تنفيذ الإجراء: "+(error.message||"حاول مرة أخرى."),"error");return;}
+  closeGroupMemberOptions();
   await loadGroupManagement();await loadConversations();
   announce(action==="promote"?"تم تعيينه مشرفًا.":action==="demote"?"تمت إزالة صفة المشرف.":"تمت إزالة العضو.");
 }
