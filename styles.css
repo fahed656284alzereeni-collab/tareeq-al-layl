@@ -1422,3 +1422,236 @@ input::placeholder, textarea::placeholder { color: #c4d0e2; opacity: 1; }
   .bottom-navigation { gap: 5px; padding-inline: 6px; }
   .chat-actions { grid-template-columns: minmax(0, 1fr); }
 }
+
+
+/* Complete button design system — one polished visual language across Mersal. */
+:root {
+  --button-height: 54px;
+  --button-radius: 15px;
+  --button-text: #f8fbff;
+  --button-muted-bg: linear-gradient(145deg, #263f63, #1a2e4b);
+  --button-muted-border: #7896bd;
+  --button-primary-bg: linear-gradient(120deg, #3f75b9 0%, #287d91 100%);
+  --button-primary-border: #a9d8f4;
+  --button-danger-bg: linear-gradient(120deg, #a53d4b, #762b3c);
+  --button-danger-border: #f0a2a9;
+  --button-shadow: 0 4px 12px #02081755, inset 0 1px #ffffff20;
+}
+button {
+  min-height: var(--button-height);
+  padding: 12px 18px;
+  border: 1px solid var(--button-muted-border);
+  border-radius: var(--button-radius);
+  background: var(--button-muted-bg);
+  color: var(--button-text);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  box-shadow: var(--button-shadow);
+  transition: background .16s ease, border-color .16s ease, box-shadow .16s ease, transform .16s ease, filter .16s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+button:hover:not(:disabled) {
+  border-color: #c4e0ff;
+  filter: brightness(1.12);
+  box-shadow: 0 7px 18px #02081766, inset 0 1px #ffffff2b;
+  transform: translateY(-1px);
+}
+button:active:not(:disabled) {
+  filter: brightness(.96);
+  box-shadow: 0 2px 6px #02081755, inset 0 2px 5px #02081744;
+  transform: translateY(1px);
+}
+button:focus-visible {
+  outline: 3px solid #ffe08a;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 2px #08111f, 0 0 0 6px #ffe08a55;
+}
+button:disabled {
+  opacity: .56;
+  cursor: not-allowed;
+  filter: grayscale(.25);
+  box-shadow: none;
+  transform: none;
+}
+button .icon, button svg { flex: 0 0 auto; }
+.primary-button {
+  min-height: 56px;
+  padding: 13px 21px;
+  border: 1px solid var(--button-primary-border);
+  border-radius: 16px;
+  background: var(--button-primary-bg);
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: .01em;
+  box-shadow: 0 5px 16px #174c7b66, inset 0 1px #ffffff44;
+}
+.primary-button:hover:not(:disabled) {
+  border-color: #e3f4ff;
+  background: linear-gradient(120deg, #528bd0, #3294a2);
+  filter: none;
+  box-shadow: 0 8px 22px #174c7b77, inset 0 1px #ffffff55;
+}
+.quiet-button {
+  border: 1px solid var(--button-muted-border);
+  border-radius: 14px;
+  background: var(--button-muted-bg);
+  color: #f8fbff;
+  font-weight: 700;
+}
+.quiet-button:hover:not(:disabled) {
+  background: linear-gradient(145deg, #34547e, #244365);
+}
+.danger-button {
+  border: 1px solid var(--button-danger-border);
+  border-radius: 14px;
+  background: var(--button-danger-bg);
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 4px 13px #4b101c66, inset 0 1px #ffffff2b;
+}
+.danger-button:hover:not(:disabled) {
+  border-color: #ffd5d8;
+  background: linear-gradient(120deg, #bd4b59, #923448);
+  filter: none;
+}
+.person-button, .conversation-button {
+  min-height: 62px;
+  padding: 13px 16px;
+  border: 1px solid #607fa8;
+  border-radius: 15px;
+  background: linear-gradient(115deg, #233b5b, #192d49);
+  color: #f8fbff;
+  font-weight: 700;
+  box-shadow: 0 3px 10px #02081744, inset 0 1px #ffffff12;
+}
+.person-button:hover:not(:disabled), .conversation-button:hover:not(:disabled) {
+  border-color: #b9d9ff;
+  background: linear-gradient(115deg, #31547e, #234765);
+}
+.settings-menu-button, .attachment-choice, .message-option-button,
+.message-options-toggle, .conversation-search-result, .status-entry,
+.inline-video-action, .group-member-action, .group-member-remove,
+.developer-contact-link, .developer-contact-close {
+  border: 1px solid var(--button-muted-border);
+  border-radius: 14px;
+  background: var(--button-muted-bg);
+  color: var(--button-text);
+  font-weight: 700;
+}
+.settings-menu-button { min-height: 60px; text-align: right; }
+.attachment-choice { min-height: 58px; text-align: right; }
+.message-option-button, .message-options-toggle, .inline-video-action {
+  min-height: 46px;
+  padding: 10px 14px;
+  font-size: .94rem;
+}
+.bottom-nav-button {
+  min-height: 66px;
+  border: 1px solid #7896bd;
+  border-radius: 16px;
+  background: linear-gradient(155deg, #223a5a, #172a45);
+  color: #f8fbff;
+  box-shadow: 0 3px 10px #02081755, inset 0 1px #ffffff1c;
+}
+.bottom-nav-button[aria-current="page"] {
+  border: 2px solid #ffe08a;
+  background: linear-gradient(145deg, #3b6598, #286b79);
+  color: #fff;
+  box-shadow: 0 0 0 2px #ffe08a22, 0 5px 16px #02081766, inset 0 1px #ffffff55;
+}
+.notifications-toggle, .close-notifications, .mark-all-read,
+#notifications-toggle, #close-notifications, #mark-all-read {
+  border: 1px solid var(--button-muted-border);
+  border-radius: 14px;
+  background: var(--button-muted-bg);
+  color: var(--button-text);
+  font-weight: 750;
+}
+#voice-call-reject, #voice-call-end, #conversation-info-clear,
+#block-person-button, #conversation-delete-button, #group-leave,
+#group-delete-everyone, #delete-account-button, #confirm-delete-account,
+#delete-status-button {
+  border-color: var(--button-danger-border);
+  background: var(--button-danger-bg);
+  color: #fff;
+}
+:root[data-theme="light"] {
+  --button-text: #20334d;
+  --button-muted-bg: linear-gradient(145deg, #ffffff, #eaf1fa);
+  --button-muted-border: #9aadc7;
+  --button-shadow: 0 3px 10px #20334d16, inset 0 1px #ffffff;
+}
+:root[data-theme="light"] button:not(.primary-button):not(.danger-button):not(.bottom-nav-button) {
+  color: #20334d;
+}
+:root[data-theme="light"] .primary-button {
+  color: #fff;
+  border-color: #2d6b94;
+  background: linear-gradient(120deg, #326eae, #247d88);
+  box-shadow: 0 4px 13px #245a8b33, inset 0 1px #ffffff55;
+}
+:root[data-theme="light"] .primary-button:hover:not(:disabled) {
+  background: linear-gradient(120deg, #275d99, #1e6e78);
+}
+:root[data-theme="light"] .quiet-button,
+:root[data-theme="light"] .settings-menu-button,
+:root[data-theme="light"] .attachment-choice,
+:root[data-theme="light"] .message-option-button,
+:root[data-theme="light"] .message-options-toggle,
+:root[data-theme="light"] .conversation-search-result,
+:root[data-theme="light"] .status-entry,
+:root[data-theme="light"] .inline-video-action,
+:root[data-theme="light"] .notifications-toggle,
+:root[data-theme="light"] .close-notifications,
+:root[data-theme="light"] .mark-all-read {
+  color: #20334d;
+  border-color: #9aadc7;
+  background: linear-gradient(145deg, #fff, #eaf1fa);
+}
+:root[data-theme="light"] .person-button,
+:root[data-theme="light"] .conversation-button {
+  color: #20334d;
+  border-color: #b3c4d9;
+  background: linear-gradient(115deg, #fff, #edf3fa);
+}
+:root[data-theme="light"] .person-button:hover:not(:disabled),
+:root[data-theme="light"] .conversation-button:hover:not(:disabled) {
+  background: linear-gradient(115deg, #edf5ff, #dceaf7);
+}
+:root[data-theme="light"] .bottom-nav-button {
+  color: #20334d;
+  border-color: #a7b8ce;
+  background: linear-gradient(155deg, #fff, #eaf1fa);
+}
+:root[data-theme="light"] .bottom-nav-button[aria-current="page"] {
+  color: #172d49;
+  border-color: #805400;
+  background: linear-gradient(145deg, #e4efff, #d9f0ef);
+}
+:root[data-theme="light"] .danger-button,
+:root[data-theme="light"] #voice-call-reject,
+:root[data-theme="light"] #voice-call-end,
+:root[data-theme="light"] #conversation-info-clear,
+:root[data-theme="light"] #block-person-button,
+:root[data-theme="light"] #conversation-delete-button,
+:root[data-theme="light"] #group-leave,
+:root[data-theme="light"] #group-delete-everyone,
+:root[data-theme="light"] #delete-account-button,
+:root[data-theme="light"] #confirm-delete-account,
+:root[data-theme="light"] #delete-status-button {
+  color: #fff;
+  border-color: #a53d4b;
+  background: linear-gradient(120deg, #a53d4b, #762b3c);
+}
+@media (max-width: 720px) {
+  button { min-height: 54px; }
+  .primary-button { min-height: 56px; }
+  .person-button, .conversation-button { min-height: 62px; }
+  .chat-actions > button { min-height: 54px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  button { transition: none !important; }
+}
