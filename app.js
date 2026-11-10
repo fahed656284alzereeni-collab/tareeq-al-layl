@@ -26,6 +26,13 @@ const settingsEmail = $("#settings-email");
 const closeSettingsButton = $("#close-settings");
 const settingsHome = $("#settings-home");
 const accountSettingsView = $("#account-settings-view");
+const accountLogoutButton = $("#account-logout-button");
+const deleteAccountButton = $("#delete-account-button");
+const deleteAccountPanel = $("#delete-account-panel");
+const closeDeleteAccountButton = $("#close-delete-account");
+const cancelDeleteAccountButton = $("#cancel-delete-account");
+const deleteAccountConfirmation = $("#delete-account-confirmation");
+const confirmDeleteAccountButton = $("#confirm-delete-account");
 const refreshDataButton = $("#refresh-data");
 const pushNotificationsButton = $("#enable-push-notifications");
 const pushNotificationsHelp = $("#push-notifications-help");
@@ -557,6 +564,56 @@ async function loadOwnProfile() {
 settingsButton.addEventListener("click", openSettings);
 $("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
 $("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
+accountLogoutButton.addEventListener("click", async () => {
+  accountLogoutButton.disabled = true;
+  const { error } = await supabase.auth.signOut();
+  if (error) announce("تعذر تسجيل الخروج: " + error.message, "error");
+  else {
+    settingsPanel.hidden = true;
+    showLoggedOut("تم تسجيل الخروج.");
+  }
+  accountLogoutButton.disabled = false;
+});
+function openDeleteAccountPanel() {
+  deleteAccountConfirmation.value = "";
+  confirmDeleteAccountButton.disabled = true;
+  deleteAccountPanel.hidden = false;
+  deleteAccountConfirmation.focus();
+}
+function closeDeleteAccountPanel() {
+  deleteAccountPanel.hidden = true;
+  deleteAccountButton.focus();
+}
+deleteAccountButton.addEventListener("click", openDeleteAccountPanel);
+closeDeleteAccountButton.addEventListener("click", closeDeleteAccountPanel);
+cancelDeleteAccountButton.addEventListener("click", closeDeleteAccountPanel);
+deleteAccountConfirmation.addEventListener("input", () => {
+  confirmDeleteAccountButton.disabled = deleteAccountConfirmation.value.trim() !== "حذف حسابي";
+});
+deleteAccountPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeDeleteAccountPanel();
+});
+confirmDeleteAccountButton.addEventListener("click", async () => {
+  if (!currentUser || deleteAccountConfirmation.value.trim() !== "حذف حسابي") return;
+  confirmDeleteAccountButton.disabled = true;
+  closeDeleteAccountButton.disabled = true;
+  cancelDeleteAccountButton.disabled = true;
+  try {
+    const { error } = await supabase.functions.invoke("delete-account", {
+      body: { confirmation: "حذف حسابي" }
+    });
+    if (error) throw error;
+    deleteAccountPanel.hidden = true;
+    await supabase.auth.signOut();
+    showLoggedOut("تم حذف الحساب نهائيًا.");
+  } catch (error) {
+    announce("تعذر حذف الحساب: " + (error?.message || "حاول مرة أخرى."), "error");
+    confirmDeleteAccountButton.disabled = false;
+  } finally {
+    closeDeleteAccountButton.disabled = false;
+    cancelDeleteAccountButton.disabled = false;
+  }
+});
 settingsPanel.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     settingsPanel.hidden = true;
