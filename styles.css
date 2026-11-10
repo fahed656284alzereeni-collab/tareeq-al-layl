@@ -977,3 +977,12 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 .group-add-card input{box-sizing:border-box;width:100%;min-height:54px;padding:12px;border:1px solid var(--border);border-radius:11px;background:var(--surface-raised);color:var(--text);font:inherit}
 .group-add-card .people-list{flex:1 0 auto;max-width:760px;width:100%;margin:0 auto}
 :root[data-theme=light] .group-add-panel{background:#f4f7fc;color:#20334d}
+
+
+/* Voice messages and microphone permission */
+.microphone-settings { display: grid; gap: 9px; margin-top: 18px; }
+.microphone-settings .quiet-button { width: 100%; }
+.voice-recording-status { grid-column: 1 / -1; margin: 0; color: #ffe1a6; line-height: 1.6; }
+.message-audio { display: block; width: min(100%, 340px); min-width: 230px; max-width: 100%; margin: 4px 0; }
+@media (min-width: 721px) { .message-form { grid-template-columns: minmax(0, 1fr) auto auto auto; } }
+@media (max-width: 720px) { .message-form { grid-template-columns: minmax(0, 1fr); } .message-form > button { width: 100%; } }
