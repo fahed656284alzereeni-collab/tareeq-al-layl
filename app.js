@@ -143,6 +143,7 @@ const voiceCallAcceptButton = $("#voice-call-accept");
 const voiceCallRejectButton = $("#voice-call-reject");
 const voiceCallMuteButton = $("#voice-call-mute");
 const voiceCallEndButton = $("#voice-call-end");
+const voiceCallEnableAudioButton = $("#voice-call-enable-audio");
 let callChannel = null, callChannelConversationId = null, callChannelReady = false, callChannelPromise = null;
 let activeCall = null;
 let activeGroupMemberIds = new Set();
@@ -1628,7 +1629,10 @@ function setVoiceCallStatus(message) {
   voiceCallStatus.textContent = message;
 }
 async function ensureCallChannel(conversationId) {
-  if (callChannel && callChannelConversationId === conversationId && callChannelReady) return;
+  if (callChannel && callChannelConversationId === conversationId) {
+    if (callChannelReady) return;
+    if (callChannelPromise) return callChannelPromise;
+  }
   if (callChannel) await closeCallChannel();
   callChannelConversationId = conversationId;
   callChannelReady = false;
@@ -1684,7 +1688,7 @@ async function startVoiceCall() {
   }
   voiceCallButton.disabled = true;
   try {
-    if (!callChannelReady) await callChannelPromise;
+    await ensureCallChannel(activeConversation.id);
     const participants = await getVoiceCallParticipantIds();
     if (!participants.length) throw new Error("لا يوجد مشاركون متاحون في هذه المحادثة.");
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -1738,7 +1742,12 @@ function createVoicePeer(peerId) {
       voiceCallAudio.append(audio);
     }
     audio.srcObject = event.streams[0];
-    void audio.play().catch(() => setVoiceCallStatus("المكالمة متصلة. اضغط على الشاشة للسماح بتشغيل الصوت."));
+    void audio.play().then(() => {
+      if (voiceCallEnableAudioButton) voiceCallEnableAudioButton.hidden = true;
+    }).catch(() => {
+      if (voiceCallEnableAudioButton) voiceCallEnableAudioButton.hidden = false;
+      setVoiceCallStatus("تم الاتصال. اضغط تشغيل صوت المكالمة لسماع الطرف الآخر.");
+    });
   };
   pc.onconnectionstatechange = () => {
     if (activeCall?.peers.get(peerId) !== pc) return;
@@ -1897,6 +1906,7 @@ async function finishVoiceCall() {
   if (call?.peers) for (const pc of call.peers.values()) pc.close();
   if (call?.localStream) for (const track of call.localStream.getTracks()) track.stop();
   voiceCallAudio.replaceChildren();
+  if (voiceCallEnableAudioButton) voiceCallEnableAudioButton.hidden = true;
   voiceCallPanel.hidden = true;
   if (voiceCallButton?.isConnected && !chatView.hidden) voiceCallButton.focus();
 }
@@ -1905,6 +1915,24 @@ voiceCallAcceptButton.addEventListener("click", () => { void acceptVoiceCall(); 
 voiceCallRejectButton.addEventListener("click", () => { void rejectVoiceCall(); });
 voiceCallMuteButton.addEventListener("click", toggleVoiceCallMute);
 voiceCallEndButton.addEventListener("click", () => { void endVoiceCall(); });
+voiceCallEnableAudioButton?.addEventListener("click", async () => {
+  voiceCallEnableAudioButton.disabled = true;
+  try {
+    const players = [...voiceCallAudio.querySelectorAll("audio")];
+    if (!players.length) throw new Error("لم يصل الصوت من الطرف الآخر بعد.");
+    await Promise.all(players.map(async audio => {
+      audio.muted = false;
+      audio.volume = 1;
+      await audio.play();
+    }));
+    voiceCallEnableAudioButton.hidden = true;
+    setVoiceCallStatus("تم تشغيل صوت المكالمة.");
+  } catch (error) {
+    setVoiceCallStatus(error.message || "تعذر تشغيل الصوت. تحقق من مستوى صوت الهاتف.");
+  } finally {
+    voiceCallEnableAudioButton.disabled = false;
+  }
+});
 voiceCallPanel.addEventListener("keydown", event => {
   if (event.key === "Escape" && activeCall) { event.preventDefault(); void endVoiceCall(); }
 });
