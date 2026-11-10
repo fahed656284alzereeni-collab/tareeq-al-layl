@@ -848,3 +848,17 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 .new-chat-card [hidden]{display:none!important}.group-person-choice{display:flex!important;align-items:center;gap:14px;min-height:54px;padding:8px 12px;border-bottom:1px solid var(--border)}.group-person-choice input{width:22px;height:22px}
 :root[data-theme=light] .new-chat-panel{background:#f4f7fc;color:#20334d}
 
+
+
+.account-action-button{width:100%;min-height:52px;margin-top:12px}
+.danger-button{min-height:50px;padding:12px 16px;border:1px solid #b94b55;border-radius:12px;background:#8e2632;color:#fff;font:inherit;font-weight:800}
+.danger-button:disabled{opacity:.55}
+.delete-account-panel{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;overflow-y:auto;padding:18px;background:#050914f2;color:#fff}
+.delete-account-panel[hidden]{display:none!important}
+.delete-account-card{box-sizing:border-box;width:100%;min-height:100vh;display:flex;flex-direction:column;justify-content:center;gap:18px;padding:clamp(22px,5vw,48px);background:#111a2d;color:#fff}
+.delete-account-card p{line-height:1.9}
+.delete-account-card label{font-weight:750}
+.delete-account-card input{min-height:54px;width:100%;box-sizing:border-box}
+.delete-account-card .danger-button,.delete-account-card .quiet-button{width:100%}
+:root[data-theme=light] .delete-account-panel{background:#e8eef7f2}
+:root[data-theme=light] .delete-account-card{background:#f7f9fc;color:#17243a}
