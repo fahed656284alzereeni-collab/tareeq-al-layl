@@ -1112,6 +1112,7 @@ blockPersonButton.addEventListener("click",async()=>{
       if(error&&error.code!=="23505")throw error;
     }
     await loadBlockState();
+    if(isPrivateConversationBlocked()&&activeCall)await endVoiceCall(true);
     announce(activeBlockState.blockedByMe?"تم حظر الشخص.":"تم إلغاء الحظر.");
   }catch(error){announce("تعذر تغيير الحظر: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{blockPersonButton.disabled=activeBlockState.blockedByThem&&!activeBlockState.blockedByMe;}
@@ -1455,6 +1456,7 @@ async function handleVoiceOffer(from, description) {
 }
 async function handleCallSignal(signal) {
   if (!signal || !currentUser || signal.conversationId !== activeConversation?.id || signal.to !== currentUser.id || signal.from === currentUser.id) return;
+  if(isPrivateConversationBlocked())return;
   const from = signal.from, details = signal.details || {};
   if (signal.type === "invite") {
     if (activeCall) {
