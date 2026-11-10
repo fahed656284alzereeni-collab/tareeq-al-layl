@@ -988,3 +988,20 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 .group-member-actions{display:grid;gap:8px;margin:8px 0 14px}
 .group-member-action,.group-member-remove{width:100%;min-height:48px;text-align:right}
 .group-member-name{overflow-wrap:anywhere}
+
+
+/* Group member names open a dedicated full-screen actions view. */
+.group-member-list{display:grid;gap:8px;width:100%;max-width:760px;margin:18px auto 0;padding:0;list-style:none}
+.group-member-list[hidden]{display:none!important}
+.group-member-list>li{display:grid;gap:2px;padding:8px 12px;border:1px solid var(--border);border-radius:12px;background:var(--surface-raised)}
+.group-member-name{width:100%;min-height:48px;padding:8px 4px;border:0;background:transparent;color:var(--text);font:inherit;font-weight:750;text-align:right;cursor:pointer}
+.group-member-role{padding:0 4px 6px;color:var(--muted);font-size:.9rem}
+.group-member-options-panel[hidden]{display:none!important}
+.group-member-options-panel{position:fixed;inset:0;z-index:2147483000;overflow-y:auto;background:var(--page,#101827);color:var(--text);padding:max(20px,env(safe-area-inset-top)) 20px max(20px,env(safe-area-inset-bottom))}
+.group-member-options-card{display:flex;flex-direction:column;gap:14px;min-height:calc(100dvh - 40px);max-width:760px;margin:0 auto}
+.group-member-options-card>button{width:100%;min-height:50px}
+.group-member-options-name{margin:18px 0 0;font-size:1.2rem;font-weight:800;overflow-wrap:anywhere}
+.group-member-options-role,.group-member-no-actions{margin:0;color:var(--muted)}
+.group-member-options-actions{display:grid;gap:10px;margin-top:12px}
+.group-member-options-actions>button{width:100%;min-height:52px;text-align:right}
+body.group-member-options-fullscreen{overflow:hidden}
