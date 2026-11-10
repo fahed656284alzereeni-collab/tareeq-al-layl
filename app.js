@@ -1308,6 +1308,15 @@ function openGroupMemberOptions(userId,name,roleLabel,role,isGroupOwner,permissi
   groupMemberOptionsRole.textContent=roleLabel;
   groupMemberOptionsActions.replaceChildren();
   const isSelf=userId===currentUser?.id;
+  if(!isSelf){
+    const messageButton=safeText("button","primary-button group-member-action","مراسلة");
+    messageButton.type="button";
+    messageButton.addEventListener("click",()=>{
+      closeGroupMemberOptions();
+      void openConversation({id:userId,display_name:name});
+    });
+    groupMemberOptionsActions.append(messageButton);
+  }
   if(!isSelf&&!isGroupOwner){
     if(permissions.isOwner){
       const roleButton=safeText("button","quiet-button group-member-action",role==="admin"?"إزالة صفة المشرف":"تعيين مشرف");
