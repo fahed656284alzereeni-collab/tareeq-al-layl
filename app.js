@@ -22,6 +22,9 @@ function finishStartup() {
 }
 const loginButton = $("#google-login");
 const settingsButton = $("#settings-button");
+const bottomNavigation = $("#bottom-navigation");
+const homeTabButton = $("#home-tab");
+const settingsTabButton = $("#settings-tab");
 const settingsPanel = $("#settings-panel");
 const settingsForm = $("#settings-form");
 const displayNameInput = $("#settings-display-name");
@@ -54,6 +57,27 @@ const notificationsPanel = $("#notifications-panel");
 const closeNotificationsButton = $("#close-notifications");
 const notificationsList = $("#notifications-list");
 const notificationCount = $("#notification-count");
+
+function setActiveBottomTab(tab) {
+  if (!homeTabButton || !settingsTabButton) return;
+  if (tab === "settings") {
+    homeTabButton.removeAttribute("aria-current");
+    settingsTabButton.setAttribute("aria-current", "page");
+  } else {
+    settingsTabButton.removeAttribute("aria-current");
+    homeTabButton.setAttribute("aria-current", "page");
+  }
+}
+
+function returnToHomeTab() {
+  if (settingsPanel && !settingsPanel.hidden) {
+    settingsPanel.hidden = true;
+    document.body.classList.remove("settings-open");
+  }
+  setActiveBottomTab("home");
+  if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
+}
+
 const markAllReadButton = $("#mark-all-read");
 const chatEmpty = $("#chat-empty");
 const chatView = $("#chat-view");
@@ -226,6 +250,8 @@ function safeText(tag, className, value) {
 function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكنك المحاولة مرة أخرى باستخدام Google.") {
   finishStartup();
   settingsPanel.hidden = true;
+  document.body.classList.remove("settings-open");
+  bottomNavigation.hidden = true;
   settingsButton.hidden = true;
   document.body.classList.remove("chat-fullscreen");
   workspace.classList.remove("chat-open");
@@ -277,6 +303,8 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   authPanel.hidden = true;
   workspace.hidden = false;
   settingsButton.hidden = false;
+  bottomNavigation.hidden = false;
+  setActiveBottomTab("home");
   account.textContent = "مرحبًا بك في مرسال · متصل الآن";
 
   // Reveal the usable app immediately; load account data and live updates in the background.
@@ -621,6 +649,8 @@ function openSettings() {
   settingsHome.hidden = false;
   accountSettingsView.hidden = true;
   settingsPanel.hidden = false;
+  document.body.classList.add("settings-open");
+  setActiveBottomTab("settings");
   displayNameInput.focus();
 }
 async function loadOwnProfile() {
@@ -630,6 +660,8 @@ async function loadOwnProfile() {
   displayNameInput.value = data?.display_name || currentUser.email?.split("@")[0] || "";
 }
 settingsButton.addEventListener("click", openSettings);
+settingsTabButton.addEventListener("click", openSettings);
+homeTabButton.addEventListener("click", returnToHomeTab);
 $("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
 $("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
 accountLogoutButton.addEventListener("click", async () => {
@@ -685,11 +717,15 @@ confirmDeleteAccountButton.addEventListener("click", async () => {
 settingsPanel.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     settingsPanel.hidden = true;
+    document.body.classList.remove("settings-open");
+    setActiveBottomTab("home");
     settingsReturnFocus?.focus?.();
   }
 });
 closeSettingsButton.addEventListener("click", () => {
   settingsPanel.hidden = true;
+  document.body.classList.remove("settings-open");
+  setActiveBottomTab("home");
   if (settingsReturnFocus?.focus) settingsReturnFocus.focus();
 });
 textSizeSelect.addEventListener("change", () => {
@@ -724,6 +760,8 @@ settingsForm.addEventListener("submit", async (event) => {
     await Promise.all([loadPeople(), loadConversations()]);
     announce("تم الحفظ.", "success");
     settingsPanel.hidden = true;
+    document.body.classList.remove("settings-open");
+    setActiveBottomTab("home");
     settingsReturnFocus?.focus?.();
   }
   saveButton.disabled = false;
@@ -1321,6 +1359,7 @@ conversationInfoExportButton.addEventListener("click", async () => {
   }
 });
 backToChatsButton.addEventListener("click", async () => {
+  setActiveBottomTab("home");
   if (activeCall) await endVoiceCall(true);
   await closeCallChannel();
   document.body.classList.remove("chat-fullscreen");
