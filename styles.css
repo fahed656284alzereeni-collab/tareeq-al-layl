@@ -964,3 +964,6 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
   .chat-actions { width: 100%; }
   .chat-actions > button { flex: 1 1 auto; }
 }
+
+.conversation-info > #group-leave,
+.conversation-info > #group-delete-everyone { display:block; width:100%; max-width:760px; min-height:54px; margin:12px auto 0; }
