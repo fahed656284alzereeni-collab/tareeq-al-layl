@@ -38,7 +38,6 @@ const pushNotificationsButton = $("#enable-push-notifications");
 const pushNotificationsHelp = $("#push-notifications-help");
 const microphonePermissionButton = $("#microphone-permission-button");
 const microphonePermissionHelp = $("#microphone-permission-help");
-const voiceAudioCompatibilityToggle = $("#voice-audio-compatibility-toggle");
 let settingsReturnFocus = null;
 const newChatButton=$("#new-chat-button"),newChatPanel=$("#new-chat-panel"),closeNewChatButton=$("#close-new-chat");
 const privateChatView=$("#private-chat-view"),groupChatView=$("#group-chat-view"),groupNameInput=$("#group-name");
@@ -607,7 +606,6 @@ function openSettings() {
   settingsEmail.value = currentUser.email || "";
   textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
   themeSelect.value = localStorage.getItem("mersal-theme") || "system";
-  voiceAudioCompatibilityToggle.checked = localStorage.getItem("mersal-voice-audio-compatibility") === "enabled";
   void refreshMicrophonePermissionStatus();
   applyTextSize(textSizeSelect.value);
   applyTheme(themeSelect.value);
@@ -642,12 +640,6 @@ async function refreshMicrophonePermissionStatus() {
     microphonePermissionButton.disabled = false;
   }
 }
-voiceAudioCompatibilityToggle.addEventListener("change", () => {
-  localStorage.setItem("mersal-voice-audio-compatibility", voiceAudioCompatibilityToggle.checked ? "enabled" : "disabled");
-  announce(voiceAudioCompatibilityToggle.checked
-    ? "تم تفعيل وضع الصوت التجريبي."
-    : "تم إيقاف وضع الصوت التجريبي.");
-});
 microphonePermissionButton.addEventListener("click", async () => {
   if (!navigator.mediaDevices?.getUserMedia) {
     microphonePermissionHelp.textContent = "هذا المتصفح لا يدعم الوصول إلى الميكروفون من الموقع.";
@@ -1028,7 +1020,8 @@ function updateBlockedControls(){
 }
 async function updateConversationInfo() {
   if (!activeConversation || !activePartner) return;
-  const isGroup = Boolean(activeConversation.is_group), isAdmin = isGroup && activeConversation.user_one === currentUser.id;
+  const isGroup = Boolean(activeConversation.is_group);
+  const { isOwner, isAdmin } = isGroup ? await getCurrentGroupPermissions() : { isOwner: false, isAdmin: false };
   groupAddMembersButton.hidden=!isAdmin;
   blockPersonButton.hidden=isGroup;
   conversationDeleteButton.hidden=false;
@@ -1041,7 +1034,8 @@ async function updateConversationInfo() {
   setConversationInfoValue(conversationInfoCount, "جارٍ التحميل…");
   conversationSearchArea.hidden = true; conversationSearchInput.value = ""; conversationSearchResults.replaceChildren();
   conversationSearchStatus.textContent = "اكتب كلمة لعرض النتائج.";
-  groupAdminTools.hidden = !isAdmin; groupLeaveButton.hidden = !isGroup; groupDeleteEveryoneButton.hidden = !isAdmin;
+  groupAdminTools.hidden = !isAdmin; groupLeaveButton.hidden = !isGroup; groupDeleteEveryoneButton.hidden = !isOwner;
+  groupRenameInput.hidden = !isOwner; groupRenameInput.previousElementSibling.hidden = !isOwner; groupRenameSaveButton.hidden = !isOwner;
   groupMemberList.replaceChildren(); groupAddPeople.replaceChildren(); groupAddSearch.value = "";
   if(isGroup){activeBlockState={blockedByMe:false,blockedByThem:false};updateBlockedControls();}
   else await loadBlockState();
@@ -1057,8 +1051,18 @@ async function updateConversationInfo() {
   conversationInfoMuteButton.textContent=activeConversationMuted?"تشغيل إشعارات المحادثة":"كتم إشعارات المحادثة";
   if(isAdmin)await loadGroupManagement();
 }
+async function getCurrentGroupPermissions(){
+  if(!activeConversation?.is_group||!currentUser)return {isOwner:false,isAdmin:false};
+  const isOwner=activeConversation.user_one===currentUser.id;
+  if(isOwner)return {isOwner:true,isAdmin:true};
+  const {data,error}=await supabase.from("conversation_members").select("role").eq("conversation_id",activeConversation.id).eq("user_id",currentUser.id).maybeSingle();
+  if(error){console.warn("تعذر التحقق من صلاحية مشرف المجموعة:",error.message);return {isOwner:false,isAdmin:false};}
+  return {isOwner:false,isAdmin:data?.role==="admin"};
+}
 async function loadGroupManagement(){
-  if(!activeConversation?.is_group||activeConversation.user_one!==currentUser.id)return;
+  if(!activeConversation?.is_group||!currentUser)return;
+  const permissions=await getCurrentGroupPermissions();
+  if(!permissions.isAdmin)return;
   const {data:members,error}=await supabase.from("conversation_members").select("user_id,role").eq("conversation_id",activeConversation.id);
   if(error){announce("تعذر تحميل أعضاء المجموعة: "+error.message,"error");return;}
   activeGroupMemberIds=new Set((members||[]).map(member=>member.user_id));
@@ -1066,9 +1070,26 @@ async function loadGroupManagement(){
   if(ids.length){const result=await supabase.from("profiles").select("id,display_name").in("id",ids);if(result.error){announce("تعذر تحميل أسماء الأعضاء.","error");return;}profiles=result.data||[];}
   const profileMap=new Map(profiles.map(profile=>[profile.id,profile]));groupMemberList.replaceChildren();
   for(const member of members||[]){
-    const item=document.createElement("li"),name=profileMap.get(member.user_id)?.display_name||"مستخدم مرسال";
-    item.append(safeText("span","group-member-name",name+(member.user_id===currentUser.id?" (أنت)":"")));
-    if(member.user_id!==currentUser.id){const remove=safeText("button","danger-button group-member-remove","إزالة العضو "+name);remove.type="button";remove.addEventListener("click",()=>{void removeGroupMember(member.user_id,name);});item.append(remove);}
+    const isSelf=member.user_id===currentUser.id,isGroupOwner=member.user_id===activeConversation.user_one;
+    const name=profileMap.get(member.user_id)?.display_name||"مستخدم مرسال";
+    const item=document.createElement("li"),roleLabel=isGroupOwner?"منشئ المجموعة":member.role==="admin"?"مشرف":"عضو";
+    item.append(safeText("span","group-member-name",name+(isSelf?" (أنت)":"")+"، "+roleLabel));
+    if(!isSelf&&!isGroupOwner){
+      const actions=document.createElement("div");actions.className="group-member-actions";
+      if(permissions.isOwner){
+        const roleButton=safeText("button","quiet-button group-member-action",member.role==="admin"?"إزالة صفة المشرف عن "+name:"تعيين "+name+" مشرفًا");
+        roleButton.type="button";roleButton.setAttribute("aria-label",roleButton.textContent);
+        roleButton.addEventListener("click",()=>{void manageGroupMember(member.user_id,name,member.role==="admin"?"demote":"promote");});
+        actions.append(roleButton);
+      }
+      if(permissions.isOwner||member.role!=="admin"){
+        const remove=safeText("button","danger-button group-member-remove","إزالة "+name+" من المجموعة");
+        remove.type="button";remove.setAttribute("aria-label",remove.textContent);
+        remove.addEventListener("click",()=>{void manageGroupMember(member.user_id,name,"remove");});
+        actions.append(remove);
+      }
+      item.append(actions);
+    }
     groupMemberList.append(item);
   }
   renderGroupAddPeople();
@@ -1084,16 +1105,18 @@ function renderGroupAddPeople(){
     label.append(checkbox,document.createTextNode(displayName(person)));item.append(label);groupAddPeople.append(item);
   }
 }
-async function removeGroupMember(userId,name){
-  if(!activeConversation||activeConversation.user_one!==currentUser.id)return;
-  if(!window.confirm("هل تريد إزالة "+name+" من المجموعة؟"))return;
-  const {error}=await supabase.from("conversation_members").delete().eq("conversation_id",activeConversation.id).eq("user_id",userId);
-  if(error){announce("تعذرت إزالة العضو: "+error.message,"error");return;}
-  await loadGroupManagement();announce("تمت إزالة العضو.");
+async function manageGroupMember(userId,name,action){
+  if(!activeConversation?.is_group||!currentUser)return;
+  const prompts={promote:"هل تريد تعيين "+name+" مشرفًا في المجموعة؟",demote:"هل تريد إزالة صفة المشرف عن "+name+"؟",remove:"هل تريد إزالة "+name+" من المجموعة؟"};
+  if(!window.confirm(prompts[action]||"تأكيد الإجراء؟"))return;
+  const {error}=await supabase.rpc("manage_group_member",{p_conversation_id:activeConversation.id,p_target_user_id:userId,p_action:action});
+  if(error){announce("تعذر تنفيذ الإجراء: "+(error.message||"حاول مرة أخرى."),"error");return;}
+  await loadGroupManagement();await loadConversations();
+  announce(action==="promote"?"تم تعيينه مشرفًا.":action==="demote"?"تمت إزالة صفة المشرف.":"تمت إزالة العضو.");
 }
 groupAddSearch.addEventListener("input",renderGroupAddPeople);
-groupAddMembersButton.addEventListener("click",()=>{
-  if(!activeConversation?.is_group||activeConversation.user_one!==currentUser.id)return;
+groupAddMembersButton.addEventListener("click",async()=>{
+  if(!activeConversation?.is_group||!(await getCurrentGroupPermissions()).isAdmin)return;
   conversationInfoPanel.hidden=true;
   document.body.classList.remove("conversation-info-fullscreen");
   groupAddPanel.hidden=false;
@@ -1109,7 +1132,7 @@ function closeGroupAddPanel(){
 closeGroupAddButton.addEventListener("click",closeGroupAddPanel);
 groupAddPanel.addEventListener("keydown",event=>{if(event.key==="Escape")closeGroupAddPanel();});
 groupAddSelectedButton.addEventListener("click",async()=>{
-  if(!activeConversation?.is_group||activeConversation.user_one!==currentUser.id)return;
+  if(!activeConversation?.is_group||!(await getCurrentGroupPermissions()).isAdmin)return;
   const ids=[...selectedAdditionalMembers].filter(id=>!activeGroupMemberIds.has(id));
   if(!ids.length){announce("اختر شخصًا واحدًا على الأقل.","error");return;}
   groupAddSelectedButton.disabled=true;
@@ -1749,13 +1772,16 @@ function appendMessage(message) {
   actions.className = "message-actions";
   const toggle = safeText("button", "message-options-toggle", "خيارات الرسالة");
   toggle.type = "button";
+  toggle.setAttribute("aria-label", "خيارات الرسالة");
   toggle.setAttribute("aria-haspopup", "dialog");
   toggle.setAttribute("aria-expanded", "false");
   const menu = document.createElement("div");
   menu.className = "message-options";
+  menu.setAttribute("aria-label", "خيارات الرسالة");
   menu.hidden = true;
   menu._home = actions;
-  const menuTitle = safeText("div", "message-options-title", "خيارات الرسالة");
+  const menuTitle = safeText("h2", "message-options-title", "خيارات الرسالة");
+  menuTitle.setAttribute("aria-level", "2");
   menuTitle.id = "message-options-title-" + message.id;
   const closeButton = safeText("button", "message-option-button message-options-close", "إغلاق الخيارات");
   closeButton.type = "button";
@@ -1771,6 +1797,7 @@ function appendMessage(message) {
     closeButton.focus();
   });
   const copyButton = safeText("button", "message-option-button", "نسخ الرسالة");
+  copyButton.setAttribute("aria-label", "نسخ الرسالة");
   copyButton.type = "button";
   copyButton.addEventListener("click", async () => {
     try {
@@ -1782,6 +1809,7 @@ function appendMessage(message) {
     closeMessageOptions(menu, toggle);
   });
   const replyButton = safeText("button", "message-option-button", "الرد على الرسالة");
+  replyButton.setAttribute("aria-label", "الرد على الرسالة");
   replyButton.type = "button";
   replyButton.addEventListener("click", () => {
     replyingToMessage = { id: message.id, body: message.body || "" };
@@ -1792,9 +1820,11 @@ function appendMessage(message) {
     announce("اكتب ردك على الرسالة المحددة.");
   });
   const deleteMineButton = safeText("button", "message-option-button message-delete-button", "حذف لدي");
+  deleteMineButton.setAttribute("aria-label", "حذف الرسالة لدي فقط");
   deleteMineButton.type = "button";
   deleteMineButton.addEventListener("click", () => { void deleteMessageForMe(message, item, menu, toggle); });
   const deleteEveryoneButton = safeText("button", "message-option-button message-delete-everyone-button", "حذف لدى الجميع");
+  deleteEveryoneButton.setAttribute("aria-label", "حذف الرسالة لدى الجميع");
   deleteEveryoneButton.type = "button";
   deleteEveryoneButton.disabled = message.sender_id !== currentUser.id;
   deleteEveryoneButton.setAttribute("aria-label", message.sender_id === currentUser.id ? "حذف هذه الرسالة لدى الجميع" : "حذف لدى الجميع، متاح لرسائلك أنت فقط");
@@ -1856,36 +1886,6 @@ function resetVoiceRecorderUi(message = "") {
   voiceRecordingStatus.textContent = message;
 }
 
-// iOS browsers can change the system audio session when microphone capture
-// starts. Set the intended capture mode first, then release it after stopping
-// the microphone so VoiceOver and other device audio can return to normal.
-function voiceAudioCompatibilityEnabled() {
-  return localStorage.getItem("mersal-voice-audio-compatibility") === "enabled";
-}
-function prepareVoiceCaptureAudioSession() {
-  try {
-    if (navigator.audioSession) {
-      // Experimental WebKit workaround: reset the session before capture.
-      navigator.audioSession.type = voiceAudioCompatibilityEnabled() ? "auto" : "play-and-record";
-    }
-  } catch { /* Audio Session API is not available in every iOS browser. */ }
-}
-function activateVoiceCaptureAudioSession() {
-  if (!voiceAudioCompatibilityEnabled()) return;
-  try {
-    // WebKit reports better routing after getUserMedia when play-and-record
-    // is selected immediately after the microphone stream is acquired.
-    if (navigator.audioSession) navigator.audioSession.type = "play-and-record";
-  } catch { /* The microphone stream must remain usable if unsupported. */ }
-}
-function restoreVoiceCaptureAudioSession() {
-  try {
-    if (navigator.audioSession) {
-      navigator.audioSession.type = "playback";
-      navigator.audioSession.type = "auto";
-    }
-  } catch { /* Keep recording usable when the browser does not expose this API. */ }
-}
 async function startVoiceMessageRecording() {
   if (!activeConversation || !currentUser) return;
   if (isPrivateConversationBlocked()) { announce("لا يمكنك إرسال مرفقات في هذه المحادثة بسبب الحظر.", "error"); return; }
@@ -1893,7 +1893,6 @@ async function startVoiceMessageRecording() {
     announce("تسجيل الرسائل الصوتية يحتاج متصفحًا آمنًا يدعم الميكروفون والتسجيل.", "error"); return;
   }
   voiceMessageButton.disabled = true;
-  prepareVoiceCaptureAudioSession();
   try {
     // Capture microphone only; do not request or mix device/system audio.
     const stream = await navigator.mediaDevices.getUserMedia({
@@ -1907,7 +1906,6 @@ async function startVoiceMessageRecording() {
       video: false
     });
     voiceRecordingStream = stream;
-    activateVoiceCaptureAudioSession();
     localStorage.setItem("mersal-microphone-permission", "granted");
     const mimeCandidates = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"];
     const preferredMime = mimeCandidates.find(type => MediaRecorder.isTypeSupported?.(type));
@@ -1921,7 +1919,6 @@ async function startVoiceMessageRecording() {
     voiceRecorder.addEventListener("error", () => {
       voiceRecordingStream?.getTracks().forEach(track => track.stop());
       voiceRecordingStream = null;
-      restoreVoiceCaptureAudioSession();
       resetVoiceRecorderUi();
       announce("حدث خطأ أثناء تسجيل الرسالة الصوتية.", "error");
     }, { once: true });
@@ -1931,7 +1928,6 @@ async function startVoiceMessageRecording() {
       const blob = new Blob(voiceRecordingChunks, { type: mimeType });
       voiceRecordingStream?.getTracks().forEach(track => track.stop());
       voiceRecordingStream = null;
-      restoreVoiceCaptureAudioSession();
       resetVoiceRecorderUi();
       if (!blob.size) { announce("لم يتم تسجيل صوت. حاول مرة أخرى.", "error"); return; }
       const voiceFile = new File([blob], "voice-message-" + Date.now() + "." + extension, { type: mimeType });
@@ -1946,7 +1942,6 @@ async function startVoiceMessageRecording() {
   } catch (error) {
     voiceRecordingStream?.getTracks().forEach(track => track.stop());
     voiceRecordingStream = null;
-    restoreVoiceCaptureAudioSession();
     resetVoiceRecorderUi();
     announce(error?.name === "NotAllowedError"
       ? "لم يُسمح باستخدام الميكروفون. فعّل الإذن من إعدادات مرسال أو إعدادات الموقع."
