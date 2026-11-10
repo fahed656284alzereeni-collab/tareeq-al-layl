@@ -71,6 +71,11 @@ const conversationInfoSearchButton = $("#conversation-info-search");
 const conversationInfoExportButton = $("#conversation-info-export");
 const conversationInfoMuteButton = $("#conversation-info-mute");
 const conversationInfoClearButton = $("#conversation-info-clear");
+const blockPersonButton = $("#block-person-button");
+const conversationDeleteButton = $("#conversation-delete-button");
+const groupAddMembersButton = $("#group-add-members-button");
+const groupAddPanel = $("#group-add-panel");
+const closeGroupAddButton = $("#close-group-add");
 const groupAdminTools = $("#group-admin-tools");
 const groupRenameInput = $("#group-rename-input");
 const groupRenameSaveButton = $("#group-rename-save");
@@ -165,6 +170,7 @@ let currentUser = null;
 let activeConversation = null;
 let activePartner = null;
 let activeConversationMuted = false;
+let activeBlockState = { blockedByMe: false, blockedByThem: false };
 let people = [];
 let conversations = [];
 let realtimeChannel = null;
@@ -802,6 +808,20 @@ async function loadConversations() {
   let groupRows=[];
   if(groupIds.length){const result=await supabase.from("conversations").select("id,user_one,user_two,last_message_at,is_group,group_name,created_at").in("id",groupIds);if(result.error)throw result.error;groupRows=result.data||[];}
   conversations=[...new Map([...conversations,...groupRows].map(c=>[c.id,c])).values()].sort((a,b)=>new Date(b.last_message_at||b.created_at||0)-new Date(a.last_message_at||a.created_at||0));
+  const {data:hiddenRows,error:hiddenError}=await supabase.from("conversation_hidden_for").select("conversation_id,hidden_at").eq("user_id",currentUser.id);
+  if(hiddenError)throw hiddenError;
+  const hiddenMap=new Map((hiddenRows||[]).map(row=>[row.conversation_id,row.hidden_at]));
+  const visibleConversations=[];
+  for(const conversation of conversations){
+    const hiddenAt=hiddenMap.get(conversation.id);
+    if(!hiddenAt){visibleConversations.push(conversation);continue;}
+    const latestAt=conversation.last_message_at||conversation.created_at||0;
+    if(new Date(latestAt)>new Date(hiddenAt)){
+      visibleConversations.push(conversation);
+      void supabase.from("conversation_hidden_for").delete().eq("conversation_id",conversation.id).eq("user_id",currentUser.id);
+    }
+  }
+  conversations=visibleConversations;
   const partnerIds = conversations.filter(c=>!c.is_group).map(c => c.user_one === currentUser.id ? c.user_two : c.user_one);
   let profileMap = new Map();
   if (partnerIds.length) {
@@ -868,6 +888,8 @@ async function openConversation(person) {
 }
 async function selectConversation(conversation, person) {
   if (activeCall && activeCall.conversationId !== conversation.id) await endVoiceCall(true);
+  if (!groupAddPanel.hidden) { groupAddPanel.hidden=true; document.body.classList.remove("group-add-fullscreen"); }
+  void supabase.from("conversation_hidden_for").delete().eq("conversation_id",conversation.id).eq("user_id",currentUser.id);
   status.textContent = "";
   activeConversation = conversation;
   activePartner = person;
@@ -919,9 +941,39 @@ function setConversationInfoValue(element, value) {
   if (group && label) group.setAttribute("aria-label", label + "، " + value);
 }
 
+async function loadBlockState(){
+  activeBlockState={blockedByMe:false,blockedByThem:false};
+  if(!activeConversation||activeConversation.is_group||!activePartner){updateBlockedControls();return;}
+  const {data,error}=await supabase.from("user_blocks").select("blocker_id,blocked_id")
+    .or("and(blocker_id.eq."+currentUser.id+",blocked_id.eq."+activePartner.id+"),and(blocker_id.eq."+activePartner.id+",blocked_id.eq."+currentUser.id+")");
+  if(error)throw error;
+  for(const row of data||[]){
+    if(row.blocker_id===currentUser.id)activeBlockState.blockedByMe=true;
+    if(row.blocker_id===activePartner.id)activeBlockState.blockedByThem=true;
+  }
+  updateBlockedControls();
+}
+function isPrivateConversationBlocked(){
+  return Boolean(activeConversation&&!activeConversation.is_group&&(activeBlockState.blockedByMe||activeBlockState.blockedByThem));
+}
+function updateBlockedControls(){
+  if(!blockPersonButton)return;
+  const blocked=isPrivateConversationBlocked();
+  messageInput.disabled=blocked;
+  sendButton.disabled=blocked;
+  attachButton.disabled=blocked;
+  voiceCallButton.disabled=blocked;
+  messageInput.placeholder=blocked?"لا يمكن إرسال الرسائل بسبب الحظر.":"اكتب رسالتك هنا…";
+  blockPersonButton.textContent=activeBlockState.blockedByMe?"إلغاء الحظر":activeBlockState.blockedByThem?"هذا الشخص حظرك":"حظر الشخص";
+  blockPersonButton.disabled=activeBlockState.blockedByThem&&!activeBlockState.blockedByMe;
+  blockPersonButton.setAttribute("aria-label",blockPersonButton.textContent);
+}
 async function updateConversationInfo() {
   if (!activeConversation || !activePartner) return;
   const isGroup = Boolean(activeConversation.is_group), isAdmin = isGroup && activeConversation.user_one === currentUser.id;
+  groupAddMembersButton.hidden=!isAdmin;
+  blockPersonButton.hidden=isGroup;
+  conversationDeleteButton.hidden=false;
   conversationInfoNameLabel.textContent = isGroup ? "اسم المجموعة" : "اسم الشخص";
   conversationInfoStatusRow.hidden = isGroup;
   setConversationInfoValue(conversationInfoName, isGroup ? (activeConversation.group_name || "مجموعة") : displayName(activePartner));
@@ -933,6 +985,8 @@ async function updateConversationInfo() {
   conversationSearchStatus.textContent = "اكتب كلمة لعرض النتائج.";
   groupAdminTools.hidden = !isAdmin; groupLeaveButton.hidden = !isGroup; groupDeleteEveryoneButton.hidden = !isAdmin;
   groupMemberList.replaceChildren(); groupAddPeople.replaceChildren(); groupAddSearch.value = "";
+  if(isGroup){activeBlockState={blockedByMe:false,blockedByThem:false};updateBlockedControls();}
+  else await loadBlockState();
   selectedAdditionalMembers.clear(); groupRenameInput.value = activeConversation.group_name || "";
   const [{count,error},{data:preference,error:preferenceError}] = await Promise.all([
     supabase.from("messages").select("id",{count:"exact",head:true}).eq("conversation_id",activeConversation.id),
@@ -980,12 +1034,28 @@ async function removeGroupMember(userId,name){
   await loadGroupManagement();announce("تمت إزالة العضو.");
 }
 groupAddSearch.addEventListener("input",renderGroupAddPeople);
+groupAddMembersButton.addEventListener("click",()=>{
+  if(!activeConversation?.is_group||activeConversation.user_one!==currentUser.id)return;
+  conversationInfoPanel.hidden=true;
+  document.body.classList.remove("conversation-info-fullscreen");
+  groupAddPanel.hidden=false;
+  document.body.classList.add("group-add-fullscreen");
+  renderGroupAddPeople();
+  groupAddSearch.focus();
+});
+function closeGroupAddPanel(){
+  groupAddPanel.hidden=true;
+  document.body.classList.remove("group-add-fullscreen");
+  groupAddMembersButton.focus();
+}
+closeGroupAddButton.addEventListener("click",closeGroupAddPanel);
+groupAddPanel.addEventListener("keydown",event=>{if(event.key==="Escape")closeGroupAddPanel();});
 groupAddSelectedButton.addEventListener("click",async()=>{
   if(!activeConversation?.is_group||activeConversation.user_one!==currentUser.id)return;
   const ids=[...selectedAdditionalMembers].filter(id=>!activeGroupMemberIds.has(id));
   if(!ids.length){announce("اختر شخصًا واحدًا على الأقل.","error");return;}
   groupAddSelectedButton.disabled=true;
-  try{const rows=ids.map(user_id=>({conversation_id:activeConversation.id,user_id,role:"member"}));const {error}=await supabase.from("conversation_members").insert(rows);if(error)throw error;selectedAdditionalMembers.clear();await loadGroupManagement();await loadConversations();announce("تمت إضافة الأعضاء.");}
+  try{const rows=ids.map(user_id=>({conversation_id:activeConversation.id,user_id,role:"member"}));const {error}=await supabase.from("conversation_members").insert(rows);if(error)throw error;selectedAdditionalMembers.clear();await loadGroupManagement();await loadConversations();closeGroupAddPanel();announce("تمت إضافة الأعضاء.");}
   catch(error){announce("تعذرت إضافة الأعضاء: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{groupAddSelectedButton.disabled=false;}
 });
@@ -1027,6 +1097,48 @@ async function deleteActiveGroup(deleteForEveryone){
 }
 groupLeaveButton.addEventListener("click",()=>{deleteActiveGroup(false);});
 groupDeleteEveryoneButton.addEventListener("click",()=>{deleteActiveGroup(true);});
+
+blockPersonButton.addEventListener("click",async()=>{
+  if(!activeConversation||activeConversation.is_group||!activePartner||!currentUser||activeBlockState.blockedByThem&&!activeBlockState.blockedByMe)return;
+  blockPersonButton.disabled=true;
+  try{
+    if(activeBlockState.blockedByMe){
+      const {error}=await supabase.from("user_blocks").delete().eq("blocker_id",currentUser.id).eq("blocked_id",activePartner.id);
+      if(error)throw error;
+    }else{
+      const {error}=await supabase.from("user_blocks").insert({blocker_id:currentUser.id,blocked_id:activePartner.id});
+      if(error&&error.code!=="23505")throw error;
+    }
+    await loadBlockState();
+    announce(activeBlockState.blockedByMe?"تم حظر الشخص.":"تم إلغاء الحظر.");
+  }catch(error){announce("تعذر تغيير الحظر: "+(error.message||"حاول مرة أخرى."),"error");}
+  finally{blockPersonButton.disabled=activeBlockState.blockedByThem&&!activeBlockState.blockedByMe;}
+});
+
+conversationDeleteButton.addEventListener("click",async()=>{
+  if(!activeConversation||!currentUser)return;
+  const id=activeConversation.id,isGroup=Boolean(activeConversation.is_group);
+  const label=isGroup?"المجموعة":"الدردشة";
+  if(!window.confirm("سيتم حذف "+label+" من قائمتك فقط. لن تُحذف لدى بقية المشاركين، وستظهر مجددًا عند وصول رسالة جديدة. هل تريد المتابعة؟"))return;
+  conversationDeleteButton.disabled=true;
+  try{
+    const {error}=await supabase.from("conversation_hidden_for").insert({conversation_id:id,user_id:currentUser.id});
+    if(error&&error.code!=="23505")throw error;
+    if(activeCall)await endVoiceCall(true);
+    if(realtimeChannel){await supabase.removeChannel(realtimeChannel);realtimeChannel=null;}
+    await closeCallChannel();
+    conversationInfoPanel.hidden=true;
+    groupAddPanel.hidden=true;
+    document.body.classList.remove("conversation-info-fullscreen","group-add-fullscreen","chat-fullscreen");
+    workspace.classList.remove("chat-open");
+    chatView.hidden=true;chatEmpty.hidden=false;
+    activeConversation=null;activePartner=null;
+    activeBlockState={blockedByMe:false,blockedByThem:false};
+    await loadConversations();
+    announce("تم حذف الدردشة من قائمتك.");
+  }catch(error){announce("تعذر حذف الدردشة: "+(error.message||"حاول مرة أخرى."),"error");}
+  finally{conversationDeleteButton.disabled=false;}
+});
 
 conversationInfoMuteButton.addEventListener("click",async()=>{
   if(!activeConversation||!currentUser)return;
@@ -1667,6 +1779,7 @@ $("#choose-files").addEventListener("click", () => documentFileInput.click());
 async function uploadAttachments(fileList) {
   const files = [...(fileList || [])];
   if (!files.length || !currentUser || !activeConversation) return;
+  if(isPrivateConversationBlocked()){announce("لا يمكنك إرسال مرفقات في هذه المحادثة بسبب الحظر.","error");return;}
   closeAttachmentChooser();
   for (const file of files) {
     if (file.size > 50 * 1024 * 1024) {
@@ -1724,6 +1837,7 @@ messageForm.addEventListener("submit", async (event) => {
     return;
   }
   if (!activeConversation || !currentUser) return;
+  if(isPrivateConversationBlocked()){announce("لا يمكنك إرسال رسائل في هذه المحادثة بسبب الحظر.","error");return;}
   const body = replyingToMessage ? "ردًا على: " + replyingToMessage.body + "\n\n" + typedBody : typedBody;
   sendButton.disabled = true;
   const { data, error } = await supabase.from("messages").insert({
