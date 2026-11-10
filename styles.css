@@ -1005,3 +1005,62 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 .group-member-options-actions{display:grid;gap:10px;margin-top:12px}
 .group-member-options-actions>button{width:100%;min-height:52px;text-align:right}
 body.group-member-options-fullscreen{overflow:hidden}
+
+
+/* Persistent, VoiceOver-friendly two-tab bottom navigation */
+#main-content { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
+.bottom-navigation {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 150;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-height: 76px;
+  padding: 9px clamp(12px, 4vw, 28px) calc(9px + env(safe-area-inset-bottom));
+  border-top: 1px solid #59769c99;
+  background: #101b31f5;
+  box-shadow: 0 -8px 28px #0004;
+  backdrop-filter: blur(18px);
+}
+.bottom-nav-button {
+  width: 100%;
+  min-height: 52px;
+  padding: 10px 14px;
+  border: 1px solid #49658b;
+  border-radius: 13px;
+  background: #1b2b45;
+  color: #f5f7ff;
+  font: inherit;
+  font-weight: 750;
+}
+.bottom-nav-button[aria-current="page"] {
+  border-color: #a9c2ff;
+  background: #304b72;
+  color: #fff;
+  box-shadow: inset 0 0 0 1px #a9c2ff55;
+}
+.bottom-nav-button:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+body.settings-open .workspace { visibility: hidden; }
+.settings-overlay { z-index: 110; }
+.settings-card { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+.workspace.chat-open .chat-view {
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+}
+body.conversation-info-fullscreen .bottom-navigation { display: none; }
+:root[data-theme="light"] .bottom-navigation {
+  border-color: #c4d1e2;
+  background: #f7f9fcf5;
+  box-shadow: 0 -8px 28px #29496b18;
+}
+:root[data-theme="light"] .bottom-nav-button {
+  border-color: #bdcde1;
+  background: #fff;
+  color: #20334d;
+}
+:root[data-theme="light"] .bottom-nav-button[aria-current="page"] {
+  border-color: #527bb3;
+  background: #e5eefb;
+  color: #20334d;
+}
