@@ -1012,8 +1012,8 @@ async function deleteActiveGroup(deleteForEveryone){
     const result=await supabase.rpc("delete_group",{p_conversation_id:id,p_delete_for_everyone:deleteForEveryone});
     if(result.error)throw result.error;
     if(activeCall)await endVoiceCall(true);
-    if(messageChannel){await supabase.removeChannel(messageChannel);messageChannel=null;}
-    if(callChannel){await supabase.removeChannel(callChannel);callChannel=null;}
+    if(realtimeChannel){await supabase.removeChannel(realtimeChannel);realtimeChannel=null;}
+    await closeCallChannel();
     conversationInfoPanel.hidden=true;
     document.body.classList.remove("conversation-info-fullscreen","chat-fullscreen");
     workspace.classList.remove("chat-open");
