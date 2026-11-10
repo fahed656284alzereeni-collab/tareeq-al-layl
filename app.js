@@ -1170,7 +1170,7 @@ async function ensureCallChannel(conversationId) {
   const ready = new Promise((resolve, reject) => {
     let settled = false;
     channel.on("broadcast", { event: "call-signal" }, message => {
-      void handleCallSignal(message?.payload || message);
+      void handleCallSignal(message?.payload || message).catch(error => { console.warn("Call signal:", error); setVoiceCallStatus("حدثت مشكلة في الاتصال الصوتي."); });
     });
     channel.subscribe(state => {
       if (state === "SUBSCRIBED" && !settled) {
@@ -1406,16 +1406,18 @@ function toggleVoiceCallMute() {
   updateVoiceCallPanel();
   setVoiceCallStatus(activeCall.muted ? "الميكروفون مكتوم." : "الميكروفون يعمل.");
 }
-async function endVoiceCall() {
+async function endVoiceCall(notifyOthers = true) {
   if (!activeCall) { voiceCallPanel.hidden = true; return; }
-  const wasAccepted = activeCall.accepted;
-  const caller = activeCall.initiatorId;
-  const shouldEndForEveryone = !activeConversation?.is_group || caller === currentUser?.id;
-  try {
-    if (wasAccepted && shouldEndForEveryone) await sendCallSignalToAll("end");
-    else if (wasAccepted) await sendCallSignalToAll("leave");
-    else await sendCallSignal("decline", caller);
-  } catch (error) { console.warn("End call signal:", error); }
+  if (notifyOthers) {
+    const wasAccepted = activeCall.accepted;
+    const caller = activeCall.initiatorId;
+    const shouldEndForEveryone = !activeConversation?.is_group || caller === currentUser?.id;
+    try {
+      if (wasAccepted && shouldEndForEveryone) await sendCallSignalToAll("end");
+      else if (wasAccepted) await sendCallSignalToAll("leave");
+      else await sendCallSignal("decline", caller);
+    } catch (error) { console.warn("End call signal:", error); }
+  }
   await finishVoiceCall();
 }
 async function finishVoiceCall() {
