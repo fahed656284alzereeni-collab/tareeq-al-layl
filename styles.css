@@ -986,3 +986,7 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 .message-audio { display: block; width: min(100%, 340px); min-width: 230px; max-width: 100%; margin: 4px 0; }
 @media (min-width: 721px) { .message-form { grid-template-columns: minmax(0, 1fr) auto auto auto; } }
 @media (max-width: 720px) { .message-form { grid-template-columns: minmax(0, 1fr); } .message-form > button { width: 100%; } }
+
+/* Accessible voice audio compatibility setting */
+.voice-audio-setting { display: flex !important; align-items: center; gap: 12px; margin: 16px 0 8px !important; line-height: 1.7; }
+.voice-audio-setting input[type="checkbox"] { flex: 0 0 24px; width: 24px; min-width: 24px; min-height: 24px; height: 24px; margin: 0; padding: 0; accent-color: #8db9f0; }
