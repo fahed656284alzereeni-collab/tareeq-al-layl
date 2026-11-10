@@ -49,6 +49,10 @@
               <option value="light">فاتح</option>
             </select>
             <p class="settings-help">اختر المظهر المريح لك. يُحفظ اختيارك على هذا الجهاز.</p>
+            <div class="microphone-settings">
+              <button id="microphone-permission-button" type="button" class="quiet-button">السماح باستخدام الميكروفون</button>
+              <p id="microphone-permission-help" class="settings-help" role="status" aria-live="polite">لم يتم منح إذن الميكروفون بعد.</p>
+            </div>
             <div class="settings-extra">
               <button id="enable-push-notifications" type="button" class="quiet-button push-notifications-button" aria-pressed="false">تشغيل إشعارات الهاتف</button>
               <p id="push-notifications-help" class="settings-help" role="status" aria-live="polite">لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.</p>
@@ -162,7 +166,9 @@
             <label class="visually-hidden" for="message-input">اكتب رسالتك</label>
             <textarea id="message-input" rows="2" maxlength="5000" placeholder="اكتب رسالتك هنا…" aria-label="نص الرسالة" enterkeyhint="send"></textarea>
             <button id="attach-button" type="button" class="quiet-button" aria-haspopup="dialog" aria-controls="attachment-chooser">إرفاق</button>
+            <button id="voice-message-button" type="button" class="quiet-button">تسجيل رسالة صوتية</button>
             <button id="send-button" type="submit" class="primary-button">إرسال</button>
+            <p id="voice-recording-status" class="voice-recording-status" role="status" aria-live="polite" hidden>جارٍ التسجيل… اضغط زر التسجيل لإيقافه وإرساله.</p>
           </form>
         </div>
       </div>
