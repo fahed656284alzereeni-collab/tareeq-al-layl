@@ -90,7 +90,7 @@ function openStatusTab() {
   statusView.hidden = false;
   document.body.classList.add("status-open");
   setActiveBottomTab("statuses");
-  void loadStatuses();
+  void loadStatuses().catch(error => announce("تعذر تحميل الحالات: " + error.message, "error"));
 }
 
 const markAllReadButton = $("#mark-all-read");
