@@ -15,6 +15,11 @@ const authPanel = $("#auth-panel");
 const workspace = $("#workspace");
 const account = $("#account");
 const status = $("#status");
+const startupRetryButton = $("#startup-retry");
+function finishStartup() {
+  if (window.__mersalStartupTimer) window.clearTimeout(window.__mersalStartupTimer);
+  if (startupRetryButton) startupRetryButton.hidden = true;
+}
 const loginButton = $("#google-login");
 const settingsButton = $("#settings-button");
 const settingsPanel = $("#settings-panel");
@@ -220,6 +225,7 @@ function safeText(tag, className, value) {
   return node;
 }
 function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكنك المحاولة مرة أخرى باستخدام Google.") {
+  finishStartup();
   settingsPanel.hidden = true;
   settingsButton.hidden = true;
   document.body.classList.remove("chat-fullscreen");
@@ -284,10 +290,12 @@ async function handleSession(session, authEvent = "UNKNOWN") {
     }
     await startPresence();
     startNotificationsRealtime();
+    finishStartup();
     if (!alreadyLoadedForThisUser && authEvent !== "TOKEN_REFRESHED") {
       announce("تم تسجيل الدخول. يمكنك بدء محادثة جديدة.");
     }
   } catch (error) {
+    finishStartup();
     announce("تعذر تحميل الحساب: " + (error.message || "خطأ غير معروف"), "error");
   }
 }
