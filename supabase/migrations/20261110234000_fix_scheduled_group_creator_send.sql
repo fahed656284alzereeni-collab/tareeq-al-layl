@@ -1,3 +1,5 @@
+-- Keep scheduled delivery authorization aligned with scheduling-time authorization.
+-- The group creator (conversations.user_one) may send even when not present in conversation_members.
 create or replace function private.process_due_scheduled_messages()
 returns integer
 language plpgsql
