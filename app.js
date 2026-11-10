@@ -934,6 +934,7 @@ async function selectConversation(conversation, person) {
   chatView.hidden = false;
   workspace.classList.add("chat-open");
   document.body.classList.add("chat-fullscreen");
+  bottomNavigation.hidden = true;
   conversationInfoPanel.hidden = true;
   document.body.classList.remove("conversation-info-fullscreen");
   await loadMessages();
@@ -1349,6 +1350,7 @@ backToChatsButton.addEventListener("click", async () => {
   await closeCallChannel();
   document.body.classList.remove("chat-fullscreen");
   workspace.classList.remove("chat-open");
+  bottomNavigation.hidden = false;
   chatView.hidden = true;
   chatEmpty.hidden = false;
   conversationInfoPanel.hidden = true;
