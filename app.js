@@ -1112,7 +1112,7 @@ blockPersonButton.addEventListener("click",async()=>{
       if(error&&error.code!=="23505")throw error;
     }
     await loadBlockState();
-    if(isPrivateConversationBlocked()&&activeCall)await endVoiceCall(true);
+    if(isPrivateConversationBlocked()&&activeCall){await endVoiceCall(true);updateBlockedControls();}
     announce(activeBlockState.blockedByMe?"تم حظر الشخص.":"تم إلغاء الحظر.");
   }catch(error){announce("تعذر تغيير الحظر: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{blockPersonButton.disabled=activeBlockState.blockedByThem&&!activeBlockState.blockedByMe;}
