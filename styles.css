@@ -1017,6 +1017,9 @@ body.group-member-options-fullscreen{overflow:hidden}
   backdrop-filter: blur(18px);
 }
 .bottom-nav-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   min-height: 52px;
   padding: 10px 14px;
@@ -1024,8 +1027,12 @@ body.group-member-options-fullscreen{overflow:hidden}
   border-radius: 13px;
   background: #1b2b45;
   color: #f5f7ff;
-  font: inherit;
-  font-weight: 750;
+}
+.bottom-nav-button svg {
+  display: block;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 auto;
 }
 .bottom-nav-button[aria-current="page"] {
   border-color: #a9c2ff;
