@@ -36,6 +36,8 @@ const confirmDeleteAccountButton = $("#confirm-delete-account");
 const refreshDataButton = $("#refresh-data");
 const pushNotificationsButton = $("#enable-push-notifications");
 const pushNotificationsHelp = $("#push-notifications-help");
+const microphonePermissionButton = $("#microphone-permission-button");
+const microphonePermissionHelp = $("#microphone-permission-help");
 let settingsReturnFocus = null;
 const newChatButton=$("#new-chat-button"),newChatPanel=$("#new-chat-panel"),closeNewChatButton=$("#close-new-chat");
 const privateChatView=$("#private-chat-view"),groupChatView=$("#group-chat-view"),groupNameInput=$("#group-name");
@@ -107,7 +109,12 @@ const messageForm = $("#message-form");
 const messageInput = $("#message-input");
 const sendButton = $("#send-button");
 const attachButton = $("#attach-button");
+const voiceMessageButton = $("#voice-message-button");
+const voiceRecordingStatus = $("#voice-recording-status");
 const attachmentChooser = $("#attachment-chooser");
+let voiceRecorder = null;
+let voiceRecordingStream = null;
+let voiceRecordingChunks = [];
 const closeAttachmentChooserButton = $("#close-attachment-chooser");
 const imageFileInput = $("#image-file-input");
 const videoFileInput = $("#video-file-input");
@@ -599,6 +606,7 @@ function openSettings() {
   settingsEmail.value = currentUser.email || "";
   textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
   themeSelect.value = localStorage.getItem("mersal-theme") || "system";
+  void refreshMicrophonePermissionStatus();
   applyTextSize(textSizeSelect.value);
   applyTheme(themeSelect.value);
   settingsHome.hidden = false;
@@ -612,6 +620,47 @@ async function loadOwnProfile() {
   if (error) throw error;
   displayNameInput.value = data?.display_name || currentUser.email?.split("@")[0] || "";
 }
+async function refreshMicrophonePermissionStatus() {
+  let permissionState = null;
+  try {
+    if (navigator.permissions?.query) permissionState = (await navigator.permissions.query({ name: "microphone" })).state;
+  } catch { /* Safari may not expose microphone permission queries. */ }
+  const saved = localStorage.getItem("mersal-microphone-permission") === "granted";
+  if (permissionState === "denied") {
+    microphonePermissionHelp.textContent = "إذن الميكروفون مرفوض. اسمح به من إعدادات الموقع في المتصفح.";
+    microphonePermissionButton.textContent = "طريقة السماح بالميكروفون";
+    microphonePermissionButton.disabled = false;
+  } else if (permissionState === "granted" || saved) {
+    microphonePermissionHelp.textContent = "تم السماح بالميكروفون على هذا الجهاز. قد تحتاج لإعادة الإذن إذا غيّرت إعدادات الخصوصية.";
+    microphonePermissionButton.textContent = "التحقق من إذن الميكروفون";
+    microphonePermissionButton.disabled = false;
+  } else {
+    microphonePermissionHelp.textContent = "لم يتم منح إذن الميكروفون بعد.";
+    microphonePermissionButton.textContent = "السماح باستخدام الميكروفون";
+    microphonePermissionButton.disabled = false;
+  }
+}
+microphonePermissionButton.addEventListener("click", async () => {
+  if (!navigator.mediaDevices?.getUserMedia) {
+    microphonePermissionHelp.textContent = "هذا المتصفح لا يدعم الوصول إلى الميكروفون من الموقع.";
+    return;
+  }
+  microphonePermissionButton.disabled = true;
+  microphonePermissionHelp.textContent = "يرجى الموافقة على طلب الميكروفون من الجهاز.";
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    stream.getTracks().forEach(track => track.stop());
+    localStorage.setItem("mersal-microphone-permission", "granted");
+    microphonePermissionHelp.textContent = "تم السماح بالميكروفون. يمكنك الآن تسجيل الرسائل الصوتية داخل مرسال.";
+    microphonePermissionButton.textContent = "التحقق من إذن الميكروفون";
+  } catch (error) {
+    microphonePermissionHelp.textContent = error?.name === "NotAllowedError"
+      ? "لم يتم منح الإذن. اسمح بالميكروفون من إعدادات الموقع في المتصفح أو الآيفون."
+      : "تعذر الوصول إلى الميكروفون. تحقق من توفره ثم حاول مرة أخرى.";
+  } finally {
+    microphonePermissionButton.disabled = false;
+  }
+});
 settingsButton.addEventListener("click", openSettings);
 $("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
 $("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
@@ -1658,6 +1707,16 @@ function appendMessage(message) {
         attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق."));
         return;
       }
+      if (attachment.kind === "voice" || attachment.type?.startsWith("audio/")) {
+        const audio = document.createElement("audio");
+        audio.controls = true;
+        audio.preload = "metadata";
+        audio.src = data.signedUrl;
+        audio.setAttribute("aria-label", attachment.kind === "voice" ? "تشغيل الرسالة الصوتية" : "تشغيل الملف الصوتي");
+        audio.className = "message-audio";
+        attachmentView.append(audio);
+        return;
+      }
       const previewButton = safeText("button", "attachment-open-button", attachment.type?.startsWith("image/") ? "عرض الصورة داخل المحادثة" : attachment.type?.startsWith("video/") ? "تشغيل الفيديو داخل المحادثة" : "عرض الملف داخل المحادثة");
       previewButton.type = "button";
       previewButton.setAttribute("aria-label", (attachment.type?.startsWith("image/") ? "عرض الصورة " : attachment.type?.startsWith("video/") ? "تشغيل الفيديو " : "عرض الملف ") + fileName + " داخل المحادثة");
@@ -1780,7 +1839,86 @@ $("#choose-images").addEventListener("click", () => imageFileInput.click());
 $("#choose-videos").addEventListener("click", () => videoFileInput.click());
 $("#choose-files").addEventListener("click", () => documentFileInput.click());
 
-async function uploadAttachments(fileList) {
+function resetVoiceRecorderUi(message = "") {
+  voiceRecorder = null;
+  voiceRecordingChunks = [];
+  voiceMessageButton.textContent = "تسجيل رسالة صوتية";
+  voiceMessageButton.disabled = false;
+  voiceRecordingStatus.hidden = !message;
+  voiceRecordingStatus.textContent = message;
+}
+async function startVoiceMessageRecording() {
+  if (!activeConversation || !currentUser) return;
+  if (isPrivateConversationBlocked()) { announce("لا يمكنك إرسال مرفقات في هذه المحادثة بسبب الحظر.", "error"); return; }
+  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
+    announce("تسجيل الرسائل الصوتية يحتاج متصفحًا آمنًا يدعم الميكروفون والتسجيل.", "error"); return;
+  }
+  voiceMessageButton.disabled = true;
+  try {
+    // Capture microphone only; do not request or mix device/system audio.
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: { ideal: false },
+        noiseSuppression: { ideal: false },
+        autoGainControl: { ideal: false },
+        sampleRate: { ideal: 48000 },
+        channelCount: { ideal: 1 }
+      },
+      video: false
+    });
+    voiceRecordingStream = stream;
+    localStorage.setItem("mersal-microphone-permission", "granted");
+    const mimeCandidates = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"];
+    const preferredMime = mimeCandidates.find(type => MediaRecorder.isTypeSupported?.(type));
+    const options = { audioBitsPerSecond: 128000 };
+    if (preferredMime) options.mimeType = preferredMime;
+    voiceRecorder = new MediaRecorder(stream, options);
+    voiceRecordingChunks = [];
+    voiceRecorder.addEventListener("dataavailable", event => {
+      if (event.data?.size) voiceRecordingChunks.push(event.data);
+    });
+    voiceRecorder.addEventListener("error", () => {
+      voiceRecordingStream?.getTracks().forEach(track => track.stop());
+      voiceRecordingStream = null;
+      resetVoiceRecorderUi();
+      announce("حدث خطأ أثناء تسجيل الرسالة الصوتية.", "error");
+    }, { once: true });
+    voiceRecorder.addEventListener("stop", async () => {
+      const mimeType = voiceRecorder?.mimeType || preferredMime || "audio/mp4";
+      const extension = mimeType.includes("webm") ? "webm" : "m4a";
+      const blob = new Blob(voiceRecordingChunks, { type: mimeType });
+      voiceRecordingStream?.getTracks().forEach(track => track.stop());
+      voiceRecordingStream = null;
+      resetVoiceRecorderUi();
+      if (!blob.size) { announce("لم يتم تسجيل صوت. حاول مرة أخرى.", "error"); return; }
+      const voiceFile = new File([blob], "voice-message-" + Date.now() + "." + extension, { type: mimeType });
+      await uploadAttachments([voiceFile], { voiceMessage: true });
+    }, { once: true });
+    voiceRecorder.start(1000);
+    voiceMessageButton.textContent = "إيقاف التسجيل وإرساله";
+    voiceMessageButton.disabled = false;
+    voiceRecordingStatus.textContent = "جارٍ التسجيل… اضغط زر التسجيل لإيقافه وإرساله.";
+    voiceRecordingStatus.hidden = false;
+    announce("بدأ تسجيل الرسالة الصوتية.");
+  } catch (error) {
+    voiceRecordingStream?.getTracks().forEach(track => track.stop());
+    voiceRecordingStream = null;
+    resetVoiceRecorderUi();
+    announce(error?.name === "NotAllowedError"
+      ? "لم يُسمح باستخدام الميكروفون. فعّل الإذن من إعدادات مرسال أو إعدادات الموقع."
+      : "تعذر بدء التسجيل. تحقق من الميكروفون وحاول مرة أخرى.", "error");
+  }
+}
+voiceMessageButton.addEventListener("click", () => {
+  if (voiceRecorder && voiceRecorder.state === "recording") {
+    voiceMessageButton.disabled = true;
+    voiceMessageButton.textContent = "جارٍ تجهيز التسجيل…";
+    voiceRecorder.stop();
+  } else {
+    void startVoiceMessageRecording();
+  }
+});
+async function uploadAttachments(fileList, options = {}) {
   const files = [...(fileList || [])];
   if (!files.length || !currentUser || !activeConversation) return;
   if(isPrivateConversationBlocked()){announce("لا يمكنك إرسال مرفقات في هذه المحادثة بسبب الحظر.","error");return;}
@@ -1804,8 +1942,8 @@ async function uploadAttachments(fileList) {
         upsert: false
       });
       if (uploadError) throw uploadError;
-      const attachment = { path: uploaded.path, name: file.name, type: file.type || "application/octet-stream", size: file.size };
-      const body = "📎 " + file.name + "\\nMERSAL_ATTACHMENT:" + JSON.stringify(attachment);
+      const attachment = { path: uploaded.path, name: file.name, type: file.type || "application/octet-stream", size: file.size, ...(options.voiceMessage ? { kind: "voice" } : {}) };
+      const body = (options.voiceMessage ? "رسالة صوتية" : "📎 " + file.name) + "\\nMERSAL_ATTACHMENT:" + JSON.stringify(attachment);
       const { data, error } = await supabase.from("messages").insert({
         conversation_id: activeConversation.id, sender_id: currentUser.id, body
       }).select("id,conversation_id,sender_id,body,created_at").single();
