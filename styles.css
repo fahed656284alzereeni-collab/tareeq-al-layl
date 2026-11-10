@@ -1108,3 +1108,58 @@ body.conversation-info-fullscreen .bottom-navigation { display: none; }
 }
 
 .bottom-navigation[hidden] { display: none; }
+
+
+/* Expiring status updates */
+.status-view[hidden], .status-fullscreen-panel[hidden] { display: none !important; }
+body.status-open #workspace .sidebar, body.status-open #workspace .chat-panel { display: none !important; }
+.status-view:not([hidden]) {
+  position: fixed; inset: 0 0 calc(76px + env(safe-area-inset-bottom)); z-index: 100;
+  box-sizing: border-box; overflow-y: auto; overscroll-behavior: contain;
+  padding: max(18px, env(safe-area-inset-top)) 16px 20px;
+  background: var(--page, #101827); color: var(--text, #f5f7ff);
+}
+.status-page-actions { display: grid; gap: 10px; max-width: 760px; margin: 0 auto 16px; }
+.status-page-actions button { width: 100%; min-height: 54px; }
+.status-list { display: grid; gap: 9px; width: 100%; max-width: 760px; margin: 0 auto; padding: 0; list-style: none; }
+.status-entry {
+  display: block; width: 100%; min-height: 60px; padding: 14px;
+  border: 1px solid var(--border, #405273); border-radius: 12px;
+  background: var(--surface-raised, #172945); color: var(--text, #f5f7ff);
+  text-align: right; font: inherit; line-height: 1.6;
+}
+.status-entry:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; }
+.status-fullscreen-panel {
+  position: fixed; inset: 0; z-index: 2147483300; overflow-y: auto;
+  overscroll-behavior: contain; background: var(--page, #101827); color: var(--text, #f5f7ff);
+}
+.status-composer-card, .status-viewer-card {
+  box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; min-height: 100%;
+  padding: max(20px, env(safe-area-inset-top)) 16px max(22px, env(safe-area-inset-bottom));
+}
+.status-composer-card > button, .status-viewer-card > button { width: 100%; min-height: 52px; }
+.status-type-actions { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 8px; }
+.status-type-actions button { min-height: 48px; }
+.status-type-actions button[aria-pressed="true"] { border-color: var(--focus); background: var(--surface-raised); }
+#status-text-input {
+  box-sizing: border-box; width: 100%; min-height: 150px; padding: 14px;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface-raised); color: var(--text); font: inherit; line-height: 1.7;
+}
+#status-selected-media { overflow-wrap: anywhere; }
+.status-viewer-content { display: flex; align-items: center; justify-content: center; min-height: 42vh; }
+.status-viewer-text {
+  width: 100%; padding: 22px 14px; border-radius: 14px; background: var(--surface-raised);
+  text-align: center; font-size: 1.5rem; line-height: 1.9; overflow-wrap: anywhere;
+}
+.status-viewer-image, .status-viewer-video {
+  display: block; max-width: 100%; max-height: 68vh; width: auto; height: auto;
+  object-fit: contain; border-radius: 12px;
+}
+.status-viewer-video { width: 100%; background: #000; }
+.status-viewer-caption, .status-viewer-meta { line-height: 1.7; overflow-wrap: anywhere; }
+.status-viewer-views { display: grid; gap: 7px; margin: 8px 0; padding: 0; list-style: none; }
+.status-viewer-person { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+body.status-open { overflow: hidden; }
+:root[data-theme="light"] .status-view:not([hidden]),
+:root[data-theme="light"] .status-fullscreen-panel { background: #f4f7fc; color: #20334d; }
