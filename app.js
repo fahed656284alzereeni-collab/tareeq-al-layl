@@ -1772,9 +1772,6 @@ function appendMessage(message) {
   menu.setAttribute("aria-label", "خيارات الرسالة");
   menu.hidden = true;
   menu._home = actions;
-  const menuTitle = safeText("h2", "message-options-title", "خيارات الرسالة");
-  menuTitle.setAttribute("aria-level", "2");
-  menuTitle.id = "message-options-title-" + message.id;
   const closeButton = safeText("button", "message-option-button message-options-close", "إغلاق الخيارات");
   closeButton.type = "button";
   closeButton.addEventListener("click", () => closeMessageOptions(menu, toggle));
@@ -1783,7 +1780,6 @@ function appendMessage(message) {
     menu.classList.add("is-open");
     menu.setAttribute("role", "dialog");
     menu.setAttribute("aria-modal", "true");
-    menu.setAttribute("aria-labelledby", menuTitle.id);
     toggle.setAttribute("aria-expanded", "true");
     document.body.append(menu);
     closeButton.focus();
@@ -1821,7 +1817,7 @@ function appendMessage(message) {
   deleteEveryoneButton.disabled = message.sender_id !== currentUser.id;
   deleteEveryoneButton.setAttribute("aria-label", message.sender_id === currentUser.id ? "حذف هذه الرسالة لدى الجميع" : "حذف لدى الجميع، متاح لرسائلك أنت فقط");
   deleteEveryoneButton.addEventListener("click", () => { void deleteMessageForEveryone(message, item, menu, toggle); });
-  menu.append(menuTitle, closeButton, copyButton, replyButton, deleteMineButton, deleteEveryoneButton);
+  menu.append(closeButton, copyButton, replyButton, deleteMineButton, deleteEveryoneButton);
   actions.append(toggle, menu);
   item.append(actions);
   messagesList.append(item);
