@@ -145,6 +145,7 @@
             <div class="chat-actions">
               <button id="voice-call-button" type="button" class="quiet-button">اتصال صوتي</button>
               <button id="refresh-chat" type="button" class="quiet-button">تحديث الرسائل</button>
+              <button id="scheduled-messages-button" type="button" class="quiet-button" aria-controls="scheduled-messages-panel">الرسائل المجدولة</button>
             </div>
           </div>
           <section id="conversation-info" class="conversation-info" hidden>
@@ -195,6 +196,22 @@
               <button id="group-add-selected" type="button" class="primary-button">إضافة المحددين</button>
             </div>
           </section>
+          <section id="message-schedule-panel" class="message-schedule-panel" role="dialog" aria-modal="true" aria-label="جدولة الرسالة" hidden>
+            <div class="message-schedule-card">
+              <button id="close-message-schedule" type="button" class="quiet-button">إغلاق</button>
+              <p id="message-schedule-preview" class="message-schedule-preview"></p>
+              <label for="message-schedule-time">وقت إرسال الرسالة</label>
+              <input id="message-schedule-time" type="datetime-local" required>
+              <p id="message-schedule-help" class="settings-help" role="status" aria-live="polite">اختر التاريخ والوقت، وسيتم إرسال الرسالة تلقائيًا حتى لو أغلقت مرسال.</p>
+              <button id="confirm-message-schedule" type="button" class="primary-button">جدولة الرسالة</button>
+            </div>
+          </section>
+          <section id="scheduled-messages-panel" class="scheduled-messages-panel" role="dialog" aria-modal="true" aria-label="الرسائل المجدولة" hidden>
+            <div class="scheduled-messages-card">
+              <button id="close-scheduled-messages" type="button" class="quiet-button">إغلاق</button>
+              <ul id="scheduled-messages-list" class="scheduled-messages-list" aria-label="قائمة الرسائل المجدولة" aria-live="polite"></ul>
+            </div>
+          </section>
           <ol id="messages" class="messages" aria-label="رسائل المحادثة" aria-live="polite" aria-relevant="additions text"></ol>
           <input id="image-file-input" type="file" accept="image/*" multiple hidden aria-hidden="true" tabindex="-1">
           <input id="video-file-input" type="file" accept="video/*" multiple hidden aria-hidden="true" tabindex="-1">
@@ -204,7 +221,8 @@
             <label class="visually-hidden" for="message-input">اكتب رسالتك</label>
             <textarea id="message-input" rows="2" maxlength="5000" placeholder="اكتب رسالتك هنا…" aria-label="نص الرسالة" enterkeyhint="send"></textarea>
             <button id="attach-button" type="button" class="quiet-button" aria-haspopup="dialog" aria-controls="attachment-chooser">إرفاق</button>
-            <button id="send-button" type="submit" class="primary-button">إرسال</button>
+            <span id="send-button-help" class="visually-hidden">اضغط مطولًا على زر الإرسال لجدولة الرسالة، أو استخدم الاختصار Alt مع السهم للأسفل.</span>
+            <button id="send-button" type="submit" class="primary-button" aria-describedby="send-button-help" aria-keyshortcuts="Alt+ArrowDown">إرسال</button>
           </form>
         </div>
       </div>
