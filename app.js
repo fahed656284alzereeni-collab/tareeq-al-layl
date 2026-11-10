@@ -38,7 +38,6 @@ const closeDeleteAccountButton = $("#close-delete-account");
 const cancelDeleteAccountButton = $("#cancel-delete-account");
 const deleteAccountConfirmation = $("#delete-account-confirmation");
 const confirmDeleteAccountButton = $("#confirm-delete-account");
-const refreshDataButton = $("#refresh-data");
 const pushNotificationsButton = $("#enable-push-notifications");
 const pushNotificationsHelp = $("#push-notifications-help");
 let settingsReturnFocus = null;
@@ -728,16 +727,6 @@ settingsForm.addEventListener("submit", async (event) => {
     settingsReturnFocus?.focus?.();
   }
   saveButton.disabled = false;
-});
-refreshDataButton.addEventListener("click", async () => {
-  refreshDataButton.disabled = true;
-  try {
-    await Promise.all([loadPeople(), loadConversations()]);
-    announce("تم التحديث.", "success");
-  } catch (error) {
-    announce("تعذر تحديث البيانات: " + error.message, "error");
-  }
-  refreshDataButton.disabled = false;
 });
 applyTextSize(localStorage.getItem("mersal-text-size") || "normal");
 applyTheme(localStorage.getItem("mersal-theme") || "system");
