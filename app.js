@@ -267,6 +267,10 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   settingsPanel.hidden = true;
   document.body.classList.remove("settings-open");
   bottomNavigation.hidden = true;
+  statusView.hidden = true;
+  statusComposerPanel.hidden = true;
+  statusViewerPanel.hidden = true;
+  document.body.classList.remove("status-open");
   document.body.classList.remove("chat-fullscreen");
   workspace.classList.remove("chat-open");
   conversationInfoPanel.hidden = true;
