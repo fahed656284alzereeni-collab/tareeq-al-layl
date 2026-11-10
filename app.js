@@ -109,12 +109,7 @@ const messageForm = $("#message-form");
 const messageInput = $("#message-input");
 const sendButton = $("#send-button");
 const attachButton = $("#attach-button");
-const voiceMessageButton = $("#voice-message-button");
-const voiceRecordingStatus = $("#voice-recording-status");
 const attachmentChooser = $("#attachment-chooser");
-let voiceRecorder = null;
-let voiceRecordingStream = null;
-let voiceRecordingChunks = [];
 const closeAttachmentChooserButton = $("#close-attachment-chooser");
 const imageFileInput = $("#image-file-input");
 const videoFileInput = $("#video-file-input");
@@ -1877,86 +1872,6 @@ $("#choose-images").addEventListener("click", () => imageFileInput.click());
 $("#choose-videos").addEventListener("click", () => videoFileInput.click());
 $("#choose-files").addEventListener("click", () => documentFileInput.click());
 
-function resetVoiceRecorderUi(message = "") {
-  voiceRecorder = null;
-  voiceRecordingChunks = [];
-  voiceMessageButton.textContent = "تسجيل رسالة صوتية";
-  voiceMessageButton.disabled = false;
-  voiceRecordingStatus.hidden = !message;
-  voiceRecordingStatus.textContent = message;
-}
-
-async function startVoiceMessageRecording() {
-  if (!activeConversation || !currentUser) return;
-  if (isPrivateConversationBlocked()) { announce("لا يمكنك إرسال مرفقات في هذه المحادثة بسبب الحظر.", "error"); return; }
-  if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-    announce("تسجيل الرسائل الصوتية يحتاج متصفحًا آمنًا يدعم الميكروفون والتسجيل.", "error"); return;
-  }
-  voiceMessageButton.disabled = true;
-  try {
-    // Capture microphone only; do not request or mix device/system audio.
-    const stream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: { ideal: false },
-        noiseSuppression: { ideal: false },
-        autoGainControl: { ideal: false },
-        sampleRate: { ideal: 48000 },
-        channelCount: { ideal: 1 }
-      },
-      video: false
-    });
-    voiceRecordingStream = stream;
-    localStorage.setItem("mersal-microphone-permission", "granted");
-    const mimeCandidates = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"];
-    const preferredMime = mimeCandidates.find(type => MediaRecorder.isTypeSupported?.(type));
-    const options = { audioBitsPerSecond: 128000 };
-    if (preferredMime) options.mimeType = preferredMime;
-    voiceRecorder = new MediaRecorder(stream, options);
-    voiceRecordingChunks = [];
-    voiceRecorder.addEventListener("dataavailable", event => {
-      if (event.data?.size) voiceRecordingChunks.push(event.data);
-    });
-    voiceRecorder.addEventListener("error", () => {
-      voiceRecordingStream?.getTracks().forEach(track => track.stop());
-      voiceRecordingStream = null;
-      resetVoiceRecorderUi();
-      announce("حدث خطأ أثناء تسجيل الرسالة الصوتية.", "error");
-    }, { once: true });
-    voiceRecorder.addEventListener("stop", async () => {
-      const mimeType = voiceRecorder?.mimeType || preferredMime || "audio/mp4";
-      const extension = mimeType.includes("webm") ? "webm" : "m4a";
-      const blob = new Blob(voiceRecordingChunks, { type: mimeType });
-      voiceRecordingStream?.getTracks().forEach(track => track.stop());
-      voiceRecordingStream = null;
-      resetVoiceRecorderUi();
-      if (!blob.size) { announce("لم يتم تسجيل صوت. حاول مرة أخرى.", "error"); return; }
-      const voiceFile = new File([blob], "voice-message-" + Date.now() + "." + extension, { type: mimeType });
-      await uploadAttachments([voiceFile], { voiceMessage: true });
-    }, { once: true });
-    voiceRecorder.start(1000);
-    voiceMessageButton.textContent = "إيقاف التسجيل وإرساله";
-    voiceMessageButton.disabled = false;
-    voiceRecordingStatus.textContent = "جارٍ التسجيل… اضغط زر التسجيل لإيقافه وإرساله.";
-    voiceRecordingStatus.hidden = false;
-    announce("بدأ تسجيل الرسالة الصوتية.");
-  } catch (error) {
-    voiceRecordingStream?.getTracks().forEach(track => track.stop());
-    voiceRecordingStream = null;
-    resetVoiceRecorderUi();
-    announce(error?.name === "NotAllowedError"
-      ? "لم يُسمح باستخدام الميكروفون. فعّل الإذن من إعدادات مرسال أو إعدادات الموقع."
-      : "تعذر بدء التسجيل. تحقق من الميكروفون وحاول مرة أخرى.", "error");
-  }
-}
-voiceMessageButton.addEventListener("click", () => {
-  if (voiceRecorder && voiceRecorder.state === "recording") {
-    voiceMessageButton.disabled = true;
-    voiceMessageButton.textContent = "جارٍ تجهيز التسجيل…";
-    voiceRecorder.stop();
-  } else {
-    void startVoiceMessageRecording();
-  }
-});
 async function uploadAttachments(fileList, options = {}) {
   const files = [...(fileList || [])];
   if (!files.length || !currentUser || !activeConversation) return;
