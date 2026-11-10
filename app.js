@@ -24,6 +24,14 @@ const loginButton = $("#google-login");
 const bottomNavigation = $("#bottom-navigation");
 const homeTabButton = $("#home-tab");
 const settingsTabButton = $("#settings-tab");
+const statusTabButton = $("#status-tab");
+const statusView = $("#status-view");
+const statusList = $("#status-list");
+const statusComposerPanel = $("#status-composer-panel");
+const statusViewerPanel = $("#status-viewer-panel");
+const statusTextInput = $("#status-text-input");
+const statusImageInput = $("#status-image-input");
+const statusVideoInput = $("#status-video-input");
 const settingsPanel = $("#settings-panel");
 const settingsForm = $("#settings-form");
 const displayNameInput = $("#settings-display-name");
@@ -57,19 +65,32 @@ const notificationsList = $("#notifications-list");
 const notificationCount = $("#notification-count");
 
 function setActiveBottomTab(tab) {
-  if (!homeTabButton || !settingsTabButton) return;
-  const settingsActive = tab === "settings";
-  homeTabButton.setAttribute("aria-selected", String(!settingsActive));
-  settingsTabButton.setAttribute("aria-selected", String(settingsActive));
+  if (!homeTabButton || !settingsTabButton || !statusTabButton) return;
+  homeTabButton.setAttribute("aria-selected", String(tab === "home"));
+  statusTabButton.setAttribute("aria-selected", String(tab === "statuses"));
+  settingsTabButton.setAttribute("aria-selected", String(tab === "settings"));
 }
-
 function returnToHomeTab() {
   if (settingsPanel && !settingsPanel.hidden) {
     settingsPanel.hidden = true;
     document.body.classList.remove("settings-open");
   }
+  statusView.hidden = true;
+  document.body.classList.remove("status-open");
   setActiveBottomTab("home");
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
+}
+function openStatusTab() {
+  if (!currentUser) return;
+  if (settingsPanel && !settingsPanel.hidden) {
+    settingsPanel.hidden = true;
+    document.body.classList.remove("settings-open");
+  }
+  if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
+  statusView.hidden = false;
+  document.body.classList.add("status-open");
+  setActiveBottomTab("statuses");
+  void loadStatuses();
 }
 
 const markAllReadButton = $("#mark-all-read");
@@ -304,6 +325,7 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   if (status.textContent === "جارٍ تجهيز مرسال…") status.textContent = "";
 
   void syncPushNotificationState();
+  void loadStatuses().catch(error => announce("تعذر تحميل الحالات: " + (error.message || "حاول مرة أخرى."), "error"));
   void touchLastSeen();
   if (!lastSeenHeartbeat) lastSeenHeartbeat = window.setInterval(() => { if (document.visibilityState === "visible") void touchLastSeen(); }, 60000);
 
@@ -632,6 +654,8 @@ function applyTheme(choice) {
 
 function openSettings() {
   if (!currentUser) return;
+  statusView.hidden = true;
+  document.body.classList.remove("status-open");
   settingsReturnFocus = document.activeElement;
   settingsEmail.value = currentUser.email || "";
   textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
@@ -652,6 +676,7 @@ async function loadOwnProfile() {
   displayNameInput.value = data?.display_name || currentUser.email?.split("@")[0] || "";
 }
 settingsTabButton.addEventListener("click", openSettings);
+statusTabButton.addEventListener("click", openStatusTab);
 homeTabButton.addEventListener("click", returnToHomeTab);
 $("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
 $("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
@@ -824,6 +849,184 @@ createGroupButton.addEventListener("click",async()=>{
   await selectConversation(conv,{...person,display_name:name});await loadConversations();closeNewChat();announce("تم إنشاء المجموعة.","success");
  }catch(error){announce("تعذر إنشاء المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}finally{createGroupButton.disabled=false;}
 });
+
+
+let selectedStatusKind = "text";
+let selectedStatusFile = null;
+let statusViewerReturnFocus = null;
+let activeViewedStatus = null;
+function statusKindLabel(kind) { return kind === "image" ? "صورة" : kind === "video" ? "فيديو" : "نص"; }
+function statusTimeLabel(value) {
+  return new Date(value).toLocaleString("ar-JO", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" });
+}
+async function loadStatuses() {
+  if (!currentUser || !statusList) return;
+  const { data, error } = await supabase.from("statuses")
+    .select("id,user_id,kind,content,media_path,media_type,created_at,expires_at")
+    .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false });
+  if (error) throw error;
+  const rows = data || [];
+  const ids = [...new Set(rows.map(row => row.user_id))];
+  let profiles = new Map();
+  if (ids.length) {
+    const result = await supabase.from("profiles").select("id,display_name").in("id", ids);
+    if (result.error) throw result.error;
+    profiles = new Map((result.data || []).map(profile => [profile.id, profile]));
+  }
+  statusList.replaceChildren();
+  if (!rows.length) { statusList.append(safeText("li", "empty-item", "لا توجد حالات حاليًا.")); return; }
+  for (const row of rows) {
+    const own = row.user_id === currentUser.id;
+    const name = own ? "حالتي" : displayName(profiles.get(row.user_id));
+    const button = safeText("button", "status-entry", name + "، " + statusKindLabel(row.kind) + "، " + statusTimeLabel(row.created_at));
+    button.type = "button";
+    button.addEventListener("click", () => { void openStatusViewer(row, name, button); });
+    const item = document.createElement("li"); item.append(button); statusList.append(item);
+  }
+}
+function openStatusComposer() {
+  selectedStatusKind = "text"; selectedStatusFile = null;
+  statusTextInput.value = ""; statusImageInput.value = ""; statusVideoInput.value = "";
+  $("#status-selected-media").textContent = "";
+  $("#status-text-mode").setAttribute("aria-pressed", "true");
+  $("#status-image-mode").setAttribute("aria-pressed", "false");
+  $("#status-video-mode").setAttribute("aria-pressed", "false");
+  statusTextInput.placeholder = "اكتب حالتك";
+  statusComposerPanel.hidden = false; $("#close-status-composer").focus();
+}
+function closeStatusComposer() { statusComposerPanel.hidden = true; $("#add-status-button").focus(); }
+function setStatusKind(kind) {
+  selectedStatusKind = kind; selectedStatusFile = null;
+  statusImageInput.value = ""; statusVideoInput.value = "";
+  $("#status-selected-media").textContent = "";
+  $("#status-text-mode").setAttribute("aria-pressed", String(kind === "text"));
+  $("#status-image-mode").setAttribute("aria-pressed", String(kind === "image"));
+  $("#status-video-mode").setAttribute("aria-pressed", String(kind === "video"));
+  statusTextInput.placeholder = kind === "text" ? "اكتب حالتك" : "أضف وصفًا اختياريًا";
+  if (kind === "image") statusImageInput.click();
+  if (kind === "video") statusVideoInput.click();
+}
+$("#add-status-button").addEventListener("click", openStatusComposer);
+$("#refresh-statuses-button").addEventListener("click", () => {
+  const button = $("#refresh-statuses-button"); button.disabled = true;
+  void loadStatuses().then(() => announce("تم تحديث الحالات."))
+    .catch(error => announce("تعذر تحديث الحالات: " + error.message, "error"))
+    .finally(() => { button.disabled = false; });
+});
+$("#close-status-composer").addEventListener("click", closeStatusComposer);
+$("#status-text-mode").addEventListener("click", () => setStatusKind("text"));
+$("#status-image-mode").addEventListener("click", () => setStatusKind("image"));
+$("#status-video-mode").addEventListener("click", () => setStatusKind("video"));
+statusImageInput.addEventListener("change", () => {
+  selectedStatusFile = statusImageInput.files?.[0] || null;
+  $("#status-selected-media").textContent = selectedStatusFile ? selectedStatusFile.name : "";
+});
+statusVideoInput.addEventListener("change", () => {
+  selectedStatusFile = statusVideoInput.files?.[0] || null;
+  $("#status-selected-media").textContent = selectedStatusFile ? selectedStatusFile.name : "";
+});
+$("#publish-status-button").addEventListener("click", async () => {
+  if (!currentUser) return;
+  const content = statusTextInput.value.trim();
+  if (selectedStatusKind === "text" && !content) { announce("اكتب نص الحالة أولًا.", "error"); statusTextInput.focus(); return; }
+  if (selectedStatusKind !== "text" && !selectedStatusFile) { announce("اختر صورة أو فيديو أولًا.", "error"); return; }
+  if (selectedStatusFile && selectedStatusFile.size > 50 * 1024 * 1024) { announce("حجم الملف أكبر من 50 ميغابايت.", "error"); return; }
+  if (selectedStatusFile && !(selectedStatusKind === "image" ? selectedStatusFile.type.startsWith("image/") : selectedStatusFile.type.startsWith("video/"))) {
+    announce("نوع الملف لا يطابق نوع الحالة المختار.", "error"); return;
+  }
+  const button = $("#publish-status-button"); button.disabled = true;
+  let uploadedPath = null;
+  try {
+    let mediaType = null;
+    if (selectedStatusFile) {
+      mediaType = selectedStatusFile.type;
+      const extension = String(selectedStatusFile.name || "").match(/\.([a-zA-Z0-9]{1,10})$/)?.[1]?.toLowerCase() || "bin";
+      const unique = crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2);
+      uploadedPath = "statuses/" + currentUser.id + "/" + unique + "." + extension;
+      const upload = await supabase.storage.from("mersal-attachments").upload(uploadedPath, selectedStatusFile, { contentType: mediaType, upsert: false });
+      if (upload.error) throw upload.error;
+    }
+    const { error } = await supabase.from("statuses").insert({
+      user_id: currentUser.id, kind: selectedStatusKind, content: content || null,
+      media_path: uploadedPath, media_type: mediaType,
+      expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+    });
+    if (error) throw error;
+    statusComposerPanel.hidden = true;
+    await loadStatuses(); announce("تم نشر الحالة.");
+  } catch (error) {
+    if (uploadedPath) await supabase.storage.from("mersal-attachments").remove([uploadedPath]);
+    announce("تعذر نشر الحالة: " + (error.message || "حاول مرة أخرى."), "error");
+  } finally { button.disabled = false; }
+});
+async function openStatusViewer(row, name, trigger) {
+  statusViewerReturnFocus = trigger; activeViewedStatus = row;
+  $("#status-viewer-content").replaceChildren(); $("#status-viewer-views").replaceChildren();
+  $("#status-viewer-caption").textContent = row.content || "";
+  $("#status-viewer-meta").textContent = name + "، " + statusTimeLabel(row.created_at);
+  const own = row.user_id === currentUser.id;
+  $("#delete-status-button").hidden = !own;
+  if (!own) {
+    const viewed = await supabase.from("status_views").insert({ status_id: row.id, viewer_id: currentUser.id });
+    if (viewed.error && viewed.error.code !== "23505") console.warn("تعذر تسجيل مشاهدة الحالة:", viewed.error.message);
+  }
+  if (row.kind === "text") {
+    $("#status-viewer-content").append(safeText("p", "status-viewer-text", row.content || ""));
+  } else if (row.media_path) {
+    const remaining = Math.floor((new Date(row.expires_at).getTime() - Date.now()) / 1000);
+    if (remaining <= 0) {
+      $("#status-viewer-content").append(safeText("p", "empty-item", "انتهت صلاحية هذه الحالة."));
+    } else {
+      const signed = await supabase.storage.from("mersal-attachments").createSignedUrl(row.media_path, Math.min(3600, remaining));
+      if (signed.error || !signed.data?.signedUrl) {
+        $("#status-viewer-content").append(safeText("p", "empty-item", "تعذر فتح الحالة."));
+      } else if (row.kind === "image") {
+        const media = document.createElement("img"); media.src = signed.data.signedUrl;
+        media.alt = "صورة الحالة من " + name; media.className = "status-viewer-image";
+        $("#status-viewer-content").append(media);
+      } else {
+        const media = document.createElement("video"); media.src = signed.data.signedUrl;
+        media.controls = true; media.playsInline = true; media.preload = "metadata";
+        media.setAttribute("aria-label", "فيديو الحالة من " + name); media.className = "status-viewer-video";
+        $("#status-viewer-content").append(media);
+      }
+    }
+  }
+  if (own) {
+    const result = await supabase.from("status_views").select("viewer_id,viewed_at").eq("status_id", row.id).order("viewed_at", { ascending: false });
+    if (result.error) $("#status-viewer-views").append(safeText("li", "empty-item", "تعذر تحميل المشاهدات."));
+    else if (!result.data?.length) $("#status-viewer-views").append(safeText("li", "empty-item", "لم يشاهدها أحد بعد."));
+    else {
+      const ids = [...new Set(result.data.map(view => view.viewer_id))];
+      const profiles = await supabase.from("profiles").select("id,display_name").in("id", ids);
+      const names = new Map((profiles.data || []).map(profile => [profile.id, profile.display_name]));
+      for (const view of result.data) $("#status-viewer-views").append(safeText("li", "status-viewer-person",
+        (names.get(view.viewer_id) || "مستخدم مرسال") + "، " + statusTimeLabel(view.viewed_at)));
+    }
+  }
+  statusViewerPanel.hidden = false; $("#close-status-viewer").focus();
+}
+function closeStatusViewer() {
+  statusViewerPanel.hidden = true; $("#status-viewer-content").replaceChildren();
+  if (statusViewerReturnFocus?.isConnected) statusViewerReturnFocus.focus();
+}
+$("#close-status-viewer").addEventListener("click", closeStatusViewer);
+$("#delete-status-button").addEventListener("click", async () => {
+  const row = activeViewedStatus; if (!row || row.user_id !== currentUser?.id) return;
+  const button = $("#delete-status-button"); button.disabled = true;
+  try {
+    const { error } = await supabase.from("statuses").delete().eq("id", row.id).eq("user_id", currentUser.id);
+    if (error) throw error;
+    if (row.media_path) {
+      const removed = await supabase.storage.from("mersal-attachments").remove([row.media_path]);
+      if (removed.error) console.warn("تعذر حذف ملف الحالة:", removed.error.message);
+    }
+    closeStatusViewer(); await loadStatuses(); announce("تم حذف الحالة.");
+  } catch (error) { announce("تعذر حذف الحالة: " + (error.message || "حاول مرة أخرى."), "error"); }
+  finally { button.disabled = false; }
+});
+statusComposerPanel.addEventListener("keydown", event => { if (event.key === "Escape") closeStatusComposer(); });
+statusViewerPanel.addEventListener("keydown", event => { if (event.key === "Escape") closeStatusViewer(); });
 
 async function loadConversations() {
   const { data, error } = await supabase.from("conversations")
