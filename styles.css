@@ -1064,3 +1064,5 @@ body.conversation-info-fullscreen .bottom-navigation { display: none; }
   background: #e5eefb;
   color: #20334d;
 }
+
+.bottom-navigation[hidden] { display: none; }
