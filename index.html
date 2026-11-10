@@ -67,6 +67,8 @@
           <p id="email-help" class="settings-help">البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.</p>
           <button id="save-settings" type="submit" class="primary-button">حفظ بيانات الحساب</button>
         </form>
+          <button id="account-logout-button" type="button" class="quiet-button account-action-button">تسجيل الخروج</button>
+          <button id="delete-account-button" type="button" class="danger-button account-action-button">حذف الحساب</button>
         </div>
       </div>
     </div>
@@ -143,6 +145,16 @@
         <div id="group-chat-view" hidden><label for="group-name">اسم المجموعة</label><input id="group-name" type="text" maxlength="60" placeholder="اكتب اسم المجموعة"><label for="group-people-search">ابحث عن أعضاء</label><input id="group-people-search" type="search" placeholder="اكتب اسم الشخص" autocomplete="off"><ul id="group-people-list" class="people-list" aria-label="اختيار أعضاء المجموعة"></ul><button id="create-group-button" type="button" class="primary-button">إنشاء المجموعة</button></div>
       </div>
     </section>
+  <section id="delete-account-panel" class="delete-account-panel" role="dialog" aria-modal="true" aria-label="تأكيد حذف الحساب" hidden>
+    <div class="delete-account-card">
+      <button id="close-delete-account" type="button" class="quiet-button">إغلاق</button>
+      <p id="delete-account-warning">حذف الحساب نهائي ولا يمكن التراجع عنه. سيتم حذف بيانات حسابك ورسائلك ومحادثاتك الخاصة والملفات التي أرفقتها، كما ستُحذف المجموعات التي أنشأتها. ستُزال عضويتك ورسائلك من المجموعات الأخرى.</p>
+      <label for="delete-account-confirmation">للتأكيد، اكتب: حذف حسابي</label>
+      <input id="delete-account-confirmation" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-describedby="delete-account-warning" placeholder="حذف حسابي">
+      <button id="confirm-delete-account" type="button" class="danger-button" disabled>حذف الحساب نهائيًا</button>
+      <button id="cancel-delete-account" type="button" class="quiet-button">إلغاء</button>
+    </div>
+  </section>
   <footer class="brand-tagline"><p>مرسال · تواصل بوضوح واحترام</p></footer><section id="attachment-chooser" class="attachment-chooser" role="dialog" aria-modal="true" aria-label="إرفاق ملف" hidden>
     <div class="attachment-chooser-card">
       <button id="close-attachment-chooser" type="button" class="quiet-button">إغلاق</button>
