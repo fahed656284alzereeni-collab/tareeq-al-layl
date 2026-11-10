@@ -108,6 +108,7 @@ const chatPartnerName = $("#chat-partner-name");
 const chatPartnerAccessible = $("#chat-partner-accessible");
 const chatPartnerPresence = $("#chat-partner-presence");
 let activePartnerLastSeenAt = null;
+let activeGroupMemberCount = null;
 let lastSeenHeartbeat = null;
 const conversationInfoStatus = $("#conversation-info-status");
 const conversationInfoCreated = $("#conversation-info-created");
@@ -475,7 +476,7 @@ function updateChatPartnerPresence() {
   if (activeConversation?.is_group) {
     chatPartnerPresence.textContent = "مجموعة";
     chatPartnerPresence.classList.remove("is-online", "is-offline");
-    chatPartnerAccessible.setAttribute("aria-label", `${chatPartnerName.textContent}، مجموعة`);
+    updateGroupHeaderAccessibleLabel();
     return;
   }
   const online = onlineUserIds.has(activePartner.id);
@@ -483,6 +484,30 @@ function updateChatPartnerPresence() {
   chatPartnerPresence.classList.toggle("is-online", online);
   chatPartnerPresence.classList.toggle("is-offline", !online);
   chatPartnerAccessible.setAttribute("aria-label", `${chatPartnerName.textContent}، ${chatPartnerPresence.textContent}`);
+}
+
+function updateGroupHeaderAccessibleLabel() {
+  if (!activeConversation?.is_group || !chatPartnerAccessible) return;
+  const name = chatPartnerName.textContent || activeConversation.group_name || "مجموعة";
+  const countLabel = activeGroupMemberCount === null
+    ? "جارٍ تحميل عدد الأعضاء"
+    : "عدد الأعضاء " + new Intl.NumberFormat("ar-JO").format(activeGroupMemberCount);
+  chatPartnerAccessible.setAttribute("aria-label", name + "، " + countLabel);
+}
+async function refreshGroupHeaderMemberCount(conversationId = activeConversation?.id) {
+  if (!conversationId || !currentUser || !activeConversation?.is_group || activeConversation.id !== conversationId) return;
+  const { count, error } = await supabase.from("conversation_members")
+    .select("user_id", { count: "exact", head: true })
+    .eq("conversation_id", conversationId);
+  if (error) {
+    console.warn("تعذر تحميل عدد أعضاء المجموعة:", error.message);
+    activeGroupMemberCount = null;
+    updateGroupHeaderAccessibleLabel();
+    return;
+  }
+  if (!activeConversation?.is_group || activeConversation.id !== conversationId) return;
+  activeGroupMemberCount = count || 0;
+  updateGroupHeaderAccessibleLabel();
 }
 
 async function startPresence() {
@@ -1264,12 +1289,14 @@ async function selectConversation(conversation, person) {
   status.textContent = "";
   activeConversation = conversation;
   activePartner = person;
+  activeGroupMemberCount = null;
   chatPartnerName.textContent = displayName(person);
   chatPartnerAccessible.setAttribute("aria-label", `${chatPartnerName.textContent}، جاري تحديث حالة الظهور`);
   const { data: partnerProfile } = await supabase.from("profiles")
     .select("last_seen_at").eq("id", person.id).maybeSingle();
   activePartnerLastSeenAt = partnerProfile?.last_seen_at || null;
   updateChatPartnerPresence();
+  if (activeConversation.is_group) void refreshGroupHeaderMemberCount(activeConversation.id);
   chatEmpty.hidden = true;
   chatView.hidden = false;
   workspace.classList.add("chat-open");
@@ -1387,6 +1414,10 @@ async function loadGroupManagement(){
   const {data:members,error}=await supabase.from("conversation_members").select("user_id,role").eq("conversation_id",activeConversation.id);
   if(error){announce("تعذر تحميل أعضاء المجموعة: "+error.message,"error");return;}
   activeGroupMemberIds=new Set((members||[]).map(member=>member.user_id));
+  if (activeConversation?.id) {
+    activeGroupMemberCount = members?.length || 0;
+    updateGroupHeaderAccessibleLabel();
+  }
   const ids=[...activeGroupMemberIds];let profiles=[];
   if(ids.length){const result=await supabase.from("profiles").select("id,display_name").in("id",ids);if(result.error){announce("تعذر تحميل أسماء الأعضاء.","error");return;}profiles=result.data||[];}
   const profileMap=new Map(profiles.map(profile=>[profile.id,profile]));groupMemberList.replaceChildren();
@@ -1499,7 +1530,7 @@ groupRenameSaveButton.addEventListener("click",async()=>{
   const name=groupRenameInput.value.trim();
   if(name.length<2){announce("اسم المجموعة يجب أن يتكون من حرفين على الأقل.","error");groupRenameInput.focus();return;}
   groupRenameSaveButton.disabled=true;
-  try{const {data,error}=await supabase.from("conversations").update({group_name:name}).eq("id",activeConversation.id).eq("user_one",currentUser.id).select("id").maybeSingle();if(error||!data)throw error||new Error("لا تملك صلاحية تغيير الاسم.");activeConversation.group_name=name;chatPartnerName.textContent=name;chatPartnerAccessible.setAttribute("aria-label",name+"، مجموعة");await loadConversations();await updateConversationInfo();announce("تم تغيير اسم المجموعة.");}
+  try{const {data,error}=await supabase.from("conversations").update({group_name:name}).eq("id",activeConversation.id).eq("user_one",currentUser.id).select("id").maybeSingle();if(error||!data)throw error||new Error("لا تملك صلاحية تغيير الاسم.");activeConversation.group_name=name;chatPartnerName.textContent=name;updateGroupHeaderAccessibleLabel();await loadConversations();await updateConversationInfo();announce("تم تغيير اسم المجموعة.");}
   catch(error){announce("تعذر تغيير اسم المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{groupRenameSaveButton.disabled=false;}
 });
