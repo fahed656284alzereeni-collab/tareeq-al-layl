@@ -36,8 +36,6 @@ const confirmDeleteAccountButton = $("#confirm-delete-account");
 const refreshDataButton = $("#refresh-data");
 const pushNotificationsButton = $("#enable-push-notifications");
 const pushNotificationsHelp = $("#push-notifications-help");
-const microphonePermissionButton = $("#microphone-permission-button");
-const microphonePermissionHelp = $("#microphone-permission-help");
 let settingsReturnFocus = null;
 const newChatButton=$("#new-chat-button"),newChatPanel=$("#new-chat-panel"),closeNewChatButton=$("#close-new-chat");
 const privateChatView=$("#private-chat-view"),groupChatView=$("#group-chat-view"),groupNameInput=$("#group-name");
@@ -601,7 +599,6 @@ function openSettings() {
   settingsEmail.value = currentUser.email || "";
   textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
   themeSelect.value = localStorage.getItem("mersal-theme") || "system";
-  void refreshMicrophonePermissionStatus();
   applyTextSize(textSizeSelect.value);
   applyTheme(themeSelect.value);
   settingsHome.hidden = false;
@@ -615,47 +612,6 @@ async function loadOwnProfile() {
   if (error) throw error;
   displayNameInput.value = data?.display_name || currentUser.email?.split("@")[0] || "";
 }
-async function refreshMicrophonePermissionStatus() {
-  let permissionState = null;
-  try {
-    if (navigator.permissions?.query) permissionState = (await navigator.permissions.query({ name: "microphone" })).state;
-  } catch { /* Safari may not expose microphone permission queries. */ }
-  const saved = localStorage.getItem("mersal-microphone-permission") === "granted";
-  if (permissionState === "denied") {
-    microphonePermissionHelp.textContent = "إذن الميكروفون مرفوض. اسمح به من إعدادات الموقع في المتصفح.";
-    microphonePermissionButton.textContent = "طريقة السماح بالميكروفون";
-    microphonePermissionButton.disabled = false;
-  } else if (permissionState === "granted" || saved) {
-    microphonePermissionHelp.textContent = "تم السماح بالميكروفون على هذا الجهاز. قد تحتاج لإعادة الإذن إذا غيّرت إعدادات الخصوصية.";
-    microphonePermissionButton.textContent = "التحقق من إذن الميكروفون";
-    microphonePermissionButton.disabled = false;
-  } else {
-    microphonePermissionHelp.textContent = "لم يتم منح إذن الميكروفون بعد.";
-    microphonePermissionButton.textContent = "السماح باستخدام الميكروفون";
-    microphonePermissionButton.disabled = false;
-  }
-}
-microphonePermissionButton.addEventListener("click", async () => {
-  if (!navigator.mediaDevices?.getUserMedia) {
-    microphonePermissionHelp.textContent = "هذا المتصفح لا يدعم الوصول إلى الميكروفون من الموقع.";
-    return;
-  }
-  microphonePermissionButton.disabled = true;
-  microphonePermissionHelp.textContent = "يرجى الموافقة على طلب الميكروفون من الجهاز.";
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-    stream.getTracks().forEach(track => track.stop());
-    localStorage.setItem("mersal-microphone-permission", "granted");
-    microphonePermissionHelp.textContent = "تم السماح بالميكروفون. يمكنك الآن تسجيل الرسائل الصوتية داخل مرسال.";
-    microphonePermissionButton.textContent = "التحقق من إذن الميكروفون";
-  } catch (error) {
-    microphonePermissionHelp.textContent = error?.name === "NotAllowedError"
-      ? "لم يتم منح الإذن. اسمح بالميكروفون من إعدادات الموقع في المتصفح أو الآيفون."
-      : "تعذر الوصول إلى الميكروفون. تحقق من توفره ثم حاول مرة أخرى.";
-  } finally {
-    microphonePermissionButton.disabled = false;
-  }
-});
 settingsButton.addEventListener("click", openSettings);
 $("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
 $("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
