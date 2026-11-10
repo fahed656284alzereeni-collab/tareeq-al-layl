@@ -100,6 +100,23 @@ footer { padding: 16px 12px; text-align: center; color: #a6b3cb; font-size: .9re
 html.text-large { font-size: 112%; }
 html.text-xlarge { font-size: 125%; }
 
+/* Account details occupy the full screen; keep the existing back button at the top. */
+#account-settings-view {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  padding: clamp(20px, 4vw, 42px);
+  padding-bottom: calc(42px + env(safe-area-inset-bottom));
+  background: #0b1020;
+}
+#account-settings-view[hidden] { display: none !important; }
+:root[data-theme="light"] #account-settings-view { background: #f7f9fc; }
+
 /* General settings navigation */
 .settings-title { font-size: 1.3rem; font-weight: 800; }
 .settings-menu { display: grid; gap: 12px; }
