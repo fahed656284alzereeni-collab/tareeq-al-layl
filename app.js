@@ -17,6 +17,12 @@ const account = $("#account");
 const status = $("#status");
 const loginButton = $("#google-login");
 const logoutButton = $("#logout");
+const deleteAccountButton = $("#delete-account-button");
+const deleteAccountPanel = $("#delete-account-panel");
+const closeDeleteAccountButton = $("#close-delete-account");
+const cancelDeleteAccountButton = $("#cancel-delete-account");
+const deleteAccountConfirmation = $("#delete-account-confirmation");
+const confirmDeleteAccountButton = $("#confirm-delete-account");
 const settingsButton = $("#settings-button");
 const settingsPanel = $("#settings-panel");
 const settingsForm = $("#settings-form");
@@ -183,6 +189,7 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   authPanel.hidden = false;
   workspace.hidden = true;
   logoutButton.hidden = true;
+  deleteAccountButton.hidden = true;
   account.textContent = "غير مسجل الدخول";
   if (realtimeChannel) supabase.removeChannel(realtimeChannel);
   if (presenceChannel) supabase.removeChannel(presenceChannel);
@@ -224,7 +231,8 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   if (!lastSeenHeartbeat) lastSeenHeartbeat = window.setInterval(() => { if (document.visibilityState === "visible") void touchLastSeen(); }, 60000);
   authPanel.hidden = true;
   workspace.hidden = false;
-  logoutButton.hidden = true;
+  logoutButton.hidden = false;
+  deleteAccountButton.hidden = false;
   settingsButton.hidden = false;
   account.textContent = "مرحبًا بك في مرسال · متصل الآن";
   try {
@@ -637,6 +645,47 @@ loginButton.addEventListener("click", async () => {
   } catch (error) {
     announce("تعذر بدء تسجيل الدخول: " + (error?.message || "خطأ غير معروف"), "error");
     loginButton.disabled = false;
+  }
+});
+
+function openDeleteAccountPanel() {
+  deleteAccountConfirmation.value = "";
+  confirmDeleteAccountButton.disabled = true;
+  deleteAccountPanel.hidden = false;
+  deleteAccountConfirmation.focus();
+}
+function closeDeleteAccountPanel() {
+  deleteAccountPanel.hidden = true;
+  deleteAccountButton.focus();
+}
+deleteAccountButton.addEventListener("click", openDeleteAccountPanel);
+closeDeleteAccountButton.addEventListener("click", closeDeleteAccountPanel);
+cancelDeleteAccountButton.addEventListener("click", closeDeleteAccountPanel);
+deleteAccountConfirmation.addEventListener("input", () => {
+  confirmDeleteAccountButton.disabled = deleteAccountConfirmation.value.trim() !== "حذف حسابي";
+});
+deleteAccountPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeDeleteAccountPanel();
+});
+confirmDeleteAccountButton.addEventListener("click", async () => {
+  if (!currentUser || deleteAccountConfirmation.value.trim() !== "حذف حسابي") return;
+  confirmDeleteAccountButton.disabled = true;
+  closeDeleteAccountButton.disabled = true;
+  cancelDeleteAccountButton.disabled = true;
+  try {
+    const { error } = await supabase.functions.invoke("delete-account", {
+      body: { confirmation: "حذف حسابي" }
+    });
+    if (error) throw error;
+    deleteAccountPanel.hidden = true;
+    await supabase.auth.signOut();
+    showLoggedOut("تم حذف الحساب نهائيًا.");
+  } catch (error) {
+    announce("تعذر حذف الحساب: " + (error?.message || "حاول مرة أخرى."), "error");
+    confirmDeleteAccountButton.disabled = false;
+  } finally {
+    closeDeleteAccountButton.disabled = false;
+    cancelDeleteAccountButton.disabled = false;
   }
 });
 logoutButton.addEventListener("click", async () => {
