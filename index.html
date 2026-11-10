@@ -157,7 +157,8 @@
               <div role="group" aria-label="عدد الرسائل"><span class="conversation-info-label">عدد الرسائل</span><span class="conversation-info-value" id="conversation-info-count">—</span></div>
             </div>
             <div class="conversation-info-tools">
-              <button id="conversation-info-search" type="button" class="quiet-button">البحث في الرسائل</button>
+              <label class="visually-hidden" for="conversation-search-input">البحث في الرسائل</label>
+              <input id="conversation-search-input" class="conversation-search-input" type="search" autocomplete="off" placeholder="ابحث في الرسائل" aria-label="البحث في الرسائل">
               <button id="conversation-info-export" type="button" class="quiet-button">تنزيل سجل المحادثة</button>
               <button id="conversation-info-mute" type="button" class="quiet-button">كتم إشعارات المحادثة</button>
               <button id="conversation-info-clear" type="button" class="danger-button">مسح المحادثة من جهازي</button>
@@ -174,8 +175,6 @@
             <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
             <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
             <div id="conversation-search-area" class="conversation-search-area" hidden>
-              <label for="conversation-search-input">ابحث في الرسائل المحمّلة</label>
-              <input id="conversation-search-input" type="search" autocomplete="off" placeholder="اكتب كلمة للبحث">
               <p id="conversation-search-status" role="status" aria-live="polite">اكتب كلمة لعرض النتائج.</p>
               <ul id="conversation-search-results" class="conversation-search-results"></ul>
             </div>
