@@ -15,6 +15,14 @@ const $ = (selector) => document.querySelector(selector);
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
   "عام":"General","الخصوصية":"Privacy","آخر ظهور":"Last seen","حالة الاتصال":"Online status",
+  "من يستطيع رؤية آخر ظهورك":"Who can see your last seen",
+  "من يستطيع رؤية أنك متصل الآن":"Who can see when you're online",
+  "الخصوصية متبادلة مثل واتساب: إذا أخفيت آخر ظهورك عن شخص، فلن تتمكن من رؤية آخر ظهوره أو حالة اتصاله. ويجب أن تسمح إعدادات الطرفين بذلك.":"Mutual privacy, like WhatsApp: if you hide your last seen from someone, you cannot see their last seen or online status. Both users' settings must allow it.",
+  "اختر الجميع للسماح برؤية اتصالك، أو «مثل آخر ظهور» لتطبيق الجمهور نفسه. لا يمكن تجاوز قاعدة الخصوصية المتبادلة.":"Choose Everyone to share when you're online, or Same as last seen to use the same audience. Mutual privacy still applies.",
+  "عند إيقافها لن ترسل أو ترى مؤشرات القراءة في المحادثات الفردية، ولن تعرف من شاهد حالاتك. تبقى مؤشرات القراءة في المجموعات مفعّلة كما في واتساب.":"When off, you won't send or see read receipts in individual chats or see who viewed your statuses. Group read receipts remain on, as in WhatsApp.",
+  "يُمنع إدخالك إلى المجموعات ممن لا تسمح لهم إعداداتك أو تستثنيهم.":"People not allowed by your settings or exclusions cannot add you to groups.",
+  "تُطبّق تغييرات جمهور الحالات على الحالات الجديدة فقط، ولا تغيّر جمهور الحالات المنشورة سابقًا. هذه الخيارات الثلاثة تطابق خيارات جمهور الحالة في واتساب.":"Audience changes apply only to new statuses, not statuses already posted. These three choices match WhatsApp status privacy.",
+  "يظهر إشعار برسالة جديدة دون عرض محتوى الرسالة.":"Notifications show that a new message arrived without revealing its content.",
   "مؤشرات قراءة الرسائل":"Read receipts","من يستطيع إضافتي إلى المجموعات":"Who can add me to groups",
   "إخفاء نص الرسائل في الإشعارات":"Hide message text in notifications","من يستطيع مشاهدة حالاتي":"Who can view my statuses",
   "الأشخاص المحظورون":"Blocked users","حفظ المستثنين":"Save exclusions","الجميع":"Everyone",
