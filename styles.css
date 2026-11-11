@@ -1771,6 +1771,16 @@ html[dir="ltr"] .message-form { direction: ltr; }
 html[dir="ltr"] .voice-call-card > button { text-align: left; }
 
 
+/* Full-screen accessible contact picker for privacy exceptions and status audience. */
+.privacy-contact-picker{position:fixed;inset:0;z-index:220;box-sizing:border-box;width:100%;height:100vh;height:100dvh;overflow-y:auto;padding:calc(20px + env(safe-area-inset-top)) 20px calc(28px + env(safe-area-inset-bottom));background:#0b1020;color:#f4f7ff;display:flex;flex-direction:column;gap:18px}
+.privacy-contact-picker[hidden]{display:none!important}
+.privacy-contact-picker-header{display:flex;align-items:center;gap:16px}
+.privacy-contact-picker-header h2{font-size:1.15rem;margin:0}
+.privacy-contact-picker .privacy-people-list{flex:1;align-content:start}
+.privacy-contact-picker .primary-button{width:100%;min-height:52px}
+body.privacy-contact-picker-open{overflow:hidden}
+:root[data-theme="light"] .privacy-contact-picker{background:#f7f9fc;color:#20334d}
+:root[data-theme="light"] .privacy-contact-picker .privacy-person-choice{color:#20334d}
 /* General settings are a dedicated full-screen view, matching account settings. */
 #general-settings-view {
   position: fixed;
@@ -1866,3 +1876,5 @@ html[dir="ltr"] #privacy-settings-view{text-align:left}
   color: #20334d;
   border-color: #bdcde1;
 }
+
+#privacy-settings-view .privacy-options > div[id$="-exclusions-area"]{display:none!important}
