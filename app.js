@@ -80,7 +80,7 @@ const mersalTranslations = {
   "تعذر إلغاء جدولة الرسالة: ":"Could not cancel scheduled message: ","ربما حان موعد إرسالها.":"It may be time to send it.",
   "تم إلغاء جدولة الرسالة.":"Scheduled message cancelled.","حجم الملف ":"File size "," أكبر من 50 ميغابايت.":" exceeds 50 MB.",
   "تعذر إرسال الملف ":"Could not send file ","اكتب رسالتك قبل الإرسال.":"Write your message before sending.","تعذر التحقق من الجلسة: ":"Could not verify session: ",
-  "فشل تسجيل الدخول: ":"Sign-in failed: "
+  "فشل تسجيل الدخول: ":"Sign-in failed: ",
 "م":"M","الإعدادات":"Settings","التواصل مع المطور":"Contact the developer","محادثاتك الخاصة":"Your private chats",
   "ابحث في الرسائل":"Search messages","أعضاء المجموعة":"Group members","خيارات عضو المجموعة":"Group member options","إضافة أعضاء للمجموعة":"Add members to group",
   "الأشخاص المتاحون للإضافة":"People available to add","قائمة الرسائل المجدولة":"Scheduled message list","رسائل المحادثة":"Conversation messages",
