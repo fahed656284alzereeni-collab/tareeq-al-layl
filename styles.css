@@ -1903,25 +1903,18 @@ html[dir="ltr"] #privacy-settings-view{text-align:left}
 .profile-settings-form { display: grid; gap: 18px; max-width: 760px; margin: 0 auto; }
 .profile-settings-form > label { display: block; margin: 0 0 -10px; color: #e5ebf8; font-weight: 750; }
 .profile-photo-editor { display: grid; justify-items: center; gap: 12px; text-align: center; }
-.profile-photo-preview,
-.profile-photo-placeholder {
-  width: 132px;
-  height: 132px;
+.profile-photo-preview {
+  display: block;
+  width: min(260px, 72vw);
+  height: min(260px, 72vw);
+  max-width: 100%;
+  aspect-ratio: 1;
   border-radius: 50%;
   object-fit: cover;
 }
-.profile-photo-placeholder {
-  display: grid;
-  place-items: center;
-  margin: 0;
-  padding: 12px;
-  border: 2px dashed #7892b6;
-  background: #182945;
-  color: #e5ebf8;
-  font-weight: 750;
-}
-.profile-photo-preview[hidden],
-.profile-photo-placeholder[hidden] { display: none !important; }
+.profile-photo-placeholder,
+.profile-photo-placeholder[hidden],
+.profile-photo-preview[hidden] { display: none !important; }
 .profile-photo-editor button { width: min(100%, 360px); }
 #account-settings-view .settings-section { max-width: 760px; margin: 0 auto 18px; }
 #account-settings-view .settings-section-title { color: inherit; font-weight: 800; }
