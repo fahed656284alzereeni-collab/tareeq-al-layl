@@ -288,17 +288,6 @@ const openDeveloperContactButton = $("#open-developer-contact");
 const closeDeveloperContactButton = $("#close-developer-contact");
 let developerContactReturnFocus = null;
 const settingsForm = $("#settings-form");
-let profileSavedSnapshot = null;
-let profileSaveInProgress = false;
-function getProfileFormSnapshot() {
-  return JSON.stringify({ name: displayNameInput.value.trim(), about: settingsAboutInput.value.trim() });
-}
-function updateProfileSaveButton() {
-  const button = $("#save-settings");
-  if (button) button.disabled = profileSaveInProgress || profileSavedSnapshot === null || getProfileFormSnapshot() === profileSavedSnapshot;
-}
-displayNameInput.addEventListener("input", updateProfileSaveButton);
-settingsAboutInput.addEventListener("input", updateProfileSaveButton);
 const displayNameInput = $("#settings-display-name");
 const profileSettingsView = $("#profile-settings-view");
 const openProfileSettingsButton = $("#open-profile-settings");
@@ -343,6 +332,17 @@ let activePrivacyPicker = null;
 const privacySaveInProgress = new Set();
 const saveAboutExclusionsButton = $("#save-about-exclusions");
 const settingsAboutInput = $("#settings-about");
+let profileSavedSnapshot = null;
+let profileSaveInProgress = false;
+function getProfileFormSnapshot() {
+  return JSON.stringify({ name: displayNameInput.value.trim(), about: settingsAboutInput.value.trim() });
+}
+function updateProfileSaveButton() {
+  const button = $("#save-settings");
+  if (button) button.disabled = profileSaveInProgress || profileSavedSnapshot === null || getProfileFormSnapshot() === profileSavedSnapshot;
+}
+displayNameInput.addEventListener("input", updateProfileSaveButton);
+settingsAboutInput.addEventListener("input", updateProfileSaveButton);
 const conversationInfoAbout = $("#conversation-info-about");
 const conversationInfoPhoto = $("#conversation-info-photo");
 const conversationInfoPhotoRow = $("#conversation-info-photo-row");
@@ -1228,6 +1228,7 @@ async function loadPrivacySettings() {
     : "حدد الأشخاص الذين لن يتمكنوا من مشاهدة حالاتك.";
   await Promise.all([renderPrivacyExclusionChoices("last_seen",false), renderPrivacyExclusionChoices("group_add",false), renderPrivacyExclusionChoices("profile_photo",false), renderPrivacyExclusionChoices("about",false), renderStatusAudienceChoices(false), renderBlockedUsers()]);
   if (notifications.length) renderNotifications();
+  updatePrivacySaveButtons();
 }
 async function savePrivacySettings() {
   if (!currentUser) return;
@@ -1759,19 +1760,16 @@ settingsForm.addEventListener("submit", async (event) => {
     displayNameInput.focus();
     return;
   }
-  const saveButton = $("#save-settings");
   if (profileSavedSnapshot === getProfileFormSnapshot() || profileSaveInProgress) return;
   profileSaveInProgress = true;
   updateProfileSaveButton();
   announce("جارٍ حفظ إعدادات الحساب…");
-  const { error } = await supabase.from("profiles").update({
-    display_name: name, about, updated_at: new Date().toISOString()
-  }).eq("id", currentUser.id);
-  if (error) {
-    announce("تعذر حفظ الاسم: " + error.message, "error");
-  } else {
-    // Keep the user on the profile screen after saving. Refresh related
-    // profile/conversation views without changing the current settings navigation.
+  try {
+    const { error } = await supabase.from("profiles").update({
+      display_name: name, about, updated_at: new Date().toISOString()
+    }).eq("id", currentUser.id);
+    if (error) throw error;
+    // Keep the user on the profile screen after saving. Refresh related views.
     profileSavedSnapshot = getProfileFormSnapshot();
     const refreshResults = await Promise.allSettled([loadPeople(), loadConversations()]);
     announce(
@@ -1780,9 +1778,12 @@ settingsForm.addEventListener("submit", async (event) => {
         : "تم حفظ الملف الشخصي.",
       "success"
     );
+  } catch (error) {
+    announce("تعذر حفظ الملف الشخصي: " + (error.message || "حاول مرة أخرى."), "error");
+  } finally {
+    profileSaveInProgress = false;
+    updateProfileSaveButton();
   }
-  profileSaveInProgress = false;
-  updateProfileSaveButton();
 });
 applyTextSize(localStorage.getItem("mersal-text-size") || "normal");
 applyTheme(localStorage.getItem("mersal-theme") || "system");
