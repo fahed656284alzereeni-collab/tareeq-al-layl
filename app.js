@@ -1191,7 +1191,17 @@ backPrivacySettingsButton.addEventListener("click",()=>{privacySettingsView.hidd
 for(const control of [privacyLastSeenSelect,privacyOnlineSelect,privacyReadReceiptsInput,privacyGroupAddSelect,privacyHidePreviewInput,privacyStatusSelect]){
   control.addEventListener("change",async()=>{
     statusExclusionsArea.hidden=privacyStatusSelect.value!=="custom";
-    try{await savePrivacySettings();}catch(error){announce("تعذر حفظ إعداد الخصوصية: "+error.message,"error");}
+    try{await savePrivacySettings();}
+    catch(error){
+      privacyLastSeenSelect.value=privacySettings.last_seen_visibility;
+      privacyOnlineSelect.value=privacySettings.online_visibility;
+      privacyReadReceiptsInput.checked=privacySettings.read_receipts_enabled;
+      privacyGroupAddSelect.value=privacySettings.group_add_visibility;
+      privacyHidePreviewInput.checked=privacySettings.hide_notification_preview;
+      privacyStatusSelect.value=privacySettings.status_visibility;
+      statusExclusionsArea.hidden=privacySettings.status_visibility!=="custom";
+      announce("تعذر حفظ إعداد الخصوصية: "+error.message,"error");
+    }
   });
 }
 saveStatusExclusionsButton.addEventListener("click",()=>{void saveStatusExclusions();});
