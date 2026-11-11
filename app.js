@@ -1720,20 +1720,15 @@ settingsForm.addEventListener("submit", async (event) => {
   if (error) {
     announce("تعذر حفظ الاسم: " + error.message, "error");
   } else {
-    // The profile update is already saved. Refreshing the lists must not prevent
-    // the settings screen from closing if either refresh request fails.
+    // Keep the user on the profile screen after saving. Refresh related
+    // profile/conversation views without changing the current settings navigation.
     const refreshResults = await Promise.allSettled([loadPeople(), loadConversations()]);
-    settingsPanel.hidden = true;
-    profileSettingsView.hidden = true;
-    settingsHome.hidden = false;
-    document.body.classList.remove("settings-open");
-    setActiveBottomTab("home");
-    announce("تم حفظ الملف الشخصي.", "success");
-    // Return VoiceOver focus to the home tab, not to the settings tab that opened this screen.
-    homeTabButton?.focus?.();
-    if (refreshResults.some(result => result.status === "rejected")) {
-      announce("تم حفظ الملف الشخصي. قد تحتاج قائمة المحادثات إلى تحديث.", "success");
-    }
+    announce(
+      refreshResults.some(result => result.status === "rejected")
+        ? "تم حفظ الملف الشخصي. قد تحتاج بعض القوائم إلى تحديث."
+        : "تم حفظ الملف الشخصي.",
+      "success"
+    );
   }
   saveButton.disabled = false;
 });
