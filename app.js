@@ -288,6 +288,16 @@ const closeDeveloperContactButton = $("#close-developer-contact");
 let developerContactReturnFocus = null;
 const settingsForm = $("#settings-form");
 const displayNameInput = $("#settings-display-name");
+const profileSettingsView = $("#profile-settings-view");
+const openProfileSettingsButton = $("#open-profile-settings");
+const backProfileSettingsButton = $("#back-profile-settings");
+const profilePhotoInput = $("#profile-photo-input");
+const profilePhotoPreview = $("#profile-photo-preview");
+const profilePhotoPlaceholder = $("#profile-photo-placeholder");
+const chooseProfilePhotoButton = $("#choose-profile-photo");
+const removeProfilePhotoButton = $("#remove-profile-photo");
+let currentProfilePhotoPath = null;
+let currentProfilePhotoExternal = false;
 const textSizeSelect = $("#settings-text-size");
 const themeSelect = $("#settings-theme");
 const settingsLanguageSelect = $("#settings-language");
@@ -668,6 +678,32 @@ function getCallbackParams() {
 }
 function displayName(profile) {
   return profile?.display_name?.trim() || "مستخدم مرسال";
+}
+async function resolveProfileAvatar(profile) {
+  if (!profile?.avatar_url) return profile;
+  if (/^https?:\/\//i.test(profile.avatar_url)) return profile;
+  const { data, error } = await supabase.storage.from("mersal-profile-photos").createSignedUrl(profile.avatar_url, 3600);
+  if (error || !data?.signedUrl) {
+    console.warn("تعذر تجهيز الصورة الشخصية:", error?.message || "رابط الصورة غير متاح");
+    return { ...profile, avatar_url: null };
+  }
+  return { ...profile, avatar_url: data.signedUrl };
+}
+async function resolveProfileAvatars(profiles) {
+  return Promise.all((profiles || []).map(resolveProfileAvatar));
+}
+function setProfilePhotoPreview(url) {
+  if (url) {
+    profilePhotoPreview.src = url;
+    profilePhotoPreview.hidden = false;
+    profilePhotoPlaceholder.hidden = true;
+    removeProfilePhotoButton.hidden = false;
+  } else {
+    profilePhotoPreview.removeAttribute("src");
+    profilePhotoPreview.hidden = true;
+    profilePhotoPlaceholder.hidden = false;
+    removeProfilePhotoButton.hidden = !currentProfilePhotoPath && !currentProfilePhotoExternal;
+  }
 }
 function appendProfileAvatar(container, profile) {
   const avatar=document.createElement("span");
@@ -1375,6 +1411,7 @@ function openSettings() {
   settingsHome.hidden = false;
   generalSettingsView.hidden = true;
   privacySettingsView.hidden = true;
+  profileSettingsView.hidden = true;
   accountSettingsView.hidden = true;
   settingsPanel.hidden = false;
   document.body.classList.add("settings-open");
@@ -1383,13 +1420,17 @@ function openSettings() {
 }
 async function loadOwnProfile() {
   const [{data,error},visibleProfile] = await Promise.all([
-    supabase.from("profiles").select("display_name").eq("id",currentUser.id).maybeSingle(),
+    supabase.from("profiles").select("display_name,avatar_url").eq("id",currentUser.id).maybeSingle(),
     supabase.rpc("get_visible_profiles",{p_user_ids:[currentUser.id]})
   ]);
   if(error)throw error;
   if(visibleProfile.error)throw visibleProfile.error;
   displayNameInput.value=data?.display_name||currentUser.email?.split("@")[0]||"";
   settingsAboutInput.value=visibleProfile.data?.[0]?.about||"";
+  currentProfilePhotoPath = data?.avatar_url && !/^https?:\/\//i.test(data.avatar_url) ? data.avatar_url : null;
+  currentProfilePhotoExternal = Boolean(data?.avatar_url && !currentProfilePhotoPath);
+  const ownPhoto = await resolveProfileAvatar({ avatar_url: data?.avatar_url || null });
+  setProfilePhotoPreview(ownPhoto?.avatar_url || null);
 }
 openDeveloperContactButton.addEventListener("click", () => {
   developerContactReturnFocus = document.activeElement;
@@ -1417,14 +1458,14 @@ settingsTabButton.addEventListener("click", openSettings);
 statusTabButton.addEventListener("click", openStatusTab);
 homeTabButton.addEventListener("click", returnToHomeTab);
 openGeneralSettingsButton.addEventListener("click", () => {
-  settingsHome.hidden = true; accountSettingsView.hidden = true; privacySettingsView.hidden = true;
+  settingsHome.hidden = true; accountSettingsView.hidden = true; profileSettingsView.hidden = true; privacySettingsView.hidden = true;
   generalSettingsView.hidden = false; backGeneralSettingsButton.focus();
 });
 privacySettingsView.addEventListener("keydown", event => {
   if (event.key === "Escape") backPrivacySettingsButton.click();
 });
 openPrivacySettingsButton.addEventListener("click", async () => {
-  settingsHome.hidden=true; accountSettingsView.hidden=true; generalSettingsView.hidden=true;
+  settingsHome.hidden=true; accountSettingsView.hidden=true; profileSettingsView.hidden=true; generalSettingsView.hidden=true;
   privacySettingsView.hidden=false;
   try { await loadPrivacySettings(); privacyLastSeenSelect.focus(); }
   catch(error){announce("تعذر تحميل إعدادات الخصوصية: "+error.message,"error");}
@@ -1476,7 +1517,19 @@ backGeneralSettingsButton.addEventListener("click", () => {
   settingsHome.hidden = false;
   openGeneralSettingsButton.focus();
 });
-$("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; generalSettingsView.hidden = true; privacySettingsView.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
+openProfileSettingsButton.addEventListener("click", async () => {
+  settingsHome.hidden = true; accountSettingsView.hidden = true; generalSettingsView.hidden = true; privacySettingsView.hidden = true;
+  profileSettingsView.hidden = false;
+  try { await loadOwnProfile(); displayNameInput.focus(); }
+  catch (error) { announce("تعذر تحميل الملف الشخصي: " + error.message, "error"); }
+});
+backProfileSettingsButton.addEventListener("click", () => {
+  profileSettingsView.hidden = true; settingsHome.hidden = false; openProfileSettingsButton.focus();
+});
+$("#open-account-settings").addEventListener("click", () => {
+  settingsHome.hidden = true; generalSettingsView.hidden = true; privacySettingsView.hidden = true; profileSettingsView.hidden = true;
+  accountSettingsView.hidden = false; settingsEmail.focus();
+});
 $("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
 accountLogoutButton.addEventListener("click", async () => {
   accountLogoutButton.disabled = true;
@@ -1530,6 +1583,18 @@ confirmDeleteAccountButton.addEventListener("click", async () => {
 });
 settingsPanel.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
+  if (!profileSettingsView.hidden) {
+    profileSettingsView.hidden = true;
+    settingsHome.hidden = false;
+    openProfileSettingsButton.focus();
+    return;
+  }
+  if (!accountSettingsView.hidden) {
+    accountSettingsView.hidden = true;
+    settingsHome.hidden = false;
+    $("#open-account-settings").focus();
+    return;
+  }
   if (!privacySettingsView.hidden) {
     privacySettingsView.hidden = true;
     settingsHome.hidden = false;
@@ -1558,6 +1623,83 @@ themeSelect.addEventListener("change", () => {
 window.matchMedia?.("(prefers-color-scheme: light)").addEventListener?.("change", () => {
   if ((localStorage.getItem("mersal-theme") || "system") === "system") applyTheme("system");
 });
+chooseProfilePhotoButton.addEventListener("click", () => profilePhotoInput.click());
+profilePhotoInput.addEventListener("change", async () => {
+  const file = profilePhotoInput.files?.[0];
+  profilePhotoInput.value = "";
+  if (!file || !currentUser) return;
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+  if (!allowedTypes.includes(file.type)) {
+    announce("اختر صورة بصيغة JPG أو PNG أو WebP أو GIF.", "error");
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    announce("حجم الصورة يجب ألا يتجاوز 5 ميغابايت.", "error");
+    return;
+  }
+  chooseProfilePhotoButton.disabled = true;
+  removeProfilePhotoButton.disabled = true;
+  announce("جارٍ رفع الصورة الشخصية…");
+  let uploadedPath = null;
+  let profileUpdated = false;
+  try {
+    const extension = ({ "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif" })[file.type];
+    uploadedPath = currentUser.id + "/" + crypto.randomUUID() + "." + extension;
+    const { error: uploadError } = await supabase.storage.from("mersal-profile-photos").upload(uploadedPath, file, {
+      contentType: file.type, upsert: false
+    });
+    if (uploadError) throw uploadError;
+    const { error: updateError } = await supabase.from("profiles").update({
+      avatar_url: uploadedPath, updated_at: new Date().toISOString()
+    }).eq("id", currentUser.id);
+    if (updateError) throw updateError;
+    profileUpdated = true;
+    const previousPath = currentProfilePhotoPath;
+    currentProfilePhotoPath = uploadedPath;
+    currentProfilePhotoExternal = false;
+    const { data: signed, error: signedError } = await supabase.storage.from("mersal-profile-photos").createSignedUrl(uploadedPath, 3600);
+    if (signedError) throw signedError;
+    setProfilePhotoPreview(signed.signedUrl);
+    if (previousPath && previousPath !== uploadedPath) {
+      const { error: removeError } = await supabase.storage.from("mersal-profile-photos").remove([previousPath]);
+      if (removeError) console.warn("تعذر حذف الصورة السابقة:", removeError.message);
+    }
+    await Promise.all([loadPeople(), loadConversations()]);
+    announce("تم تحديث الصورة الشخصية.");
+  } catch (error) {
+    if (uploadedPath && !profileUpdated) await supabase.storage.from("mersal-profile-photos").remove([uploadedPath]).catch(() => {});
+    announce("تعذر رفع الصورة الشخصية: " + (error.message || "حاول مرة أخرى."), "error");
+  } finally {
+    chooseProfilePhotoButton.disabled = false;
+    removeProfilePhotoButton.disabled = false;
+  }
+});
+removeProfilePhotoButton.addEventListener("click", async () => {
+  if (!currentUser || (!currentProfilePhotoPath && !currentProfilePhotoExternal)) return;
+  removeProfilePhotoButton.disabled = true;
+  chooseProfilePhotoButton.disabled = true;
+  try {
+    const previousPath = currentProfilePhotoPath;
+    const { error } = await supabase.from("profiles").update({
+      avatar_url: null, updated_at: new Date().toISOString()
+    }).eq("id", currentUser.id);
+    if (error) throw error;
+    if (previousPath) {
+      const { error: removeError } = await supabase.storage.from("mersal-profile-photos").remove([previousPath]);
+      if (removeError) console.warn("تعذر حذف ملف الصورة السابقة:", removeError.message);
+    }
+    currentProfilePhotoPath = null;
+    currentProfilePhotoExternal = false;
+    setProfilePhotoPreview(null);
+    await Promise.all([loadPeople(), loadConversations()]);
+    announce("تمت إزالة الصورة الشخصية.");
+  } catch (error) {
+    announce("تعذرت إزالة الصورة الشخصية: " + (error.message || "حاول مرة أخرى."), "error");
+  } finally {
+    removeProfilePhotoButton.disabled = false;
+    chooseProfilePhotoButton.disabled = false;
+  }
+});
 settingsForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!currentUser) return;
@@ -1579,7 +1721,7 @@ settingsForm.addEventListener("submit", async (event) => {
     announce("تعذر حفظ الاسم: " + error.message, "error");
   } else {
     await Promise.all([loadPeople(), loadConversations()]);
-    announce("تم الحفظ.", "success");
+    announce("تم حفظ الملف الشخصي.", "success");
     settingsPanel.hidden = true;
     document.body.classList.remove("settings-open");
     setActiveBottomTab("home");
@@ -1631,6 +1773,7 @@ async function loadPeople() {
     if(result.error)throw result.error;
     visibleProfiles=result.data||[];
   }
+  visibleProfiles = await resolveProfileAvatars(visibleProfiles);
   const visibleMap=new Map(visibleProfiles.map(profile=>[profile.id,profile]));
   people=(data||[]).map(person=>({...person,...(visibleMap.get(person.id)||{})}));
   renderPeople();
@@ -1924,7 +2067,8 @@ async function loadConversations() {
     if (profileError) throw profileError;
     const visible=await supabase.rpc("get_visible_profiles",{p_user_ids:partnerIds});
     if(visible.error)throw visible.error;
-    const visibleMap=new Map((visible.data||[]).map(profile=>[profile.id,profile]));
+    const resolvedProfiles=await resolveProfileAvatars(visible.data||[]);
+    const visibleMap=new Map(resolvedProfiles.map(profile=>[profile.id,profile]));
     profileMap=new Map((profiles||[]).map(profile=>[profile.id,{...profile,...(visibleMap.get(profile.id)||{})}]));
   }
   conversationList.replaceChildren();
@@ -2106,7 +2250,7 @@ async function updateConversationInfo() {
   if (!isGroup) {
     const visibleProfile=await supabase.rpc("get_visible_profiles",{p_user_ids:[activePartner.id]});
     if(visibleProfile.error)console.warn("تعذر تحميل بيانات الحساب:",visibleProfile.error.message);
-    const partnerProfile=visibleProfile.data?.[0];
+    const partnerProfile=await resolveProfileAvatar(visibleProfile.data?.[0]);
     setConversationInfoValue(conversationInfoAbout,partnerProfile?.about||"لا توجد نبذة متاحة.");
     if(conversationInfoPhoto){
       if(partnerProfile?.avatar_url){
