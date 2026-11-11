@@ -58,6 +58,9 @@
           <section class="settings-section general-settings-entry">
             <button id="open-general-settings" type="button" class="settings-menu-button">عام</button>
           </section>
+          <section class="settings-section privacy-settings-entry">
+            <button id="open-privacy-settings" type="button" class="settings-menu-button">الخصوصية</button>
+          </section>
           <section class="settings-section developer-contact-entry">
             <button id="open-developer-contact" type="button" class="settings-menu-button">التواصل مع المطور عبر</button>
           </section>
@@ -87,6 +90,30 @@
               <button id="enable-push-notifications" type="button" class="quiet-button push-notifications-button" aria-pressed="false">تشغيل إشعارات الهاتف</button>
               <p id="push-notifications-help" class="settings-help" role="status" aria-live="polite">لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.</p>
             </div>
+          </section>
+        </div>
+        <div id="privacy-settings-view" hidden>
+          <button id="back-privacy-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
+          <section class="settings-section privacy-options">
+            <label for="privacy-last-seen">آخر ظهور</label>
+            <select id="privacy-last-seen"><option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option><option value="nobody">لا أحد</option></select>
+            <label for="privacy-online">حالة الاتصال</label>
+            <select id="privacy-online"><option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option><option value="nobody">لا أحد</option></select>
+            <label class="privacy-toggle"><input id="privacy-read-receipts" type="checkbox" checked> مؤشرات قراءة الرسائل</label>
+            <label for="privacy-group-add">من يستطيع إضافتي إلى المجموعات</label>
+            <select id="privacy-group-add"><option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option><option value="nobody">لا أحد</option></select>
+            <label class="privacy-toggle"><input id="privacy-hide-preview" type="checkbox"> إخفاء نص الرسائل في الإشعارات</label>
+            <label for="privacy-status">من يستطيع مشاهدة حالاتي</label>
+            <select id="privacy-status"><option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option><option value="custom">جهات اتصالي باستثناء أشخاص</option><option value="nobody">لا أحد</option></select>
+            <div id="status-exclusions-area" hidden>
+              <p class="settings-help">حدد الأشخاص الذين لا تريد أن يشاهدوا حالاتك.</p>
+              <ul id="status-exclusions-list" class="privacy-people-list" aria-label="الأشخاص المستثنون من مشاهدة الحالات"></ul>
+              <button id="save-status-exclusions" type="button" class="primary-button">حفظ المستثنين</button>
+            </div>
+          </section>
+          <section class="settings-section blocked-users-section">
+            <p>الأشخاص المحظورون</p>
+            <ul id="blocked-users-list" class="privacy-people-list" aria-label="الأشخاص المحظورون"></ul>
           </section>
         </div>
         <div id="account-settings-view" hidden>
