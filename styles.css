@@ -1735,3 +1735,37 @@ button .icon, button svg { flex: 0 0 auto; }
 @media (prefers-reduced-motion: reduce) {
   .message-schedule-panel, .scheduled-messages-panel { scroll-behavior: auto; }
 }
+
+
+/* Language selector and bidirectional layout support */
+.app-language-entry label {
+  display: block;
+  margin: 0 0 8px;
+  color: #e5ebf8;
+  font-weight: 700;
+}
+.app-language-entry select {
+  display: block;
+  width: 100%;
+  min-height: 50px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #0b1427;
+  color: #fff;
+  font: inherit;
+}
+:root[data-theme="light"] .app-language-entry label { color: #20334d; }
+:root[data-theme="light"] .app-language-entry select {
+  background: #fff;
+  color: #20334d;
+  border-color: #bdcde1;
+}
+html[dir="ltr"] .settings-menu-button { text-align: left; }
+html[dir="ltr"] .settings-back,
+html[dir="ltr"] .settings-section,
+html[dir="ltr"] .app-language-entry { text-align: left; }
+html[dir="ltr"] .app-settings-inline label { text-align: left; }
+html[dir="ltr"] .chat-actions { direction: ltr; }
+html[dir="ltr"] .message-form { direction: ltr; }
+html[dir="ltr"] .voice-call-card > button { text-align: left; }
