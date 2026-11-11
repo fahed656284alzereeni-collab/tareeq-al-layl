@@ -343,6 +343,7 @@ function updateProfileSaveButton() {
 }
 displayNameInput.addEventListener("input", updateProfileSaveButton);
 settingsAboutInput.addEventListener("input", updateProfileSaveButton);
+updateProfileSaveButton();
 const conversationInfoAbout = $("#conversation-info-about");
 const conversationInfoPhoto = $("#conversation-info-photo");
 const conversationInfoPhotoRow = $("#conversation-info-photo-row");
@@ -1303,6 +1304,7 @@ function closePrivacyContactPicker(restoreSelection=true) {
   document.body.classList.remove("privacy-contact-picker-open");
   const target=activePrivacyPicker.focusTarget;
   activePrivacyPicker=null;
+  updatePrivacySaveButtons();
   target?.focus();
 }
 function privacySelectionChanged(selected, stored) {
