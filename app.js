@@ -280,6 +280,7 @@ const saveStatusExclusionsButton = $("#save-status-exclusions");
 const blockedUsersList = $("#blocked-users-list");
 let privacySettings = { last_seen_visibility:"contacts", online_visibility:"contacts", read_receipts_enabled:true, group_add_visibility:"everyone", status_visibility:"contacts", hide_notification_preview:false };
 let selectedStatusExclusions = new Set();
+let storedStatusExclusions = new Set();
 let presenceDetails = new Map();
 let presenceRefreshTimer = null;
 const accountSettingsView = $("#account-settings-view");
@@ -686,7 +687,9 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   try {
     if (!alreadyLoadedForThisUser) {
       await ensureProfile(session.user);
-      await Promise.all([loadPeople(), loadConversations(), loadNotifications(), loadOwnProfile(), loadPrivacySettings()]);
+      // Load privacy before notifications so a saved hidden-preview preference is applied before any preview is rendered.
+      await loadPrivacySettings();
+      await Promise.all([loadPeople(), loadConversations(), loadNotifications(), loadOwnProfile()]);
     }
     await startPresence();
     startNotificationsRealtime();
@@ -1079,14 +1082,29 @@ async function savePrivacySettings() {
   if (activePartner) await refreshVisiblePresence();
   if (notifications.length) renderNotifications();
 }
+async function loadPrivacyContacts() {
+  if (!people.length) await loadPeople();
+  const { data, error } = await supabase.from("conversations")
+    .select("user_one,user_two")
+    .eq("is_group", false)
+    .or("user_one.eq." + currentUser.id + ",user_two.eq." + currentUser.id);
+  if (error) throw error;
+  const contactIds = new Set((data || []).map(row => row.user_one === currentUser.id ? row.user_two : row.user_one));
+  return people.filter(person => contactIds.has(person.id));
+}
 async function renderStatusExclusions() {
   if (!currentUser) return;
   const { data,error } = await supabase.from("status_privacy_exclusions").select("excluded_user_id").eq("owner_id",currentUser.id);
   if (error) throw error;
-  selectedStatusExclusions = new Set((data||[]).map(row=>row.excluded_user_id));
+  storedStatusExclusions = new Set((data||[]).map(row=>row.excluded_user_id));
+  selectedStatusExclusions = new Set(storedStatusExclusions);
   statusExclusionsList.replaceChildren();
-  if (!people.length) await loadPeople();
-  for (const person of people) {
+  const contacts = await loadPrivacyContacts();
+  if (!contacts.length) {
+    statusExclusionsList.append(safeText("li","empty-item","لا توجد جهات اتصال في مرسال لاستثنائها."));
+    return;
+  }
+  for (const person of contacts) {
     const li=document.createElement("li"),label=document.createElement("label"),cb=document.createElement("input");
     label.className="privacy-person-choice"; cb.type="checkbox"; cb.checked=selectedStatusExclusions.has(person.id);
     cb.addEventListener("change",()=>{if(cb.checked)selectedStatusExclusions.add(person.id);else selectedStatusExclusions.delete(person.id);});
@@ -1097,10 +1115,18 @@ async function saveStatusExclusions() {
   if (!currentUser) return;
   saveStatusExclusionsButton.disabled=true;
   try {
-    const removed=await supabase.from("status_privacy_exclusions").delete().eq("owner_id",currentUser.id);
-    if (removed.error) throw removed.error;
-    const rows=[...selectedStatusExclusions].map(excluded_user_id=>({owner_id:currentUser.id,excluded_user_id}));
-    if(rows.length){const inserted=await supabase.from("status_privacy_exclusions").insert(rows);if(inserted.error)throw inserted.error;}
+    const added=[...selectedStatusExclusions].filter(id=>!storedStatusExclusions.has(id));
+    if (added.length) {
+      const inserted=await supabase.from("status_privacy_exclusions").insert(added.map(excluded_user_id=>({owner_id:currentUser.id,excluded_user_id})));
+      if (inserted.error) throw inserted.error;
+      for (const id of added) storedStatusExclusions.add(id);
+    }
+    const removed=[...storedStatusExclusions].filter(id=>!selectedStatusExclusions.has(id));
+    if (removed.length) {
+      const deleted=await supabase.from("status_privacy_exclusions").delete().eq("owner_id",currentUser.id).in("excluded_user_id",removed);
+      if (deleted.error) throw deleted.error;
+      for (const id of removed) storedStatusExclusions.delete(id);
+    }
     announce("تم حفظ الأشخاص المستثنين.");
   } catch(error){announce("تعذر حفظ المستثنين: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{saveStatusExclusionsButton.disabled=false;}
