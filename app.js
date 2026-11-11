@@ -282,6 +282,7 @@ const statusExclusionsList = $("#status-exclusions-list");
 const saveStatusExclusionsButton = $("#save-status-exclusions");
 const blockedUsersList = $("#blocked-users-list");
 let privacySettings = { last_seen_visibility:"contacts", online_visibility:"contacts", read_receipts_enabled:true, group_add_visibility:"everyone", status_visibility:"contacts", hide_notification_preview:false };
+let privacySettingsLoaded = false;
 let selectedStatusExclusions = new Set();
 let storedStatusExclusions = new Set();
 let presenceDetails = new Map();
@@ -956,7 +957,7 @@ function renderNotifications(profileMap = new Map()) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "notification-item" + (notification.read_at ? " is-read" : " is-unread");
-    const safePreview = privacySettings.hide_notification_preview ? "رسالة جديدة" : (notification.preview || "أرسل رسالة جديدة");
+    const safePreview = (!privacySettingsLoaded || privacySettings.hide_notification_preview) ? "رسالة جديدة" : (notification.preview || "أرسل رسالة جديدة");
     button.setAttribute("aria-label", (notification.read_at ? "مقروء: " : "غير مقروء: ") + displayName(sender) + ". " + safePreview);
     button.append(safeText("span", "notification-sender", displayName(sender)));
     button.append(safeText("span", "notification-preview", safePreview));
@@ -1062,6 +1063,7 @@ async function loadPrivacySettings() {
   const { data, error } = await supabase.from("privacy_settings").select("*").eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
   if (data) privacySettings = { ...privacySettings, ...data };
+  privacySettingsLoaded = true;
   privacyLastSeenSelect.value = privacySettings.last_seen_visibility;
   privacyOnlineSelect.value = privacySettings.online_visibility;
   privacyReadReceiptsInput.checked = privacySettings.read_receipts_enabled;
@@ -1081,6 +1083,7 @@ async function savePrivacySettings() {
   const { error } = await supabase.from("privacy_settings").upsert(next,{onConflict:"user_id"});
   if (error) throw error;
   privacySettings = { ...privacySettings, ...next };
+  privacySettingsLoaded = true;
   announce("تم حفظ إعدادات الخصوصية.");
   await refreshVisiblePresence().catch(error => console.warn("تعذر تحديث الحضور بعد حفظ الخصوصية:", error.message));
   renderPeople();
@@ -2749,6 +2752,7 @@ function appendMessage(message) {
 }
 async function loadMessages() {
   if (!activeConversation) return;
+  if (!privacySettingsLoaded) await loadPrivacySettings();
   messagesList.replaceChildren();
   const { data, error } = await supabase.from("messages")
     .select("id,conversation_id,sender_id,body,created_at,is_deleted")
