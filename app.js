@@ -288,6 +288,17 @@ const openDeveloperContactButton = $("#open-developer-contact");
 const closeDeveloperContactButton = $("#close-developer-contact");
 let developerContactReturnFocus = null;
 const settingsForm = $("#settings-form");
+let profileSavedSnapshot = null;
+let profileSaveInProgress = false;
+function getProfileFormSnapshot() {
+  return JSON.stringify({ name: displayNameInput.value.trim(), about: settingsAboutInput.value.trim() });
+}
+function updateProfileSaveButton() {
+  const button = $("#save-settings");
+  if (button) button.disabled = profileSaveInProgress || profileSavedSnapshot === null || getProfileFormSnapshot() === profileSavedSnapshot;
+}
+displayNameInput.addEventListener("input", updateProfileSaveButton);
+settingsAboutInput.addEventListener("input", updateProfileSaveButton);
 const displayNameInput = $("#settings-display-name");
 const profileSettingsView = $("#profile-settings-view");
 const openProfileSettingsButton = $("#open-profile-settings");
@@ -329,6 +340,7 @@ const privacyContactPickerTitle = $("#privacy-contact-picker-title");
 const savePrivacyContactPickerButton = $("#save-privacy-contact-picker");
 const closePrivacyContactPickerButton = $("#close-privacy-contact-picker");
 let activePrivacyPicker = null;
+const privacySaveInProgress = new Set();
 const saveAboutExclusionsButton = $("#save-about-exclusions");
 const settingsAboutInput = $("#settings-about");
 const conversationInfoAbout = $("#conversation-info-about");
@@ -1267,7 +1279,7 @@ async function renderChoiceList(list, selectedSet, title, focusTarget) {
       const li=document.createElement("li"),choice=document.createElement("label"),cb=document.createElement("input");
       choice.className="privacy-person-choice"; cb.type="checkbox"; cb.checked=selectedSet.has(person.id);
       cb.setAttribute("aria-label",displayName(person));
-      cb.addEventListener("change",()=>{if(cb.checked)selectedSet.add(person.id);else selectedSet.delete(person.id);});
+      cb.addEventListener("change",()=>{if(cb.checked)selectedSet.add(person.id);else selectedSet.delete(person.id);updatePrivacySaveButtons();});
       choice.append(cb,document.createTextNode(displayName(person))); li.append(choice); privacyContactPickerList.append(li);
     }
   }
@@ -1292,6 +1304,31 @@ function closePrivacyContactPicker(restoreSelection=true) {
   activePrivacyPicker=null;
   target?.focus();
 }
+function privacySelectionChanged(selected, stored) {
+  return selected.size !== stored.size || [...selected].some(id => !stored.has(id));
+}
+function updatePrivacySaveButtons() {
+  const states = {
+    last_seen: privacySelectionChanged(selectedLastSeenExclusions, storedLastSeenExclusions),
+    group_add: privacySelectionChanged(selectedGroupAddExclusions, storedGroupAddExclusions),
+    profile_photo: privacySelectionChanged(selectedProfilePhotoExclusions, storedProfilePhotoExclusions),
+    about: privacySelectionChanged(selectedAboutExclusions, storedAboutExclusions),
+    status: privacySelectionChanged(selectedStatusExclusions, storedStatusExclusions)
+  };
+  for (const [key, button] of Object.entries({
+    last_seen: saveLastSeenExclusionsButton,
+    group_add: saveGroupAddExclusionsButton,
+    profile_photo: saveProfilePhotoExclusionsButton,
+    about: saveAboutExclusionsButton,
+    status: saveStatusExclusionsButton
+  })) {
+    if (button) button.disabled = !states[key] || privacySaveInProgress.has(key);
+  }
+  if (savePrivacyContactPickerButton) {
+    const key = activePrivacyPicker?.key;
+    savePrivacyContactPickerButton.disabled = !key || !states[key] || privacySaveInProgress.has(key);
+  }
+}
 function getPrivacyExclusionState(settingKey) {
   const map = {
     last_seen:{list:lastSeenExclusionsList,selected:selectedLastSeenExclusions,stored:storedLastSeenExclusions},
@@ -1311,10 +1348,15 @@ async function renderPrivacyExclusionChoices(settingKey, openPicker=true) {
   if(openPicker){
     await renderChoiceList(list,selected,({last_seen:"استثناءات آخر ظهور",group_add:"استثناءات إضافتك إلى المجموعات",profile_photo:"استثناءات صورة ملفك الشخصي",about:"استثناءات النبذة"})[settingKey],({last_seen:privacyLastSeenSelect,group_add:privacyGroupAddSelect,profile_photo:privacyProfilePhotoSelect,about:privacyAboutSelect})[settingKey]);
     activePrivacyPicker.key=settingKey;
+    updatePrivacySaveButtons();
   }
 }
 async function savePrivacyExclusionChoices(settingKey) {
   const {selected,stored}=getPrivacyExclusionState(settingKey);
+  if (!privacySelectionChanged(selected, stored) || privacySaveInProgress.has(settingKey)) return;
+  privacySaveInProgress.add(settingKey);
+  updatePrivacySaveButtons();
+  try {
   const added=[...selected].filter(id=>!stored.has(id));
   if(added.length){
     const {error}=await supabase.from("privacy_exclusions").insert(added.map(excluded_user_id=>({owner_id:currentUser.id,excluded_user_id,setting_key:settingKey})));
@@ -1331,6 +1373,10 @@ async function savePrivacyExclusionChoices(settingKey) {
   if(settingKey==="about"&&activePartner)await updateConversationInfo();
   announce("تم حفظ الاستثناءات.");
   closePrivacyContactPicker(false);
+  } finally {
+    privacySaveInProgress.delete(settingKey);
+    updatePrivacySaveButtons();
+  }
 }
 
 async function renderStatusAudienceChoices(openPicker=true) {
@@ -1345,11 +1391,14 @@ async function renderStatusAudienceChoices(openPicker=true) {
   if(openPicker){
     await renderChoiceList(statusExclusionsList,selectedStatusExclusions,privacySettings.status_visibility==="only_share"?"اختيار من يستطيع مشاهدة حالاتك":"استثناءات مشاهدة الحالات",privacyStatusSelect);
     activePrivacyPicker.key="status";
+    updatePrivacySaveButtons();
   }
 }
 async function saveStatusExclusions() {
   if (!currentUser) return;
-  saveStatusExclusionsButton.disabled=true;
+  if (!privacySelectionChanged(selectedStatusExclusions, storedStatusExclusions) || privacySaveInProgress.has("status")) return;
+  privacySaveInProgress.add("status");
+  updatePrivacySaveButtons();
   try {
     const isOnlyShare=privacySettings.status_visibility==="only_share";
     const table=isOnlyShare?"status_privacy_inclusions":"status_privacy_exclusions";
@@ -1368,7 +1417,7 @@ async function saveStatusExclusions() {
     announce("تم حفظ جمهور الحالات.");
     closePrivacyContactPicker(false);
   } catch(error){announce("تعذر حفظ جمهور الحالات: "+(error.message||"حاول مرة أخرى."),"error");}
-  finally{saveStatusExclusionsButton.disabled=false;}
+  finally{privacySaveInProgress.delete("status");updatePrivacySaveButtons();}
 }
 async function renderBlockedUsers() {
   if (!currentUser) return;
@@ -1424,6 +1473,8 @@ async function loadOwnProfile() {
   if(visibleProfile.error)throw visibleProfile.error;
   displayNameInput.value=data?.display_name||currentUser.email?.split("@")[0]||"";
   settingsAboutInput.value=visibleProfile.data?.[0]?.about||"";
+  profileSavedSnapshot = getProfileFormSnapshot();
+  updateProfileSaveButton();
   currentProfilePhotoPath = data?.avatar_url && !/^https?:\/\//i.test(data.avatar_url) ? data.avatar_url : null;
   currentProfilePhotoExternal = Boolean(data?.avatar_url && !currentProfilePhotoPath);
   const ownPhoto = await resolveProfileAvatar({ avatar_url: data?.avatar_url || null });
@@ -1709,7 +1760,9 @@ settingsForm.addEventListener("submit", async (event) => {
     return;
   }
   const saveButton = $("#save-settings");
-  saveButton.disabled = true;
+  if (profileSavedSnapshot === getProfileFormSnapshot() || profileSaveInProgress) return;
+  profileSaveInProgress = true;
+  updateProfileSaveButton();
   announce("جارٍ حفظ إعدادات الحساب…");
   const { error } = await supabase.from("profiles").update({
     display_name: name, about, updated_at: new Date().toISOString()
@@ -1719,6 +1772,7 @@ settingsForm.addEventListener("submit", async (event) => {
   } else {
     // Keep the user on the profile screen after saving. Refresh related
     // profile/conversation views without changing the current settings navigation.
+    profileSavedSnapshot = getProfileFormSnapshot();
     const refreshResults = await Promise.allSettled([loadPeople(), loadConversations()]);
     announce(
       refreshResults.some(result => result.status === "rejected")
@@ -1727,7 +1781,8 @@ settingsForm.addEventListener("submit", async (event) => {
       "success"
     );
   }
-  saveButton.disabled = false;
+  profileSaveInProgress = false;
+  updateProfileSaveButton();
 });
 applyTextSize(localStorage.getItem("mersal-text-size") || "normal");
 applyTheme(localStorage.getItem("mersal-theme") || "system");
@@ -2278,6 +2333,7 @@ async function updateConversationInfo() {
   if(isGroup){activeBlockState={blockedByMe:false,blockedByThem:false};updateBlockedControls();}
   else await loadBlockState();
   selectedAdditionalMembers.clear(); groupRenameInput.value = activeConversation.group_name || "";
+  updateGroupRenameSaveButton();
   const [{count,error},{data:preference,error:preferenceError}] = await Promise.all([
     supabase.from("messages").select("id",{count:"exact",head:true}).eq("conversation_id",activeConversation.id),
     supabase.from("conversation_preferences").select("muted").eq("conversation_id",activeConversation.id).eq("user_id",currentUser.id).maybeSingle()
@@ -2420,14 +2476,24 @@ groupAddSelectedButton.addEventListener("click",async()=>{
   catch(error){announce("تعذرت إضافة الأعضاء: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{groupAddSelectedButton.disabled=false;}
 });
+let groupRenameSaveInProgress = false;
+function updateGroupRenameSaveButton() {
+  if (!groupRenameSaveButton) return;
+  const original = String(activeConversation?.group_name || "").trim();
+  const current = groupRenameInput.value.trim();
+  groupRenameSaveButton.disabled = groupRenameSaveInProgress || !activeConversation?.is_group || current.length < 2 || current === original;
+}
+groupRenameInput.addEventListener("input", updateGroupRenameSaveButton);
 groupRenameSaveButton.addEventListener("click",async()=>{
   if(!activeConversation?.is_group||activeConversation.user_one!==currentUser.id)return;
   const name=groupRenameInput.value.trim();
   if(name.length<2){announce("اسم المجموعة يجب أن يتكون من حرفين على الأقل.","error");groupRenameInput.focus();return;}
-  groupRenameSaveButton.disabled=true;
+  if (name === String(activeConversation.group_name || "").trim() || groupRenameSaveInProgress) return;
+  groupRenameSaveInProgress = true;
+  updateGroupRenameSaveButton();
   try{const {data,error}=await supabase.from("conversations").update({group_name:name}).eq("id",activeConversation.id).eq("user_one",currentUser.id).select("id").maybeSingle();if(error||!data)throw error||new Error("لا تملك صلاحية تغيير الاسم.");activeConversation.group_name=name;chatPartnerName.textContent=name;updateGroupHeaderAccessibleLabel();await loadConversations();await updateConversationInfo();announce("تم تغيير اسم المجموعة.");}
   catch(error){announce("تعذر تغيير اسم المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}
-  finally{groupRenameSaveButton.disabled=false;}
+  finally{groupRenameSaveInProgress=false;updateGroupRenameSaveButton();}
 });
 async function deleteActiveGroup(deleteForEveryone){
   if(!activeConversation?.is_group||!currentUser)return;
