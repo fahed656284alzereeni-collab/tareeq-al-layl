@@ -14,6 +14,7 @@ const $ = (selector) => document.querySelector(selector);
 
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
+  "الملف الشخصي":"Profile","الحساب":"Account",
   "عام":"General","الخصوصية":"Privacy","آخر ظهور":"Last seen","حالة الاتصال":"Online status","صورة الملف الشخصي":"Profile photo","النبذة":"About",
   "من يستطيع رؤية صورة ملفك الشخصي":"Who can see your profile photo","من يستطيع رؤية نبذتك":"Who can see your About",
   "نبذة عني":"About me","اكتب نبذة قصيرة عنك":"Write a short About","لا توجد نبذة متاحة.":"No About available.",
