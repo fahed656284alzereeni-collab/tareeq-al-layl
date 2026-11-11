@@ -105,7 +105,7 @@
             </select>
             <div id="last-seen-exclusions-area" hidden>
               <ul id="last-seen-exclusions-list" class="privacy-people-list" aria-label="استثناءات آخر ظهور"></ul>
-              <button id="save-last-seen-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
+              <button id="save-last-seen-exclusions" type="button" class="primary-button" disabled>حفظ الاستثناءات</button>
             </div>
             <label for="privacy-online">من يستطيع رؤية أنك متصل الآن</label>
             <select id="privacy-online"><option value="everyone">الجميع</option><option value="same_as_last_seen">مثل آخر ظهور</option></select>
@@ -117,7 +117,7 @@
             </select>
             <div id="group-add-exclusions-area" hidden>
               <ul id="group-add-exclusions-list" class="privacy-people-list" aria-label="استثناءات إضافة المجموعات"></ul>
-              <button id="save-group-add-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
+              <button id="save-group-add-exclusions" type="button" class="primary-button" disabled>حفظ الاستثناءات</button>
             </div>
             <label for="privacy-status">من يستطيع مشاهدة حالاتي</label>
             <select id="privacy-status">
@@ -128,7 +128,7 @@
             <div id="status-exclusions-area" hidden>
               <p id="status-audience-help" class="settings-help" hidden>حدد الأشخاص الذين تريد مشاركة حالاتك معهم.</p>
               <ul id="status-exclusions-list" class="privacy-people-list" aria-label="جهات اتصال جمهور الحالات"></ul>
-              <button id="save-status-exclusions" type="button" class="primary-button">حفظ جمهور الحالات</button>
+              <button id="save-status-exclusions" type="button" class="primary-button" disabled>حفظ جمهور الحالات</button>
             </div>
             <label for="privacy-profile-photo">من يستطيع رؤية صورة ملفك الشخصي</label>
             <select id="privacy-profile-photo">
@@ -137,7 +137,7 @@
             </select>
             <div id="profile-photo-exclusions-area" hidden>
               <ul id="profile-photo-exclusions-list" class="privacy-people-list" aria-label="استثناءات صورة الملف الشخصي"></ul>
-              <button id="save-profile-photo-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
+              <button id="save-profile-photo-exclusions" type="button" class="primary-button" disabled>حفظ الاستثناءات</button>
             </div>
             <label for="privacy-about">من يستطيع رؤية نبذتك</label>
             <select id="privacy-about">
@@ -146,7 +146,7 @@
             </select>
             <div id="about-exclusions-area" hidden>
               <ul id="about-exclusions-list" class="privacy-people-list" aria-label="استثناءات النبذة"></ul>
-              <button id="save-about-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
+              <button id="save-about-exclusions" type="button" class="primary-button" disabled>حفظ الاستثناءات</button>
             </div>
             <label class="privacy-toggle"><input id="privacy-hide-preview" type="checkbox"> إخفاء نص الرسائل في الإشعارات</label>
           </section>
@@ -162,7 +162,7 @@
             <div id="privacy-contact-picker-title">اختيار جهات الاتصال</div>
           </header>
           <ul id="privacy-contact-picker-list" class="privacy-people-list" aria-label="جهات الاتصال"></ul>
-          <button id="save-privacy-contact-picker" type="button" class="primary-button">حفظ الاختيار</button>
+          <button id="save-privacy-contact-picker" type="button" class="primary-button" disabled>حفظ الاختيار</button>
         </section>
         <div id="profile-settings-view" hidden>
           <button id="back-profile-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
@@ -182,7 +182,7 @@
               <textarea id="settings-about" name="about" maxlength="200" rows="3" aria-describedby="settings-about-help" placeholder="اكتب نبذة قصيرة عنك"></textarea>
               <p id="settings-about-help" class="settings-help">يمكن أن تصل النبذة إلى 200 حرف.</p>
             </section>
-            <button id="save-settings" type="submit" class="primary-button">حفظ الملف الشخصي</button>
+            <button id="save-settings" type="submit" class="primary-button" disabled>حفظ الملف الشخصي</button>
           </form>
         </div>
         <div id="account-settings-view" hidden>
@@ -282,7 +282,7 @@
             <div id="group-admin-tools" class="group-admin-tools" hidden>
               <label for="group-rename-input">اسم المجموعة الجديد</label>
               <input id="group-rename-input" type="text" maxlength="60" autocomplete="off">
-              <button id="group-rename-save" type="button" class="quiet-button">حفظ اسم المجموعة</button>
+              <button id="group-rename-save" type="button" class="quiet-button" disabled>حفظ اسم المجموعة</button>
             </div>
             <ul id="group-member-list" class="people-list group-member-list" aria-label="أعضاء المجموعة" hidden></ul>
             <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
