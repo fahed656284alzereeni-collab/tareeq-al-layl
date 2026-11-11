@@ -21,9 +21,9 @@ const mersalTranslations = {
   "الأشخاص الذين لن يتمكنوا من رؤية صورة ملفك الشخصي.":"People who cannot see your profile photo.",
   "تتحكم هذه الإعدادات في ظهور النبذة الموجودة في بيانات حسابك.":"These settings control who can see your About.",
   "الأشخاص الذين لن يتمكنوا من رؤية نبذتك.":"People who cannot see your About.",
-  "يمكن أن تصل النبذة إلى 139 حرفًا.":"Your About can be up to 139 characters.",
+  "يمكن أن تصل النبذة إلى 200 حرف.":"Your About can be up to 200 characters.",
   "الصورة الشخصية":"Profile photo","الصورة الشخصية لـ ":"Profile photo of ",
-  "النبذة يجب ألا تتجاوز 139 حرفًا.":"About must be 139 characters or fewer.",
+  "النبذة يجب ألا تتجاوز 200 حرفًا.":"About must be 200 characters or fewer.",
   "من يستطيع رؤية آخر ظهورك":"Who can see your last seen",
   "من يستطيع رؤية أنك متصل الآن":"Who can see when you're online",
   "الخصوصية متبادلة مثل واتساب: إذا أخفيت آخر ظهورك عن شخص، فلن تتمكن من رؤية آخر ظهوره أو حالة اتصاله. ويجب أن تسمح إعدادات الطرفين بذلك.":"Mutual privacy, like WhatsApp: if you hide your last seen from someone, you cannot see their last seen or online status. Both users' settings must allow it.",
@@ -1563,7 +1563,7 @@ settingsForm.addEventListener("submit", async (event) => {
   if (!currentUser) return;
   const name = displayNameInput.value.trim();
   const about = settingsAboutInput.value.trim();
-  if(about.length>139){announce("النبذة يجب ألا تتجاوز 139 حرفًا.","error");settingsAboutInput.focus();return;}
+  if(about.length>200){announce("النبذة يجب ألا تتجاوز 200 حرفًا.","error");settingsAboutInput.focus();return;}
   if (name.length < 2 || name.length > 40) {
     announce("الاسم يجب أن يكون بين حرفين و40 حرفًا.", "error");
     displayNameInput.focus();
