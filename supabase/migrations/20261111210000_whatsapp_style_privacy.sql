@@ -272,3 +272,30 @@ using (
   and exists(select 1 from public.statuses s where s.media_path=objects.name
     and s.expires_at>now() and private.can_view_status_item(s.id,(select auth.uid())))
 );
+
+
+-- Keep the public RPC invoker-safe; the narrowly scoped implementation stays private.
+create or replace function private.get_visible_presence_internal()
+returns table(user_id uuid,is_online boolean,last_seen_at timestamptz)
+language sql stable security definer set search_path=''
+as $$
+  select p.id,
+    (p.last_seen_at>=now()-interval '90 seconds') and private.can_view_user_presence(p.id,'online') as is_online,
+    case when private.can_view_user_presence(p.id,'last_seen') then p.last_seen_at else null end as last_seen_at
+  from public.profiles p
+  where (select auth.uid()) is not null
+    and p.id<>(select auth.uid())
+    and (private.can_view_user_presence(p.id,'online') or private.can_view_user_presence(p.id,'last_seen'))
+    and not exists(select 1 from public.user_blocks b where
+      (b.blocker_id=(select auth.uid()) and b.blocked_id=p.id)
+      or (b.blocker_id=p.id and b.blocked_id=(select auth.uid())));
+$$;
+revoke all on function private.get_visible_presence_internal() from public,anon,authenticated;
+grant execute on function private.get_visible_presence_internal() to authenticated;
+
+create or replace function public.get_visible_presence()
+returns table(user_id uuid,is_online boolean,last_seen_at timestamptz)
+language sql stable security invoker set search_path=''
+as $$ select * from private.get_visible_presence_internal(); $$;
+revoke all on function public.get_visible_presence() from public,anon;
+grant execute on function public.get_visible_presence() to authenticated;
