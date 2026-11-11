@@ -694,6 +694,13 @@ async function handleSession(session, authEvent = "UNKNOWN") {
     return;
   }
   const alreadyLoadedForThisUser = currentUser?.id === session.user.id && !workspace.hidden;
+  if (currentUser?.id !== session.user.id) {
+    privacySettings = { last_seen_visibility:"contacts", online_visibility:"everyone", read_receipts_enabled:true,
+      group_add_visibility:"everyone", status_visibility:"contacts", hide_notification_preview:false };
+    privacySettingsLoaded = false;
+    presenceDetails.clear();
+    onlineUserIds.clear();
+  }
   currentUser = session.user;
   authPanel.hidden = true;
   workspace.hidden = false;
