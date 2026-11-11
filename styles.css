@@ -1769,3 +1769,23 @@ html[dir="ltr"] .app-settings-inline label { text-align: left; }
 html[dir="ltr"] .chat-actions { direction: ltr; }
 html[dir="ltr"] .message-form { direction: ltr; }
 html[dir="ltr"] .voice-call-card > button { text-align: left; }
+
+
+/* General settings are a dedicated full-screen view, matching account settings. */
+#general-settings-view {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  padding: clamp(20px, 4vw, 42px);
+  padding-bottom: calc(42px + env(safe-area-inset-bottom));
+  background: #0b1020;
+}
+#general-settings-view[hidden] { display: none !important; }
+#general-settings-view .settings-section { margin-bottom: 16px; }
+:root[data-theme="light"] #general-settings-view { background: #f7f9fc; }
+html[dir="ltr"] #general-settings-view { text-align: left; }
