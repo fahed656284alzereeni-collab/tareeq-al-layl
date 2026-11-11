@@ -14,7 +14,7 @@ const $ = (selector) => document.querySelector(selector);
 
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
-  "مرسال":"Mersal","، جاري تحديث حالة الظهور":"; updating presence",
+  "عام":"General","مرسال":"Mersal","، جاري تحديث حالة الظهور":"; updating presence",
   "عرض المرفق داخل المحادثة":"View attachment in chat","إغلاق العرض":"Close viewer","ترجيع 10 ثوانٍ":"Rewind 10 seconds","ترجيع 10 ثوانٍ في ":"Rewind 10 seconds in ",
   "تشغيل":"Play","تشغيل ":"Play ","تقديم 10 ثوانٍ":"Forward 10 seconds","تقديم 10 ثوانٍ في ":"Forward 10 seconds in ","موضع التشغيل في ":"Playback position in ",
   "إيقاف مؤقت":"Pause","إيقاف ":"Stop ","الفيديو المرفق داخل المحادثة":"Video attached in chat","تشغيل الملف الصوتي داخل مرسال":"Play audio file in Mersal",
@@ -255,6 +255,9 @@ const themeSelect = $("#settings-theme");
 const settingsLanguageSelect = $("#settings-language");
 const settingsEmail = $("#settings-email");
 const settingsHome = $("#settings-home");
+const generalSettingsView = $("#general-settings-view");
+const openGeneralSettingsButton = $("#open-general-settings");
+const backGeneralSettingsButton = $("#back-general-settings");
 const accountSettingsView = $("#account-settings-view");
 const accountLogoutButton = $("#account-logout-button");
 const deleteAccountButton = $("#delete-account-button");
@@ -1016,6 +1019,7 @@ function openSettings() {
   applyTextSize(textSizeSelect.value);
   applyTheme(themeSelect.value);
   settingsHome.hidden = false;
+  generalSettingsView.hidden = true;
   accountSettingsView.hidden = true;
   settingsPanel.hidden = false;
   document.body.classList.add("settings-open");
@@ -1053,7 +1057,18 @@ settingsLanguageSelect.addEventListener("change", () => {
 settingsTabButton.addEventListener("click", openSettings);
 statusTabButton.addEventListener("click", openStatusTab);
 homeTabButton.addEventListener("click", returnToHomeTab);
-$("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
+openGeneralSettingsButton.addEventListener("click", () => {
+  settingsHome.hidden = true;
+  accountSettingsView.hidden = true;
+  generalSettingsView.hidden = false;
+  backGeneralSettingsButton.focus();
+});
+backGeneralSettingsButton.addEventListener("click", () => {
+  generalSettingsView.hidden = true;
+  settingsHome.hidden = false;
+  openGeneralSettingsButton.focus();
+});
+$("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; generalSettingsView.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
 $("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
 accountLogoutButton.addEventListener("click", async () => {
   accountLogoutButton.disabled = true;
@@ -1106,12 +1121,17 @@ confirmDeleteAccountButton.addEventListener("click", async () => {
   }
 });
 settingsPanel.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") {
-    settingsPanel.hidden = true;
-    document.body.classList.remove("settings-open");
-    setActiveBottomTab("home");
-    settingsReturnFocus?.focus?.();
+  if (event.key !== "Escape") return;
+  if (!generalSettingsView.hidden) {
+    generalSettingsView.hidden = true;
+    settingsHome.hidden = false;
+    openGeneralSettingsButton.focus();
+    return;
   }
+  settingsPanel.hidden = true;
+  document.body.classList.remove("settings-open");
+  setActiveBottomTab("home");
+  settingsReturnFocus?.focus?.();
 });
 textSizeSelect.addEventListener("change", () => {
   applyTextSize(textSizeSelect.value);
