@@ -29,6 +29,7 @@ create policy status_privacy_inclusions_delete_own on public.status_privacy_incl
 create index if not exists privacy_exclusions_owner_setting_idx on public.privacy_exclusions(owner_id,setting_key);
 create index if not exists status_privacy_inclusions_owner_idx on public.status_privacy_inclusions(owner_id);
 alter table public.statuses add column if not exists audience_user_ids uuid[];
+revoke all (audience_user_ids) on table public.statuses from authenticated;
 
 alter table public.privacy_settings drop constraint if exists privacy_settings_last_seen_visibility_check;
 alter table public.privacy_settings drop constraint if exists privacy_settings_online_visibility_check;
