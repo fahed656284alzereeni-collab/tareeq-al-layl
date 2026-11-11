@@ -1181,7 +1181,7 @@ async function loadPrivacySettings() {
   statusAudienceHelp.textContent = privacySettings.status_visibility === "only_share"
     ? "حدد الأشخاص الذين سيتمكنون من مشاهدة حالاتك فقط."
     : "حدد الأشخاص الذين لن يتمكنوا من مشاهدة حالاتك.";
-  await Promise.all([renderPrivacyExclusionChoices("last_seen"), renderPrivacyExclusionChoices("group_add"), renderPrivacyExclusionChoices("profile_photo"), renderPrivacyExclusionChoices("about"), renderStatusAudienceChoices(), renderBlockedUsers()]);
+  await Promise.all([renderPrivacyExclusionChoices("last_seen",false), renderPrivacyExclusionChoices("group_add",false), renderPrivacyExclusionChoices("profile_photo",false), renderPrivacyExclusionChoices("about",false), renderStatusAudienceChoices(false), renderBlockedUsers()]);
   if (notifications.length) renderNotifications();
 }
 async function savePrivacySettings() {
@@ -1269,14 +1269,16 @@ function getPrivacyExclusionState(settingKey) {
   if(!map[settingKey])throw new Error("إعداد الخصوصية غير معروف.");
   return map[settingKey];
 }
-async function renderPrivacyExclusionChoices(settingKey) {
+async function renderPrivacyExclusionChoices(settingKey, openPicker=true) {
   const {list,selected,stored}=getPrivacyExclusionState(settingKey);
   const {data,error}=await supabase.from("privacy_exclusions").select("excluded_user_id").eq("owner_id",currentUser.id).eq("setting_key",settingKey);
   if(error)throw error;
   stored.clear(); for(const row of data||[])stored.add(row.excluded_user_id);
   selected.clear(); for(const id of stored)selected.add(id);
-  await renderChoiceList(list,selected,({last_seen:"استثناءات آخر ظهور",group_add:"استثناءات إضافتك إلى المجموعات",profile_photo:"استثناءات صورة ملفك الشخصي",about:"استثناءات النبذة"})[settingKey],({last_seen:privacyLastSeenSelect,group_add:privacyGroupAddSelect,profile_photo:privacyProfilePhotoSelect,about:privacyAboutSelect})[settingKey]);
-  activePrivacyPicker.key=settingKey;
+  if(openPicker){
+    await renderChoiceList(list,selected,({last_seen:"استثناءات آخر ظهور",group_add:"استثناءات إضافتك إلى المجموعات",profile_photo:"استثناءات صورة ملفك الشخصي",about:"استثناءات النبذة"})[settingKey],({last_seen:privacyLastSeenSelect,group_add:privacyGroupAddSelect,profile_photo:privacyProfilePhotoSelect,about:privacyAboutSelect})[settingKey]);
+    activePrivacyPicker.key=settingKey;
+  }
 }
 async function savePrivacyExclusionChoices(settingKey) {
   const {selected,stored}=getPrivacyExclusionState(settingKey);
@@ -1298,7 +1300,7 @@ async function savePrivacyExclusionChoices(settingKey) {
   closePrivacyContactPicker(false);
 }
 
-async function renderStatusAudienceChoices() {
+async function renderStatusAudienceChoices(openPicker=true) {
   if (!currentUser) return;
   const isOnlyShare = privacyStatusSelect.value === "only_share";
   const table = isOnlyShare ? "status_privacy_inclusions" : "status_privacy_exclusions";
@@ -1307,8 +1309,10 @@ async function renderStatusAudienceChoices() {
   if(error)throw error;
   storedStatusExclusions = new Set((data||[]).map(row=>row[idColumn]));
   selectedStatusExclusions = new Set(storedStatusExclusions);
-  await renderChoiceList(statusExclusionsList,selectedStatusExclusions,privacySettings.status_visibility==="only_share"?"اختيار من يستطيع مشاهدة حالاتك":"استثناءات مشاهدة الحالات",privacyStatusSelect);
-  activePrivacyPicker.key="status";
+  if(openPicker){
+    await renderChoiceList(statusExclusionsList,selectedStatusExclusions,privacySettings.status_visibility==="only_share"?"اختيار من يستطيع مشاهدة حالاتك":"استثناءات مشاهدة الحالات",privacyStatusSelect);
+    activePrivacyPicker.key="status";
+  }
 }
 async function saveStatusExclusions() {
   if (!currentUser) return;
