@@ -778,15 +778,21 @@ async function refreshVisiblePresence() {
     const details = presenceDetails.get(activePartner.id);
     setConversationInfoValue(conversationInfoStatus, details?.is_online ? "متصل الآن" : details?.last_seen_at ? formatLastSeen(details.last_seen_at) : "حالة الظهور مخفية");
   }
+  conversationList.querySelectorAll(".conversation-button[data-partner-id]").forEach(button => {
+    const online = onlineUserIds.has(button.dataset.partnerId);
+    const existing = button.querySelector(".conversation-presence");
+    if (online && !existing) button.append(safeText("span", "conversation-presence is-online", "متصل الآن"));
+    else if (!online && existing) existing.remove();
+  });
 }
 async function startPresence() {
   if (!currentUser) return;
   if (presenceChannel) { await supabase.removeChannel(presenceChannel); presenceChannel = null; }
   if (presenceRefreshTimer) clearInterval(presenceRefreshTimer);
   await refreshVisiblePresence();
-  await Promise.all([loadPeople(), loadConversations()]);
+  renderPeople();
   presenceRefreshTimer = window.setInterval(() => {
-    void refreshVisiblePresence().then(() => Promise.all([loadPeople(), loadConversations()]))
+    void refreshVisiblePresence().then(() => renderPeople())
       .catch(error => console.warn("تعذر تحديث الحضور:", error.message));
   }, 45000);
 }
@@ -1634,6 +1640,7 @@ async function loadConversations() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "conversation-button";
+    button.dataset.partnerId = partnerId;
     button.append(safeText("span", "conversation-person-name", displayName(person)));
     const isOnline = onlineUserIds.has(partnerId);
     if (isOnline) {
@@ -1723,10 +1730,18 @@ async function selectConversation(conversation, person) {
       event: "UPDATE", schema: "public", table: "messages",
       filter: "conversation_id=eq." + conversation.id
     }, () => { void loadMessages(); })
-    .on("postgres_changes", { event:"INSERT", schema:"public", table:"message_reads", filter:"user_id=eq."+(person?.id||"") }, payload => {
+    .on("postgres_changes", { event:"INSERT", schema:"public", table:"message_reads", ...(conversation.is_group ? {} : { filter:"user_id=eq."+(person?.id||"") }) }, async payload => {
       if(!privacySettings.read_receipts_enabled)return;
       const messageNode=document.querySelector('[data-message-id="'+payload.new.message_id+'"]');
-      if(messageNode&&!messageNode.querySelector(".message-read-state"))messageNode.append(safeText("span","message-read-state","مقروء"));
+      if(!messageNode || !messageNode.classList.contains("mine"))return;
+      if(conversation.is_group){
+        const result=await supabase.from("message_reads").select("user_id").eq("message_id",payload.new.message_id);
+        if(!result.error){
+          const label=messageNode.querySelector(".message-read-state")||safeText("span","message-read-state","");
+          label.textContent=(result.data||[]).length ? "مقروء من "+result.data.length : "";
+          if(!label.isConnected)messageNode.append(label);
+        }
+      }else if(!messageNode.querySelector(".message-read-state"))messageNode.append(safeText("span","message-read-state","مقروء"));
     })
     .subscribe((state) => {
       if (state === "CHANNEL_ERROR" || state === "TIMED_OUT") {
@@ -2624,7 +2639,10 @@ function appendMessage(message) {
   }
   const time = new Date(message.created_at).toLocaleString("ar-JO", { dateStyle: "short", timeStyle: "short" });
   item.append(safeText("time", "message-time", time));
-  if (message.sender_id === currentUser.id && message._readByPartner && privacySettings.read_receipts_enabled) item.append(safeText("span", "message-read-state", "مقروء"));
+  if (message.sender_id === currentUser.id && privacySettings.read_receipts_enabled) {
+    if (message._readCount > 0) item.append(safeText("span", "message-read-state", activeConversation?.is_group ? "مقروء من " + message._readCount : "مقروء"));
+    else if (message._readByPartner) item.append(safeText("span", "message-read-state", "مقروء"));
+  }
   const actions = document.createElement("div");
   actions.className = "message-actions";
   const toggle = safeText("button", "message-options-toggle", "خيارات الرسالة");
@@ -2714,11 +2732,20 @@ async function loadMessages() {
       const receipts=await supabase.from("message_reads").upsert(incomingIds.map(message_id=>({message_id,user_id:currentUser.id})),{onConflict:"message_id,user_id",ignoreDuplicates:true});
       if(receipts.error)console.warn("تعذر تسجيل قراءة الرسائل:",receipts.error.message);
     }
-    if(!activeConversation.is_group&&activePartner){
-      const ownIds=visibleMessages.filter(message=>message.sender_id===currentUser.id).map(message=>message.id);
-      if(ownIds.length){
-        const readRows=await supabase.from("message_reads").select("message_id").eq("user_id",activePartner.id).in("message_id",ownIds);
-        if(!readRows.error){const readIds=new Set((readRows.data||[]).map(row=>row.message_id));visibleMessages.forEach(message=>{if(message.sender_id===currentUser.id)message._readByPartner=readIds.has(message.id);});}
+    const ownIds=visibleMessages.filter(message=>message.sender_id===currentUser.id).map(message=>message.id);
+    if(ownIds.length){
+      let readQuery=supabase.from("message_reads").select("message_id,user_id").in("message_id",ownIds);
+      if(!activeConversation.is_group&&activePartner)readQuery=readQuery.eq("user_id",activePartner.id);
+      const readRows=await readQuery;
+      if(!readRows.error){
+        const counts=new Map();
+        for(const row of readRows.data||[])counts.set(row.message_id,(counts.get(row.message_id)||0)+1);
+        visibleMessages.forEach(message=>{
+          if(message.sender_id===currentUser.id){
+            if(activeConversation.is_group)message._readCount=counts.get(message.id)||0;
+            else message._readByPartner=(counts.get(message.id)||0)>0;
+          }
+        });
       }
     }
   }
