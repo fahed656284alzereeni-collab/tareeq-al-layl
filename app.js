@@ -14,7 +14,7 @@ const $ = (selector) => document.querySelector(selector);
 
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
-  "مرسال":"Mersal",
+  "مرسال":"Mersal","، جاري تحديث حالة الظهور":"; updating presence",
   "عرض المرفق داخل المحادثة":"View attachment in chat","إغلاق العرض":"Close viewer","ترجيع 10 ثوانٍ":"Rewind 10 seconds","ترجيع 10 ثوانٍ في ":"Rewind 10 seconds in ",
   "تشغيل":"Play","تشغيل ":"Play ","تقديم 10 ثوانٍ":"Forward 10 seconds","تقديم 10 ثوانٍ في ":"Forward 10 seconds in ","موضع التشغيل في ":"Playback position in ",
   "إيقاف مؤقت":"Pause","إيقاف ":"Stop ","الفيديو المرفق داخل المحادثة":"Video attached in chat","تشغيل الملف الصوتي داخل مرسال":"Play audio file in Mersal",
@@ -169,7 +169,7 @@ function mersalTranslateValue(value) {
   if(prefix)return mersalTranslations[prefix]+value.slice(prefix.length);
   const suffix=Object.keys(mersalTranslations).filter(key=>key.startsWith(" ")&&value.endsWith(key)).sort((a,b)=>b.length-a.length)[0];
   if(suffix)return value.slice(0,-suffix.length)+mersalTranslations[suffix];
-  return value;
+  return value.replace(/،/g,",").replace(/؟/g,"?");
 }
 function mersalTranslateTextNode(node, language) {
   if(mersalShouldSkip(node))return;
