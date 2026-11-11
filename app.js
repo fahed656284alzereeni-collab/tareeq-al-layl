@@ -11,6 +11,129 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 });
 
 const $ = (selector) => document.querySelector(selector);
+
+// Mersal interface language. User-generated messages, names, and statuses are never translated.
+const mersalTranslations = {
+  "مرسال":"Mersal","جارٍ التحقق من تسجيل الدخول…":"Checking sign-in…","جارٍ تجهيز مرسال…":"Loading Mersal…","إعادة المحاولة":"Try again",
+  "تسجيل الدخول باستخدام Google":"Sign in with Google","إعدادات الحساب":"Account settings","اللغة":"Language","العربية":"Arabic","حجم النص في مرسال":"Text size",
+  "عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.":"Increase text size for easier reading. Your choice is saved on this device.",
+  "المظهر":"Appearance","حسب إعدادات الجهاز":"System default","داكن":"Dark","فاتح":"Light","اختر المظهر المريح لك. يُحفظ اختيارك على هذا الجهاز.":"Choose your preferred appearance. Your choice is saved on this device.",
+  "تشغيل إشعارات الهاتف":"Enable phone notifications","لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.":"Enable phone notifications to receive messages when Mersal is not open.",
+  "التواصل مع المطور عبر":"Contact the developer","من تطوير fahed alzereeni":"Developed by fahed alzereeni","رجوع إلى الإعدادات":"Back to settings",
+  "الاسم الظاهر للآخرين":"Name shown to others","البريد الإلكتروني":"Email address","البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.":"This email is linked to your Google account and cannot be changed here.",
+  "حفظ بيانات الحساب":"Save account details","تسجيل الخروج":"Sign out","حذف الحساب":"Delete account","إنستغرام":"Instagram","فيسبوك":"Facebook","واتساب":"WhatsApp",
+  "إضافة حالة":"Add status","تحديث الحالات":"Refresh statuses","الإشعارات":"Notifications","إغلاق":"Close","تحديد الكل كمقروء":"Mark all as read","دردشة جديدة":"New chat",
+  "اختر شخصًا من القائمة لبدء محادثة خاصة.":"Choose someone from the list to start a private chat.","العودة للمحادثات":"Back to chats","اتصال صوتي":"Voice call",
+  "تحديث الرسائل":"Refresh messages","الرسائل المجدولة":"Scheduled messages","إغلاق المعلومات":"Close details","الاسم":"Name","الحالة":"Status","تاريخ الإنشاء":"Created",
+  "عدد الرسائل":"Message count","البحث في الرسائل":"Search messages","تنزيل سجل المحادثة":"Download chat history","كتم إشعارات المحادثة":"Mute chat notifications",
+  "مسح المحادثة من جهازي":"Clear chat on this device","حظر الشخص":"Block user","إضافة أعضاء":"Add members","حذف الدردشة من عندي":"Delete chat for me",
+  "اسم المجموعة الجديد":"New group name","حفظ اسم المجموعة":"Save group name","مغادرة المجموعة":"Leave group","حذف المجموعة للجميع":"Delete group for everyone",
+  "اكتب كلمة لعرض النتائج.":"Type a word to view results.","ابحث عن شخص لإضافته":"Find someone to add","إضافة المحددين":"Add selected",
+  "وقت إرسال الرسالة":"Message send time","اختر التاريخ والوقت، وسيتم إرسال الرسالة تلقائيًا حتى لو أغلقت مرسال.":"Choose a date and time. The message will be sent automatically, even if you close Mersal.",
+  "جدولة الرسالة":"Schedule message","إلغاء الرد":"Cancel reply","اكتب رسالتك":"Write your message","إرفاق":"Attach","إرسال":"Send",
+  "الرئيسية":"Home","الحالات":"Statuses","نص":"Text","صورة":"Photo","فيديو":"Video","نشر الحالة":"Post status","حذف الحالة":"Delete status",
+  "محادثة جديدة":"New conversation","مجموعة جديدة":"New group","ابحث عن شخص":"Search for a person","اسم المجموعة":"Group name","ابحث عن أعضاء":"Search members","إنشاء المجموعة":"Create group",
+  "جارٍ تجهيز المكالمة…":"Preparing call…","تشغيل صوت المكالمة":"Play call audio","الرد على المكالمة":"Answer call","رفض المكالمة":"Decline call","كتم الميكروفون":"Mute microphone","إنهاء المكالمة":"End call",
+  "إلغاء":"Cancel","إرسال الصور":"Send photos","إرسال الفيديوهات":"Send videos","إرسال الملفات":"Send files","اسم الشخص":"Person's name","اكتب اسم المجموعة.":"Enter a group name.",
+  "اكتب اسم المجموعة":"Enter a group name","اكتب اسم الشخص":"Enter a person's name","اكتب الاسم للبحث":"Enter a name to search","اكتب رسالتك هنا…":"Write your message…",
+  "البحث":"Search","إضافة المحددين":"Add selected","حفظ":"Save","مراسلة":"Message","منشئ المجموعة":"Group creator","مشرف":"Admin","عضو":"Member",
+  "متصل الآن":"Online","آخر ظهور غير متوفر":"Last seen unavailable","غير متوفر":"Unavailable","غير مسجل الدخول":"Signed out","مستخدم مرسال":"Mersal user",
+  "رسالة صوتية":"Voice message","صورة مرفقة":"Attached image","ملف مرفق":"Attached file","مرفق":"Attachment","ملف":"File","صورة":"Photo","فيديو":"Video",
+  "نسخ الرسالة":"Copy message","الرد على الرسالة":"Reply to message","حذف الرسالة لدى الجميع":"Delete message for everyone","حذف الرسالة لدي فقط":"Delete message for me",
+  "حذف لدى الجميع":"Delete for everyone","حذف لدي":"Delete for me","إلغاء الجدولة":"Cancel schedule","لا توجد إشعارات بعد.":"No notifications yet.",
+  "لا توجد حالات حاليًا.":"No statuses yet.","لا توجد رسائل مجدولة في هذه المحادثة.":"No scheduled messages in this chat.","لا توجد محادثات بعد.":"No conversations yet.",
+  "لا يوجد أشخاص بهذا الاسم.":"No people found with that name.","لا يوجد أشخاص متاحون للإضافة.":"No people available to add.","لا توجد إجراءات متاحة لهذا العضو.":"No actions available for this member.",
+  "هذه بداية المحادثة. أرسل أول رسالة.":"This is the beginning of the conversation. Send the first message.","أرسل رسالة جديدة":"Send a new message",
+  "تم الحفظ.":"Saved.","تم الإرسال.":"Sent.","تم الحفظ":"Saved","تم الحذف.":"Deleted.","تم الحذف":"Deleted","تم نسخ الرسالة.":"Message copied.",
+  "تم إنشاء المجموعة.":"Group created.","تمت إضافة الأعضاء.":"Members added.","تمت إزالة العضو.":"Member removed.","تم تغيير اسم المجموعة.":"Group name updated.",
+  "تم تسجيل الدخول. يمكنك بدء محادثة جديدة.":"Signed in. You can start a new conversation.","تم تسجيل الخروج.":"Signed out.",
+  "تم تشغيل إشعارات الهاتف على هذا الجهاز.":"Phone notifications enabled on this device.","تم إيقاف إشعارات الهاتف على هذا الجهاز.":"Phone notifications disabled on this device.",
+  "تم تشغيل إشعارات المحادثة.":"Chat notifications enabled.","تم كتم إشعارات المحادثة.":"Chat notifications muted.","تم حظر الشخص.":"User blocked.","تم إلغاء الحظر.":"User unblocked.",
+  "تعذر التشغيل":"Playback failed","تعذر إرسال إشارة المكالمة.":"Could not send the call signal.","تعذر الاتصال بقناة المكالمة.":"Could not connect to the call channel.",
+  "المكالمات الصوتية تحتاج متصفحًا آمنًا يدعم الميكروفون.":"Voice calls require a secure browser that supports the microphone.",
+  "المكالمة الصوتية متصلة.":"Voice call connected.","الميكروفون مكتوم.":"Microphone is muted.","الميكروفون يعمل.":"Microphone is on.",
+  "تشغيل الميكروفون":"Unmute microphone","مغادرة المكالمة":"Leave call","مشارك في المكالمة":"Call participant","أحد المشاركين":"A participant",
+  "جارٍ الاتصال بالمشاركين…":"Connecting to participants…","تم الاتصال. اضغط تشغيل صوت المكالمة لسماع الطرف الآخر.":"Connected. Select Play call audio to hear the other person.",
+  "تم تشغيل صوت المكالمة.":"Call audio started.","لم يصل الصوت من الطرف الآخر بعد.":"Audio from the other person has not arrived yet.",
+  "حدثت مشكلة في الاتصال الصوتي.":"A voice connection problem occurred.","الاتصال بأحد المشاركين غير مستقر. تحقق من الشبكة.":"Connection to a participant is unstable. Check your network.",
+  "اكتب رسالتك أولًا.":"Write your message first.","اكتب نص الحالة أولًا.":"Enter status text first.","اختر صورة أو فيديو أولًا.":"Choose a photo or video first.",
+  "اختر شخصًا واحدًا على الأقل.":"Choose at least one person.","اختر شخصًا واحدًا على الأقل لإنشاء المجموعة.":"Choose at least one person to create the group.",
+  "اسم المجموعة يجب أن يتكون من حرفين على الأقل.":"The group name must contain at least two characters.","الاسم يجب أن يكون بين حرفين و40 حرفًا.":"The name must be between 2 and 40 characters.",
+  "لا يمكنك إرسال رسائل في هذه المحادثة بسبب الحظر.":"You cannot send messages in this chat because of a block.",
+  "لا يمكنك إرسال مرفقات في هذه المحادثة بسبب الحظر.":"You cannot send attachments in this chat because of a block.",
+  "لا يمكنك جدولة رسائل في هذه المحادثة بسبب الحظر.":"You cannot schedule messages in this chat because of a block.",
+  "لا تملك صلاحية تغيير الاسم.":"You do not have permission to change the name.","هذا الشخص حظرك":"This person has blocked you",
+  "حاول مرة أخرى.":"Please try again.","خطأ غير معروف":"Unknown error","رفض Google الطلب":"Google declined the request",
+  "لم يتم تسجيل الدخول. يمكنك المحاولة مرة أخرى باستخدام Google.":"You are not signed in. You can try again using Google.",
+  "إشعارات الهاتف غير مدعومة":"Phone notifications are not supported","هذا المتصفح لا يدعم إشعارات الهاتف.":"This browser does not support phone notifications.",
+  "الإشعارات محظورة من إعدادات الجهاز. اسمح بها لمرسال من إعدادات الإشعارات.":"Notifications are blocked in your device settings. Allow them for Mersal in notification settings.",
+  "لا توجد نتائج ضمن الرسائل المحمّلة حاليًا.":"No results in the messages currently loaded.","لم يشاهدها أحد بعد.":"No one has viewed it yet.",
+  "حجم الملف أكبر من 50 ميغابايت.":"The file is larger than 50 MB.","أكبر من 50 ميغابايت.":"Larger than 50 MB.",
+  "هذا النوع من الملفات لا يدعم المعاينة داخل مرسال حاليًا. لم يتم فتحه في تطبيق أو موقع خارجي.":"This file type cannot be previewed in Mersal yet. It was not opened in an external app or website.",
+  "تم تجهيز سجل المحادثة.":"Chat history is ready.","جارٍ التحميل…":"Loading…","جارٍ حفظ إعدادات الحساب…":"Saving account settings…",
+  "جارٍ رفع ":"Uploading ","موعد الإرسال: ":"Scheduled for: ","عدد الأعضاء ":"Members: ","عدد النتائج: ":"Results: ",
+  "آخر ظهور غير متوفر":"Last seen unavailable","متصل الآن":"Online","غير مقروء: ":"Unread: ","مقروء: ":"Read: ",
+  "صورة الحالة من ":"Status photo from ","فيديو الحالة من ":"Status video from ","إشعار جديد من ":"New notification from ",
+  "تعذر تحميل الرسائل: ":"Could not load messages: ","تعذر إرسال الرسالة: ":"Could not send message: ","تعذر إنشاء المجموعة: ":"Could not create group: ",
+  "تعذرت جدولة الرسالة: ":"Could not schedule message: ","تعذر تحميل الحالات: ":"Could not load statuses: ","تعذر تحميل الإشعارات: ":"Could not load notifications: ",
+  "تعذر بدء المكالمة: ":"Could not start call: ","تعذر الرد على المكالمة: ":"Could not answer call: ","تعذر حفظ الاسم: ":"Could not save name: ",
+  "تعذر حذف الحساب: ":"Could not delete account: ","تعذر تسجيل الخروج: ":"Could not sign out: ","تعذر فتح المحادثة: ":"Could not open conversation: "
+};
+const mersalOriginalText = new WeakMap();
+const mersalOriginalAttributes = new WeakMap();
+const mersalSkipTranslation = "#messages,#status-list,#conversation-list,#people-list,#group-people-list,#group-add-people,#group-member-list,#scheduled-messages-list,#conversation-search-results,[data-no-translate],input,textarea";
+function mersalShouldSkip(node) {
+  const parent=node.parentElement;
+  return !parent||Boolean(parent.closest(mersalSkipTranslation));
+}
+function mersalTranslateTextNode(node, language) {
+  if(mersalShouldSkip(node))return;
+  if(!mersalOriginalText.has(node))mersalOriginalText.set(node,node.nodeValue);
+  const original=mersalOriginalText.get(node);
+  const translated=mersalTranslations[original];
+  const next=language==="en"?(translated||original):original;
+  if(node.nodeValue!==next)node.nodeValue=next;
+}
+function mersalTranslateAttributes(element, language) {
+  if(element.matches?.(mersalSkipTranslation))return;
+  for(const attr of ["aria-label","aria-description","placeholder","title","alt"]){
+    if(!element.hasAttribute(attr))continue;
+    let originals=mersalOriginalAttributes.get(element);
+    if(!originals){originals={};mersalOriginalAttributes.set(element,originals);}
+    if(!(attr in originals))originals[attr]=element.getAttribute(attr);
+    const original=originals[attr];
+    const next=language==="en"?(mersalTranslations[original]||original):original;
+    if(element.getAttribute(attr)!==next)element.setAttribute(attr,next);
+  }
+}
+function mersalTranslateTree(root=document) {
+  const language=localStorage.getItem("mersal-language")==="en"?"en":"ar";
+  if(root.nodeType===Node.TEXT_NODE){mersalTranslateTextNode(root,language);return;}
+  if(root.nodeType===Node.ELEMENT_NODE)mersalTranslateAttributes(root,language);
+  const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
+  let node;while((node=walker.nextNode()))mersalTranslateTextNode(node,language);
+  if(root.querySelectorAll)root.querySelectorAll("*").forEach(element=>mersalTranslateAttributes(element,language));
+}
+function applyMersalLanguage(language, persist=true) {
+  const chosen=language==="en"?"en":"ar";
+  if(persist)localStorage.setItem("mersal-language",chosen);
+  document.documentElement.lang=chosen;
+  document.documentElement.dir=chosen==="ar"?"rtl":"ltr";
+  document.documentElement.dataset.language=chosen;
+  mersalTranslateTree();
+  const selector=document.querySelector("#settings-language");
+  if(selector&&selector.value!==chosen)selector.value=chosen;
+}
+applyMersalLanguage(localStorage.getItem("mersal-language")||"ar",false);
+const mersalLanguageObserver=new MutationObserver(records=>{
+  const language=localStorage.getItem("mersal-language")==="en"?"en":"ar";
+  for(const record of records){
+    if(record.type==="characterData")mersalTranslateTextNode(record.target,language);
+    else for(const node of record.addedNodes)if(node.nodeType===Node.ELEMENT_NODE||node.nodeType===Node.TEXT_NODE)mersalTranslateTree(node);
+    if(record.type==="attributes"&&record.target.nodeType===Node.ELEMENT_NODE)mersalTranslateAttributes(record.target,language);
+  }
+});
+mersalLanguageObserver.observe(document.documentElement,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["aria-label","aria-description","placeholder","title","alt"]});
 const authPanel = $("#auth-panel");
 const workspace = $("#workspace");
 const account = $("#account");
@@ -41,6 +164,7 @@ const settingsForm = $("#settings-form");
 const displayNameInput = $("#settings-display-name");
 const textSizeSelect = $("#settings-text-size");
 const themeSelect = $("#settings-theme");
+const settingsLanguageSelect = $("#settings-language");
 const settingsEmail = $("#settings-email");
 const settingsHome = $("#settings-home");
 const accountSettingsView = $("#account-settings-view");
@@ -800,6 +924,7 @@ function openSettings() {
   settingsEmail.value = currentUser.email || "";
   textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
   themeSelect.value = localStorage.getItem("mersal-theme") || "system";
+  settingsLanguageSelect.value = localStorage.getItem("mersal-language") || "ar";
   applyTextSize(textSizeSelect.value);
   applyTheme(themeSelect.value);
   settingsHome.hidden = false;
@@ -833,6 +958,7 @@ developerContactPanel.addEventListener("keydown", event => {
     (developerContactReturnFocus || openDeveloperContactButton).focus();
   }
 });
+settingsLanguageSelect.addEventListener("change", () => applyMersalLanguage(settingsLanguageSelect.value));
 settingsTabButton.addEventListener("click", openSettings);
 statusTabButton.addEventListener("click", openStatusTab);
 homeTabButton.addEventListener("click", returnToHomeTab);
