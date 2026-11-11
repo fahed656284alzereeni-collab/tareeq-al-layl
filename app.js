@@ -162,12 +162,20 @@ function mersalShouldSkip(node) {
   const parent=node.parentElement;
   return !parent||Boolean(parent.closest(mersalSkipTranslation));
 }
+function mersalTranslateValue(value) {
+  if(Object.prototype.hasOwnProperty.call(mersalTranslations,value))return mersalTranslations[value];
+  const prefix=Object.keys(mersalTranslations).filter(key=>key.endsWith(" ")&&value.startsWith(key)).sort((a,b)=>b.length-a.length)[0];
+  if(prefix)return mersalTranslations[prefix]+value.slice(prefix.length);
+  const suffix=Object.keys(mersalTranslations).filter(key=>key.startsWith(" ")&&value.endsWith(key)).sort((a,b)=>b.length-a.length)[0];
+  if(suffix)return value.slice(0,-suffix.length)+mersalTranslations[suffix];
+  return value;
+}
 function mersalTranslateTextNode(node, language) {
   if(mersalShouldSkip(node))return;
   let state=mersalOriginalText.get(node);
   if(!state){state={original:node.nodeValue,lastApplied:null};mersalOriginalText.set(node,state);}
   else if(node.nodeValue!==state.lastApplied){state.original=node.nodeValue;}
-  const next=language==="en"?(mersalTranslations[state.original]||state.original):state.original;
+  const next=language==="en"?mersalTranslateValue(state.original):state.original;
   if(node.nodeValue!==next){state.lastApplied=next;node.nodeValue=next;}else state.lastApplied=next;
 }
 function mersalTranslateAttributes(element, language) {
@@ -180,7 +188,7 @@ function mersalTranslateAttributes(element, language) {
     let state=originals[attr];
     if(!state){state={original:current,lastApplied:null};originals[attr]=state;}
     else if(current!==state.lastApplied){state.original=current;}
-    const next=language==="en"?(mersalTranslations[state.original]||state.original):state.original;
+    const next=language==="en"?mersalTranslateValue(state.original):state.original;
     if(current!==next)element.setAttribute(attr,next);
     state.lastApplied=next;
   }
