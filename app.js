@@ -297,7 +297,7 @@ const statusExclusionsList = $("#status-exclusions-list");
 const statusAudienceHelp = $("#status-audience-help");
 const saveStatusExclusionsButton = $("#save-status-exclusions");
 const blockedUsersList = $("#blocked-users-list");
-let privacySettings = { last_seen_visibility:"everyone", online_visibility:"everyone", read_receipts_enabled:true, group_add_visibility:"everyone", status_visibility:"contacts", hide_notification_preview:false };
+let privacySettings = { last_seen_visibility:"contacts", online_visibility:"everyone", read_receipts_enabled:true, group_add_visibility:"everyone", status_visibility:"contacts", hide_notification_preview:false };
 let privacySettingsLoaded = false;
 let selectedStatusExclusions = new Set();
 let storedStatusExclusions = new Set();
@@ -727,7 +727,7 @@ async function handleSession(session, authEvent = "UNKNOWN") {
 }
 
 async function touchLastSeen() {
-  if (!currentUser) return;
+  if (!currentUser || document.visibilityState !== "visible") return;
   const now = new Date().toISOString();
   const { error } = await supabase.from("profiles").update({ last_seen_at: now }).eq("id", currentUser.id);
   if (error) console.warn("تعذر تحديث آخر ظهور:", error.message);
