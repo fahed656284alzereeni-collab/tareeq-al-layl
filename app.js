@@ -784,8 +784,10 @@ async function startPresence() {
   if (presenceChannel) { await supabase.removeChannel(presenceChannel); presenceChannel = null; }
   if (presenceRefreshTimer) clearInterval(presenceRefreshTimer);
   await refreshVisiblePresence();
+  await Promise.all([loadPeople(), loadConversations()]);
   presenceRefreshTimer = window.setInterval(() => {
-    void refreshVisiblePresence().then(() => renderPeople()).catch(error => console.warn("تعذر تحديث الحضور:", error.message));
+    void refreshVisiblePresence().then(() => Promise.all([loadPeople(), loadConversations()]))
+      .catch(error => console.warn("تعذر تحديث الحضور:", error.message));
   }, 45000);
 }
 
@@ -1176,6 +1178,9 @@ openGeneralSettingsButton.addEventListener("click", () => {
   settingsHome.hidden = true; accountSettingsView.hidden = true; privacySettingsView.hidden = true;
   generalSettingsView.hidden = false; backGeneralSettingsButton.focus();
 });
+privacySettingsView.addEventListener("keydown", event => {
+  if (event.key === "Escape") backPrivacySettingsButton.click();
+});
 openPrivacySettingsButton.addEventListener("click", async () => {
   settingsHome.hidden=true; accountSettingsView.hidden=true; generalSettingsView.hidden=true;
   privacySettingsView.hidden=false;
@@ -1366,7 +1371,11 @@ createGroupButton.addEventListener("click",async()=>{
  try{
   const {data:conv,error}=await supabase.from("conversations").insert({user_one:currentUser.id,user_two:ids[0],is_group:true,group_name:name}).select("id,user_one,user_two,last_message_at,is_group,group_name,created_at").single();if(error)throw error;
   const rows=[currentUser.id,...ids].map(user_id=>({conversation_id:conv.id,user_id,role:user_id===currentUser.id?"admin":"member"}));
-  const {error:memberError}=await supabase.from("conversation_members").insert(rows);if(memberError)throw memberError;
+  const {error:memberError}=await supabase.from("conversation_members").insert(rows);
+  if(memberError){
+    await supabase.rpc("delete_group",{p_conversation_id:conv.id,p_delete_for_everyone:true}).catch(()=>{});
+    throw memberError;
+  }
   const {data:person,error:profileError}=await supabase.from("profiles").select("id,display_name,avatar_url").eq("id",ids[0]).single();if(profileError)throw profileError;
   await selectConversation(conv,{...person,display_name:name});await loadConversations();closeNewChat();announce("تم إنشاء المجموعة.","success");
  }catch(error){announce("تعذر إنشاء المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}finally{createGroupButton.disabled=false;}
