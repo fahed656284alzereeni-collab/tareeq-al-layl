@@ -19,6 +19,15 @@ const mersalTranslations = {
   "إخفاء نص الرسائل في الإشعارات":"Hide message text in notifications","من يستطيع مشاهدة حالاتي":"Who can view my statuses",
   "الأشخاص المحظورون":"Blocked users","حفظ المستثنين":"Save exclusions","الجميع":"Everyone",
   "جهات اتصالي":"My contacts","لا أحد":"Nobody","جهات اتصالي باستثناء أشخاص":"My contacts except…",
+  "من يستطيع رؤية حالة اتصالي":"Who can see when I'm online","مثل آخر ظهور":"Same as last seen",
+  "المشاركة مع أشخاص محددين فقط":"Only share with selected contacts",
+  "الأشخاص الذين لن يظهر لهم آخر ظهورك.":"People who cannot see your last seen.",
+  "الأشخاص الذين لا تريد السماح لهم بإضافتك إلى المجموعات.":"People who cannot add you to groups.",
+  "حدد الأشخاص الذين سيتمكنون من مشاهدة حالاتك فقط.":"Choose who can see your statuses.",
+  "حدد الأشخاص الذين لن يتمكنوا من مشاهدة حالاتك.":"Choose who cannot see your statuses.",
+  "حفظ جمهور الحالات":"Save status audience",
+  "إذا أخفيت آخر ظهورك عن شخص، فلن تتمكن من رؤية آخر ظهوره أو حالة اتصاله.":"If you hide your last seen from someone, you can't see their last seen or online status.",
+  "عند إيقافها لن ترسل أو ترى مؤشرات القراءة في المحادثات الفردية. تبقى مؤشرات القراءة في المجموعات مفعّلة.":"When off, you won't send or see read receipts in individual chats. Group read receipts stay on.",
   "حدد الأشخاص الذين لا تريد أن يشاهدوا حالاتك.":"Choose people who should not see your statuses.",
   "رسالة جديدة":"New message","مقروء":"Read","مقروء من ":"Read by ","حالة الظهور مخفية":"Presence hidden",
   " إخفاء نص الرسائل في الإشعارات":" Hide message text in notifications",
@@ -1633,7 +1642,7 @@ async function openStatusViewer(row, name, trigger) {
   $("#status-viewer-meta").textContent = name + "، " + statusTimeLabel(row.created_at);
   const own = row.user_id === currentUser.id;
   $("#delete-status-button").hidden = !own;
-  if (!own) {
+  if (!own && privacySettings.read_receipts_enabled) {
     const viewed = await supabase.from("status_views").insert({ status_id: row.id, viewer_id: currentUser.id });
     if (viewed.error && viewed.error.code !== "23505") console.warn("تعذر تسجيل مشاهدة الحالة:", viewed.error.message);
   }
@@ -1658,7 +1667,9 @@ async function openStatusViewer(row, name, trigger) {
       }
     }
   }
-  if (own) {
+  if (own && !privacySettings.read_receipts_enabled) {
+    $("#status-viewer-views").append(safeText("li","empty-item","أوقفت مؤشرات القراءة؛ لذلك لا يمكنك مشاهدة من شاهد حالتك."));
+  } else if (own) {
     const result = await supabase.from("status_views").select("viewer_id,viewed_at").eq("status_id", row.id).order("viewed_at", { ascending: false });
     if (result.error) $("#status-viewer-views").append(safeText("li", "empty-item", "تعذر تحميل المشاهدات."));
     else if (!result.data?.length) $("#status-viewer-views").append(safeText("li", "empty-item", "لم يشاهدها أحد بعد."));
@@ -1826,7 +1837,7 @@ async function selectConversation(conversation, person) {
         .eq("message_id", payload.new.id).eq("user_id", currentUser.id).maybeSingle();
       if (!hidden) {
         appendMessage(payload.new);
-        if(privacySettings.read_receipts_enabled&&payload.new.sender_id!==currentUser.id){
+        if((privacySettings.read_receipts_enabled||conversation.is_group)&&payload.new.sender_id!==currentUser.id){
           void supabase.from("message_reads").upsert({message_id:payload.new.id,user_id:currentUser.id},{onConflict:"message_id,user_id",ignoreDuplicates:true});
         }
       }
@@ -1836,7 +1847,7 @@ async function selectConversation(conversation, person) {
       filter: "conversation_id=eq." + conversation.id
     }, () => { void loadMessages(); })
     .on("postgres_changes", { event:"INSERT", schema:"public", table:"message_reads", ...(conversation.is_group ? {} : { filter:"user_id=eq."+(person?.id||"") }) }, async payload => {
-      if(!privacySettings.read_receipts_enabled)return;
+      if(!privacySettings.read_receipts_enabled&&!conversation.is_group)return;
       const messageNode=document.querySelector('[data-message-id="'+payload.new.message_id+'"]');
       if(!messageNode || !messageNode.classList.contains("mine"))return;
       if(conversation.is_group){
@@ -2744,7 +2755,7 @@ function appendMessage(message) {
   }
   const time = new Date(message.created_at).toLocaleString("ar-JO", { dateStyle: "short", timeStyle: "short" });
   item.append(safeText("time", "message-time", time));
-  if (message.sender_id === currentUser.id && privacySettings.read_receipts_enabled) {
+  if (message.sender_id === currentUser.id && (privacySettings.read_receipts_enabled || activeConversation?.is_group)) {
     if (message._readCount > 0) item.append(safeText("span", "message-read-state", activeConversation?.is_group ? "مقروء من " + message._readCount : "مقروء"));
     else if (message._readByPartner) item.append(safeText("span", "message-read-state", "مقروء"));
   }
@@ -2832,7 +2843,7 @@ async function loadMessages() {
   }
   const hiddenIds = new Set((hiddenRows || []).map(row => row.message_id));
   const visibleMessages = (data || []).filter(message => !hiddenIds.has(message.id));
-  if (privacySettings.read_receipts_enabled) {
+  if (privacySettings.read_receipts_enabled || activeConversation.is_group) {
     const incomingIds=visibleMessages.filter(message=>message.sender_id!==currentUser.id&&!message.is_deleted).map(message=>message.id);
     if(incomingIds.length){
       const receipts=await supabase.from("message_reads").upsert(incomingIds.map(message_id=>({message_id,user_id:currentUser.id})),{onConflict:"message_id,user_id",ignoreDuplicates:true});
