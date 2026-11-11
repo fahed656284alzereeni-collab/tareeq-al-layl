@@ -1056,6 +1056,7 @@ async function loadPrivacySettings() {
   privacyStatusSelect.value = privacySettings.status_visibility;
   statusExclusionsArea.hidden = privacySettings.status_visibility !== "custom";
   await Promise.all([renderStatusExclusions(), renderBlockedUsers()]);
+  if (notifications.length) renderNotifications();
 }
 async function savePrivacySettings() {
   if (!currentUser) return;
