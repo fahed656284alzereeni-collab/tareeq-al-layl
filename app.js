@@ -1240,7 +1240,7 @@ async function renderChoiceList(list, selectedSet, title, focusTarget) {
   }
   privacyContactPicker.hidden=false;
   document.body.classList.add("privacy-contact-picker-open");
-  savePrivacyContactPickerButton.focus();
+  closePrivacyContactPickerButton.focus();
   activePrivacyPicker={focusTarget};
 }
 function closePrivacyContactPicker(restoreSelection=true) {
