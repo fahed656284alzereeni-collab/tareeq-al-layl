@@ -20,7 +20,10 @@ const mersalTranslations = {
   "الأشخاص المحظورون":"Blocked users","حفظ المستثنين":"Save exclusions","الجميع":"Everyone",
   "جهات اتصالي":"My contacts","لا أحد":"Nobody","جهات اتصالي باستثناء أشخاص":"My contacts except…",
   "حدد الأشخاص الذين لا تريد أن يشاهدوا حالاتك.":"Choose people who should not see your statuses.",
-  "رسالة جديدة":"New message","مقروء":"Read","حالة الظهور مخفية":"Presence hidden",
+  "رسالة جديدة":"New message","مقروء":"Read","مقروء من ":"Read by ","حالة الظهور مخفية":"Presence hidden",
+  " إخفاء نص الرسائل في الإشعارات":" Hide message text in notifications",
+  " مؤشرات قراءة الرسائل":" Read receipts","إلغاء الحظر":"Unblock","لا يوجد أشخاص محظورون.":"No blocked users.",
+  "الأشخاص المستثنون من مشاهدة الحالات":"People excluded from viewing statuses",
   "عام":"General","مرسال":"Mersal","، جاري تحديث حالة الظهور":"; updating presence",
   "عرض المرفق داخل المحادثة":"View attachment in chat","إغلاق العرض":"Close viewer","ترجيع 10 ثوانٍ":"Rewind 10 seconds","ترجيع 10 ثوانٍ في ":"Rewind 10 seconds in ",
   "تشغيل":"Play","تشغيل ":"Play ","تقديم 10 ثوانٍ":"Forward 10 seconds","تقديم 10 ثوانٍ في ":"Forward 10 seconds in ","موضع التشغيل في ":"Playback position in ",
@@ -1079,7 +1082,13 @@ async function savePrivacySettings() {
   if (error) throw error;
   privacySettings = { ...privacySettings, ...next };
   announce("تم حفظ إعدادات الخصوصية.");
-  if (activePartner) await refreshVisiblePresence();
+  await refreshVisiblePresence().catch(error => console.warn("تعذر تحديث الحضور بعد حفظ الخصوصية:", error.message));
+  renderPeople();
+  if (!privacySettings.read_receipts_enabled) {
+    messagesList.querySelectorAll(".message-read-state").forEach(node => node.remove());
+  } else if (activeConversation) {
+    await loadMessages();
+  }
   if (notifications.length) renderNotifications();
 }
 async function loadPrivacyContacts() {
