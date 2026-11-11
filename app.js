@@ -14,6 +14,7 @@ const $ = (selector) => document.querySelector(selector);
 
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
+  "مرسال":"Mersal",
   "عرض المرفق داخل المحادثة":"View attachment in chat","إغلاق العرض":"Close viewer","ترجيع 10 ثوانٍ":"Rewind 10 seconds","ترجيع 10 ثوانٍ في ":"Rewind 10 seconds in ",
   "تشغيل":"Play","تشغيل ":"Play ","تقديم 10 ثوانٍ":"Forward 10 seconds","تقديم 10 ثوانٍ في ":"Forward 10 seconds in ","موضع التشغيل في ":"Playback position in ",
   "إيقاف مؤقت":"Pause","إيقاف ":"Stop ","الفيديو المرفق داخل المحادثة":"Video attached in chat","تشغيل الملف الصوتي داخل مرسال":"Play audio file in Mersal",
@@ -157,7 +158,7 @@ const mersalTranslations = {
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
-const mersalSkipTranslation = "#messages,#status-list,#conversation-list,#people-list,#group-people-list,#group-add-people,#group-member-list,#scheduled-messages-list,#conversation-search-results,[data-no-translate],input,textarea";
+const mersalSkipTranslation = "#messages,#status-list,#conversation-list,#people-list,#group-people-list,#group-add-people,#group-member-list,#scheduled-messages-list,#conversation-search-results,#notifications-list,#conversation-info-name,#conversation-info-status,#group-member-options-name,#message-schedule-preview,#replying-to-text,[data-no-translate],input,textarea";
 function mersalShouldSkip(node) {
   const parent=node.parentElement;
   return !parent||Boolean(parent.closest(mersalSkipTranslation));
