@@ -1972,21 +1972,21 @@ async function handleVoiceOffer(from, description) {
 }
 async function handleCallSignal(signal) {
   if(!signal||!currentUser||signal.to!==currentUser.id||signal.from===currentUser.id||!signal.conversationId)return;
-  const callConversation=conversations.find(item=>item.id===signal.conversationId);
-  if(!callConversation)return;
-  if(!callConversation.is_group){
-    const otherId=callConversation.user_one===currentUser.id?callConversation.user_two:callConversation.user_one;
-    const [blockedByMe,blockedByThem]=await Promise.all([
-      supabase.from("user_blocks").select("blocker_id").eq("blocker_id",currentUser.id).eq("blocked_id",otherId).maybeSingle(),
-      supabase.from("user_blocks").select("blocker_id").eq("blocker_id",otherId).eq("blocked_id",currentUser.id).maybeSingle()
-    ]);
-    if(blockedByMe.error||blockedByThem.error)throw blockedByMe.error||blockedByThem.error;
-    if(blockedByMe.data||blockedByThem.data)return;
-  }
-  const validParticipants=await getVoiceCallParticipantIds(callConversation);
-  if(!validParticipants.includes(signal.from))return;
-  const from = signal.from, details = signal.details || {};
-  if (signal.type === "invite") {
+  const from=signal.from,details=signal.details||{};
+  if(signal.type==="invite"){
+    const callConversation=conversations.find(item=>item.id===signal.conversationId);
+    if(!callConversation)return;
+    if(!callConversation.is_group){
+      const otherId=callConversation.user_one===currentUser.id?callConversation.user_two:callConversation.user_one;
+      const [blockedByMe,blockedByThem]=await Promise.all([
+        supabase.from("user_blocks").select("blocker_id").eq("blocker_id",currentUser.id).eq("blocked_id",otherId).maybeSingle(),
+        supabase.from("user_blocks").select("blocker_id").eq("blocker_id",otherId).eq("blocked_id",currentUser.id).maybeSingle()
+      ]);
+      if(blockedByMe.error||blockedByThem.error)throw blockedByMe.error||blockedByThem.error;
+      if(blockedByMe.data||blockedByThem.data)return;
+    }
+    const validParticipants=await getVoiceCallParticipantIds(callConversation);
+    if(!validParticipants.includes(from))return;
     if (activeCall) {
       if (activeCall.id !== signal.callId) {
         try { await sendCallSignal("busy", from, {}, signal.callId, signal.conversationId); } catch {}
@@ -2006,7 +2006,7 @@ async function handleCallSignal(signal) {
     voiceCallAcceptButton.focus();
     return;
   }
-  if (!activeCall || activeCall.id !== signal.callId) return;
+  if (!activeCall || activeCall.id !== signal.callId || activeCall.conversationId !== signal.conversationId || !activeCall.participants.has(from)) return;
   if (signal.type === "ready") {
     activeCall.readyUsers.add(from);
     if (activeCall.accepted) await maybeCreateVoiceOffer(from);
