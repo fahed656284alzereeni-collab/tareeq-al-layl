@@ -1789,3 +1789,27 @@ html[dir="ltr"] .voice-call-card > button { text-align: left; }
 #general-settings-view .settings-section { margin-bottom: 16px; }
 :root[data-theme="light"] #general-settings-view { background: #f7f9fc; }
 html[dir="ltr"] #general-settings-view { text-align: left; }
+
+
+/* Privacy settings full-screen and accessible controls. */
+#privacy-settings-view{position:fixed;inset:0;z-index:125;box-sizing:border-box;width:100%;height:100vh;height:100dvh;overflow-y:auto;padding:clamp(20px,4vw,42px);padding-bottom:calc(42px + env(safe-area-inset-bottom));background:#0b1020}
+#privacy-settings-view[hidden]{display:none!important}
+#privacy-settings-view .settings-section{margin:0 0 22px}
+#privacy-settings-view label:not(.privacy-toggle):not(.privacy-person-choice){display:block;margin:18px 0 8px;color:#e5ebf8;font-weight:750}
+#privacy-settings-view select{display:block;width:100%;min-height:54px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#0b1427;color:#fff;font:inherit}
+.privacy-toggle{display:flex;align-items:center;gap:12px;min-height:56px;color:#f5f7ff;font-weight:700}
+.privacy-toggle input,.privacy-person-choice input{width:22px;height:22px;flex:0 0 auto}
+.privacy-people-list{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+.privacy-person-choice,.blocked-user-row{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:54px;padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.04);color:inherit}
+.privacy-person-choice{justify-content:flex-start}
+.blocked-user-row button{min-width:130px}
+#save-status-exclusions{width:100%;margin-top:14px}
+#status-exclusions-area{margin-top:12px}
+.message-read-state{display:block;font-size:.78rem;color:#9fc8ff;margin-top:3px}
+:root[data-theme="light"] #privacy-settings-view{background:#f7f9fc}
+:root[data-theme="light"] #privacy-settings-view label:not(.privacy-toggle):not(.privacy-person-choice){color:#20334d}
+:root[data-theme="light"] #privacy-settings-view select{background:#fff;color:#20334d;border-color:#bdcde1}
+:root[data-theme="light"] .privacy-toggle{color:#20334d}
+:root[data-theme="light"] .privacy-person-choice,:root[data-theme="light"] .blocked-user-row{background:#fff;color:#20334d}
+html[dir="ltr"] #privacy-settings-view{text-align:left}
+@media(max-width:520px){.blocked-user-row{align-items:stretch;flex-direction:column}.blocked-user-row button{width:100%}}
