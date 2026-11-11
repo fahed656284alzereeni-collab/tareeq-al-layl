@@ -96,69 +96,56 @@
           <button id="back-privacy-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
           <section class="settings-section privacy-options">
             <label for="privacy-last-seen">من يستطيع رؤية آخر ظهورك</label>
-            <select id="privacy-last-seen" aria-describedby="last-seen-privacy-help">
+            <select id="privacy-last-seen">
               <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option><option value="nobody">لا أحد</option>
             </select>
-            <p class="settings-help">جهات اتصالك في مرسال هي الأشخاص الذين توجد بينك وبينهم محادثة فردية.</p>
-            <p id="last-seen-privacy-help" class="settings-help">الخصوصية متبادلة مثل واتساب: إذا أخفيت آخر ظهورك عن شخص، فلن تتمكن من رؤية آخر ظهوره أو حالة اتصاله. ويجب أن تسمح إعدادات الطرفين بذلك.</p>
             <div id="last-seen-exclusions-area" hidden>
-              <p class="settings-help">الأشخاص الذين لن يظهر لهم آخر ظهورك.</p>
               <ul id="last-seen-exclusions-list" class="privacy-people-list" aria-label="استثناءات آخر ظهور"></ul>
               <button id="save-last-seen-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
             </div>
             <label for="privacy-online">من يستطيع رؤية أنك متصل الآن</label>
-            <p id="online-privacy-help" class="settings-help">اختر الجميع للسماح برؤية اتصالك، أو «مثل آخر ظهور» لتطبيق الجمهور نفسه. لا يمكن تجاوز قاعدة الخصوصية المتبادلة.</p>
-            <select id="privacy-online" aria-describedby="last-seen-privacy-help online-privacy-help"><option value="everyone">الجميع</option><option value="same_as_last_seen">مثل آخر ظهور</option></select>
-            <label class="privacy-toggle"><input id="privacy-read-receipts" type="checkbox" checked aria-describedby="read-receipts-privacy-help"> مؤشرات قراءة الرسائل</label>
-            <p id="read-receipts-privacy-help" class="settings-help">عند إيقافها لن ترسل أو ترى مؤشرات القراءة في المحادثات الفردية، ولن تعرف من شاهد حالاتك. تبقى مؤشرات القراءة في المجموعات مفعّلة كما في واتساب.</p>
+            <select id="privacy-online"><option value="everyone">الجميع</option><option value="same_as_last_seen">مثل آخر ظهور</option></select>
+            <label class="privacy-toggle"><input id="privacy-read-receipts" type="checkbox" checked> مؤشرات قراءة الرسائل</label>
             <label for="privacy-group-add">من يستطيع إضافتي إلى المجموعات</label>
-            <select id="privacy-group-add" aria-describedby="group-add-privacy-help">
+            <select id="privacy-group-add">
               <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option>
             </select>
-            <p id="group-add-privacy-help" class="settings-help">يُمنع إدخالك إلى المجموعات ممن لا تسمح لهم إعداداتك أو تستثنيهم.</p>
             <div id="group-add-exclusions-area" hidden>
-              <p class="settings-help">الأشخاص الذين لا تريد السماح لهم بإضافتك إلى المجموعات.</p>
               <ul id="group-add-exclusions-list" class="privacy-people-list" aria-label="استثناءات إضافة المجموعات"></ul>
               <button id="save-group-add-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
             </div>
             <label for="privacy-status">من يستطيع مشاهدة حالاتي</label>
-            <select id="privacy-status" aria-describedby="status-privacy-help">
+            <select id="privacy-status">
               <option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option>
               <option value="only_share">المشاركة مع أشخاص محددين فقط</option>
             </select>
-            <p id="status-privacy-help" class="settings-help">تُطبّق تغييرات جمهور الحالات على الحالات الجديدة فقط، ولا تغيّر جمهور الحالات المنشورة سابقًا. هذه الخيارات الثلاثة تطابق خيارات جمهور الحالة في واتساب.</p>
             <div id="status-exclusions-area" hidden>
-              <p id="status-audience-help" class="settings-help">حدد الأشخاص الذين تريد مشاركة حالاتك معهم.</p>
+              <p id="status-audience-help" class="settings-help" hidden>حدد الأشخاص الذين تريد مشاركة حالاتك معهم.</p>
               <ul id="status-exclusions-list" class="privacy-people-list" aria-label="جهات اتصال جمهور الحالات"></ul>
               <button id="save-status-exclusions" type="button" class="primary-button">حفظ جمهور الحالات</button>
             </div>
             <label for="privacy-profile-photo">من يستطيع رؤية صورة ملفك الشخصي</label>
-            <select id="privacy-profile-photo" aria-describedby="profile-photo-privacy-help">
+            <select id="privacy-profile-photo">
               <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option><option value="nobody">لا أحد</option>
             </select>
-            <p id="profile-photo-privacy-help" class="settings-help">تتحكم هذه الإعدادات في ظهور صورة حسابك للأشخاص الآخرين.</p>
             <div id="profile-photo-exclusions-area" hidden>
-              <p class="settings-help">الأشخاص الذين لن يتمكنوا من رؤية صورة ملفك الشخصي.</p>
               <ul id="profile-photo-exclusions-list" class="privacy-people-list" aria-label="استثناءات صورة الملف الشخصي"></ul>
               <button id="save-profile-photo-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
             </div>
             <label for="privacy-about">من يستطيع رؤية نبذتك</label>
-            <select id="privacy-about" aria-describedby="about-privacy-help">
+            <select id="privacy-about">
               <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option><option value="nobody">لا أحد</option>
             </select>
-            <p id="about-privacy-help" class="settings-help">تتحكم هذه الإعدادات في ظهور النبذة الموجودة في بيانات حسابك.</p>
             <div id="about-exclusions-area" hidden>
-              <p class="settings-help">الأشخاص الذين لن يتمكنوا من رؤية نبذتك.</p>
               <ul id="about-exclusions-list" class="privacy-people-list" aria-label="استثناءات النبذة"></ul>
               <button id="save-about-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
             </div>
-            <label class="privacy-toggle"><input id="privacy-hide-preview" type="checkbox" aria-describedby="hide-preview-privacy-help"> إخفاء نص الرسائل في الإشعارات</label>
-            <p id="hide-preview-privacy-help" class="settings-help">يظهر إشعار برسالة جديدة دون عرض محتوى الرسالة.</p>
+            <label class="privacy-toggle"><input id="privacy-hide-preview" type="checkbox"> إخفاء نص الرسائل في الإشعارات</label>
           </section>
           <section class="settings-section blocked-users-section">
             <p>الأشخاص المحظورون</p>
