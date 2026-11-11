@@ -316,6 +316,8 @@ const saveAboutExclusionsButton = $("#save-about-exclusions");
 const settingsAboutInput = $("#settings-about");
 const conversationInfoAbout = $("#conversation-info-about");
 const conversationInfoPhoto = $("#conversation-info-photo");
+const conversationInfoPhotoRow = $("#conversation-info-photo-row");
+const conversationInfoAboutRow = $("#conversation-info-about")?.parentElement;
 const lastSeenExclusionsArea = $("#last-seen-exclusions-area");
 const lastSeenExclusionsList = $("#last-seen-exclusions-list");
 const saveLastSeenExclusionsButton = $("#save-last-seen-exclusions");
@@ -1636,6 +1638,7 @@ createGroupButton.addEventListener("click",async()=>{
   const {error:memberError}=await supabase.from("conversation_members").insert(rows);
   if(memberError){
     await supabase.rpc("delete_group",{p_conversation_id:conv.id,p_delete_for_everyone:true}).catch(()=>{});
+    if(memberError.code==="42501")throw new Error("تعذر إضافة أحد الأشخاص لأن إعدادات خصوصيته لا تسمح بإضافته مباشرة إلى المجموعات.");
     throw memberError;
   }
   const {data:person,error:profileError}=await supabase.from("profiles").select("id,display_name").eq("id",ids[0]).single();if(profileError)throw profileError;
@@ -2052,6 +2055,8 @@ async function updateConversationInfo() {
   conversationDeleteButton.hidden=false;
   conversationInfoNameLabel.textContent = isGroup ? "اسم المجموعة" : "اسم الشخص";
   conversationInfoStatusRow.hidden = isGroup;
+  if(conversationInfoPhotoRow)conversationInfoPhotoRow.hidden=isGroup;
+  if(conversationInfoAboutRow)conversationInfoAboutRow.hidden=isGroup;
   setConversationInfoValue(conversationInfoName, isGroup ? (activeConversation.group_name || "مجموعة") : displayName(activePartner));
   if (!isGroup) {
     const visibleProfile=await supabase.rpc("get_visible_profiles",{p_user_ids:[activePartner.id]});
