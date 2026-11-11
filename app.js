@@ -1629,7 +1629,7 @@ profilePhotoInput.addEventListener("change", async () => {
     announce("اختر صورة بصيغة JPG أو PNG أو WebP أو GIF.", "error");
     return;
   }
-  if (file.size > 5 * 1024 * 1024) {
+  if (file.size > 50 * 1024 * 1024) {
     announce("حجم الصورة يجب ألا يتجاوز 5 ميغابايت.", "error");
     return;
   }
