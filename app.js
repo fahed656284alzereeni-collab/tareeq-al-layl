@@ -1638,7 +1638,7 @@ createGroupButton.addEventListener("click",async()=>{
   const {error:memberError}=await supabase.from("conversation_members").insert(rows);
   if(memberError){
     await supabase.rpc("delete_group",{p_conversation_id:conv.id,p_delete_for_everyone:true}).catch(()=>{});
-    if(memberError.code==="42501")throw new Error("تعذر إضافة أحد الأشخاص لأن إعدادات خصوصيته لا تسمح بإضافته مباشرة إلى المجموعات.");
+    if(memberError.code==="42501")throw new Error("تعذر إضافة أحد الأشخاص؛ قد تمنع إعدادات الخصوصية أو الحظر إضافته مباشرة إلى المجموعة.");
     throw memberError;
   }
   const {data:person,error:profileError}=await supabase.from("profiles").select("id,display_name").eq("id",ids[0]).single();if(profileError)throw profileError;
