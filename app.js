@@ -309,6 +309,7 @@ const aboutExclusionsList = $("#about-exclusions-list");
 const saveAboutExclusionsButton = $("#save-about-exclusions");
 const settingsAboutInput = $("#settings-about");
 const conversationInfoAbout = $("#conversation-info-about");
+const conversationInfoPhoto = $("#conversation-info-photo");
 const lastSeenExclusionsArea = $("#last-seen-exclusions-area");
 const lastSeenExclusionsList = $("#last-seen-exclusions-list");
 const saveLastSeenExclusionsButton = $("#save-last-seen-exclusions");
@@ -653,6 +654,25 @@ function getCallbackParams() {
 }
 function displayName(profile) {
   return profile?.display_name?.trim() || "مستخدم مرسال";
+}
+function appendProfileAvatar(container, profile) {
+  const avatar=document.createElement("span");
+  avatar.className="profile-avatar";
+  avatar.setAttribute("aria-hidden","true");
+  let imageUrl=null;
+  try {
+    const candidate=new URL(profile?.avatar_url || "");
+    if(candidate.protocol==="https:" || candidate.protocol==="http:") imageUrl=candidate.href;
+  } catch {}
+  if(imageUrl) {
+    const image=document.createElement("img");
+    image.src=imageUrl; image.alt=""; image.loading="lazy"; image.referrerPolicy="no-referrer";
+    avatar.append(image);
+  } else {
+    avatar.textContent=displayName(profile).trim().slice(0,1) || "م";
+  }
+  container.append(avatar);
+  return avatar;
 }
 function safeText(tag, className, value) {
   const node = document.createElement(tag);
@@ -1127,6 +1147,7 @@ async function loadPrivacySettings() {
   if (error) throw error;
   if (data) privacySettings = { ...privacySettings, ...data };
   if (privacySettings.status_visibility === "custom") privacySettings.status_visibility = "contacts_except";
+  if (privacySettings.group_add_visibility === "nobody") privacySettings.group_add_visibility = "contacts_except";
   // WhatsApp has no separate "Nobody" status audience; an empty "Only share with" list means nobody.
   if (privacySettings.status_visibility === "nobody") privacySettings.status_visibility = "only_share";
   privacySettingsLoaded = true;
@@ -1231,6 +1252,7 @@ async function savePrivacyExclusionChoices(settingKey) {
   }
   stored.clear(); for(const id of selected)stored.add(id);
   if(settingKey==="last_seen"){await refreshVisiblePresence().catch(()=>{});renderPeople();}
+  if(settingKey==="profile_photo"){await Promise.all([loadPeople(),loadConversations()]);}
   if(settingKey==="about"&&activePartner)await updateConversationInfo();
   announce("تم حفظ الاستثناءات.");
 }
@@ -1549,7 +1571,15 @@ async function loadPeople() {
     .order("display_name", { ascending: true })
     .limit(100);
   if (error) throw error;
-  people = data || [];
+  const ids=(data||[]).map(person=>person.id);
+  let visibleProfiles=[];
+  if(ids.length){
+    const result=await supabase.rpc("get_visible_profiles",{p_user_ids:ids});
+    if(result.error)throw result.error;
+    visibleProfiles=result.data||[];
+  }
+  const visibleMap=new Map(visibleProfiles.map(profile=>[profile.id,profile]));
+  people=(data||[]).map(person=>({...person,...(visibleMap.get(person.id)||{})}));
   renderPeople();
 }
 
@@ -1557,13 +1587,30 @@ function renderPeople() {
  const term=peopleSearch.value.trim().toLocaleLowerCase();peopleList.replaceChildren();
  const filtered=people.filter(p=>displayName(p).toLocaleLowerCase().includes(term));
  if(!filtered.length){peopleList.append(safeText("li","empty-item","لا يوجد أشخاص بهذا الاسم."));return;}
- for(const person of filtered){const item=document.createElement("li"),button=safeText("button","person-button",displayName(person)+(onlineUserIds.has(person.id)?" · متصل الآن":""));button.type="button";button.addEventListener("click",()=>{closeNewChat();void openConversation(person);});item.append(button);peopleList.append(item);}
+ for(const person of filtered){
+   const item=document.createElement("li"),button=document.createElement("button");
+   button.type="button";button.className="person-button";
+   appendProfileAvatar(button,person);
+   button.append(safeText("span","person-button-name",displayName(person)));
+   if(onlineUserIds.has(person.id))button.append(safeText("span","person-button-presence","متصل الآن"));
+   button.addEventListener("click",()=>{closeNewChat();void openConversation(person);});
+   item.append(button);peopleList.append(item);
+ }
 }
 function renderGroupPeople(){
  const term=groupPeopleSearch.value.trim().toLocaleLowerCase();groupPeopleList.replaceChildren();
  const filtered=people.filter(p=>displayName(p).toLocaleLowerCase().includes(term));
  if(!filtered.length){groupPeopleList.append(safeText("li","empty-item","لا يوجد أشخاص بهذا الاسم."));return;}
- for(const person of filtered){const item=document.createElement("li"),label=document.createElement("label");label.className="group-person-choice";const cb=document.createElement("input");cb.type="checkbox";cb.checked=selectedGroupMembers.has(person.id);cb.addEventListener("change",()=>{if(cb.checked)selectedGroupMembers.add(person.id);else selectedGroupMembers.delete(person.id);});label.append(cb,document.createTextNode(displayName(person)));item.append(label);groupPeopleList.append(item);}
+ for(const person of filtered){
+   const item=document.createElement("li"),label=document.createElement("label");
+   label.className="group-person-choice";
+   const cb=document.createElement("input");cb.type="checkbox";cb.checked=selectedGroupMembers.has(person.id);
+   cb.addEventListener("change",()=>{if(cb.checked)selectedGroupMembers.add(person.id);else selectedGroupMembers.delete(person.id);});
+   label.append(cb);
+   appendProfileAvatar(label,person);
+   label.append(document.createTextNode(displayName(person)));
+   item.append(label);groupPeopleList.append(item);
+ }
 }
 function openNewChat(){newChatReturnFocus=newChatButton;newChatPanel.hidden=false;privateChatView.hidden=true;groupChatView.hidden=true;newPrivateChatButton.hidden=false;newGroupChatButton.hidden=false;closeNewChatButton.focus();}
 function closeNewChat(){newChatPanel.hidden=true;if(newChatReturnFocus?.isConnected)newChatReturnFocus.focus();}
@@ -1821,7 +1868,10 @@ async function loadConversations() {
     const { data: profiles, error: profileError } = await supabase.from("profiles")
       .select("id,display_name").in("id", partnerIds);
     if (profileError) throw profileError;
-    profileMap = new Map((profiles || []).map(p => [p.id, p]));
+    const visible=await supabase.rpc("get_visible_profiles",{p_user_ids:partnerIds});
+    if(visible.error)throw visible.error;
+    const visibleMap=new Map((visible.data||[]).map(profile=>[profile.id,profile]));
+    profileMap=new Map((profiles||[]).map(profile=>[profile.id,{...profile,...(visibleMap.get(profile.id)||{})}]));
   }
   conversationList.replaceChildren();
   if (!conversations.length) {
@@ -1836,6 +1886,7 @@ async function loadConversations() {
     button.type = "button";
     button.className = "conversation-button";
     button.dataset.partnerId = partnerId;
+    if(!conversation.is_group)appendProfileAvatar(button,person);
     button.append(safeText("span", "conversation-person-name", displayName(person)));
     const isOnline = onlineUserIds.has(partnerId);
     if (isOnline) {
@@ -1951,6 +2002,7 @@ async function selectConversation(conversation, person) {
 }
 
 function setConversationInfoValue(element, value) {
+  if(!element)return;
   element.textContent = value;
   const group = element.parentElement;
   const label = group?.querySelector(".conversation-info-label")?.textContent?.trim();
@@ -1997,8 +2049,20 @@ async function updateConversationInfo() {
   setConversationInfoValue(conversationInfoName, isGroup ? (activeConversation.group_name || "مجموعة") : displayName(activePartner));
   if (!isGroup) {
     const visibleProfile=await supabase.rpc("get_visible_profiles",{p_user_ids:[activePartner.id]});
-    if(visibleProfile.error)console.warn("تعذر تحميل نبذة الحساب:",visibleProfile.error.message);
-    setConversationInfoValue(conversationInfoAbout,visibleProfile.data?.[0]?.about||"لا توجد نبذة متاحة.");
+    if(visibleProfile.error)console.warn("تعذر تحميل بيانات الحساب:",visibleProfile.error.message);
+    const partnerProfile=visibleProfile.data?.[0];
+    setConversationInfoValue(conversationInfoAbout,partnerProfile?.about||"لا توجد نبذة متاحة.");
+    if(conversationInfoPhoto){
+      if(partnerProfile?.avatar_url){
+        conversationInfoPhoto.src=partnerProfile.avatar_url;
+        conversationInfoPhoto.alt="الصورة الشخصية لـ "+displayName(activePartner);
+        conversationInfoPhoto.hidden=false;
+      }else{
+        conversationInfoPhoto.removeAttribute("src");
+        conversationInfoPhoto.alt="";
+        conversationInfoPhoto.hidden=true;
+      }
+    }
     const presence = presenceDetails.get(activePartner.id);
     const reciprocalHidden=privacySettingsLoaded&&privacySettings.last_seen_visibility==="nobody";
     setConversationInfoValue(conversationInfoStatus, reciprocalHidden ? "حالة الظهور مخفية" : presence?.is_online ? "متصل الآن" : presence?.last_seen_at ? formatLastSeen(presence.last_seen_at) : "حالة الظهور مخفية");
