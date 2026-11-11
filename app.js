@@ -1296,6 +1296,12 @@ confirmDeleteAccountButton.addEventListener("click", async () => {
 });
 settingsPanel.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
+  if (!privacySettingsView.hidden) {
+    privacySettingsView.hidden = true;
+    settingsHome.hidden = false;
+    openPrivacySettingsButton.focus();
+    return;
+  }
   if (!generalSettingsView.hidden) {
     generalSettingsView.hidden = true;
     settingsHome.hidden = false;
