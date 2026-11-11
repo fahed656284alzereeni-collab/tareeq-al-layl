@@ -1086,6 +1086,8 @@ async function loadPrivacySettings() {
   if (error) throw error;
   if (data) privacySettings = { ...privacySettings, ...data };
   if (privacySettings.status_visibility === "custom") privacySettings.status_visibility = "contacts_except";
+  // WhatsApp has no separate "Nobody" status audience; an empty "Only share with" list means nobody.
+  if (privacySettings.status_visibility === "nobody") privacySettings.status_visibility = "only_share";
   privacySettingsLoaded = true;
   privacyLastSeenSelect.value = privacySettings.last_seen_visibility;
   privacyOnlineSelect.value = ["same_as_last_seen","everyone"].includes(privacySettings.online_visibility) ? privacySettings.online_visibility : "same_as_last_seen";
