@@ -277,14 +277,25 @@ const privacyReadReceiptsInput = $("#privacy-read-receipts");
 const privacyGroupAddSelect = $("#privacy-group-add");
 const privacyHidePreviewInput = $("#privacy-hide-preview");
 const privacyStatusSelect = $("#privacy-status");
+const lastSeenExclusionsArea = $("#last-seen-exclusions-area");
+const lastSeenExclusionsList = $("#last-seen-exclusions-list");
+const saveLastSeenExclusionsButton = $("#save-last-seen-exclusions");
+const groupAddExclusionsArea = $("#group-add-exclusions-area");
+const groupAddExclusionsList = $("#group-add-exclusions-list");
+const saveGroupAddExclusionsButton = $("#save-group-add-exclusions");
 const statusExclusionsArea = $("#status-exclusions-area");
 const statusExclusionsList = $("#status-exclusions-list");
+const statusAudienceHelp = $("#status-audience-help");
 const saveStatusExclusionsButton = $("#save-status-exclusions");
 const blockedUsersList = $("#blocked-users-list");
 let privacySettings = { last_seen_visibility:"everyone", online_visibility:"everyone", read_receipts_enabled:true, group_add_visibility:"everyone", status_visibility:"contacts", hide_notification_preview:false };
 let privacySettingsLoaded = false;
 let selectedStatusExclusions = new Set();
 let storedStatusExclusions = new Set();
+let selectedLastSeenExclusions = new Set();
+let storedLastSeenExclusions = new Set();
+let selectedGroupAddExclusions = new Set();
+let storedGroupAddExclusions = new Set();
 let presenceDetails = new Map();
 let presenceRefreshTimer = null;
 const accountSettingsView = $("#account-settings-view");
@@ -1063,15 +1074,21 @@ async function loadPrivacySettings() {
   const { data, error } = await supabase.from("privacy_settings").select("*").eq("user_id", currentUser.id).maybeSingle();
   if (error) throw error;
   if (data) privacySettings = { ...privacySettings, ...data };
+  if (privacySettings.status_visibility === "custom") privacySettings.status_visibility = "contacts_except";
   privacySettingsLoaded = true;
   privacyLastSeenSelect.value = privacySettings.last_seen_visibility;
-  privacyOnlineSelect.value = privacySettings.online_visibility;
+  privacyOnlineSelect.value = ["same_as_last_seen","everyone"].includes(privacySettings.online_visibility) ? privacySettings.online_visibility : "same_as_last_seen";
   privacyReadReceiptsInput.checked = privacySettings.read_receipts_enabled;
   privacyGroupAddSelect.value = privacySettings.group_add_visibility;
   privacyHidePreviewInput.checked = privacySettings.hide_notification_preview;
   privacyStatusSelect.value = privacySettings.status_visibility;
-  statusExclusionsArea.hidden = privacySettings.status_visibility !== "custom";
-  await Promise.all([renderStatusExclusions(), renderBlockedUsers()]);
+  lastSeenExclusionsArea.hidden = privacySettings.last_seen_visibility !== "contacts_except";
+  groupAddExclusionsArea.hidden = privacySettings.group_add_visibility !== "contacts_except";
+  statusExclusionsArea.hidden = !["contacts_except","only_share"].includes(privacySettings.status_visibility);
+  statusAudienceHelp.textContent = privacySettings.status_visibility === "only_share"
+    ? "حدد الأشخاص الذين سيتمكنون من مشاهدة حالاتك فقط."
+    : "حدد الأشخاص الذين لن يتمكنوا من مشاهدة حالاتك.";
+  await Promise.all([renderPrivacyExclusionChoices("last_seen"), renderPrivacyExclusionChoices("group_add"), renderStatusAudienceChoices(), renderBlockedUsers()]);
   if (notifications.length) renderNotifications();
 }
 async function savePrivacySettings() {
@@ -1084,10 +1101,16 @@ async function savePrivacySettings() {
   if (error) throw error;
   privacySettings = { ...privacySettings, ...next };
   privacySettingsLoaded = true;
+  lastSeenExclusionsArea.hidden = next.last_seen_visibility !== "contacts_except";
+  groupAddExclusionsArea.hidden = next.group_add_visibility !== "contacts_except";
+  statusExclusionsArea.hidden = !["contacts_except","only_share"].includes(next.status_visibility);
+  statusAudienceHelp.textContent = next.status_visibility === "only_share"
+    ? "حدد الأشخاص الذين سيتمكنون من مشاهدة حالاتك فقط."
+    : "حدد الأشخاص الذين لن يتمكنوا من مشاهدة حالاتك.";
   announce("تم حفظ إعدادات الخصوصية.");
   await refreshVisiblePresence().catch(error => console.warn("تعذر تحديث الحضور بعد حفظ الخصوصية:", error.message));
   renderPeople();
-  if (!privacySettings.read_receipts_enabled) {
+  if (!privacySettings.read_receipts_enabled && !activeConversation?.is_group) {
     messagesList.querySelectorAll(".message-read-state").forEach(node => node.remove());
   } else if (activeConversation) {
     await loadMessages();
@@ -1104,43 +1127,76 @@ async function loadPrivacyContacts() {
   const contactIds = new Set((data || []).map(row => row.user_one === currentUser.id ? row.user_two : row.user_one));
   return people.filter(person => contactIds.has(person.id));
 }
-async function renderStatusExclusions() {
-  if (!currentUser) return;
-  const { data,error } = await supabase.from("status_privacy_exclusions").select("excluded_user_id").eq("owner_id",currentUser.id);
-  if (error) throw error;
-  storedStatusExclusions = new Set((data||[]).map(row=>row.excluded_user_id));
-  selectedStatusExclusions = new Set(storedStatusExclusions);
-  statusExclusionsList.replaceChildren();
+async function renderChoiceList(list, selectedSet) {
+  list.replaceChildren();
   const contacts = await loadPrivacyContacts();
-  if (!contacts.length) {
-    statusExclusionsList.append(safeText("li","empty-item","لا توجد جهات اتصال في مرسال لاستثنائها."));
-    return;
-  }
+  if (!contacts.length) { list.append(safeText("li","empty-item","لا توجد جهات اتصال في مرسال للاختيار منها.")); return; }
   for (const person of contacts) {
-    const li=document.createElement("li"),label=document.createElement("label"),cb=document.createElement("input");
-    label.className="privacy-person-choice"; cb.type="checkbox"; cb.checked=selectedStatusExclusions.has(person.id);
-    cb.addEventListener("change",()=>{if(cb.checked)selectedStatusExclusions.add(person.id);else selectedStatusExclusions.delete(person.id);});
-    label.append(cb,document.createTextNode(displayName(person))); li.append(label); statusExclusionsList.append(li);
+    const li=document.createElement("li"),choice=document.createElement("label"),cb=document.createElement("input");
+    choice.className="privacy-person-choice"; cb.type="checkbox"; cb.checked=selectedSet.has(person.id);
+    cb.addEventListener("change",()=>{if(cb.checked)selectedSet.add(person.id);else selectedSet.delete(person.id);});
+    choice.append(cb,document.createTextNode(displayName(person))); li.append(choice); list.append(li);
   }
+}
+async function renderPrivacyExclusionChoices(settingKey) {
+  const list = settingKey === "last_seen" ? lastSeenExclusionsList : groupAddExclusionsList;
+  const selected = settingKey === "last_seen" ? selectedLastSeenExclusions : selectedGroupAddExclusions;
+  const stored = settingKey === "last_seen" ? storedLastSeenExclusions : storedGroupAddExclusions;
+  const {data,error}=await supabase.from("privacy_exclusions").select("excluded_user_id").eq("owner_id",currentUser.id).eq("setting_key",settingKey);
+  if(error)throw error;
+  stored.clear(); for(const row of data||[])stored.add(row.excluded_user_id);
+  selected.clear(); for(const id of stored)selected.add(id);
+  await renderChoiceList(list,selected);
+}
+async function savePrivacyExclusionChoices(settingKey) {
+  const selected = settingKey === "last_seen" ? selectedLastSeenExclusions : selectedGroupAddExclusions;
+  const stored = settingKey === "last_seen" ? storedLastSeenExclusions : storedGroupAddExclusions;
+  const added=[...selected].filter(id=>!stored.has(id));
+  if(added.length){
+    const {error}=await supabase.from("privacy_exclusions").insert(added.map(excluded_user_id=>({owner_id:currentUser.id,excluded_user_id,setting_key:settingKey})));
+    if(error)throw error;
+  }
+  const removed=[...stored].filter(id=>!selected.has(id));
+  if(removed.length){
+    const {error}=await supabase.from("privacy_exclusions").delete().eq("owner_id",currentUser.id).eq("setting_key",settingKey).in("excluded_user_id",removed);
+    if(error)throw error;
+  }
+  stored.clear(); for(const id of selected)stored.add(id);
+  await refreshVisiblePresence().catch(()=>{});
+  renderPeople();
+  announce("تم حفظ الاستثناءات.");
+}
+async function renderStatusAudienceChoices() {
+  if (!currentUser) return;
+  const isOnlyShare = privacyStatusSelect.value === "only_share";
+  const table = isOnlyShare ? "status_privacy_inclusions" : "status_privacy_exclusions";
+  const idColumn = isOnlyShare ? "included_user_id" : "excluded_user_id";
+  const {data,error}=await supabase.from(table).select(idColumn).eq("owner_id",currentUser.id);
+  if(error)throw error;
+  storedStatusExclusions = new Set((data||[]).map(row=>row[idColumn]));
+  selectedStatusExclusions = new Set(storedStatusExclusions);
+  await renderChoiceList(statusExclusionsList,selectedStatusExclusions);
 }
 async function saveStatusExclusions() {
   if (!currentUser) return;
   saveStatusExclusionsButton.disabled=true;
   try {
+    const isOnlyShare=privacySettings.status_visibility==="only_share";
+    const table=isOnlyShare?"status_privacy_inclusions":"status_privacy_exclusions";
+    const idColumn=isOnlyShare?"included_user_id":"excluded_user_id";
     const added=[...selectedStatusExclusions].filter(id=>!storedStatusExclusions.has(id));
-    if (added.length) {
-      const inserted=await supabase.from("status_privacy_exclusions").insert(added.map(excluded_user_id=>({owner_id:currentUser.id,excluded_user_id})));
-      if (inserted.error) throw inserted.error;
-      for (const id of added) storedStatusExclusions.add(id);
+    if(added.length){
+      const {error}=await supabase.from(table).insert(added.map(id=>({owner_id:currentUser.id,[idColumn]:id})));
+      if(error)throw error;
     }
     const removed=[...storedStatusExclusions].filter(id=>!selectedStatusExclusions.has(id));
-    if (removed.length) {
-      const deleted=await supabase.from("status_privacy_exclusions").delete().eq("owner_id",currentUser.id).in("excluded_user_id",removed);
-      if (deleted.error) throw deleted.error;
-      for (const id of removed) storedStatusExclusions.delete(id);
+    if(removed.length){
+      const {error}=await supabase.from(table).delete().eq("owner_id",currentUser.id).in(idColumn,removed);
+      if(error)throw error;
     }
-    announce("تم حفظ الأشخاص المستثنين.");
-  } catch(error){announce("تعذر حفظ المستثنين: "+(error.message||"حاول مرة أخرى."),"error");}
+    storedStatusExclusions=new Set(selectedStatusExclusions);
+    announce("تم حفظ جمهور الحالات.");
+  } catch(error){announce("تعذر حفظ جمهور الحالات: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{saveStatusExclusionsButton.disabled=false;}
 }
 async function renderBlockedUsers() {
@@ -1234,20 +1290,25 @@ openPrivacySettingsButton.addEventListener("click", async () => {
 backPrivacySettingsButton.addEventListener("click",()=>{privacySettingsView.hidden=true;settingsHome.hidden=false;openPrivacySettingsButton.focus();});
 for(const control of [privacyLastSeenSelect,privacyOnlineSelect,privacyReadReceiptsInput,privacyGroupAddSelect,privacyHidePreviewInput,privacyStatusSelect]){
   control.addEventListener("change",async()=>{
-    statusExclusionsArea.hidden=privacyStatusSelect.value!=="custom";
-    try{await savePrivacySettings();}
-    catch(error){
+    try{
+      await savePrivacySettings();
+      if(control===privacyStatusSelect)await renderStatusAudienceChoices();
+    }catch(error){
       privacyLastSeenSelect.value=privacySettings.last_seen_visibility;
-      privacyOnlineSelect.value=privacySettings.online_visibility;
+      privacyOnlineSelect.value=["everyone","same_as_last_seen"].includes(privacySettings.online_visibility)?privacySettings.online_visibility:"same_as_last_seen";
       privacyReadReceiptsInput.checked=privacySettings.read_receipts_enabled;
       privacyGroupAddSelect.value=privacySettings.group_add_visibility;
       privacyHidePreviewInput.checked=privacySettings.hide_notification_preview;
       privacyStatusSelect.value=privacySettings.status_visibility;
-      statusExclusionsArea.hidden=privacySettings.status_visibility!=="custom";
+      lastSeenExclusionsArea.hidden=privacySettings.last_seen_visibility!=="contacts_except";
+      groupAddExclusionsArea.hidden=privacySettings.group_add_visibility!=="contacts_except";
+      statusExclusionsArea.hidden=!["contacts_except","only_share"].includes(privacySettings.status_visibility);
       announce("تعذر حفظ إعداد الخصوصية: "+error.message,"error");
     }
   });
 }
+saveLastSeenExclusionsButton.addEventListener("click",()=>void savePrivacyExclusionChoices("last_seen").catch(error=>announce("تعذر الحفظ: "+error.message,"error")));
+saveGroupAddExclusionsButton.addEventListener("click",()=>void savePrivacyExclusionChoices("group_add").catch(error=>announce("تعذر الحفظ: "+error.message,"error")));
 saveStatusExclusionsButton.addEventListener("click",()=>{void saveStatusExclusions();});
 backGeneralSettingsButton.addEventListener("click", () => {
   generalSettingsView.hidden = true;
