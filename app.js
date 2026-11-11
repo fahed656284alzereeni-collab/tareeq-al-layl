@@ -14,6 +14,13 @@ const $ = (selector) => document.querySelector(selector);
 
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
+  "عام":"General","الخصوصية":"Privacy","آخر ظهور":"Last seen","حالة الاتصال":"Online status",
+  "مؤشرات قراءة الرسائل":"Read receipts","من يستطيع إضافتي إلى المجموعات":"Who can add me to groups",
+  "إخفاء نص الرسائل في الإشعارات":"Hide message text in notifications","من يستطيع مشاهدة حالاتي":"Who can view my statuses",
+  "الأشخاص المحظورون":"Blocked users","حفظ المستثنين":"Save exclusions","الجميع":"Everyone",
+  "جهات اتصالي":"My contacts","لا أحد":"Nobody","جهات اتصالي باستثناء أشخاص":"My contacts except…",
+  "حدد الأشخاص الذين لا تريد أن يشاهدوا حالاتك.":"Choose people who should not see your statuses.",
+  "رسالة جديدة":"New message","مقروء":"Read","حالة الظهور مخفية":"Presence hidden",
   "عام":"General","مرسال":"Mersal","، جاري تحديث حالة الظهور":"; updating presence",
   "عرض المرفق داخل المحادثة":"View attachment in chat","إغلاق العرض":"Close viewer","ترجيع 10 ثوانٍ":"Rewind 10 seconds","ترجيع 10 ثوانٍ في ":"Rewind 10 seconds in ",
   "تشغيل":"Play","تشغيل ":"Play ","تقديم 10 ثوانٍ":"Forward 10 seconds","تقديم 10 ثوانٍ في ":"Forward 10 seconds in ","موضع التشغيل في ":"Playback position in ",
@@ -258,6 +265,23 @@ const settingsHome = $("#settings-home");
 const generalSettingsView = $("#general-settings-view");
 const openGeneralSettingsButton = $("#open-general-settings");
 const backGeneralSettingsButton = $("#back-general-settings");
+const privacySettingsView = $("#privacy-settings-view");
+const openPrivacySettingsButton = $("#open-privacy-settings");
+const backPrivacySettingsButton = $("#back-privacy-settings");
+const privacyLastSeenSelect = $("#privacy-last-seen");
+const privacyOnlineSelect = $("#privacy-online");
+const privacyReadReceiptsInput = $("#privacy-read-receipts");
+const privacyGroupAddSelect = $("#privacy-group-add");
+const privacyHidePreviewInput = $("#privacy-hide-preview");
+const privacyStatusSelect = $("#privacy-status");
+const statusExclusionsArea = $("#status-exclusions-area");
+const statusExclusionsList = $("#status-exclusions-list");
+const saveStatusExclusionsButton = $("#save-status-exclusions");
+const blockedUsersList = $("#blocked-users-list");
+let privacySettings = { last_seen_visibility:"contacts", online_visibility:"contacts", read_receipts_enabled:true, group_add_visibility:"everyone", status_visibility:"contacts", hide_notification_preview:false };
+let selectedStatusExclusions = new Set();
+let presenceDetails = new Map();
+let presenceRefreshTimer = null;
 const accountSettingsView = $("#account-settings-view");
 const accountLogoutButton = $("#account-logout-button");
 const deleteAccountButton = $("#delete-account-button");
@@ -662,7 +686,7 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   try {
     if (!alreadyLoadedForThisUser) {
       await ensureProfile(session.user);
-      await Promise.all([loadPeople(), loadConversations(), loadNotifications(), loadOwnProfile()]);
+      await Promise.all([loadPeople(), loadConversations(), loadNotifications(), loadOwnProfile(), loadPrivacySettings()]);
     }
     await startPresence();
     startNotificationsRealtime();
@@ -707,8 +731,10 @@ function updateChatPartnerPresence() {
     updateGroupHeaderAccessibleLabel();
     return;
   }
-  const online = onlineUserIds.has(activePartner.id);
-  chatPartnerPresence.textContent = online ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt);
+  const details = presenceDetails.get(activePartner.id);
+  const online = Boolean(details?.is_online);
+  const visibleLastSeen = details?.last_seen_at || null;
+  chatPartnerPresence.textContent = online ? "متصل الآن" : visibleLastSeen ? formatLastSeen(visibleLastSeen) : "حالة الظهور مخفية";
   chatPartnerPresence.classList.toggle("is-online", online);
   chatPartnerPresence.classList.toggle("is-offline", !online);
   chatPartnerAccessible.setAttribute("aria-label", `${chatPartnerName.textContent}، ${chatPartnerPresence.textContent}`);
@@ -738,21 +764,29 @@ async function refreshGroupHeaderMemberCount(conversationId = activeConversation
   updateGroupHeaderAccessibleLabel();
 }
 
+async function refreshVisiblePresence() {
+  if (!currentUser) return;
+  const { data, error } = await supabase.rpc("get_visible_presence");
+  if (error) throw error;
+  presenceDetails = new Map((data || []).map(row => [row.user_id, row]));
+  onlineUserIds = new Set((data || []).filter(row => row.is_online).map(row => row.user_id));
+  if (activePartner) {
+    activePartnerLastSeenAt = presenceDetails.get(activePartner.id)?.last_seen_at || null;
+    updateChatPartnerPresence();
+  }
+  if (activeConversation && !activeConversation.is_group && activePartner) {
+    const details = presenceDetails.get(activePartner.id);
+    setConversationInfoValue(conversationInfoStatus, details?.is_online ? "متصل الآن" : details?.last_seen_at ? formatLastSeen(details.last_seen_at) : "حالة الظهور مخفية");
+  }
+}
 async function startPresence() {
   if (!currentUser) return;
-  if (presenceChannel) await supabase.removeChannel(presenceChannel);
-  presenceChannel = supabase.channel("mersal-online", { config: { presence: { key: currentUser.id } } });
-  presenceChannel.on("presence", { event: "sync" }, () => {
-    onlineUserIds = new Set(Object.keys(presenceChannel.presenceState()));
-    updateChatPartnerPresence();
-    void Promise.all([loadPeople(), loadConversations()]).catch(error => announce("تعذر تحديث حالة الاتصال: " + error.message, "error"));
-  });
-  presenceChannel.subscribe(async (state) => {
-    if (state === "SUBSCRIBED" && currentUser) {
-      const { data } = await supabase.from("profiles").select("display_name").eq("id", currentUser.id).maybeSingle();
-      await presenceChannel.track({ user_id: currentUser.id, display_name: data?.display_name || "مستخدم مرسال" });
-    }
-  });
+  if (presenceChannel) { await supabase.removeChannel(presenceChannel); presenceChannel = null; }
+  if (presenceRefreshTimer) clearInterval(presenceRefreshTimer);
+  await refreshVisiblePresence();
+  presenceRefreshTimer = window.setInterval(() => {
+    void refreshVisiblePresence().then(() => renderPeople()).catch(error => console.warn("تعذر تحديث الحضور:", error.message));
+  }, 45000);
 }
 
 async function syncPushNotificationState() {
@@ -908,9 +942,10 @@ function renderNotifications(profileMap = new Map()) {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "notification-item" + (notification.read_at ? " is-read" : " is-unread");
-    button.setAttribute("aria-label", (notification.read_at ? "مقروء: " : "غير مقروء: ") + displayName(sender) + ". " + (notification.preview || "أرسل رسالة جديدة"));
+    const safePreview = privacySettings.hide_notification_preview ? "رسالة جديدة" : (notification.preview || "أرسل رسالة جديدة");
+    button.setAttribute("aria-label", (notification.read_at ? "مقروء: " : "غير مقروء: ") + displayName(sender) + ". " + safePreview);
     button.append(safeText("span", "notification-sender", displayName(sender)));
-    button.append(safeText("span", "notification-preview", notification.preview || "أرسل رسالة جديدة"));
+    button.append(safeText("span", "notification-preview", safePreview));
     button.append(safeText("time", "notification-time", new Date(notification.created_at).toLocaleString("ar-JO", { dateStyle: "short", timeStyle: "short" })));
     button.addEventListener("click", () => { void openNotification(notification, sender); });
     item.append(button);
@@ -1007,6 +1042,84 @@ function applyTheme(choice) {
   document.documentElement.dataset.themeChoice = choice;
 }
 
+
+async function loadPrivacySettings() {
+  if (!currentUser) return;
+  const { data, error } = await supabase.from("privacy_settings").select("*").eq("user_id", currentUser.id).maybeSingle();
+  if (error) throw error;
+  if (data) privacySettings = { ...privacySettings, ...data };
+  privacyLastSeenSelect.value = privacySettings.last_seen_visibility;
+  privacyOnlineSelect.value = privacySettings.online_visibility;
+  privacyReadReceiptsInput.checked = privacySettings.read_receipts_enabled;
+  privacyGroupAddSelect.value = privacySettings.group_add_visibility;
+  privacyHidePreviewInput.checked = privacySettings.hide_notification_preview;
+  privacyStatusSelect.value = privacySettings.status_visibility;
+  statusExclusionsArea.hidden = privacySettings.status_visibility !== "custom";
+  await Promise.all([renderStatusExclusions(), renderBlockedUsers()]);
+}
+async function savePrivacySettings() {
+  if (!currentUser) return;
+  const next = { user_id:currentUser.id, last_seen_visibility:privacyLastSeenSelect.value,
+    online_visibility:privacyOnlineSelect.value, read_receipts_enabled:privacyReadReceiptsInput.checked,
+    group_add_visibility:privacyGroupAddSelect.value, hide_notification_preview:privacyHidePreviewInput.checked,
+    status_visibility:privacyStatusSelect.value, updated_at:new Date().toISOString() };
+  const { error } = await supabase.from("privacy_settings").upsert(next,{onConflict:"user_id"});
+  if (error) throw error;
+  privacySettings = { ...privacySettings, ...next };
+  announce("تم حفظ إعدادات الخصوصية.");
+  if (activePartner) await refreshVisiblePresence();
+  if (notifications.length) renderNotifications();
+}
+async function renderStatusExclusions() {
+  if (!currentUser) return;
+  const { data,error } = await supabase.from("status_privacy_exclusions").select("excluded_user_id").eq("owner_id",currentUser.id);
+  if (error) throw error;
+  selectedStatusExclusions = new Set((data||[]).map(row=>row.excluded_user_id));
+  statusExclusionsList.replaceChildren();
+  if (!people.length) await loadPeople();
+  for (const person of people) {
+    const li=document.createElement("li"),label=document.createElement("label"),cb=document.createElement("input");
+    label.className="privacy-person-choice"; cb.type="checkbox"; cb.checked=selectedStatusExclusions.has(person.id);
+    cb.addEventListener("change",()=>{if(cb.checked)selectedStatusExclusions.add(person.id);else selectedStatusExclusions.delete(person.id);});
+    label.append(cb,document.createTextNode(displayName(person))); li.append(label); statusExclusionsList.append(li);
+  }
+}
+async function saveStatusExclusions() {
+  if (!currentUser) return;
+  saveStatusExclusionsButton.disabled=true;
+  try {
+    const removed=await supabase.from("status_privacy_exclusions").delete().eq("owner_id",currentUser.id);
+    if (removed.error) throw removed.error;
+    const rows=[...selectedStatusExclusions].map(excluded_user_id=>({owner_id:currentUser.id,excluded_user_id}));
+    if(rows.length){const inserted=await supabase.from("status_privacy_exclusions").insert(rows);if(inserted.error)throw inserted.error;}
+    announce("تم حفظ الأشخاص المستثنين.");
+  } catch(error){announce("تعذر حفظ المستثنين: "+(error.message||"حاول مرة أخرى."),"error");}
+  finally{saveStatusExclusionsButton.disabled=false;}
+}
+async function renderBlockedUsers() {
+  if (!currentUser) return;
+  const {data,error}=await supabase.from("user_blocks").select("blocked_id").eq("blocker_id",currentUser.id);
+  if(error)throw error;
+  blockedUsersList.replaceChildren();
+  const ids=(data||[]).map(row=>row.blocked_id);
+  if(!ids.length){blockedUsersList.append(safeText("li","empty-item","لا يوجد أشخاص محظورون."));return;}
+  const {data:profiles,error:profileError}=await supabase.from("profiles").select("id,display_name").in("id",ids);
+  if(profileError)throw profileError;
+  const names=new Map((profiles||[]).map(row=>[row.id,row.display_name]));
+  for(const id of ids){
+    const li=document.createElement("li"),row=document.createElement("div");
+    row.className="blocked-user-row"; row.append(safeText("span","blocked-user-name",names.get(id)||"مستخدم مرسال"));
+    const button=safeText("button","quiet-button","إلغاء الحظر"); button.type="button";
+    button.addEventListener("click",async()=>{
+      button.disabled=true;
+      const result=await supabase.from("user_blocks").delete().eq("blocker_id",currentUser.id).eq("blocked_id",id);
+      if(result.error){button.disabled=false;announce("تعذر إلغاء الحظر: "+result.error.message,"error");return;}
+      await renderBlockedUsers(); announce("تم إلغاء الحظر.");
+    });
+    row.append(button);li.append(row);blockedUsersList.append(li);
+  }
+}
+
 function openSettings() {
   if (!currentUser) return;
   statusView.hidden = true;
@@ -1020,6 +1133,7 @@ function openSettings() {
   applyTheme(themeSelect.value);
   settingsHome.hidden = false;
   generalSettingsView.hidden = true;
+  privacySettingsView.hidden = true;
   accountSettingsView.hidden = true;
   settingsPanel.hidden = false;
   document.body.classList.add("settings-open");
@@ -1058,17 +1172,29 @@ settingsTabButton.addEventListener("click", openSettings);
 statusTabButton.addEventListener("click", openStatusTab);
 homeTabButton.addEventListener("click", returnToHomeTab);
 openGeneralSettingsButton.addEventListener("click", () => {
-  settingsHome.hidden = true;
-  accountSettingsView.hidden = true;
-  generalSettingsView.hidden = false;
-  backGeneralSettingsButton.focus();
+  settingsHome.hidden = true; accountSettingsView.hidden = true; privacySettingsView.hidden = true;
+  generalSettingsView.hidden = false; backGeneralSettingsButton.focus();
 });
+openPrivacySettingsButton.addEventListener("click", async () => {
+  settingsHome.hidden=true; accountSettingsView.hidden=true; generalSettingsView.hidden=true;
+  privacySettingsView.hidden=false;
+  try { await loadPrivacySettings(); privacyLastSeenSelect.focus(); }
+  catch(error){announce("تعذر تحميل إعدادات الخصوصية: "+error.message,"error");}
+});
+backPrivacySettingsButton.addEventListener("click",()=>{privacySettingsView.hidden=true;settingsHome.hidden=false;openPrivacySettingsButton.focus();});
+for(const control of [privacyLastSeenSelect,privacyOnlineSelect,privacyReadReceiptsInput,privacyGroupAddSelect,privacyHidePreviewInput,privacyStatusSelect]){
+  control.addEventListener("change",async()=>{
+    statusExclusionsArea.hidden=privacyStatusSelect.value!=="custom";
+    try{await savePrivacySettings();}catch(error){announce("تعذر حفظ إعداد الخصوصية: "+error.message,"error");}
+  });
+}
+saveStatusExclusionsButton.addEventListener("click",()=>{void saveStatusExclusions();});
 backGeneralSettingsButton.addEventListener("click", () => {
   generalSettingsView.hidden = true;
   settingsHome.hidden = false;
   openGeneralSettingsButton.focus();
 });
-$("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; generalSettingsView.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
+$("#open-account-settings").addEventListener("click", () => { settingsHome.hidden = true; generalSettingsView.hidden = true; privacySettingsView.hidden = true; accountSettingsView.hidden = false; displayNameInput.focus(); });
 $("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
 accountLogoutButton.addEventListener("click", async () => {
   accountLogoutButton.disabled = true;
@@ -1542,9 +1668,8 @@ async function selectConversation(conversation, person) {
   activeGroupMemberCount = null;
   chatPartnerName.textContent = displayName(person);
   chatPartnerAccessible.setAttribute("aria-label", `${chatPartnerName.textContent}، جاري تحديث حالة الظهور`);
-  const { data: partnerProfile } = await supabase.from("profiles")
-    .select("last_seen_at").eq("id", person.id).maybeSingle();
-  activePartnerLastSeenAt = partnerProfile?.last_seen_at || null;
+  await refreshVisiblePresence().catch(error => console.warn("تعذر تحديث حالة الظهور:", error.message));
+  activePartnerLastSeenAt = presenceDetails.get(person.id)?.last_seen_at || null;
   updateChatPartnerPresence();
   if (activeConversation.is_group) void refreshGroupHeaderMemberCount(activeConversation.id);
   chatEmpty.hidden = true;
@@ -1567,12 +1692,22 @@ async function selectConversation(conversation, person) {
     }, async (payload) => {
       const { data: hidden } = await supabase.from("message_hidden_for").select("message_id")
         .eq("message_id", payload.new.id).eq("user_id", currentUser.id).maybeSingle();
-      if (!hidden) appendMessage(payload.new);
+      if (!hidden) {
+        appendMessage(payload.new);
+        if(privacySettings.read_receipts_enabled&&payload.new.sender_id!==currentUser.id){
+          void supabase.from("message_reads").upsert({message_id:payload.new.id,user_id:currentUser.id},{onConflict:"message_id,user_id",ignoreDuplicates:true});
+        }
+      }
     })
     .on("postgres_changes", {
       event: "UPDATE", schema: "public", table: "messages",
       filter: "conversation_id=eq." + conversation.id
     }, () => { void loadMessages(); })
+    .on("postgres_changes", { event:"INSERT", schema:"public", table:"message_reads", filter:"user_id=eq."+(person?.id||"") }, payload => {
+      if(!privacySettings.read_receipts_enabled)return;
+      const messageNode=document.querySelector('[data-message-id="'+payload.new.message_id+'"]');
+      if(messageNode&&!messageNode.querySelector(".message-read-state"))messageNode.append(safeText("span","message-read-state","مقروء"));
+    })
     .subscribe((state) => {
       if (state === "CHANNEL_ERROR" || state === "TIMED_OUT") {
         announce("الاتصال المباشر بالرسائل غير مستقر. استخدم زر تحديث الرسائل للمزامنة.", "error");
@@ -1630,7 +1765,10 @@ async function updateConversationInfo() {
   conversationInfoNameLabel.textContent = isGroup ? "اسم المجموعة" : "اسم الشخص";
   conversationInfoStatusRow.hidden = isGroup;
   setConversationInfoValue(conversationInfoName, isGroup ? (activeConversation.group_name || "مجموعة") : displayName(activePartner));
-  if (!isGroup) setConversationInfoValue(conversationInfoStatus, onlineUserIds.has(activePartner.id) ? "متصل الآن" : formatLastSeen(activePartnerLastSeenAt));
+  if (!isGroup) {
+    const presence = presenceDetails.get(activePartner.id);
+    setConversationInfoValue(conversationInfoStatus, presence?.is_online ? "متصل الآن" : presence?.last_seen_at ? formatLastSeen(presence.last_seen_at) : "حالة الظهور مخفية");
+  }
   const createdAt = activeConversation.created_at;
   setConversationInfoValue(conversationInfoCreated, createdAt ? new Date(createdAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" }) : "غير متوفر");
   setConversationInfoValue(conversationInfoCount, "جارٍ التحميل…");
@@ -2466,6 +2604,7 @@ function appendMessage(message) {
   }
   const time = new Date(message.created_at).toLocaleString("ar-JO", { dateStyle: "short", timeStyle: "short" });
   item.append(safeText("time", "message-time", time));
+  if (message.sender_id === currentUser.id && message._readByPartner && privacySettings.read_receipts_enabled) item.append(safeText("span", "message-read-state", "مقروء"));
   const actions = document.createElement("div");
   actions.className = "message-actions";
   const toggle = safeText("button", "message-options-toggle", "خيارات الرسالة");
@@ -2549,6 +2688,20 @@ async function loadMessages() {
   }
   const hiddenIds = new Set((hiddenRows || []).map(row => row.message_id));
   const visibleMessages = (data || []).filter(message => !hiddenIds.has(message.id));
+  if (privacySettings.read_receipts_enabled) {
+    const incomingIds=visibleMessages.filter(message=>message.sender_id!==currentUser.id&&!message.is_deleted).map(message=>message.id);
+    if(incomingIds.length){
+      const receipts=await supabase.from("message_reads").upsert(incomingIds.map(message_id=>({message_id,user_id:currentUser.id})),{onConflict:"message_id,user_id",ignoreDuplicates:true});
+      if(receipts.error)console.warn("تعذر تسجيل قراءة الرسائل:",receipts.error.message);
+    }
+    if(!activeConversation.is_group&&activePartner){
+      const ownIds=visibleMessages.filter(message=>message.sender_id===currentUser.id).map(message=>message.id);
+      if(ownIds.length){
+        const readRows=await supabase.from("message_reads").select("message_id").eq("user_id",activePartner.id).in("message_id",ownIds);
+        if(!readRows.error){const readIds=new Set((readRows.data||[]).map(row=>row.message_id));visibleMessages.forEach(message=>{if(message.sender_id===currentUser.id)message._readByPartner=readIds.has(message.id);});}
+      }
+    }
+  }
   if (!visibleMessages.length) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
   for (const message of visibleMessages) appendMessage(message);
 }
