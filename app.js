@@ -1630,7 +1630,7 @@ profilePhotoInput.addEventListener("change", async () => {
     return;
   }
   if (file.size > 50 * 1024 * 1024) {
-    announce("حجم الصورة يجب ألا يتجاوز 5 ميغابايت.", "error");
+    announce("حجم الصورة يجب ألا يتجاوز 50 ميغابايت.", "error");
     return;
   }
   chooseProfilePhotoButton.disabled = true;
