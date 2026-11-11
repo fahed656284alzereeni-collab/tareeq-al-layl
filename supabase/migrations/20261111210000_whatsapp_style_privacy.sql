@@ -28,6 +28,10 @@ create policy status_privacy_inclusions_delete_own on public.status_privacy_incl
 
 create index if not exists privacy_exclusions_owner_setting_idx on public.privacy_exclusions(owner_id,setting_key);
 create index if not exists status_privacy_inclusions_owner_idx on public.status_privacy_inclusions(owner_id);
+create index if not exists message_reads_user_id_idx on public.message_reads(user_id);
+create index if not exists privacy_exclusions_excluded_user_id_idx on public.privacy_exclusions(excluded_user_id);
+create index if not exists status_privacy_exclusions_excluded_user_id_idx on public.status_privacy_exclusions(excluded_user_id);
+create index if not exists status_privacy_inclusions_included_user_id_idx on public.status_privacy_inclusions(included_user_id);
 alter table public.statuses add column if not exists audience_user_ids uuid[];
 revoke select on table public.statuses from authenticated;
 grant select (id,user_id,kind,content,media_path,media_type,created_at,expires_at)
