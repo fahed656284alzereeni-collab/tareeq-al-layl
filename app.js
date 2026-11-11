@@ -92,7 +92,7 @@ const mersalTranslations = {
   "حذف الحساب نهائيًا":"Delete account permanently","للتأكيد، اكتب: حذف حسابي":"To confirm, type: Delete my account",
   "حذف الحساب نهائي ولا يمكن التراجع عنه. سيتم حذف بيانات حسابك ورسائلك ومحادثاتك الخاصة والملفات التي أرفقتها، كما ستُحذف المجموعات التي أنشأتها. ستُزال عضويتك ورسائلك من المجموعات الأخرى.":"Account deletion is permanent and cannot be undone. Your account data, messages, private conversations, and attached files will be deleted. Groups you created will also be deleted, and your membership and messages will be removed from other groups.",
 "جارٍ التحقق من تسجيل الدخول…":"Checking sign-in…","جارٍ تجهيز مرسال…":"Loading Mersal…","إعادة المحاولة":"Try again",
-  "تسجيل الدخول باستخدام Google":"Sign in with Google","إعدادات الحساب":"Account settings","اللغة":"Language","العربية":"العربية","مجموعة":"Group","الدردشة":"Chat","رسالة":"Message","حجم النص في مرسال":"Text size",
+  "تسجيل الدخول باستخدام Google":"Sign in with Google","إعدادات الحساب":"Account settings","اللغة":"Language","العربية":"Arabic","تم تغيير اللغة إلى العربية.":"Language changed to Arabic.","تم تغيير اللغة إلى الإنجليزية.":"Language changed to English.","مجموعة":"Group","الدردشة":"Chat","رسالة":"Message","حجم النص في مرسال":"Text size",
   "عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.":"Increase text size for easier reading. Your choice is saved on this device.",
   "المظهر":"Appearance","حسب إعدادات الجهاز":"System default","داكن":"Dark","فاتح":"Light","اختر المظهر المريح لك. يُحفظ اختيارك على هذا الجهاز.":"Choose your preferred appearance. Your choice is saved on this device.",
   "تشغيل إشعارات الهاتف":"Enable phone notifications","لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.":"Enable phone notifications to receive messages when Mersal is not open.",
@@ -1046,7 +1046,10 @@ developerContactPanel.addEventListener("keydown", event => {
     (developerContactReturnFocus || openDeveloperContactButton).focus();
   }
 });
-settingsLanguageSelect.addEventListener("change", () => applyMersalLanguage(settingsLanguageSelect.value));
+settingsLanguageSelect.addEventListener("change", () => {
+  applyMersalLanguage(settingsLanguageSelect.value);
+  announce(settingsLanguageSelect.value==="en"?"تم تغيير اللغة إلى الإنجليزية.":"تم تغيير اللغة إلى العربية.");
+});
 settingsTabButton.addEventListener("click", openSettings);
 statusTabButton.addEventListener("click", openStatusTab);
 homeTabButton.addEventListener("click", returnToHomeTab);
