@@ -95,7 +95,8 @@
         <div id="privacy-settings-view" hidden>
           <button id="back-privacy-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
           <section class="settings-section privacy-options">
-            <select id="privacy-last-seen" aria-label="من يستطيع رؤية آخر ظهورك">
+            <label for="privacy-last-seen">من يستطيع رؤية آخر ظهورك</label>
+            <select id="privacy-last-seen">
               <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option><option value="nobody">لا أحد</option>
             </select>
@@ -103,9 +104,11 @@
               <ul id="last-seen-exclusions-list" class="privacy-people-list" aria-label="استثناءات آخر ظهور"></ul>
               <button id="save-last-seen-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
             </div>
-            <select id="privacy-online" aria-label="من يستطيع رؤية أنك متصل الآن"><option value="everyone">الجميع</option><option value="same_as_last_seen">مثل آخر ظهور</option></select>
+            <label for="privacy-online">من يستطيع رؤية أنك متصل الآن</label>
+            <select id="privacy-online"><option value="everyone">الجميع</option><option value="same_as_last_seen">مثل آخر ظهور</option></select>
             <label class="privacy-toggle"><input id="privacy-read-receipts" type="checkbox" checked> مؤشرات قراءة الرسائل</label>
-            <select id="privacy-group-add" aria-label="من يستطيع إضافتي إلى المجموعات">
+            <label for="privacy-group-add">من يستطيع إضافتي إلى المجموعات</label>
+            <select id="privacy-group-add">
               <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option>
             </select>
@@ -113,7 +116,8 @@
               <ul id="group-add-exclusions-list" class="privacy-people-list" aria-label="استثناءات إضافة المجموعات"></ul>
               <button id="save-group-add-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
             </div>
-            <select id="privacy-status" aria-label="من يستطيع مشاهدة حالاتي">
+            <label for="privacy-status">من يستطيع مشاهدة حالاتي</label>
+            <select id="privacy-status">
               <option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option>
               <option value="only_share">المشاركة مع أشخاص محددين فقط</option>
@@ -123,7 +127,8 @@
               <ul id="status-exclusions-list" class="privacy-people-list" aria-label="جهات اتصال جمهور الحالات"></ul>
               <button id="save-status-exclusions" type="button" class="primary-button">حفظ جمهور الحالات</button>
             </div>
-            <select id="privacy-profile-photo" aria-label="من يستطيع رؤية صورة ملفك الشخصي">
+            <label for="privacy-profile-photo">من يستطيع رؤية صورة ملفك الشخصي</label>
+            <select id="privacy-profile-photo">
               <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option><option value="nobody">لا أحد</option>
             </select>
@@ -131,7 +136,8 @@
               <ul id="profile-photo-exclusions-list" class="privacy-people-list" aria-label="استثناءات صورة الملف الشخصي"></ul>
               <button id="save-profile-photo-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
             </div>
-            <select id="privacy-about" aria-label="من يستطيع رؤية نبذتك">
+            <label for="privacy-about">من يستطيع رؤية نبذتك</label>
+            <select id="privacy-about">
               <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option><option value="nobody">لا أحد</option>
             </select>
@@ -142,13 +148,15 @@
             <label class="privacy-toggle"><input id="privacy-hide-preview" type="checkbox"> إخفاء نص الرسائل في الإشعارات</label>
           </section>
           <section class="settings-section blocked-users-section">
+            <p>الأشخاص المحظورون</p>
             <ul id="blocked-users-list" class="privacy-people-list" aria-label="الأشخاص المحظورون"></ul>
           </section>
         </div>
-        <section id="privacy-contact-picker" class="privacy-contact-picker" role="dialog" aria-modal="true" aria-label="اختيار جهات الاتصال" hidden>
+        <section id="privacy-contact-picker" class="privacy-contact-picker" role="dialog" aria-modal="true" aria-labelledby="privacy-contact-picker-title" hidden>
           <header class="privacy-contact-picker-header">
             <button id="close-privacy-contact-picker" type="button" class="quiet-button">رجوع</button>
   
+            <div id="privacy-contact-picker-title">اختيار جهات الاتصال</div>
           </header>
           <ul id="privacy-contact-picker-list" class="privacy-people-list" aria-label="جهات الاتصال"></ul>
           <button id="save-privacy-contact-picker" type="button" class="primary-button">حفظ الاختيار</button>
