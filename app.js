@@ -693,34 +693,30 @@ async function resolveProfileAvatars(profiles) {
   return Promise.all((profiles || []).map(resolveProfileAvatar));
 }
 function setProfilePhotoPreview(url) {
+  profilePhotoPlaceholder.hidden = true;
   if (url) {
     profilePhotoPreview.src = url;
     profilePhotoPreview.hidden = false;
-    profilePhotoPlaceholder.hidden = true;
     removeProfilePhotoButton.hidden = false;
   } else {
     profilePhotoPreview.removeAttribute("src");
     profilePhotoPreview.hidden = true;
-    profilePhotoPlaceholder.hidden = false;
     removeProfilePhotoButton.hidden = !currentProfilePhotoPath && !currentProfilePhotoExternal;
   }
 }
 function appendProfileAvatar(container, profile) {
-  const avatar=document.createElement("span");
-  avatar.className="profile-avatar";
-  avatar.setAttribute("aria-hidden","true");
   let imageUrl=null;
   try {
     const candidate=new URL(profile?.avatar_url || "");
     if(candidate.protocol==="https:" || candidate.protocol==="http:") imageUrl=candidate.href;
   } catch {}
-  if(imageUrl) {
-    const image=document.createElement("img");
-    image.src=imageUrl; image.alt=""; image.loading="lazy"; image.referrerPolicy="no-referrer";
-    avatar.append(image);
-  } else {
-    avatar.textContent=displayName(profile).trim().slice(0,1) || "م";
-  }
+  if(!imageUrl) return null;
+  const avatar=document.createElement("span");
+  avatar.className="profile-avatar";
+  avatar.setAttribute("aria-hidden","true");
+  const image=document.createElement("img");
+  image.src=imageUrl; image.alt=""; image.loading="lazy"; image.referrerPolicy="no-referrer";
+  avatar.append(image);
   container.append(avatar);
   return avatar;
 }
