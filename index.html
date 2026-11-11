@@ -95,7 +95,7 @@
         <div id="privacy-settings-view" hidden>
           <button id="back-privacy-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
           <section class="settings-section privacy-options">
-            <label for="privacy-last-seen">آخر ظهور</label>
+            <label for="privacy-last-seen">من يستطيع رؤية آخر ظهورك</label>
             <select id="privacy-last-seen">
               <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option><option value="nobody">لا أحد</option>
@@ -106,7 +106,8 @@
               <ul id="last-seen-exclusions-list" class="privacy-people-list" aria-label="استثناءات آخر ظهور"></ul>
               <button id="save-last-seen-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
             </div>
-            <label for="privacy-online">من يستطيع رؤية حالة اتصالي</label>
+            <label for="privacy-online">من يستطيع رؤية أنك متصل الآن</label>
+            <p class="settings-help">مثل واتساب: إذا لم تشارك آخر ظهورك مع شخص، فلن تتمكن من رؤية آخر ظهوره أو حالة اتصاله. ويجب أن تسمح إعدادات الطرفين بذلك.</p>
             <select id="privacy-online"><option value="everyone">الجميع</option><option value="same_as_last_seen">مثل آخر ظهور</option></select>
             <label class="privacy-toggle"><input id="privacy-read-receipts" type="checkbox" checked> مؤشرات قراءة الرسائل</label>
             <p class="settings-help">عند إيقافها لن ترسل أو ترى مؤشرات القراءة في المحادثات الفردية، ولن تعرف من شاهد حالاتك. تبقى مؤشرات القراءة في المجموعات مفعّلة للطرفين.</p>
@@ -125,7 +126,6 @@
               <option value="contacts">جهات اتصالي</option>
               <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option>
               <option value="only_share">المشاركة مع أشخاص محددين فقط</option>
-              <option value="nobody">لا أحد</option>
             </select>
             <p class="settings-help">تُطبّق تغييرات جمهور الحالات على الحالات الجديدة فقط، ولا تغيّر جمهور الحالات المنشورة سابقًا.</p>
             <div id="status-exclusions-area" hidden>
