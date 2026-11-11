@@ -55,6 +55,16 @@
           <section class="settings-section account-settings-entry">
             <button id="open-account-settings" type="button" class="settings-menu-button">إعدادات الحساب</button>
           </section>
+          <section class="settings-section general-settings-entry">
+            <button id="open-general-settings" type="button" class="settings-menu-button">عام</button>
+          </section>
+          <section class="settings-section developer-contact-entry">
+            <button id="open-developer-contact" type="button" class="settings-menu-button">التواصل مع المطور عبر</button>
+          </section>
+          <p class="settings-credit">من تطوير fahed alzereeni</p>
+        </div>
+        <div id="general-settings-view" hidden>
+          <button id="back-general-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
           <section class="settings-section app-language-entry">
             <label for="settings-language">اللغة</label>
             <select id="settings-language" name="language" class="settings-language-select">
@@ -63,9 +73,6 @@
             </select>
           </section>
           <section class="settings-section app-settings-inline">
-            <label for="settings-text-size">حجم النص في مرسال</label>
-            <select id="settings-text-size" name="text_size"><option value="normal">عادي</option><option value="large">كبير</option><option value="xlarge">كبير جدًا</option></select>
-            <p class="settings-help">يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.</p>
             <label for="settings-theme">المظهر</label>
             <select id="settings-theme" name="theme">
               <option value="system">حسب إعدادات الجهاز</option>
@@ -73,15 +80,14 @@
               <option value="light">فاتح</option>
             </select>
             <p class="settings-help">اختر المظهر المريح لك. يُحفظ اختيارك على هذا الجهاز.</p>
+            <label for="settings-text-size">حجم النص في مرسال</label>
+            <select id="settings-text-size" name="text_size"><option value="normal">عادي</option><option value="large">كبير</option><option value="xlarge">كبير جدًا</option></select>
+            <p class="settings-help">يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.</p>
             <div class="settings-extra">
               <button id="enable-push-notifications" type="button" class="quiet-button push-notifications-button" aria-pressed="false">تشغيل إشعارات الهاتف</button>
               <p id="push-notifications-help" class="settings-help" role="status" aria-live="polite">لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.</p>
             </div>
           </section>
-          <section class="settings-section developer-contact-entry">
-            <button id="open-developer-contact" type="button" class="settings-menu-button">التواصل مع المطور عبر</button>
-          </section>
-          <p class="settings-credit">من تطوير fahed alzereeni</p>
         </div>
         <div id="account-settings-view" hidden>
           <button id="back-settings-home" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
