@@ -15,7 +15,7 @@ const $ = (selector) => document.querySelector(selector);
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
   "مرسال":"Mersal","جارٍ التحقق من تسجيل الدخول…":"Checking sign-in…","جارٍ تجهيز مرسال…":"Loading Mersal…","إعادة المحاولة":"Try again",
-  "تسجيل الدخول باستخدام Google":"Sign in with Google","إعدادات الحساب":"Account settings","اللغة":"Language","العربية":"Arabic","حجم النص في مرسال":"Text size",
+  "تسجيل الدخول باستخدام Google":"Sign in with Google","إعدادات الحساب":"Account settings","اللغة":"Language","العربية":"العربية","مجموعة":"Group","الدردشة":"Chat","رسالة":"Message","حجم النص في مرسال":"Text size",
   "عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.":"Increase text size for easier reading. Your choice is saved on this device.",
   "المظهر":"Appearance","حسب إعدادات الجهاز":"System default","داكن":"Dark","فاتح":"Light","اختر المظهر المريح لك. يُحفظ اختيارك على هذا الجهاز.":"Choose your preferred appearance. Your choice is saved on this device.",
   "تشغيل إشعارات الهاتف":"Enable phone notifications","لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.":"Enable phone notifications to receive messages when Mersal is not open.",
@@ -88,11 +88,11 @@ function mersalShouldSkip(node) {
 }
 function mersalTranslateTextNode(node, language) {
   if(mersalShouldSkip(node))return;
-  if(!mersalOriginalText.has(node))mersalOriginalText.set(node,node.nodeValue);
-  const original=mersalOriginalText.get(node);
-  const translated=mersalTranslations[original];
-  const next=language==="en"?(translated||original):original;
-  if(node.nodeValue!==next)node.nodeValue=next;
+  let state=mersalOriginalText.get(node);
+  if(!state){state={original:node.nodeValue,lastApplied:null};mersalOriginalText.set(node,state);}
+  else if(node.nodeValue!==state.lastApplied){state.original=node.nodeValue;}
+  const next=language==="en"?(mersalTranslations[state.original]||state.original):state.original;
+  if(node.nodeValue!==next){state.lastApplied=next;node.nodeValue=next;}else state.lastApplied=next;
 }
 function mersalTranslateAttributes(element, language) {
   if(element.matches?.(mersalSkipTranslation))return;
@@ -100,10 +100,13 @@ function mersalTranslateAttributes(element, language) {
     if(!element.hasAttribute(attr))continue;
     let originals=mersalOriginalAttributes.get(element);
     if(!originals){originals={};mersalOriginalAttributes.set(element,originals);}
-    if(!(attr in originals))originals[attr]=element.getAttribute(attr);
-    const original=originals[attr];
-    const next=language==="en"?(mersalTranslations[original]||original):original;
-    if(element.getAttribute(attr)!==next)element.setAttribute(attr,next);
+    const current=element.getAttribute(attr);
+    let state=originals[attr];
+    if(!state){state={original:current,lastApplied:null};originals[attr]=state;}
+    else if(current!==state.lastApplied){state.original=current;}
+    const next=language==="en"?(mersalTranslations[state.original]||state.original):state.original;
+    if(current!==next)element.setAttribute(attr,next);
+    state.lastApplied=next;
   }
 }
 function mersalTranslateTree(root=document) {
