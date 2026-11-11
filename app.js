@@ -1301,7 +1301,9 @@ for(const control of [privacyLastSeenSelect,privacyOnlineSelect,privacyReadRecei
   control.addEventListener("change",async()=>{
     try{
       await savePrivacySettings();
-      if(control===privacyStatusSelect)await renderStatusAudienceChoices();
+      if(control===privacyLastSeenSelect && privacyLastSeenSelect.value==="contacts_except")await renderPrivacyExclusionChoices("last_seen");
+      if(control===privacyGroupAddSelect && privacyGroupAddSelect.value==="contacts_except")await renderPrivacyExclusionChoices("group_add");
+      if(control===privacyStatusSelect && ["contacts_except","only_share"].includes(privacyStatusSelect.value))await renderStatusAudienceChoices();
     }catch(error){
       privacyLastSeenSelect.value=privacySettings.last_seen_visibility;
       privacyOnlineSelect.value=["everyone","same_as_last_seen"].includes(privacySettings.online_visibility)?privacySettings.online_visibility:"same_as_last_seen";
