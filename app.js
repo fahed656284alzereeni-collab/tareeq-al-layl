@@ -1649,6 +1649,8 @@ profilePhotoInput.addEventListener("change", async () => {
       contentType: file.type, upsert: false
     });
     if (uploadError) throw uploadError;
+    const { data: signed, error: signedError } = await supabase.storage.from("mersal-profile-photos").createSignedUrl(uploadedPath, 3600);
+    if (signedError) throw signedError;
     const { error: updateError } = await supabase.from("profiles").update({
       avatar_url: uploadedPath, updated_at: new Date().toISOString()
     }).eq("id", currentUser.id);
@@ -1657,8 +1659,6 @@ profilePhotoInput.addEventListener("change", async () => {
     const previousPath = currentProfilePhotoPath;
     currentProfilePhotoPath = uploadedPath;
     currentProfilePhotoExternal = false;
-    const { data: signed, error: signedError } = await supabase.storage.from("mersal-profile-photos").createSignedUrl(uploadedPath, 3600);
-    if (signedError) throw signedError;
     setProfilePhotoPreview(signed.signedUrl);
     if (previousPath && previousPath !== uploadedPath) {
       const { error: removeError } = await supabase.storage.from("mersal-profile-photos").remove([previousPath]);
