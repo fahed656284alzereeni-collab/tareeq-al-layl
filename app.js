@@ -14,7 +14,16 @@ const $ = (selector) => document.querySelector(selector);
 
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
-  "مرسال":"Mersal","جارٍ التحقق من تسجيل الدخول…":"Checking sign-in…","جارٍ تجهيز مرسال…":"Loading Mersal…","إعادة المحاولة":"Try again",
+  "مرسال":"Mersal","م":"M","الإعدادات":"Settings","التواصل مع المطور":"Contact the developer","محادثاتك الخاصة":"Your private chats",
+  "ابحث في الرسائل":"Search messages","أعضاء المجموعة":"Group members","خيارات عضو المجموعة":"Group member options","إضافة أعضاء للمجموعة":"Add members to group",
+  "الأشخاص المتاحون للإضافة":"People available to add","قائمة الرسائل المجدولة":"Scheduled message list","رسائل المحادثة":"Conversation messages",
+  "إرسال رسالة":"Send a message","نص الرسالة":"Message text","الصفحة الرئيسية":"Home","نص الحالة أو وصف الوسائط":"Status text or media description",
+  "عرض الحالة":"View status","مشاهدو الحالة":"Status viewers","اكتب الاسم للبحث":"Enter a name to search","الأشخاص":"People",
+  "اكتب اسم المجموعة":"Enter a group name","اختيار أعضاء المجموعة":"Choose group members","المكالمة الصوتية":"Voice call",
+  "تأكيد حذف الحساب":"Confirm account deletion","حذف حسابي":"Delete my account","إرفاق ملف":"Attach a file",
+  "حذف الحساب نهائيًا":"Delete account permanently","للتأكيد، اكتب: حذف حسابي":"To confirm, type: Delete my account",
+  "حذف الحساب نهائي ولا يمكن التراجع عنه. سيتم حذف بيانات حسابك ورسائلك ومحادثاتك الخاصة والملفات التي أرفقتها، كما ستُحذف المجموعات التي أنشأتها. ستُزال عضويتك ورسائلك من المجموعات الأخرى.":"Account deletion is permanent and cannot be undone. Your account data, messages, private conversations, and attached files will be deleted. Groups you created will also be deleted, and your membership and messages will be removed from other groups.",
+"جارٍ التحقق من تسجيل الدخول…":"Checking sign-in…","جارٍ تجهيز مرسال…":"Loading Mersal…","إعادة المحاولة":"Try again",
   "تسجيل الدخول باستخدام Google":"Sign in with Google","إعدادات الحساب":"Account settings","اللغة":"Language","العربية":"العربية","مجموعة":"Group","الدردشة":"Chat","رسالة":"Message","حجم النص في مرسال":"Text size",
   "عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.":"Increase text size for easier reading. Your choice is saved on this device.",
   "المظهر":"Appearance","حسب إعدادات الجهاز":"System default","داكن":"Dark","فاتح":"Light","اختر المظهر المريح لك. يُحفظ اختيارك على هذا الجهاز.":"Choose your preferred appearance. Your choice is saved on this device.",
