@@ -1783,7 +1783,7 @@ function updateVoiceCallPanel() {
   voiceCallEndButton.hidden = !activeCall.accepted;
   voiceCallMuteButton.textContent = activeCall.muted ? "تشغيل الميكروفون" : "كتم الميكروفون";
   const callConversation=conversations.find(item=>item.id===activeCall.conversationId);
-  voiceCallEndButton.textContent = callConversation?.is_group && activeCall.initiatorId !== currentUser.id ? "مغادرة المكالمة" : "إنهاء المكالمة";
+  voiceCallEndButton.textContent = activeCall.isGroup && activeCall.initiatorId !== currentUser.id ? "مغادرة المكالمة" : "إنهاء المكالمة";
   voiceCallParticipants.replaceChildren();
   for (const id of activeCall.participants) {
     const profile = people.find(person => person.id === id);
@@ -1880,7 +1880,7 @@ async function startVoiceCall() {
     });
     const participantSet = new Set([currentUser.id, ...participants]);
     activeCall = {
-      id: crypto.randomUUID(), conversationId: activeConversation.id,
+      id: crypto.randomUUID(), conversationId: activeConversation.id, isGroup: Boolean(activeConversation.is_group),
       initiatorId: currentUser.id, participants: participantSet, accepted: true,
       incoming: false, muted: false, localStream: stream, peers: new Map(),
       readyUsers: new Set([currentUser.id]), pendingOffers: new Map(), pendingIce: new Map()
@@ -1994,9 +1994,9 @@ async function handleCallSignal(signal) {
       return;
     }
     activeCall = {
-      id: signal.callId, conversationId: signal.conversationId,
-      initiatorId: details.initiatorId || from,
-      participants: new Set(details.participants || [from, currentUser.id]),
+      id: signal.callId, conversationId: signal.conversationId, isGroup: Boolean(callConversation.is_group),
+      initiatorId: from,
+      participants: new Set([currentUser.id,...validParticipants]),
       accepted: false, incoming: true, muted: false, localStream: null,
       peers: new Map(), readyUsers: new Set([from]),
       pendingOffers: new Map(), pendingIce: new Map()
@@ -2087,8 +2087,7 @@ async function endVoiceCall(notifyOthers = true) {
   if (notifyOthers) {
     const wasAccepted = activeCall.accepted;
     const caller = activeCall.initiatorId;
-    const callConversation=conversations.find(item=>item.id===activeCall.conversationId);
-    const shouldEndForEveryone = !callConversation?.is_group || caller === currentUser?.id;
+    const shouldEndForEveryone = !activeCall.isGroup || caller === currentUser?.id;
     try {
       if (wasAccepted && shouldEndForEveryone) await sendCallSignalToAll("end");
       else if (wasAccepted) await sendCallSignalToAll("leave");
