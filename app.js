@@ -1314,6 +1314,9 @@ for(const control of [privacyLastSeenSelect,privacyOnlineSelect,privacyReadRecei
       lastSeenExclusionsArea.hidden=privacySettings.last_seen_visibility!=="contacts_except";
       groupAddExclusionsArea.hidden=privacySettings.group_add_visibility!=="contacts_except";
       statusExclusionsArea.hidden=!["contacts_except","only_share"].includes(privacySettings.status_visibility);
+      statusAudienceHelp.textContent=privacySettings.status_visibility==="only_share"
+        ? "حدد الأشخاص الذين سيتمكنون من مشاهدة حالاتك فقط."
+        : "حدد الأشخاص الذين لن يتمكنوا من مشاهدة حالاتك.";
       announce("تعذر حفظ إعداد الخصوصية: "+error.message,"error");
     }
   });
