@@ -312,6 +312,12 @@ const profilePhotoExclusionsList = $("#profile-photo-exclusions-list");
 const saveProfilePhotoExclusionsButton = $("#save-profile-photo-exclusions");
 const aboutExclusionsArea = $("#about-exclusions-area");
 const aboutExclusionsList = $("#about-exclusions-list");
+const privacyContactPicker = $("#privacy-contact-picker");
+const privacyContactPickerList = $("#privacy-contact-picker-list");
+const privacyContactPickerTitle = $("#privacy-contact-picker-title");
+const savePrivacyContactPickerButton = $("#save-privacy-contact-picker");
+const closePrivacyContactPickerButton = $("#close-privacy-contact-picker");
+let activePrivacyPicker = null;
 const saveAboutExclusionsButton = $("#save-about-exclusions");
 const settingsAboutInput = $("#settings-about");
 const conversationInfoAbout = $("#conversation-info-about");
@@ -1217,16 +1223,41 @@ async function loadPrivacyContacts() {
   const contactIds = new Set((data || []).map(row => row.user_one === currentUser.id ? row.user_two : row.user_one));
   return people.filter(person => contactIds.has(person.id));
 }
-async function renderChoiceList(list, selectedSet) {
-  list.replaceChildren();
+async function renderChoiceList(list, selectedSet, title, focusTarget) {
+  privacyContactPickerList.replaceChildren();
+  privacyContactPickerTitle.textContent = title;
   const contacts = await loadPrivacyContacts();
-  if (!contacts.length) { list.append(safeText("li","empty-item","لا توجد جهات اتصال في مرسال للاختيار منها.")); return; }
-  for (const person of contacts) {
-    const li=document.createElement("li"),choice=document.createElement("label"),cb=document.createElement("input");
-    choice.className="privacy-person-choice"; cb.type="checkbox"; cb.checked=selectedSet.has(person.id);
-    cb.addEventListener("change",()=>{if(cb.checked)selectedSet.add(person.id);else selectedSet.delete(person.id);});
-    choice.append(cb,document.createTextNode(displayName(person))); li.append(choice); list.append(li);
+  if (!contacts.length) {
+    privacyContactPickerList.append(safeText("li","empty-item","لا توجد جهات اتصال في مرسال للاختيار منها."));
+  } else {
+    for (const person of contacts) {
+      const li=document.createElement("li"),choice=document.createElement("label"),cb=document.createElement("input");
+      choice.className="privacy-person-choice"; cb.type="checkbox"; cb.checked=selectedSet.has(person.id);
+      cb.setAttribute("aria-label",displayName(person));
+      cb.addEventListener("change",()=>{if(cb.checked)selectedSet.add(person.id);else selectedSet.delete(person.id);});
+      choice.append(cb,document.createTextNode(displayName(person))); li.append(choice); privacyContactPickerList.append(li);
+    }
   }
+  privacyContactPicker.hidden=false;
+  document.body.classList.add("privacy-contact-picker-open");
+  savePrivacyContactPickerButton.focus();
+  activePrivacyPicker={focusTarget};
+}
+function closePrivacyContactPicker(restoreSelection=true) {
+  if (!activePrivacyPicker) return;
+  if (restoreSelection) {
+    const key=activePrivacyPicker.key;
+    if (key==="status") selectedStatusExclusions=new Set(storedStatusExclusions);
+    else {
+      const state=getPrivacyExclusionState(key);
+      state.selected.clear(); for(const id of state.stored) state.selected.add(id);
+    }
+  }
+  privacyContactPicker.hidden=true;
+  document.body.classList.remove("privacy-contact-picker-open");
+  const target=activePrivacyPicker.focusTarget;
+  activePrivacyPicker=null;
+  target?.focus();
 }
 function getPrivacyExclusionState(settingKey) {
   const map = {
@@ -1244,7 +1275,8 @@ async function renderPrivacyExclusionChoices(settingKey) {
   if(error)throw error;
   stored.clear(); for(const row of data||[])stored.add(row.excluded_user_id);
   selected.clear(); for(const id of stored)selected.add(id);
-  await renderChoiceList(list,selected);
+  await renderChoiceList(list,selected,({last_seen:"استثناءات آخر ظهور",group_add:"استثناءات إضافتك إلى المجموعات",profile_photo:"استثناءات صورة ملفك الشخصي",about:"استثناءات النبذة"})[settingKey],({last_seen:privacyLastSeenSelect,group_add:privacyGroupAddSelect,profile_photo:privacyProfilePhotoSelect,about:privacyAboutSelect})[settingKey]);
+  activePrivacyPicker.key=settingKey;
 }
 async function savePrivacyExclusionChoices(settingKey) {
   const {selected,stored}=getPrivacyExclusionState(settingKey);
@@ -1263,6 +1295,7 @@ async function savePrivacyExclusionChoices(settingKey) {
   if(settingKey==="profile_photo"){await Promise.all([loadPeople(),loadConversations()]);}
   if(settingKey==="about"&&activePartner)await updateConversationInfo();
   announce("تم حفظ الاستثناءات.");
+  closePrivacyContactPicker(false);
 }
 
 async function renderStatusAudienceChoices() {
@@ -1274,7 +1307,8 @@ async function renderStatusAudienceChoices() {
   if(error)throw error;
   storedStatusExclusions = new Set((data||[]).map(row=>row[idColumn]));
   selectedStatusExclusions = new Set(storedStatusExclusions);
-  await renderChoiceList(statusExclusionsList,selectedStatusExclusions);
+  await renderChoiceList(statusExclusionsList,selectedStatusExclusions,privacySettings.status_visibility==="only_share"?"اختيار من يستطيع مشاهدة حالاتك":"استثناءات مشاهدة الحالات",privacyStatusSelect);
+  activePrivacyPicker.key="status";
 }
 async function saveStatusExclusions() {
   if (!currentUser) return;
@@ -1295,6 +1329,7 @@ async function saveStatusExclusions() {
     }
     storedStatusExclusions=new Set(selectedStatusExclusions);
     announce("تم حفظ جمهور الحالات.");
+    closePrivacyContactPicker(false);
   } catch(error){announce("تعذر حفظ جمهور الحالات: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{saveStatusExclusionsButton.disabled=false;}
 }
@@ -1426,6 +1461,12 @@ saveGroupAddExclusionsButton.addEventListener("click",()=>void savePrivacyExclus
 saveProfilePhotoExclusionsButton.addEventListener("click",()=>void savePrivacyExclusionChoices("profile_photo").catch(error=>announce("تعذر الحفظ: "+error.message,"error")));
 saveAboutExclusionsButton.addEventListener("click",()=>void savePrivacyExclusionChoices("about").catch(error=>announce("تعذر الحفظ: "+error.message,"error")));
 saveStatusExclusionsButton.addEventListener("click",()=>{void saveStatusExclusions();});
+closePrivacyContactPickerButton.addEventListener("click",()=>closePrivacyContactPicker(true));
+savePrivacyContactPickerButton.addEventListener("click",()=>{
+  if(!activePrivacyPicker)return;
+  if(activePrivacyPicker.key==="status") void saveStatusExclusions();
+  else void savePrivacyExclusionChoices(activePrivacyPicker.key).catch(error=>announce("تعذر الحفظ: "+error.message,"error"));
+});
 backGeneralSettingsButton.addEventListener("click", () => {
   generalSettingsView.hidden = true;
   settingsHome.hidden = false;
