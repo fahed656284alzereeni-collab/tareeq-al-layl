@@ -52,8 +52,11 @@
       <div class="settings-card">
         
         <div id="settings-home" class="settings-menu">
+          <section class="settings-section profile-settings-entry">
+            <button id="open-profile-settings" type="button" class="settings-menu-button">الملف الشخصي</button>
+          </section>
           <section class="settings-section account-settings-entry">
-            <button id="open-account-settings" type="button" class="settings-menu-button">إعدادات الحساب</button>
+            <button id="open-account-settings" type="button" class="settings-menu-button">الحساب</button>
           </section>
           <section class="settings-section general-settings-entry">
             <button id="open-general-settings" type="button" class="settings-menu-button">عام</button>
@@ -161,23 +164,41 @@
           <ul id="privacy-contact-picker-list" class="privacy-people-list" aria-label="جهات الاتصال"></ul>
           <button id="save-privacy-contact-picker" type="button" class="primary-button">حفظ الاختيار</button>
         </section>
+        <div id="profile-settings-view" hidden>
+          <button id="back-profile-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
+          <form id="settings-form" class="profile-settings-form">
+            <section class="settings-section profile-photo-editor">
+              <img id="profile-photo-preview" class="profile-photo-preview" alt="معاينة الصورة الشخصية" hidden>
+              <p id="profile-photo-placeholder" class="profile-photo-placeholder" role="img" aria-label="لا توجد صورة شخصية">الصورة الشخصية</p>
+              <input id="profile-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة شخصية">
+              <button id="choose-profile-photo" type="button" class="quiet-button">رفع صورة شخصية</button>
+              <button id="remove-profile-photo" type="button" class="quiet-button" hidden>إزالة الصورة الشخصية</button>
+              <p id="profile-photo-help" class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 5 ميغابايت.</p>
+            </section>
+            <label for="settings-display-name">الاسم الظاهر للآخرين</label>
+            <input id="settings-display-name" name="display_name" type="text" minlength="2" maxlength="40" autocomplete="name" required>
+            <section class="settings-section account-about-section">
+              <label for="settings-about">نبذة عني</label>
+              <textarea id="settings-about" name="about" maxlength="200" rows="3" aria-describedby="settings-about-help" placeholder="اكتب نبذة قصيرة عنك"></textarea>
+              <p id="settings-about-help" class="settings-help">يمكن أن تصل النبذة إلى 200 حرف.</p>
+            </section>
+            <button id="save-settings" type="submit" class="primary-button">حفظ الملف الشخصي</button>
+          </form>
+        </div>
         <div id="account-settings-view" hidden>
           <button id="back-settings-home" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
-        <form id="settings-form">
-          <label for="settings-display-name">الاسم الظاهر للآخرين</label>
-          <input id="settings-display-name" name="display_name" type="text" minlength="2" maxlength="40" autocomplete="name" required>
-          <section class="settings-section account-about-section">
-            <label for="settings-about">نبذة عني</label>
-            <textarea id="settings-about" name="about" maxlength="200" rows="3" aria-describedby="settings-about-help" placeholder="اكتب نبذة قصيرة عنك"></textarea>
-            <p id="settings-about-help" class="settings-help">يمكن أن تصل النبذة إلى 200 حرف.</p>
+          <section class="settings-section account-information-section">
+            <p class="settings-section-title">معلومات الحساب</p>
+            <label for="settings-email">البريد الإلكتروني</label>
+            <input id="settings-email" type="email" readonly aria-describedby="email-help">
+            <p id="email-help" class="settings-help">البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.</p>
+            <p class="settings-help">طريقة تسجيل الدخول: Google</p>
           </section>
-          <label for="settings-email">البريد الإلكتروني</label>
-          <input id="settings-email" type="email" readonly aria-describedby="email-help">
-          <p id="email-help" class="settings-help">البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.</p>
-          <button id="save-settings" type="submit" class="primary-button">حفظ بيانات الحساب</button>
-        </form>
-          <button id="account-logout-button" type="button" class="quiet-button account-action-button">تسجيل الخروج</button>
-          <button id="delete-account-button" type="button" class="danger-button account-action-button">حذف الحساب</button>
+          <section class="settings-section account-security-section">
+            <p class="settings-section-title">إدارة الحساب</p>
+            <button id="account-logout-button" type="button" class="quiet-button account-action-button">تسجيل الخروج</button>
+            <button id="delete-account-button" type="button" class="danger-button account-action-button">حذف الحساب</button>
+          </section>
         </div>
       </div>
     </div>
