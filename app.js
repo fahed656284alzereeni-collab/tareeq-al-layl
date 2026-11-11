@@ -148,7 +148,7 @@ const voiceCallRejectButton = $("#voice-call-reject");
 const voiceCallMuteButton = $("#voice-call-mute");
 const voiceCallEndButton = $("#voice-call-end");
 const voiceCallEnableAudioButton = $("#voice-call-enable-audio");
-let callChannel = null, callChannelConversationId = null, callChannelReady = false, callChannelPromise = null;
+const callChannels = new Map();
 let activeCall = null;
 let activeGroupMemberIds = new Set();
 let selectedAdditionalMembers = new Set();
@@ -468,6 +468,7 @@ async function touchLastSeen() {
 }
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden") void touchLastSeen();
+  else if(currentUser) void syncCallChannels();
 });
 
 function formatLastSeen(value) {
@@ -1229,6 +1230,7 @@ async function loadConversations() {
     }
   }
   conversations=visibleConversations;
+  void syncCallChannels().catch(error=>console.warn("Voice call channel sync:",error));
   const partnerIds = conversations.filter(c=>!c.is_group).map(c => c.user_one === currentUser.id ? c.user_two : c.user_one);
   let profileMap = new Map();
   if (partnerIds.length) {
@@ -1294,7 +1296,6 @@ async function openConversation(person) {
   await loadConversations();
 }
 async function selectConversation(conversation, person) {
-  if (activeCall && activeCall.conversationId !== conversation.id) await endVoiceCall(true);
   if (!groupAddPanel.hidden) { groupAddPanel.hidden=true; document.body.classList.remove("group-add-fullscreen"); }
   const {error:hiddenConversationError}=await supabase.from("conversation_hidden_for").delete().eq("conversation_id",conversation.id).eq("user_id",currentUser.id);
   if(hiddenConversationError)console.warn("Could not unhide conversation:",hiddenConversationError.message);
@@ -1570,7 +1571,7 @@ async function deleteActiveGroup(deleteForEveryone){
     if(result.error)throw result.error;
     if(activeCall)await endVoiceCall(true);
     if(realtimeChannel){await supabase.removeChannel(realtimeChannel);realtimeChannel=null;}
-    await closeCallChannel();
+    await closeCallChannel(id);
     conversationInfoPanel.hidden=true;
     document.body.classList.remove("conversation-info-fullscreen","chat-fullscreen");
     workspace.classList.remove("chat-open");
@@ -1615,7 +1616,7 @@ conversationDeleteButton.addEventListener("click",async()=>{
     if(error&&error.code!=="23505")throw error;
     if(activeCall)await endVoiceCall(true);
     if(realtimeChannel){await supabase.removeChannel(realtimeChannel);realtimeChannel=null;}
-    await closeCallChannel();
+    await closeCallChannel(id);
     conversationInfoPanel.hidden=true;
     groupAddPanel.hidden=true;
     document.body.classList.remove("conversation-info-fullscreen","group-add-fullscreen","chat-fullscreen");
@@ -1781,7 +1782,8 @@ function updateVoiceCallPanel() {
   voiceCallMuteButton.hidden = !activeCall.accepted;
   voiceCallEndButton.hidden = !activeCall.accepted;
   voiceCallMuteButton.textContent = activeCall.muted ? "تشغيل الميكروفون" : "كتم الميكروفون";
-  voiceCallEndButton.textContent = activeConversation?.is_group && activeCall.initiatorId !== currentUser.id ? "مغادرة المكالمة" : "إنهاء المكالمة";
+  const callConversation=conversations.find(item=>item.id===activeCall.conversationId);
+  voiceCallEndButton.textContent = callConversation?.is_group && activeCall.initiatorId !== currentUser.id ? "مغادرة المكالمة" : "إنهاء المكالمة";
   voiceCallParticipants.replaceChildren();
   for (const id of activeCall.participants) {
     const profile = people.find(person => person.id === id);
@@ -1793,57 +1795,74 @@ function setVoiceCallStatus(message) {
   voiceCallStatus.textContent = message;
 }
 async function ensureCallChannel(conversationId) {
-  if (callChannel && callChannelConversationId === conversationId) {
-    if (callChannelReady) return;
-    if (callChannelPromise) return callChannelPromise;
-  }
-  if (callChannel) await closeCallChannel();
-  callChannelConversationId = conversationId;
-  callChannelReady = false;
-  const channel = supabase.channel("mersal-call:" + conversationId, { config: { private: true } });
-  callChannel = channel;
-  const ready = new Promise((resolve, reject) => {
-    let settled = false;
-    channel.on("broadcast", { event: "call-signal" }, message => {
-      void handleCallSignal(message?.payload || message).catch(error => { console.warn("Call signal:", error); setVoiceCallStatus("حدثت مشكلة في الاتصال الصوتي."); });
+  const existing=callChannels.get(conversationId);
+  if(existing?.ready)return;
+  if(existing?.promise)return existing.promise;
+  if(existing?.channel){callChannels.delete(conversationId);await supabase.removeChannel(existing.channel);}
+  await supabase.realtime.setAuth();
+  const channel=supabase.channel("mersal-call:"+conversationId,{config:{private:true}});
+  const entry={channel,ready:false,promise:null};
+  callChannels.set(conversationId,entry);
+  entry.promise=new Promise((resolve,reject)=>{
+    let settled=false;
+    channel.on("broadcast",{event:"call-signal"},message=>{
+      void handleCallSignal(message?.payload||message).catch(error=>{
+        console.warn("Voice call signal:",error);
+        if(activeCall?.conversationId===conversationId)setVoiceCallStatus("حدثت مشكلة في الاتصال الصوتي.");
+      });
     });
-    channel.subscribe(state => {
-      if (state === "SUBSCRIBED" && !settled) {
-        settled = true; callChannelReady = true; resolve();
-      } else if ((state === "CHANNEL_ERROR" || state === "TIMED_OUT" || state === "CLOSED") && !settled) {
-        settled = true; callChannelReady = false; reject(new Error("تعذر الاتصال بقناة المكالمة."));
+    channel.subscribe(state=>{
+      if(state==="SUBSCRIBED"){
+        entry.ready=true;
+        if(!settled){settled=true;resolve();}
+      }else if(state==="CHANNEL_ERROR"||state==="TIMED_OUT"||state==="CLOSED"){
+        entry.ready=false;entry.promise=null;
+        if(!settled){settled=true;reject(new Error("تعذر الاتصال بقناة المكالمة."));}
+        else console.warn("Voice call channel disconnected:",conversationId,state);
       }
     });
   });
-  callChannelPromise = ready;
-  return ready;
+  try{await entry.promise;}
+  catch(error){
+    if(callChannels.get(conversationId)===entry)callChannels.delete(conversationId);
+    await supabase.removeChannel(channel);throw error;
+  }
 }
-async function closeCallChannel() {
-  const channel = callChannel;
-  callChannel = null; callChannelConversationId = null; callChannelReady = false; callChannelPromise = null;
-  if (channel) await supabase.removeChannel(channel);
+async function syncCallChannels(){
+  if(!currentUser)return;
+  const required=new Set(conversations.map(item=>item.id));
+  if(activeCall?.conversationId)required.add(activeCall.conversationId);
+  const stale=[...callChannels.keys()].filter(id=>!required.has(id));
+  await Promise.all(stale.map(id=>closeCallChannel(id)));
+  await Promise.all([...required].map(id=>ensureCallChannel(id).catch(error=>console.warn("تعذر تجهيز قناة المكالمة:",id,error.message))));
 }
-async function sendCallSignal(type, to, details = {}, callId = activeCall?.id) {
-  if (!callChannel || !callChannelReady || !activeCall || !callId) throw new Error("قناة المكالمة غير جاهزة.");
-  const result = await callChannel.send({
-    type: "broadcast",
-    event: "call-signal",
-    payload: { type, callId, conversationId: activeCall.conversationId, from: currentUser.id, to, details }
-  });
-  if (result !== "ok") throw new Error("تعذر إرسال إشارة المكالمة.");
+async function closeCallChannel(conversationId=null){
+  const entries=conversationId?[callChannels.get(conversationId)].filter(Boolean):[...callChannels.values()];
+  if(conversationId)callChannels.delete(conversationId);else callChannels.clear();
+  await Promise.all(entries.map(entry=>supabase.removeChannel(entry.channel)));
+}
+async function sendCallSignal(type,to,details={},callId=activeCall?.id,conversationId=activeCall?.conversationId){
+  if(!to||!callId||!conversationId)throw new Error("بيانات المكالمة غير مكتملة.");
+  let entry=callChannels.get(conversationId);
+  if(!entry?.ready){await ensureCallChannel(conversationId);entry=callChannels.get(conversationId);}
+  if(!entry?.ready)throw new Error("قناة المكالمة غير جاهزة.");
+  const result=await entry.channel.send({type:"broadcast",event:"call-signal",payload:{type,callId,conversationId,from:currentUser.id,to,details}});
+  if(result!=="ok")throw new Error("تعذر إرسال إشارة المكالمة.");
 }
 async function sendCallSignalToAll(type, details = {}) {
   if (!activeCall) return;
   const targets = [...activeCall.participants].filter(id => id !== currentUser.id);
   await Promise.all(targets.map(id => sendCallSignal(type, id, details)));
 }
-async function getVoiceCallParticipantIds() {
-  if (!activeConversation || !activePartner) return [];
-  if (!activeConversation.is_group) return [activePartner.id].filter(id => id && id !== currentUser.id);
-  const { data, error } = await supabase.from("conversation_members")
-    .select("user_id").eq("conversation_id", activeConversation.id);
-  if (error) throw error;
-  return [...new Set((data || []).map(row => row.user_id).filter(id => id && id !== currentUser.id))];
+async function getVoiceCallParticipantIds(conversation=activeConversation) {
+  if(!conversation||!currentUser)return [];
+  if(!conversation.is_group){
+    const partnerId=conversation.user_one===currentUser.id?conversation.user_two:conversation.user_one;
+    return [partnerId].filter(id=>id&&id!==currentUser.id);
+  }
+  const {data,error}=await supabase.from("conversation_members").select("user_id").eq("conversation_id",conversation.id);
+  if(error)throw error;
+  return [...new Set([conversation.user_one,...(data||[]).map(row=>row.user_id)].filter(id=>id&&id!==currentUser.id))];
 }
 async function startVoiceCall() {
   if (!activeConversation || !currentUser || activeCall) return;
@@ -1886,7 +1905,8 @@ function createVoicePeer(peerId) {
   const pc = new RTCPeerConnection({
     iceServers: [
       { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" }
+      { urls: "stun:stun1.l.google.com:19302" },
+      { urls: "stun:global.stun.twilio.com:3478" }
     ]
   });
   activeCall.peers.set(peerId, pc);
@@ -1951,13 +1971,25 @@ async function handleVoiceOffer(from, description) {
   await sendCallSignal("answer", from, { description: pc.localDescription.toJSON() });
 }
 async function handleCallSignal(signal) {
-  if (!signal || !currentUser || signal.conversationId !== activeConversation?.id || signal.to !== currentUser.id || signal.from === currentUser.id) return;
-  if(isPrivateConversationBlocked())return;
+  if(!signal||!currentUser||signal.to!==currentUser.id||signal.from===currentUser.id||!signal.conversationId)return;
+  const callConversation=conversations.find(item=>item.id===signal.conversationId);
+  if(!callConversation)return;
+  if(!callConversation.is_group){
+    const otherId=callConversation.user_one===currentUser.id?callConversation.user_two:callConversation.user_one;
+    const [blockedByMe,blockedByThem]=await Promise.all([
+      supabase.from("user_blocks").select("blocker_id").eq("blocker_id",currentUser.id).eq("blocked_id",otherId).maybeSingle(),
+      supabase.from("user_blocks").select("blocker_id").eq("blocker_id",otherId).eq("blocked_id",currentUser.id).maybeSingle()
+    ]);
+    if(blockedByMe.error||blockedByThem.error)throw blockedByMe.error||blockedByThem.error;
+    if(blockedByMe.data||blockedByThem.data)return;
+  }
+  const validParticipants=await getVoiceCallParticipantIds(callConversation);
+  if(!validParticipants.includes(signal.from))return;
   const from = signal.from, details = signal.details || {};
   if (signal.type === "invite") {
     if (activeCall) {
       if (activeCall.id !== signal.callId) {
-        try { await sendCallSignal("busy", from, {}, signal.callId); } catch {}
+        try { await sendCallSignal("busy", from, {}, signal.callId, signal.conversationId); } catch {}
       }
       return;
     }
@@ -2055,7 +2087,8 @@ async function endVoiceCall(notifyOthers = true) {
   if (notifyOthers) {
     const wasAccepted = activeCall.accepted;
     const caller = activeCall.initiatorId;
-    const shouldEndForEveryone = !activeConversation?.is_group || caller === currentUser?.id;
+    const callConversation=conversations.find(item=>item.id===activeCall.conversationId);
+    const shouldEndForEveryone = !callConversation?.is_group || caller === currentUser?.id;
     try {
       if (wasAccepted && shouldEndForEveryone) await sendCallSignalToAll("end");
       else if (wasAccepted) await sendCallSignalToAll("leave");
