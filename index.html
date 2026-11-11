@@ -166,9 +166,11 @@
         <form id="settings-form">
           <label for="settings-display-name">الاسم الظاهر للآخرين</label>
           <input id="settings-display-name" name="display_name" type="text" minlength="2" maxlength="40" autocomplete="name" required>
-          <label for="settings-about">نبذة عني</label>
-          <textarea id="settings-about" name="about" maxlength="139" rows="3" placeholder="اكتب نبذة قصيرة عنك"></textarea>
-          <p class="settings-help">يمكن أن تصل النبذة إلى 139 حرفًا.</p>
+          <section class="settings-section account-about-section">
+            <label for="settings-about">نبذة عني</label>
+            <textarea id="settings-about" name="about" maxlength="200" rows="3" aria-describedby="settings-about-help" placeholder="اكتب نبذة قصيرة عنك"></textarea>
+            <p id="settings-about-help" class="settings-help">يمكن أن تصل النبذة إلى 200 حرف.</p>
+          </section>
           <label for="settings-email">البريد الإلكتروني</label>
           <input id="settings-email" type="email" readonly aria-describedby="email-help">
           <p id="email-help" class="settings-help">البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.</p>
