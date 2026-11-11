@@ -115,7 +115,7 @@
             <label for="privacy-group-add">من يستطيع إضافتي إلى المجموعات</label>
             <select id="privacy-group-add" aria-describedby="group-add-privacy-help">
               <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
-              <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option><option value="nobody">لا أحد</option>
+              <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option>
             </select>
             <p id="group-add-privacy-help" class="settings-help">يُمنع إدخالك إلى المجموعات ممن لا تسمح لهم إعداداتك أو تستثنيهم.</p>
             <div id="group-add-exclusions-area" hidden>
@@ -135,6 +135,28 @@
               <ul id="status-exclusions-list" class="privacy-people-list" aria-label="جهات اتصال جمهور الحالات"></ul>
               <button id="save-status-exclusions" type="button" class="primary-button">حفظ جمهور الحالات</button>
             </div>
+            <label for="privacy-profile-photo">من يستطيع رؤية صورة ملفك الشخصي</label>
+            <select id="privacy-profile-photo" aria-describedby="profile-photo-privacy-help">
+              <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
+              <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option><option value="nobody">لا أحد</option>
+            </select>
+            <p id="profile-photo-privacy-help" class="settings-help">تتحكم هذه الإعدادات في ظهور صورة حسابك للأشخاص الآخرين.</p>
+            <div id="profile-photo-exclusions-area" hidden>
+              <p class="settings-help">الأشخاص الذين لن يتمكنوا من رؤية صورة ملفك الشخصي.</p>
+              <ul id="profile-photo-exclusions-list" class="privacy-people-list" aria-label="استثناءات صورة الملف الشخصي"></ul>
+              <button id="save-profile-photo-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
+            </div>
+            <label for="privacy-about">من يستطيع رؤية نبذتك</label>
+            <select id="privacy-about" aria-describedby="about-privacy-help">
+              <option value="everyone">الجميع</option><option value="contacts">جهات اتصالي</option>
+              <option value="contacts_except">جهات اتصالي باستثناء أشخاص</option><option value="nobody">لا أحد</option>
+            </select>
+            <p id="about-privacy-help" class="settings-help">تتحكم هذه الإعدادات في ظهور النبذة الموجودة في بيانات حسابك.</p>
+            <div id="about-exclusions-area" hidden>
+              <p class="settings-help">الأشخاص الذين لن يتمكنوا من رؤية نبذتك.</p>
+              <ul id="about-exclusions-list" class="privacy-people-list" aria-label="استثناءات النبذة"></ul>
+              <button id="save-about-exclusions" type="button" class="primary-button">حفظ الاستثناءات</button>
+            </div>
             <label class="privacy-toggle"><input id="privacy-hide-preview" type="checkbox" aria-describedby="hide-preview-privacy-help"> إخفاء نص الرسائل في الإشعارات</label>
             <p id="hide-preview-privacy-help" class="settings-help">يظهر إشعار برسالة جديدة دون عرض محتوى الرسالة.</p>
           </section>
@@ -148,6 +170,9 @@
         <form id="settings-form">
           <label for="settings-display-name">الاسم الظاهر للآخرين</label>
           <input id="settings-display-name" name="display_name" type="text" minlength="2" maxlength="40" autocomplete="name" required>
+          <label for="settings-about">نبذة عني</label>
+          <textarea id="settings-about" name="about" maxlength="139" rows="3" placeholder="اكتب نبذة قصيرة عنك"></textarea>
+          <p class="settings-help">يمكن أن تصل النبذة إلى 139 حرفًا.</p>
           <label for="settings-email">البريد الإلكتروني</label>
           <input id="settings-email" type="email" readonly aria-describedby="email-help">
           <p id="email-help" class="settings-help">البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.</p>
@@ -219,6 +244,8 @@
             <button id="close-conversation-info" type="button" class="quiet-button">إغلاق المعلومات</button>
             <div class="conversation-info-list">
               <div role="group" aria-label="الاسم"><span id="conversation-info-name-label" class="conversation-info-label">الاسم</span><span class="conversation-info-value" id="conversation-info-name">—</span></div>
+              <div id="conversation-info-photo-row" role="group" aria-label="الصورة الشخصية"><span class="conversation-info-label">الصورة الشخصية</span><img id="conversation-info-photo" class="conversation-info-photo" alt="" hidden></div>
+              <div role="group" aria-label="النبذة"><span class="conversation-info-label">النبذة</span><span class="conversation-info-value" id="conversation-info-about">—</span></div>
               <div id="conversation-info-status-row" role="group" aria-label="الحالة"><span class="conversation-info-label">الحالة</span><span class="conversation-info-value" id="conversation-info-status">—</span></div>
               <div role="group" aria-label="تاريخ الإنشاء"><span class="conversation-info-label">تاريخ الإنشاء</span><span class="conversation-info-value" id="conversation-info-created">—</span></div>
               <div role="group" aria-label="عدد الرسائل"><span class="conversation-info-label">عدد الرسائل</span><span class="conversation-info-value" id="conversation-info-count">—</span></div>
