@@ -40,3 +40,15 @@
 25. لا تحدّث آخر ظهور أثناء وجود التطبيق في الخلفية؛ حدّثه فقط عندما تكون الصفحة مرئية لتجنّب عرض المستخدم كمتصل بعد مغادرته.
 26. لا تعرض إعداد خصوصية لميزة غير موجودة في مرسال أو لا يمكن فرضها فعليًا؛ لا تضف عناصر شكلية لصورة الملف أو النبذة أو خصائص واتساب غير الموجودة في التطبيق.
 27. حافظ على إمكانية الوصول في قسم الخصوصية: أسماء واضحة لقارئات الشاشة، خيارات نصية مفهومة، ربط الشروحات بعناصر التحكم عبر وسوم وصفية، وتركيز مناسب عند إظهار قوائم الاستثناءات، مع عدم تكرار التسميات المنطوقة.
+
+
+## WhatsApp-style privacy behavior
+- Privacy controls must be enforced in database policies/RPCs, not only hidden in the interface.
+- Last-seen privacy is reciprocal: if a user does not share their last seen with a specific person, that user cannot see that person's last seen or online state. The other person's own audience setting must also permit visibility.
+- Online visibility supports Everyone or Same as last seen, while respecting the reciprocal last-seen rule.
+- Individual read receipts are reciprocal. Group read receipts remain available even when individual read receipts are disabled.
+- Status audience choices follow WhatsApp: My contacts, My contacts except, and Only share with. Audience is captured when a status is published; changing the setting affects new statuses only.
+- Group-add privacy follows Everyone, My contacts, and My contacts except. Do not offer a separate Nobody option; represent a restriction against all current contacts through exclusions.
+- Profile photo and About visibility support Everyone, My contacts, My contacts except, and Nobody. All profile-photo/About reads must use the privacy-aware profile RPC.
+- Blocked users must not see presence, profile details, statuses, or initiate calls/messages with the blocker.
+- Keep the Mersal-specific notification-preview control separate from WhatsApp's standard privacy options.
