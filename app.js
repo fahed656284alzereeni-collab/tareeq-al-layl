@@ -2812,78 +2812,154 @@ function updateBlockedControls(){
   blockPersonButton.disabled=activeBlockState.blockedByThem&&!activeBlockState.blockedByMe;
   blockPersonButton.setAttribute("aria-label",blockPersonButton.textContent);
 }
+let conversationInfoLoadSequence = 0;
 async function updateConversationInfo() {
   if (!activeConversation || (!activePartner && !activeConversation.is_group)) return;
-  const isGroup = Boolean(activeConversation.is_group);
+  const conversation = activeConversation;
+  const partner = activePartner;
+  const conversationId = conversation.id;
+  const loadSequence = ++conversationInfoLoadSequence;
+  const isCurrent = () => activeConversation?.id === conversationId && loadSequence === conversationInfoLoadSequence;
+  const isGroup = Boolean(conversation.is_group);
+
+  // Clear context-specific values immediately so the previous conversation cannot
+  // remain visible while the next conversation's private/group data is loading.
+  if (conversationInfoAbout) setConversationInfoValue(conversationInfoAbout, "—");
+  if (conversationInfoStatus) setConversationInfoValue(conversationInfoStatus, "—");
+  if (conversationInfoPhoto) {
+    conversationInfoPhoto.removeAttribute("src");
+    conversationInfoPhoto.alt = "";
+    conversationInfoPhoto.hidden = true;
+  }
+  if (groupInfoPhoto) {
+    groupInfoPhoto.removeAttribute("src");
+    groupInfoPhoto.alt = "";
+    groupInfoPhoto.hidden = true;
+  }
+  setConversationInfoValue(groupInfoDescription, "—");
+  groupInfoPhotoRow.hidden = true;
+  groupInfoDescriptionRow.hidden = true;
+
   const { isOwner, isAdmin } = isGroup ? await getCurrentGroupPermissions() : { isOwner: false, isAdmin: false };
-  groupAddMembersButton.hidden=!isAdmin;
-  blockPersonButton.hidden=isGroup;
-  conversationDeleteButton.hidden=false;
+  if (!isCurrent()) return;
+
+  groupAddMembersButton.hidden = !isAdmin;
+  blockPersonButton.hidden = isGroup;
+  conversationDeleteButton.hidden = false;
   conversationInfoNameLabel.textContent = isGroup ? "اسم المجموعة" : "اسم الشخص";
   conversationInfoStatusRow.hidden = isGroup;
-  if(conversationInfoPhotoRow)conversationInfoPhotoRow.hidden=isGroup;
-  individualConversationInfoList.hidden=isGroup;
-  groupConversationInfoList.hidden=!isGroup;
-  groupInfoPhotoRow.hidden=!isGroup||!activeConversation.group_photo_path;
-  groupInfoDescriptionRow.hidden=!isGroup;
-  setConversationInfoValue(conversationInfoName, isGroup ? (activeConversation.group_name || "مجموعة") : displayName(activePartner));
-  if(isGroup){
-    setConversationInfoValue(groupInfoDescription,activeConversation.group_description?.trim()||"لا يوجد وصف للمجموعة.");
-    if(activeConversation.group_photo_path){
-      const url=await resolveGroupPhotoUrl(activeConversation.group_photo_path);
-      if(url){groupInfoPhoto.src=url;groupInfoPhoto.alt="صورة مجموعة "+(activeConversation.group_name||"");groupInfoPhoto.hidden=false;}
-      else{groupInfoPhoto.removeAttribute("src");groupInfoPhoto.alt="";groupInfoPhoto.hidden=true;}
-    }else{groupInfoPhoto.removeAttribute("src");groupInfoPhoto.alt="";groupInfoPhoto.hidden=true;}
-  }
-  if (!isGroup) {
-    const visibleProfile=await supabase.rpc("get_visible_profiles",{p_user_ids:[activePartner.id]});
-    if(visibleProfile.error)console.warn("تعذر تحميل بيانات الحساب:",visibleProfile.error.message);
-    const partnerProfile=await resolveProfileAvatar(visibleProfile.data?.[0]);
-    setConversationInfoValue(conversationInfoAbout,partnerProfile?.about||"لا توجد نبذة متاحة.");
-    if(conversationInfoPhoto){
-      if(partnerProfile?.avatar_url){
-        conversationInfoPhoto.src=partnerProfile.avatar_url;
-        conversationInfoPhoto.alt="الصورة الشخصية لـ "+displayName(activePartner);
-        conversationInfoPhoto.hidden=false;
-      }else{
-        conversationInfoPhoto.removeAttribute("src");
-        conversationInfoPhoto.alt="";
-        conversationInfoPhoto.hidden=true;
+  if (conversationInfoPhotoRow) conversationInfoPhotoRow.hidden = isGroup;
+  individualConversationInfoList.hidden = isGroup;
+  groupConversationInfoList.hidden = !isGroup;
+  groupInfoPhotoRow.hidden = !isGroup || !conversation.group_photo_path;
+  groupInfoDescriptionRow.hidden = !isGroup;
+  setConversationInfoValue(conversationInfoName, isGroup ? (conversation.group_name || "مجموعة") : displayName(partner));
+
+  if (isGroup) {
+    setConversationInfoValue(groupInfoDescription, conversation.group_description?.trim() || "لا يوجد وصف للمجموعة.");
+    if (conversation.group_photo_path) {
+      const url = await resolveGroupPhotoUrl(conversation.group_photo_path);
+      if (!isCurrent()) return;
+      if (url) {
+        groupInfoPhoto.src = url;
+        groupInfoPhoto.alt = "صورة مجموعة " + (conversation.group_name || "");
+        groupInfoPhoto.hidden = false;
+      } else {
+        groupInfoPhoto.removeAttribute("src");
+        groupInfoPhoto.alt = "";
+        groupInfoPhoto.hidden = true;
       }
     }
-    const presence = presenceDetails.get(activePartner.id);
-    const reciprocalHidden=privacySettingsLoaded&&privacySettings.last_seen_visibility==="nobody";
+  }
+
+  if (!isGroup) {
+    const visibleProfile = await supabase.rpc("get_visible_profiles", { p_user_ids: [partner.id] });
+    if (!isCurrent()) return;
+    if (visibleProfile.error) console.warn("تعذر تحميل بيانات الحساب:", visibleProfile.error.message);
+    const partnerProfile = await resolveProfileAvatar(visibleProfile.data?.[0]);
+    if (!isCurrent()) return;
+    setConversationInfoValue(conversationInfoAbout, partnerProfile?.about || "لا توجد نبذة متاحة.");
+    if (partnerProfile?.avatar_url) {
+      conversationInfoPhoto.src = partnerProfile.avatar_url;
+      conversationInfoPhoto.alt = "الصورة الشخصية لـ " + displayName(partner);
+      conversationInfoPhoto.hidden = false;
+    }
+    const presence = presenceDetails.get(partner.id);
+    const reciprocalHidden = privacySettingsLoaded && privacySettings.last_seen_visibility === "nobody";
     setConversationInfoValue(conversationInfoStatus, reciprocalHidden ? "حالة الظهور مخفية" : presence?.is_online ? "متصل الآن" : presence?.last_seen_at ? formatLastSeen(presence.last_seen_at) : "حالة الظهور مخفية");
   }
-  const createdAt = activeConversation.created_at;
+
+  if (!isCurrent()) return;
+  const createdAt = conversation.created_at;
   setConversationInfoValue(conversationInfoCreated, createdAt ? new Date(createdAt).toLocaleString("ar-JO", { dateStyle: "long", timeStyle: "short" }) : "غير متوفر");
   setConversationInfoValue(conversationInfoCount, "جارٍ التحميل…");
-  conversationSearchArea.hidden = true; conversationSearchInput.value = ""; conversationSearchResults.replaceChildren();
+  conversationSearchArea.hidden = true;
+  conversationSearchInput.value = "";
+  conversationSearchResults.replaceChildren();
   conversationSearchStatus.textContent = "اكتب كلمة لعرض النتائج.";
-  groupAdminTools.hidden = !isOwner; groupMemberList.hidden = !isGroup; groupLeaveButton.hidden = !isGroup; groupDeleteEveryoneButton.hidden = !isOwner;
-  groupRenameInput.hidden = !isOwner; groupRenameInput.previousElementSibling.hidden = !isOwner; groupRenameSaveButton.hidden = !isOwner;
-  groupMemberList.replaceChildren(); groupAddPeople.replaceChildren(); groupAddSearch.value = "";
-  if(isGroup){activeBlockState={blockedByMe:false,blockedByThem:false};updateBlockedControls();}
-  else await loadBlockState();
-  selectedAdditionalMembers.clear(); groupRenameInput.value = activeConversation.group_name || "";
-  groupDescriptionInput.value=activeConversation.group_description||"";
-  groupDescriptionSavedValue=groupDescriptionInput.value.trim();updateGroupDescriptionSaveButton();
-  groupPhotoSavedPath=activeConversation.group_photo_path||null;selectedGroupPhotoFile=null;groupPhotoRemoveRequested=false;groupPhotoInput.value="";
-  if(groupPhotoPreviewObjectUrl){URL.revokeObjectURL(groupPhotoPreviewObjectUrl);groupPhotoPreviewObjectUrl=null;}
-  if(groupPhotoSavedPath){const previewUrl=await resolveGroupPhotoUrl(groupPhotoSavedPath);if(previewUrl){groupPhotoPreview.src=previewUrl;groupPhotoPreview.hidden=false;}else{groupPhotoPreview.removeAttribute("src");groupPhotoPreview.hidden=true;}}
-  else{groupPhotoPreview.removeAttribute("src");groupPhotoPreview.hidden=true;}
-  groupPhotoRemoveButton.hidden=!groupPhotoSavedPath;updateGroupPhotoSaveButton();
+  groupAdminTools.hidden = !(isGroup && isOwner);
+  groupMemberList.hidden = !isGroup;
+  groupLeaveButton.hidden = !isGroup;
+  groupDeleteEveryoneButton.hidden = !(isGroup && isOwner);
+  groupRenameInput.hidden = !(isGroup && isOwner);
+  groupRenameInput.previousElementSibling.hidden = !(isGroup && isOwner);
+  groupRenameSaveButton.hidden = !(isGroup && isOwner);
+  groupMemberList.replaceChildren();
+  groupAddPeople.replaceChildren();
+  groupAddSearch.value = "";
+  if (isGroup) {
+    activeBlockState = { blockedByMe: false, blockedByThem: false };
+    updateBlockedControls();
+  } else {
+    await loadBlockState();
+    if (!isCurrent()) return;
+  }
+
+  selectedAdditionalMembers.clear();
+  groupRenameInput.value = conversation.group_name || "";
+  groupDescriptionInput.value = conversation.group_description || "";
+  groupDescriptionSavedValue = groupDescriptionInput.value.trim();
+  updateGroupDescriptionSaveButton();
+  groupPhotoSavedPath = conversation.group_photo_path || null;
+  selectedGroupPhotoFile = null;
+  groupPhotoRemoveRequested = false;
+  groupPhotoInput.value = "";
+  if (groupPhotoPreviewObjectUrl) {
+    URL.revokeObjectURL(groupPhotoPreviewObjectUrl);
+    groupPhotoPreviewObjectUrl = null;
+  }
+  if (groupPhotoSavedPath) {
+    const previewUrl = await resolveGroupPhotoUrl(groupPhotoSavedPath);
+    if (!isCurrent()) return;
+    if (previewUrl) {
+      groupPhotoPreview.src = previewUrl;
+      groupPhotoPreview.hidden = false;
+    } else {
+      groupPhotoPreview.removeAttribute("src");
+      groupPhotoPreview.hidden = true;
+    }
+  } else {
+    groupPhotoPreview.removeAttribute("src");
+    groupPhotoPreview.hidden = true;
+  }
+  if (!isCurrent()) return;
+  groupPhotoRemoveButton.hidden = !groupPhotoSavedPath;
+  updateGroupPhotoSaveButton();
   updateGroupRenameSaveButton();
-  const [{count,error},{data:preference,error:preferenceError}] = await Promise.all([
-    supabase.from("messages").select("id",{count:"exact",head:true}).eq("conversation_id",activeConversation.id),
-    supabase.from("conversation_preferences").select("muted").eq("conversation_id",activeConversation.id).eq("user_id",currentUser.id).maybeSingle()
+
+  const [{ count, error }, { data: preference, error: preferenceError }] = await Promise.all([
+    supabase.from("messages").select("id", { count: "exact", head: true }).eq("conversation_id", conversationId),
+    supabase.from("conversation_preferences").select("muted").eq("conversation_id", conversationId).eq("user_id", currentUser.id).maybeSingle()
   ]);
-  if(error)setConversationInfoValue(conversationInfoCount,"تعذر تحميل العدد");
-  else setConversationInfoValue(conversationInfoCount,new Intl.NumberFormat("ar-JO").format(count||0));
-  if(preferenceError){activeConversationMuted=false;announce("تعذر تحميل إعداد الإشعارات لهذه المحادثة.","error");}
-  else activeConversationMuted=Boolean(preference?.muted);
-  conversationInfoMuteButton.textContent=activeConversationMuted?"تشغيل إشعارات المحادثة":"كتم إشعارات المحادثة";
-  if(isGroup)await loadGroupManagement();
+  if (!isCurrent()) return;
+  if (error) setConversationInfoValue(conversationInfoCount, "تعذر تحميل العدد");
+  else setConversationInfoValue(conversationInfoCount, new Intl.NumberFormat("ar-JO").format(count || 0));
+  if (preferenceError) {
+    activeConversationMuted = false;
+    announce("تعذر تحميل إعداد الإشعارات لهذه المحادثة.", "error");
+  } else activeConversationMuted = Boolean(preference?.muted);
+  conversationInfoMuteButton.textContent = activeConversationMuted ? "تشغيل إشعارات المحادثة" : "كتم إشعارات المحادثة";
+  if (isGroup && isCurrent()) await loadGroupManagement(conversationId);
 }
 async function getCurrentGroupPermissions(){
   if(!activeConversation?.is_group||!currentUser)return {isOwner:false,isAdmin:false};
@@ -2893,14 +2969,17 @@ async function getCurrentGroupPermissions(){
   if(error){console.warn("تعذر التحقق من صلاحية مشرف المجموعة:",error.message);return {isOwner:false,isAdmin:false};}
   return {isOwner:false,isAdmin:data?.role==="admin"};
 }
-async function loadGroupManagement(){
-  if(!activeConversation?.is_group||!currentUser)return;
+async function loadGroupManagement(expectedConversationId = activeConversation?.id){
+  const conversation = activeConversation;
+  if(!conversation?.is_group||!currentUser||conversation.id!==expectedConversationId)return;
   const permissions=await getCurrentGroupPermissions();
-  const {data:members,error}=await supabase.from("conversation_members").select("user_id,role").eq("conversation_id",activeConversation.id);
+  if(activeConversation?.id!==expectedConversationId)return;
+  const {data:members,error}=await supabase.from("conversation_members").select("user_id,role").eq("conversation_id",expectedConversationId);
+  if(activeConversation?.id!==expectedConversationId)return;
   if(error){announce("تعذر تحميل أعضاء المجموعة: "+error.message,"error");return;}
   // The group creator is a participant even when they do not have a row in conversation_members.
   const displayMembers=[...(members||[])];
-  const ownerId=activeConversation.user_one;
+  const ownerId=conversation.user_one;
   if(ownerId&&!displayMembers.some(member=>member.user_id===ownerId)){
     displayMembers.unshift({user_id:ownerId,role:"owner"});
   }
@@ -2910,7 +2989,7 @@ async function loadGroupManagement(){
     updateGroupHeaderAccessibleLabel();
   }
   const ids=[...activeGroupMemberIds];let profiles=[];
-  if(ids.length){const result=await supabase.from("profiles").select("id,display_name").in("id",ids);if(result.error){announce("تعذر تحميل أسماء الأعضاء.","error");return;}profiles=result.data||[];}
+  if(ids.length){const result=await supabase.from("profiles").select("id,display_name").in("id",ids);if(activeConversation?.id!==expectedConversationId)return;if(result.error){announce("تعذر تحميل أسماء الأعضاء.","error");return;}profiles=result.data||[];}
   const profileMap=new Map(profiles.map(profile=>[profile.id,profile]));groupMemberList.replaceChildren();
   for(const member of displayMembers){
     const isSelf=member.user_id===currentUser.id,isGroupOwner=member.user_id===ownerId;
