@@ -24,8 +24,10 @@ create index if not exists support_request_messages_request_created_idx on publi
 
 alter table public.support_requests enable row level security;
 alter table public.support_request_messages enable row level security;
-grant select, insert, update on public.support_requests to authenticated;
-grant select, insert on public.support_request_messages to authenticated;
+revoke all on table public.support_requests from anon, authenticated;
+revoke all on table public.support_request_messages from anon, authenticated;
+grant select, insert, update on table public.support_requests to authenticated;
+grant select, insert on table public.support_request_messages to authenticated;
 
 create policy "Support requests visible to owner and developer" on public.support_requests
 for select to authenticated using (user_id = (select auth.uid()) or (select auth.uid()) = '62fa5885-8d7c-4379-95e6-a8031e4f73ab'::uuid);
