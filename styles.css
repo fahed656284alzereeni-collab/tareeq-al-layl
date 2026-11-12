@@ -62,7 +62,10 @@ input::placeholder, textarea::placeholder { color: #aebbd3; opacity: 1; }
 .message.mine { align-self: flex-start; background: #294a78; border-bottom-right-radius: 5px; }
 .message.theirs { align-self: flex-end; background: #27334b; border-bottom-left-radius: 5px; }
 .message-body { margin: 0; white-space: pre-wrap; line-height: 1.75; }
-.message-time { display: block; margin-top: 6px; color: #d1daea; font-size: .78rem; }
+.message-time { display: block; margin: 0; color: #d1daea; font-size: .78rem; line-height: 1.5; }
+.message-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-top: 9px; min-width: 0; }
+.message-footer .message-actions { margin-top: 0; flex: 0 0 auto; }
+.message-footer .message-read-state { margin: 0; }
 .message-form { padding: 16px 18px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; border-top: 1px solid #405273; }
 .message-form textarea { resize: vertical; min-height: 54px; max-height: 170px; }
 .message-form .primary-button { min-width: 88px; }
@@ -645,7 +648,8 @@ body.conversation-info-fullscreen .conversation-info-list div {
 
 
 /* Accessible message actions and reply composer */
-.message-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 9px; }
+.message-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.message-footer .message-actions { margin-top: 0; }
 .message-options-toggle, .message-option-button {
   min-height: 36px; padding: 6px 10px; border: 1px solid #6680a5;
   border-radius: 9px; background: #1b2a43; color: #f5f7ff; font: inherit; font-size: .88rem;
