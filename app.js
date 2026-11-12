@@ -327,6 +327,7 @@ function loadChatSettings() {
   chatConfirmDeleteInput.checked = localStorage.getItem("mersal-chat-confirm-delete") !== "false";
   applyChatMessageTextSize(chatMessageTextSizeSelect.value);
 }
+loadChatSettings();
 const privacyLastSeenSelect = $("#privacy-last-seen");
 const privacyOnlineSelect = $("#privacy-online");
 const privacyReadReceiptsInput = $("#privacy-read-receipts");
