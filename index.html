@@ -391,13 +391,36 @@
           </div>
           <section id="conversation-info" class="conversation-info" hidden>
             <button id="close-conversation-info" type="button" class="quiet-button">إغلاق المعلومات</button>
-            <div class="conversation-info-list">
+            <div class="conversation-info-list conversation-info-common-list">
               <div role="group" aria-label="الاسم"><span id="conversation-info-name-label" class="conversation-info-label">الاسم</span><span class="conversation-info-value" id="conversation-info-name">—</span></div>
-              <div id="conversation-info-photo-row" role="group" aria-label="الصورة الشخصية"><span class="conversation-info-label">الصورة الشخصية</span><img id="conversation-info-photo" class="conversation-info-photo" alt="" hidden></div>
+            </div>
+            <div id="group-admin-tools" class="group-admin-tools group-admin-tools-top" hidden>
+              <div class="group-photo-editor">
+                <img id="group-photo-preview" class="group-photo-preview" alt="معاينة صورة المجموعة" hidden>
+                <input id="group-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة للمجموعة">
+                <button id="group-photo-choose" type="button" class="quiet-button">اختيار صورة للمجموعة</button>
+                <button id="group-photo-remove" type="button" class="quiet-button" hidden>إزالة صورة المجموعة</button>
+                <button id="group-photo-save" type="button" class="quiet-button" disabled>حفظ صورة المجموعة</button>
+                <p class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 50 ميغابايت.</p>
+              </div>
+              <label for="group-description-input">وصف المجموعة</label>
+              <textarea id="group-description-input" rows="3" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea>
+              <p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p>
+              <button id="group-description-save" type="button" class="quiet-button" disabled>حفظ وصف المجموعة</button>
+              <label for="group-rename-input">اسم المجموعة الجديد</label>
+              <input id="group-rename-input" type="text" maxlength="60" autocomplete="off">
+              <button id="group-rename-save" type="button" class="quiet-button" disabled>حفظ اسم المجموعة</button>
+            </div>
+            <div id="group-conversation-info-list" class="conversation-info-list" hidden>
               <div id="group-info-photo-row" role="group" aria-label="صورة المجموعة" hidden><span class="conversation-info-label">صورة المجموعة</span><img id="group-info-photo" class="group-info-photo" alt="" hidden></div>
-              <div role="group" aria-label="النبذة"><span class="conversation-info-label">النبذة</span><span class="conversation-info-value" id="conversation-info-about">—</span></div>
               <div id="group-info-description-row" role="group" aria-label="وصف المجموعة" hidden><span class="conversation-info-label">وصف المجموعة</span><span class="conversation-info-value" id="group-info-description">—</span></div>
+            </div>
+            <div id="individual-conversation-info-list" class="conversation-info-list" hidden>
+              <div id="conversation-info-photo-row" role="group" aria-label="الصورة الشخصية"><span class="conversation-info-label">الصورة الشخصية</span><img id="conversation-info-photo" class="conversation-info-photo" alt="" hidden></div>
+              <div role="group" aria-label="النبذة"><span class="conversation-info-label">النبذة</span><span class="conversation-info-value" id="conversation-info-about">—</span></div>
               <div id="conversation-info-status-row" role="group" aria-label="الحالة"><span class="conversation-info-label">الحالة</span><span class="conversation-info-value" id="conversation-info-status">—</span></div>
+            </div>
+            <div class="conversation-info-list conversation-info-common-list">
               <div role="group" aria-label="تاريخ الإنشاء"><span class="conversation-info-label">تاريخ الإنشاء</span><span class="conversation-info-value" id="conversation-info-created">—</span></div>
               <div role="group" aria-label="عدد الرسائل"><span class="conversation-info-label">عدد الرسائل</span><span class="conversation-info-value" id="conversation-info-count">—</span></div>
             </div>
@@ -411,23 +434,7 @@
               <button id="group-add-members-button" type="button" class="quiet-button" hidden>إضافة أعضاء</button>
               <button id="conversation-delete-button" type="button" class="danger-button">حذف الدردشة من عندي</button>
             </div>
-            <div id="group-admin-tools" class="group-admin-tools" hidden>
-              <label for="group-rename-input">اسم المجموعة الجديد</label>
-              <input id="group-rename-input" type="text" maxlength="60" autocomplete="off">
-              <button id="group-rename-save" type="button" class="quiet-button" disabled>حفظ اسم المجموعة</button>
-              <label for="group-description-input">وصف المجموعة</label>
-              <textarea id="group-description-input" rows="3" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea>
-              <p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p>
-              <button id="group-description-save" type="button" class="quiet-button" disabled>حفظ وصف المجموعة</button>
-              <div class="group-photo-editor">
-                <img id="group-photo-preview" class="group-photo-preview" alt="معاينة صورة المجموعة" hidden>
-                <input id="group-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة للمجموعة">
-                <button id="group-photo-choose" type="button" class="quiet-button">اختيار صورة للمجموعة</button>
-                <button id="group-photo-remove" type="button" class="quiet-button" hidden>إزالة صورة المجموعة</button>
-                <button id="group-photo-save" type="button" class="quiet-button" disabled>حفظ صورة المجموعة</button>
-                <p class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 50 ميغابايت.</p>
-              </div>
-            </div>
+
             <ul id="group-member-list" class="people-list group-member-list" aria-label="أعضاء المجموعة" hidden></ul>
             <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
             <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
