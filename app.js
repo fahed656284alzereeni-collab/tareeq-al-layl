@@ -2204,6 +2204,44 @@ async function loadConversations() {
     const visibleMap=new Map(resolvedProfiles.map(profile=>[profile.id,profile]));
     profileMap=new Map((profiles||[]).map(profile=>[profile.id,{...profile,...(visibleMap.get(profile.id)||{})}]));
   }
+  const conversationIds = conversations.map(conversation => conversation.id);
+  const [latestMessagesResult, unreadNotificationsResult] = await Promise.all([
+    supabase.from("messages")
+      .select("id,conversation_id,sender_id,body,created_at,is_deleted")
+      .in("conversation_id", conversationIds)
+      .order("created_at", { ascending: false })
+      .limit(1000),
+    supabase.from("notifications")
+      .select("conversation_id")
+      .eq("recipient_id", currentUser.id)
+      .is("read_at", null)
+      .in("conversation_id", conversationIds)
+  ]);
+  if (latestMessagesResult.error) throw latestMessagesResult.error;
+  if (unreadNotificationsResult.error) throw unreadNotificationsResult.error;
+  const latestMessageByConversation = new Map();
+  for (const message of latestMessagesResult.data || []) {
+    if (!latestMessageByConversation.has(message.conversation_id)) {
+      latestMessageByConversation.set(message.conversation_id, message);
+    }
+  }
+  const unreadCountByConversation = new Map();
+  for (const notification of unreadNotificationsResult.data || []) {
+    unreadCountByConversation.set(
+      notification.conversation_id,
+      (unreadCountByConversation.get(notification.conversation_id) || 0) + 1
+    );
+  }
+  const latestMessageIds = [...latestMessageByConversation.values()].map(message => message.id);
+  let hiddenMessageIds = new Set();
+  if (latestMessageIds.length) {
+    const { data: hiddenMessages, error: hiddenMessagesError } = await supabase.from("message_hidden_for")
+      .select("message_id")
+      .eq("user_id", currentUser.id)
+      .in("message_id", latestMessageIds);
+    if (hiddenMessagesError) throw hiddenMessagesError;
+    hiddenMessageIds = new Set((hiddenMessages || []).map(row => row.message_id));
+  }
   conversationList.replaceChildren();
   if (!conversations.length) {
     conversationList.append(safeText("li", "empty-item", "لا توجد محادثات بعد."));
@@ -2219,6 +2257,22 @@ async function loadConversations() {
     button.dataset.partnerId = partnerId;
     if(!conversation.is_group)appendProfileAvatar(button,person);
     button.append(safeText("span", "conversation-person-name", displayName(person)));
+    const latestMessage = latestMessageByConversation.get(conversation.id);
+    const unreadCount = unreadCountByConversation.get(conversation.id) || 0;
+    let lastMessageText = "لا توجد رسائل بعد";
+    if (latestMessage && !hiddenMessageIds.has(latestMessage.id)) {
+      lastMessageText = latestMessage.is_deleted
+        ? "تم حذف هذه الرسالة"
+        : (String(latestMessage.body || "").trim() || "رسالة غير نصية");
+      if (latestMessage.sender_id === currentUser.id) lastMessageText = "أنت: " + lastMessageText;
+    } else if (latestMessage) {
+      lastMessageText = "آخر رسالة مخفية";
+    }
+    lastMessageText = lastMessageText.length > 180 ? lastMessageText.slice(0, 180) + "…" : lastMessageText;
+    const accessibleConversationLabel = displayName(person) +
+      ". آخر رسالة: " + lastMessageText +
+      (unreadCount ? ". لديك " + unreadCount + " رسائل غير مقروءة" : ". لا توجد رسائل غير مقروءة");
+    button.setAttribute("aria-label", accessibleConversationLabel);
     const isOnline = onlineUserIds.has(partnerId);
     if (isOnline) {
       const presence = safeText("span", "conversation-presence is-online", "متصل الآن");
