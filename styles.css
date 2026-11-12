@@ -1191,31 +1191,6 @@ body.conversation-info-fullscreen .workspace.chat-open #conversation-info-status
 /* Developer credit at the bottom of settings */
 .settings-credit { margin: 28px 0 0; padding: 18px 0 4px; border-top: 1px solid var(--border); color: var(--muted); text-align: center; font-size: 0.9rem; }
 
-/* Keep the contact panel hidden until opened. */
-.developer-contact-overlay[hidden] { display: none !important; }
-
-/* Developer contact panel */
-body.developer-contact-open { overflow: hidden; }
-.developer-contact-overlay {
-  position: fixed; inset: 0; z-index: 160; display: grid; place-items: center;
-  width: 100%; height: 100vh; height: 100dvh; overflow-y: auto;
-  padding: 24px; box-sizing: border-box; background: #111a2d;
-}
-.developer-contact-card {
-  display: grid; gap: 16px; width: min(100%, 560px); margin: auto;
-}
-.developer-contact-close, .developer-contact-link {
-  display: flex; align-items: center; justify-content: center;
-  width: 100%; min-height: 56px; box-sizing: border-box; padding: 14px 18px;
-  border: 1px solid var(--border); border-radius: 14px;
-  background: #182640; color: #fff; font: inherit; font-weight: 700;
-  text-align: center; text-decoration: none;
-}
-.developer-contact-link:focus-visible, .developer-contact-close:focus-visible {
-  outline: 3px solid #8db8ff; outline-offset: 3px;
-}
-
-
 /* Keep audio and unsupported attachment previews inside the Mersal viewer. */
 .attachment-viewer-audio { width: min(100%, 720px); }
 .attachment-viewer-message { max-width: 38rem; padding: 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised); color: var(--text); line-height: 1.8; text-align: center; }
@@ -1534,7 +1509,6 @@ button .icon, button svg { flex: 0 0 auto; }
 .settings-menu-button, .attachment-choice, .message-option-button,
 .message-options-toggle, .conversation-search-result, .status-entry,
 .inline-video-action, .group-member-action, .group-member-remove,
-.developer-contact-link, .developer-contact-close {
   border: 1px solid var(--button-muted-border);
   border-radius: 14px;
   background: var(--button-muted-bg);
