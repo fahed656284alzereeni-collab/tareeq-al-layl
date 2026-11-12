@@ -2711,6 +2711,16 @@ async function selectConversation(conversation, person) {
         }
       }else if(!messageNode.querySelector(".message-read-state"))messageNode.append(safeText("span","message-read-state","مقروء"));
     })
+    .on("postgres_changes", {
+      event:"UPDATE",schema:"public",table:"conversations",filter:"id=eq."+conversation.id
+    }, payload => {
+      if(activeConversation?.id!==conversation.id||!conversation.is_group)return;
+      activeConversation={...activeConversation,...payload.new};
+      chatPartnerName.textContent=activeConversation.group_name||"مجموعة";
+      updateGroupHeaderAccessibleLabel();
+      void updateConversationInfo().catch(error=>announce("تعذر تحديث معلومات المجموعة: "+(error.message||"حاول مرة أخرى."),"error"));
+      void loadConversations().catch(error=>console.warn("تعذر تحديث قائمة المجموعات:",error.message));
+    })
     .subscribe((state) => {
       if (state === "CHANNEL_ERROR" || state === "TIMED_OUT") {
         announce("الاتصال المباشر بالرسائل غير مستقر. استخدم زر تحديث الرسائل للمزامنة.", "error");
