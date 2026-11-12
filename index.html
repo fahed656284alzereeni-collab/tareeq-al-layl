@@ -61,6 +61,9 @@
           <section class="settings-section general-settings-entry">
             <button id="open-general-settings" type="button" class="settings-menu-button">عام</button>
           </section>
+          <section class="settings-section chats-settings-entry">
+            <button id="open-chats-settings" type="button" class="settings-menu-button">الدردشات</button>
+          </section>
           <section class="settings-section privacy-settings-entry">
             <button id="open-privacy-settings" type="button" class="settings-menu-button">الخصوصية</button>
           </section>
@@ -93,6 +96,22 @@
               <button id="enable-push-notifications" type="button" class="quiet-button push-notifications-button" aria-pressed="false">تشغيل إشعارات الهاتف</button>
               <p id="push-notifications-help" class="settings-help" role="status" aria-live="polite">لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.</p>
             </div>
+          </section>
+        </div>
+        <div id="chats-settings-view" hidden>
+          <button id="back-chats-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
+          <section class="settings-section chats-options">
+            <label for="chat-message-text-size">حجم نص الرسائل داخل المحادثة</label>
+            <select id="chat-message-text-size" name="chat_message_text_size">
+              <option value="normal">عادي</option>
+              <option value="large">كبير</option>
+              <option value="xlarge">كبير جدًا</option>
+            </select>
+            <p class="settings-help">يؤثر هذا الخيار في نصوص الرسائل داخل المحادثات فقط.</p>
+            <label class="privacy-toggle"><input id="chat-enter-to-send" type="checkbox"> إرسال الرسالة بالضغط على Enter</label>
+            <p class="settings-help">عند التفعيل، يرسل Enter الرسالة، ويضيف Shift مع Enter سطرًا جديدًا.</p>
+            <label class="privacy-toggle"><input id="chat-confirm-delete" type="checkbox" checked> تأكيد قبل حذف الرسائل</label>
+            <p class="settings-help">عند إيقافه، تُحذف الرسائل مباشرة عند اختيار الحذف.</p>
           </section>
         </div>
         <div id="privacy-settings-view" hidden>
