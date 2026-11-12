@@ -234,7 +234,7 @@
         <section id="support-home-view" class="support-view">
           <div class="support-view-header">
             <button id="close-help-support" type="button" class="quiet-button">رجوع إلى الإعدادات</button>
-            <h1>المساعدة والدعم</h1>
+            <p class="support-screen-title">المساعدة والدعم</p>
           </div>
           <p class="support-intro">كيف يمكننا مساعدتك؟ اختر نوع المساعدة، وستصل طلباتك مباشرة إلى فريق مرسال.</p>
           <div class="support-actions-grid">
@@ -242,20 +242,20 @@
             <button id="support-my-requests" type="button" class="settings-menu-button">طلباتي السابقة ومتابعتها</button>
             <button id="support-admin-button" type="button" class="settings-menu-button" hidden>صندوق الدعم للمطور</button>
           </div>
-          <section class="support-faq-section" aria-label="الأسئلة الشائعة">
-            <h2>الأسئلة الشائعة</h2>
+          <div class="support-faq-section">
+            <p class="support-section-title">الأسئلة الشائعة</p>
             <details><summary>كيف أتابع طلبي؟</summary><p>افتح «طلباتي السابقة ومتابعتها» لعرض رقم الطلب وحالته والردود عليه.</p></details>
             <details><summary>كيف أبلغ عن مشكلة؟</summary><p>اختر «إرسال طلب مساعدة جديد»، ثم حدد الإبلاغ عن خلل أو مشكلة تقنية واشرح ما حدث.</p></details>
             <details><summary>كيف أبلغ عن إساءة؟</summary><p>اختر «إبلاغ عن إساءة أو محتوى» واكتب التفاصيل اللازمة لمراجعة البلاغ.</p></details>
             <details><summary>كيف أقترح ميزة؟</summary><p>اختر «اقتراح ميزة» واشرح فكرتك وكيف يمكن أن تفيد مستخدمي مرسال.</p></details>
             <details><summary>هل يمكنني متابعة رد المطور؟</summary><p>نعم، ستجد ردود فريق مرسال وتحديثات حالة الطلب داخل صفحة الطلب نفسها.</p></details>
-          </section>
+          </div>
         </section>
 
         <section id="support-form-view" class="support-view" hidden>
           <div class="support-view-header">
             <button id="support-form-back" type="button" class="quiet-button">رجوع للمساعدة والدعم</button>
-            <h2>إرسال طلب جديد</h2>
+            <p class="support-screen-title">إرسال طلب جديد</p>
           </div>
           <form id="support-request-form" class="support-form">
             <label for="support-category">نوع الطلب</label>
@@ -282,7 +282,7 @@
         <section id="support-requests-view" class="support-view" hidden>
           <div class="support-view-header">
             <button id="support-requests-back" type="button" class="quiet-button">رجوع للمساعدة والدعم</button>
-            <h2>طلباتي السابقة</h2>
+            <p class="support-screen-title">طلباتي السابقة</p>
           </div>
           <ul id="support-requests-list" class="support-request-list" aria-label="طلبات المساعدة السابقة" aria-live="polite"></ul>
         </section>
@@ -290,7 +290,7 @@
         <section id="support-admin-view" class="support-view" hidden>
           <div class="support-view-header">
             <button id="support-admin-back" type="button" class="quiet-button">رجوع للمساعدة والدعم</button>
-            <h2>صندوق الدعم للمطور</h2>
+            <p class="support-screen-title">صندوق الدعم للمطور</p>
           </div>
           <div class="support-admin-tools">
             <label for="support-admin-filter">تصفية الطلبات حسب الحالة</label>
@@ -309,7 +309,7 @@
         <section id="support-thread-view" class="support-view" hidden>
           <div class="support-view-header">
             <button id="support-thread-back" type="button" class="quiet-button">رجوع إلى الطلبات</button>
-            <h2 id="support-thread-title">تفاصيل الطلب</h2>
+            <p id="support-thread-title" class="support-screen-title">تفاصيل الطلب</p>
           </div>
           <div class="support-ticket-summary">
             <p id="support-ticket-code"></p>
@@ -328,7 +328,7 @@
             </select>
             <button id="support-save-status" type="button" class="primary-button">حفظ الحالة</button>
           </div>
-          <h3>المراسلات</h3>
+          <p class="support-section-title">المراسلات</p>
           <ul id="support-messages-list" class="support-messages-list" aria-label="رسائل الطلب" aria-live="polite"></ul>
           <form id="support-reply-form" class="support-reply-form">
             <label for="support-reply-input">اكتب ردًا</label>
