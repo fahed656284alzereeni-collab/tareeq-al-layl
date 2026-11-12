@@ -121,7 +121,7 @@ const mersalTranslations = {
   "تم إلغاء جدولة الرسالة.":"Scheduled message cancelled.","حجم الملف ":"File size "," أكبر من 50 ميغابايت.":" exceeds 50 MB.",
   "تعذر إرسال الملف ":"Could not send file ","اكتب رسالتك قبل الإرسال.":"Write your message before sending.","تعذر التحقق من الجلسة: ":"Could not verify session: ",
   "فشل تسجيل الدخول: ":"Sign-in failed: ",
-"م":"M","الإعدادات":"Settings","التواصل مع المطور":"Contact the developer","محادثاتك الخاصة":"Your private chats",
+"م":"M","الإعدادات":"Settings","محادثاتك الخاصة":"Your private chats",
   "ابحث في الرسائل":"Search messages","أعضاء المجموعة":"Group members","خيارات عضو المجموعة":"Group member options","إضافة أعضاء للمجموعة":"Add members to group",
   "الأشخاص المتاحون للإضافة":"People available to add","قائمة الرسائل المجدولة":"Scheduled message list","رسائل المحادثة":"Conversation messages",
   "إرسال رسالة":"Send a message","نص الرسالة":"Message text","الصفحة الرئيسية":"Home","نص الحالة أو وصف الوسائط":"Status text or media description",
@@ -135,7 +135,7 @@ const mersalTranslations = {
   "عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.":"Increase text size for easier reading. Your choice is saved on this device.",
   "المظهر":"Appearance","حسب إعدادات الجهاز":"System default","داكن":"Dark","فاتح":"Light","اختر المظهر المريح لك. يُحفظ اختيارك على هذا الجهاز.":"Choose your preferred appearance. Your choice is saved on this device.",
   "تشغيل إشعارات الهاتف":"Enable phone notifications","لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.":"Enable phone notifications to receive messages when Mersal is not open.",
-  "التواصل مع المطور عبر":"Contact the developer","من تطوير fahed alzereeni":"Developed by fahed alzereeni","رجوع إلى الإعدادات":"Back to settings",
+  "من تطوير fahed alzereeni":"Developed by fahed alzereeni","رجوع إلى الإعدادات":"Back to settings",
   "الاسم الظاهر للآخرين":"Name shown to others","البريد الإلكتروني":"Email address","البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.":"This email is linked to your Google account and cannot be changed here.",
   "حفظ بيانات الحساب":"Save account details","تسجيل الخروج":"Sign out","حذف الحساب":"Delete account","إنستغرام":"Instagram","فيسبوك":"Facebook","واتساب":"WhatsApp",
   "إضافة حالة":"Add status","تحديث الحالات":"Refresh statuses","الإشعارات":"Notifications","إغلاق":"Close","تحديد الكل كمقروء":"Mark all as read","دردشة جديدة":"New chat",
@@ -283,10 +283,6 @@ const statusTextInput = $("#status-text-input");
 const statusImageInput = $("#status-image-input");
 const statusVideoInput = $("#status-video-input");
 const settingsPanel = $("#settings-panel");
-const developerContactPanel = $("#developer-contact-panel");
-const openDeveloperContactButton = $("#open-developer-contact");
-const closeDeveloperContactButton = $("#close-developer-contact");
-let developerContactReturnFocus = null;
 const DEVELOPER_USER_ID = "62fa5885-8d7c-4379-95e6-a8031e4f73ab";
 const openHelpSupportButton = $("#open-help-support");
 const helpSupportPanel = $("#help-support-panel");
@@ -1864,24 +1860,6 @@ async function loadOwnProfile() {
   const ownPhoto = await resolveProfileAvatar({ avatar_url: data?.avatar_url || null });
   setProfilePhotoPreview(ownPhoto?.avatar_url || null);
 }
-openDeveloperContactButton.addEventListener("click", () => {
-  developerContactReturnFocus = document.activeElement;
-  developerContactPanel.hidden = false;
-  document.body.classList.add("developer-contact-open");
-  closeDeveloperContactButton.focus();
-});
-closeDeveloperContactButton.addEventListener("click", () => {
-  developerContactPanel.hidden = true;
-  document.body.classList.remove("developer-contact-open");
-  (developerContactReturnFocus || openDeveloperContactButton).focus();
-});
-developerContactPanel.addEventListener("keydown", event => {
-  if (event.key === "Escape") {
-    developerContactPanel.hidden = true;
-    document.body.classList.remove("developer-contact-open");
-    (developerContactReturnFocus || openDeveloperContactButton).focus();
-  }
-});
 settingsLanguageSelect.addEventListener("change", () => {
   applyMersalLanguage(settingsLanguageSelect.value);
   announce(settingsLanguageSelect.value==="en"?"تم تغيير اللغة إلى الإنجليزية.":"تم تغيير اللغة إلى العربية.");
