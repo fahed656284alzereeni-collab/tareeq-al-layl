@@ -15,7 +15,7 @@ const $ = (selector) => document.querySelector(selector);
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
   "الملف الشخصي":"Profile","الحساب":"Account",
-  "عام":"General","الخصوصية":"Privacy","الدردشات":"Chats","حجم نص الرسائل داخل المحادثة":"Message text size in chats","عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يؤثر هذا الخيار في نصوص الرسائل داخل المحادثات فقط.":"This affects message text inside chats only.","إرسال الرسالة بالضغط على Enter":"Press Enter to send messages","عند التفعيل، يرسل Enter الرسالة، ويضيف Shift مع Enter سطرًا جديدًا.":"When enabled, Enter sends the message; Shift + Enter inserts a new line.","تأكيد قبل حذف الرسائل":"Confirm before deleting messages","عند إيقافه، تُحذف الرسائل مباشرة عند اختيار الحذف.":"When disabled, messages are deleted immediately when you choose Delete.","آخر ظهور":"Last seen","حالة الاتصال":"Online status","صورة الملف الشخصي":"Profile photo","النبذة":"About",
+  "عام":"General","الخصوصية":"Privacy","الدردشات":"Chats","حجم نص الرسائل داخل المحادثة":"Message text size in chats","عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يؤثر هذا الخيار في نصوص الرسائل داخل المحادثات فقط.":"This affects message text inside chats only.","إرسال الرسالة بالضغط على Enter":"Press Enter to send messages","عند التفعيل، يرسل Enter الرسالة، ويضيف Shift مع Enter سطرًا جديدًا.":"When enabled, Enter sends the message; Shift + Enter inserts a new line.","تأكيد قبل حذف الرسائل":"Confirm before deleting messages","عند إيقافه، تُحذف الرسائل مباشرة عند اختيار الحذف.":"When disabled, messages are deleted immediately when you choose Delete.","إظهار وقت الرسائل":"Show message timestamps","يؤدي إيقاف هذا الخيار إلى إخفاء أوقات الرسائل داخل المحادثة فقط.":"Turn this off to hide timestamps inside chats only.","تقليل المسافات بين الرسائل":"Compact message spacing","يعرض الرسائل بمسافات أقل لتسهيل استعراض المحادثات الطويلة.":"Use tighter spacing to make long conversations easier to browse.","تم تشغيل إظهار وقت الرسائل.":"Message timestamps are now shown.","تم إيقاف إظهار وقت الرسائل.":"Message timestamps are now hidden.","تم تفعيل العرض المضغوط للرسائل.":"Compact message spacing enabled.","تم إيقاف العرض المضغوط للرسائل.":"Compact message spacing disabled.","آخر ظهور":"Last seen","حالة الاتصال":"Online status","صورة الملف الشخصي":"Profile photo","النبذة":"About",
   "من يستطيع رؤية صورة ملفك الشخصي":"Who can see your profile photo","من يستطيع رؤية نبذتك":"Who can see your About",
   "نبذة عني":"About me","اكتب نبذة قصيرة عنك":"Write a short About","لا توجد نبذة متاحة.":"No About available.",
   "تتحكم هذه الإعدادات في ظهور صورة حسابك للأشخاص الآخرين.":"These settings control who can see your profile photo.",
@@ -316,16 +316,32 @@ const backChatsSettingsButton = $("#back-chats-settings");
 const chatMessageTextSizeSelect = $("#chat-message-text-size");
 const chatEnterToSendInput = $("#chat-enter-to-send");
 const chatConfirmDeleteInput = $("#chat-confirm-delete");
+const chatShowMessageTimeInput = $("#chat-show-message-time");
+const chatCompactLayoutInput = $("#chat-compact-layout");
 function applyChatMessageTextSize(value) {
   const size = ["normal", "large", "xlarge"].includes(value) ? value : "normal";
   document.documentElement.dataset.chatMessageTextSize = size;
   localStorage.setItem("mersal-chat-message-text-size", size);
 }
+function applyChatMessageTimeVisibility(value) {
+  const visible = value !== false;
+  document.documentElement.dataset.chatShowMessageTime = String(visible);
+  localStorage.setItem("mersal-chat-show-message-time", String(visible));
+}
+function applyChatCompactLayout(value) {
+  const compact = value === true;
+  document.documentElement.dataset.chatDensity = compact ? "compact" : "comfortable";
+  localStorage.setItem("mersal-chat-compact-layout", String(compact));
+}
 function loadChatSettings() {
   chatMessageTextSizeSelect.value = localStorage.getItem("mersal-chat-message-text-size") || "normal";
   chatEnterToSendInput.checked = localStorage.getItem("mersal-chat-enter-to-send") === "true";
   chatConfirmDeleteInput.checked = localStorage.getItem("mersal-chat-confirm-delete") !== "false";
+  chatShowMessageTimeInput.checked = localStorage.getItem("mersal-chat-show-message-time") !== "false";
+  chatCompactLayoutInput.checked = localStorage.getItem("mersal-chat-compact-layout") === "true";
   applyChatMessageTextSize(chatMessageTextSizeSelect.value);
+  applyChatMessageTimeVisibility(chatShowMessageTimeInput.checked);
+  applyChatCompactLayout(chatCompactLayoutInput.checked);
 }
 loadChatSettings();
 const privacyLastSeenSelect = $("#privacy-last-seen");
@@ -1556,6 +1572,14 @@ chatEnterToSendInput.addEventListener("change", () => {
 chatConfirmDeleteInput.addEventListener("change", () => {
   localStorage.setItem("mersal-chat-confirm-delete", String(chatConfirmDeleteInput.checked));
   announce(chatConfirmDeleteInput.checked ? "تم تشغيل تأكيد حذف الرسائل." : "تم إيقاف تأكيد حذف الرسائل.");
+});
+chatShowMessageTimeInput.addEventListener("change", () => {
+  applyChatMessageTimeVisibility(chatShowMessageTimeInput.checked);
+  announce(chatShowMessageTimeInput.checked ? "تم تشغيل إظهار وقت الرسائل." : "تم إيقاف إظهار وقت الرسائل.");
+});
+chatCompactLayoutInput.addEventListener("change", () => {
+  applyChatCompactLayout(chatCompactLayoutInput.checked);
+  announce(chatCompactLayoutInput.checked ? "تم تفعيل العرض المضغوط للرسائل." : "تم إيقاف العرض المضغوط للرسائل.");
 });
 privacySettingsView.addEventListener("keydown", event => {
   if (event.key === "Escape") backPrivacySettingsButton.click();
