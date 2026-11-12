@@ -96,14 +96,10 @@ textarea,
 select {
   font-family: inherit;
   font-size: 16px;
+}
+button {
   -webkit-appearance: none;
   appearance: none;
-}
-input[type="checkbox"],
-input[type="radio"],
-input[type="range"] {
-  -webkit-appearance: auto;
-  appearance: auto;
 }
 input,
 textarea,
