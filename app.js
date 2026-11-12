@@ -3767,11 +3767,19 @@ function appendMessage(message) {
   } else {
     item.append(safeText("p", "message-body", message.body));
   }
-  const time = new Date(message.created_at).toLocaleString("ar-JO", { dateStyle: "short", timeStyle: "short" });
-  item.append(safeText("time", "message-time", time));
+  const sentAt = new Date(message.created_at);
+  const time = sentAt.toLocaleString("ar-JO", { dateStyle: "full", timeStyle: "short" });
+  const messageFooter = document.createElement("div");
+  messageFooter.className = "message-footer";
+  messageFooter.setAttribute("role", "group");
+  messageFooter.setAttribute("aria-label", "تاريخ ووقت الرسالة وخياراتها");
+  const timeElement = safeText("time", "message-time", time);
+  timeElement.dateTime = sentAt.toISOString();
+  timeElement.setAttribute("aria-label", "تاريخ ووقت الإرسال: " + time);
+  messageFooter.append(timeElement);
   if (message.sender_id === currentUser.id && (privacySettings.read_receipts_enabled || activeConversation?.is_group)) {
-    if (message._readCount > 0) item.append(safeText("span", "message-read-state", activeConversation?.is_group ? "مقروء من " + message._readCount : "مقروء"));
-    else if (message._readByPartner) item.append(safeText("span", "message-read-state", "مقروء"));
+    if (message._readCount > 0) messageFooter.append(safeText("span", "message-read-state", activeConversation?.is_group ? "مقروء من " + message._readCount : "مقروء"));
+    else if (message._readByPartner) messageFooter.append(safeText("span", "message-read-state", "مقروء"));
   }
   const actions = document.createElement("div");
   actions.className = "message-actions";
@@ -3832,7 +3840,8 @@ function appendMessage(message) {
   deleteEveryoneButton.addEventListener("click", () => { void deleteMessageForEveryone(message, item, menu, toggle); });
   menu.append(closeButton, copyButton, replyButton, deleteMineButton, deleteEveryoneButton);
   actions.append(toggle, menu);
-  item.append(actions);
+  messageFooter.append(actions);
+  item.append(messageFooter);
   messagesList.append(item);
   messagesList.scrollTop = messagesList.scrollHeight;
 }
