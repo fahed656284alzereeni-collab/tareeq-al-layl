@@ -2027,3 +2027,12 @@ html[dir="ltr"] #privacy-settings-view{text-align:left}
 .group-photo-editor button{width:100%;min-height:50px}
 #group-info-description{white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:720px){.group-avatar{width:38px;height:38px}.group-info-photo,.group-photo-preview{width:104px;height:104px}}
+
+
+/* Keep individual-chat details and group details in separate, predictable sections. */
+#group-conversation-info-list[hidden],#individual-conversation-info-list[hidden]{display:none!important}
+.group-admin-tools-top{margin:12px auto 18px;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface-raised)}
+.group-admin-tools-top .group-photo-editor{margin-top:0;padding-top:0;border-top:0}
+.group-admin-tools-top .group-photo-editor button,
+.group-admin-tools-top>button{width:100%;min-height:50px}
+.group-admin-tools-top textarea{min-height:88px}
