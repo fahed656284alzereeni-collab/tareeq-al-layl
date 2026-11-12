@@ -1948,3 +1948,9 @@ html[dir="ltr"] #privacy-settings-view{text-align:left}
 .message-body { font-size: var(--chat-message-font-size, 1rem); }
 :root[data-chat-message-text-size="large"] .message-body { --chat-message-font-size: 1.15rem; }
 :root[data-chat-message-text-size="xlarge"] .message-body { --chat-message-font-size: 1.3rem; }
+
+
+/* Additional chat display preferences. */
+:root[data-chat-show-message-time="false"] .message-time { display: none !important; }
+:root[data-chat-density="compact"] .messages { gap: 7px; }
+:root[data-chat-density="compact"] .message { padding: 8px 12px; }
