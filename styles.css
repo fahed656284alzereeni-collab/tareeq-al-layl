@@ -1508,7 +1508,7 @@ button .icon, button svg { flex: 0 0 auto; }
 }
 .settings-menu-button, .attachment-choice, .message-option-button,
 .message-options-toggle, .conversation-search-result, .status-entry,
-.inline-video-action, .group-member-action, .group-member-remove,
+.inline-video-action, .group-member-action, .group-member-remove {
   border: 1px solid var(--button-muted-border);
   border-radius: 14px;
   background: var(--button-muted-bg);
