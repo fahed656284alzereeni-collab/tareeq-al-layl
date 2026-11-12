@@ -1954,3 +1954,78 @@ html[dir="ltr"] #privacy-settings-view{text-align:left}
 :root[data-chat-show-message-time="false"] .message-time { display: none !important; }
 :root[data-chat-density="compact"] .messages { gap: 7px; }
 :root[data-chat-density="compact"] .message { padding: 8px 12px; }
+
+
+/* In-app Help & Support center and developer inbox */
+.help-support-overlay[hidden], .support-view[hidden] { display: none !important; }
+.help-support-overlay {
+  position: fixed; inset: 0; z-index: 2147483200; display: block;
+  width: 100vw; height: 100vh; height: 100dvh; overflow-y: auto;
+  overscroll-behavior: contain; background: var(--surface, #101b31); color: var(--text, #f5f7ff);
+  padding: max(18px, env(safe-area-inset-top)) clamp(16px, 4vw, 40px) max(24px, env(safe-area-inset-bottom));
+  box-sizing: border-box;
+}
+.help-support-content { width: min(100%, 900px); min-height: 100%; margin: 0 auto; }
+.support-view { display: block; }
+.support-view-header { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+.support-view-header h1, .support-view-header h2 { margin: 0; font-size: clamp(1.25rem, 3vw, 1.7rem); }
+.support-view-header button { min-width: 190px; min-height: 48px; }
+.support-intro { line-height: 1.9; color: var(--muted); }
+.support-actions-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin: 22px 0; }
+.support-actions-grid button { min-height: 66px; text-align: right; }
+.support-faq-section { margin-top: 28px; }
+.support-faq-section h2 { font-size: 1.15rem; }
+.support-faq-section details { padding: 15px 16px; margin: 10px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised); }
+.support-faq-section summary { min-height: 30px; cursor: pointer; font-weight: 800; line-height: 1.8; }
+.support-faq-section details p { color: var(--muted); line-height: 1.9; margin-bottom: 0; }
+.support-form { display: grid; gap: 12px; }
+.support-form label, .support-admin-tools label, .support-reply-form label { font-weight: 800; }
+.support-form input, .support-form select, .support-form textarea, .support-admin-tools select, .support-reply-form textarea {
+  width: 100%; min-height: 50px; box-sizing: border-box; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: 11px; background: var(--surface-raised);
+  color: var(--text); font: inherit; line-height: 1.7;
+}
+.support-form textarea, .support-reply-form textarea { min-height: 130px; resize: vertical; }
+.support-form button, .support-reply-form button { min-height: 54px; width: 100%; }
+.support-request-list, .support-messages-list { display: grid; gap: 12px; list-style: none; padding: 0; margin: 18px 0; }
+.support-request-card {
+  display: grid; gap: 8px; width: 100%; min-height: 70px; padding: 16px;
+  text-align: right; border: 1px solid var(--border); border-radius: 13px;
+  background: var(--surface-raised); color: var(--text); font: inherit; cursor: pointer;
+}
+.support-request-subject { font-size: 1rem; }
+.support-request-meta, .support-request-date { color: var(--muted); font-size: .9rem; line-height: 1.6; }
+.support-request-status { font-weight: 800; }
+.support-request-status.status-new { color: #e7bf72; }
+.support-request-status.status-in_progress { color: #8fc7ff; }
+.support-request-status.status-resolved { color: #65d6a0; }
+.support-request-status.status-closed { color: var(--muted); }
+.support-admin-tools { display: grid; gap: 10px; margin: 16px 0; }
+.support-admin-tools button { min-height: 48px; }
+.support-ticket-summary { display: grid; gap: 8px; padding: 16px; margin: 16px 0; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-raised); }
+.support-ticket-summary p { margin: 0; line-height: 1.8; overflow-wrap: anywhere; }
+#support-request-description { white-space: pre-wrap; }
+.support-thread-view h3 { font-size: 1.1rem; }
+.support-message { display: grid; gap: 6px; max-width: 88%; padding: 13px 15px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-raised); }
+.support-message.is-own { margin-inline-start: auto; }
+.support-message.is-other { margin-inline-end: auto; }
+.support-message-body { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; }
+.support-message-time { color: var(--muted); font-size: .8rem; }
+.support-reply-form { display: grid; gap: 10px; margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
+:root[data-theme="light"] .help-support-overlay { background: #f4f7fc; color: #20334d; }
+:root[data-theme="light"] .support-faq-section details,
+:root[data-theme="light"] .support-form input,
+:root[data-theme="light"] .support-form select,
+:root[data-theme="light"] .support-form textarea,
+:root[data-theme="light"] .support-admin-tools select,
+:root[data-theme="light"] .support-reply-form textarea,
+:root[data-theme="light"] .support-request-card,
+:root[data-theme="light"] .support-ticket-summary,
+:root[data-theme="light"] .support-message { background: #fff; color: #20334d; }
+:root[data-theme="light"] .support-request-meta,
+:root[data-theme="light"] .support-request-date,
+:root[data-theme="light"] .support-message-time { color: #66758b; }
+@media (max-width: 600px) {
+  .support-actions-grid { grid-template-columns: minmax(0,1fr); }
+  .support-message { max-width: 96%; }
+}

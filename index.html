@@ -70,6 +70,9 @@
           <section class="settings-section privacy-settings-entry">
             <button id="open-privacy-settings" type="button" class="settings-menu-button">الخصوصية</button>
           </section>
+          <section class="settings-section help-support-entry">
+            <button id="open-help-support" type="button" class="settings-menu-button">المساعدة والدعم</button>
+          </section>
           <section class="settings-section developer-contact-entry">
             <button id="open-developer-contact" type="button" class="settings-menu-button">التواصل مع المطور عبر</button>
           </section>
@@ -235,6 +238,112 @@
         <a class="developer-contact-link" href="https://www.instagram.com/fahed.alzereeni?vrfl=MXF3bnZoa2R3dGV3cA%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer">إنستغرام</a>
         <a class="developer-contact-link" href="https://www.facebook.com/share/1EKXek5Fcc/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer">فيسبوك</a>
         <a class="developer-contact-link" href="https://wa.me/qr/5E4XHVTLIRO7K1?s=r" target="_blank" rel="noopener noreferrer">واتساب</a>
+      </div>
+    </div>
+
+    <div id="help-support-panel" class="help-support-overlay" role="dialog" aria-modal="true" aria-label="المساعدة والدعم" hidden>
+      <div class="help-support-content">
+        <section id="support-home-view" class="support-view">
+          <div class="support-view-header">
+            <button id="close-help-support" type="button" class="quiet-button">رجوع إلى الإعدادات</button>
+            <h1>المساعدة والدعم</h1>
+          </div>
+          <p class="support-intro">كيف يمكننا مساعدتك؟ اختر نوع المساعدة، وستصل طلباتك مباشرة إلى فريق مرسال.</p>
+          <div class="support-actions-grid">
+            <button id="support-new-request" type="button" class="settings-menu-button">إرسال طلب مساعدة جديد</button>
+            <button id="support-my-requests" type="button" class="settings-menu-button">طلباتي السابقة ومتابعتها</button>
+            <button id="support-admin-button" type="button" class="settings-menu-button" hidden>صندوق الدعم للمطور</button>
+          </div>
+          <section class="support-faq-section" aria-label="الأسئلة الشائعة">
+            <h2>الأسئلة الشائعة</h2>
+            <details><summary>كيف أتابع طلبي؟</summary><p>افتح «طلباتي السابقة ومتابعتها» لعرض رقم الطلب وحالته والردود عليه.</p></details>
+            <details><summary>كيف أبلغ عن مشكلة؟</summary><p>اختر «إرسال طلب مساعدة جديد»، ثم حدد الإبلاغ عن خلل أو مشكلة تقنية واشرح ما حدث.</p></details>
+            <details><summary>كيف أبلغ عن إساءة؟</summary><p>اختر «إبلاغ عن إساءة أو محتوى» واكتب التفاصيل اللازمة لمراجعة البلاغ.</p></details>
+            <details><summary>كيف أقترح ميزة؟</summary><p>اختر «اقتراح ميزة» واشرح فكرتك وكيف يمكن أن تفيد مستخدمي مرسال.</p></details>
+            <details><summary>هل يمكنني متابعة رد المطور؟</summary><p>نعم، ستجد ردود فريق مرسال وتحديثات حالة الطلب داخل صفحة الطلب نفسها.</p></details>
+          </section>
+        </section>
+
+        <section id="support-form-view" class="support-view" hidden>
+          <div class="support-view-header">
+            <button id="support-form-back" type="button" class="quiet-button">رجوع للمساعدة والدعم</button>
+            <h2>إرسال طلب جديد</h2>
+          </div>
+          <form id="support-request-form" class="support-form">
+            <label for="support-category">نوع الطلب</label>
+            <select id="support-category" name="category" required>
+              <option value="help">مساعدة عامة</option>
+              <option value="technical">مشكلة تقنية</option>
+              <option value="bug">الإبلاغ عن خلل</option>
+              <option value="abuse">الإبلاغ عن إساءة أو محتوى</option>
+              <option value="suggestion">اقتراح ميزة</option>
+              <option value="other">أخرى</option>
+            </select>
+            <label for="support-subject">عنوان الطلب</label>
+            <input id="support-subject" name="subject" type="text" minlength="3" maxlength="120" required placeholder="اكتب عنوانًا مختصرًا">
+            <label for="support-description">التفاصيل</label>
+            <textarea id="support-description" name="description" rows="6" maxlength="5000" required placeholder="اشرح طلبك أو المشكلة بالتفصيل"></textarea>
+            <p class="settings-help">سيظهر طلبك للمطور داخل صندوق الدعم في مرسال، ويمكنك متابعة الردود من طلباتك السابقة.</p>
+            <button id="support-submit-request" type="submit" class="primary-button">إرسال الطلب</button>
+          </form>
+        </section>
+
+        <section id="support-requests-view" class="support-view" hidden>
+          <div class="support-view-header">
+            <button id="support-requests-back" type="button" class="quiet-button">رجوع للمساعدة والدعم</button>
+            <h2>طلباتي السابقة</h2>
+          </div>
+          <ul id="support-requests-list" class="support-request-list" aria-label="طلبات المساعدة السابقة" aria-live="polite"></ul>
+        </section>
+
+        <section id="support-admin-view" class="support-view" hidden>
+          <div class="support-view-header">
+            <button id="support-admin-back" type="button" class="quiet-button">رجوع للمساعدة والدعم</button>
+            <h2>صندوق الدعم للمطور</h2>
+          </div>
+          <div class="support-admin-tools">
+            <label for="support-admin-filter">تصفية الطلبات حسب الحالة</label>
+            <select id="support-admin-filter">
+              <option value="all">كل الطلبات</option>
+              <option value="new">جديدة</option>
+              <option value="in_progress">قيد المراجعة</option>
+              <option value="resolved">تم الحل</option>
+              <option value="closed">مغلقة</option>
+            </select>
+            <button id="support-admin-refresh" type="button" class="quiet-button">تحديث الطلبات</button>
+          </div>
+          <ul id="support-admin-list" class="support-request-list" aria-label="جميع طلبات المستخدمين" aria-live="polite"></ul>
+        </section>
+
+        <section id="support-thread-view" class="support-view" hidden>
+          <div class="support-view-header">
+            <button id="support-thread-back" type="button" class="quiet-button">رجوع إلى الطلبات</button>
+            <h2 id="support-thread-title">تفاصيل الطلب</h2>
+          </div>
+          <div class="support-ticket-summary">
+            <p id="support-ticket-code"></p>
+            <p id="support-ticket-category"></p>
+            <p id="support-ticket-status"></p>
+            <p id="support-request-description"></p>
+          </div>
+          <div id="support-admin-status-tools" class="support-admin-tools" hidden>
+            <label for="support-status-select">تحديث حالة الطلب</label>
+            <select id="support-status-select">
+              <option value="new">جديد</option>
+              <option value="in_progress">قيد المراجعة</option>
+              <option value="resolved">تم الحل</option>
+              <option value="closed">مغلق</option>
+            </select>
+            <button id="support-save-status" type="button" class="primary-button">حفظ الحالة</button>
+          </div>
+          <h3>المراسلات</h3>
+          <ul id="support-messages-list" class="support-messages-list" aria-label="رسائل الطلب" aria-live="polite"></ul>
+          <form id="support-reply-form" class="support-reply-form">
+            <label for="support-reply-input">اكتب ردًا</label>
+            <textarea id="support-reply-input" rows="3" maxlength="4000" required placeholder="اكتب رسالتك لفريق الدعم"></textarea>
+            <button id="support-send-reply" type="submit" class="primary-button">إرسال الرد</button>
+          </form>
+        </section>
       </div>
     </div>
 

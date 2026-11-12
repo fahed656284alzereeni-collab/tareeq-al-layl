@@ -15,7 +15,7 @@ const $ = (selector) => document.querySelector(selector);
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
   "الملف الشخصي":"Profile","الحساب":"Account",
-  "عام":"General","الخصوصية":"Privacy","الدردشات":"Chats","حجم نص الرسائل داخل المحادثة":"Message text size in chats","عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يؤثر هذا الخيار في نصوص الرسائل داخل المحادثات فقط.":"This affects message text inside chats only.","إرسال الرسالة بالضغط على Enter":"Press Enter to send messages","عند التفعيل، يرسل Enter الرسالة، ويضيف Shift مع Enter سطرًا جديدًا.":"When enabled, Enter sends the message; Shift + Enter inserts a new line.","تأكيد قبل حذف الرسائل":"Confirm before deleting messages","عند إيقافه، تُحذف الرسائل مباشرة عند اختيار الحذف.":"When disabled, messages are deleted immediately when you choose Delete.","إظهار وقت الرسائل":"Show message timestamps","يؤدي إيقاف هذا الخيار إلى إخفاء أوقات الرسائل داخل المحادثة فقط.":"Turn this off to hide timestamps inside chats only.","تقليل المسافات بين الرسائل":"Compact message spacing","يعرض الرسائل بمسافات أقل لتسهيل استعراض المحادثات الطويلة.":"Use tighter spacing to make long conversations easier to browse.","تم تشغيل إظهار وقت الرسائل.":"Message timestamps are now shown.","تم إيقاف إظهار وقت الرسائل.":"Message timestamps are now hidden.","تم تفعيل العرض المضغوط للرسائل.":"Compact message spacing enabled.","تم إيقاف العرض المضغوط للرسائل.":"Compact message spacing disabled.","آخر ظهور":"Last seen","حالة الاتصال":"Online status","صورة الملف الشخصي":"Profile photo","النبذة":"About",
+  "عام":"General","الخصوصية":"Privacy","الدردشات":"Chats","المساعدة والدعم":"Help & Support","مركز المساعدة":"Help Center","كيف يمكننا مساعدتك؟":"How can we help?","إرسال طلب مساعدة جديد":"Send a new support request","طلباتي السابقة ومتابعتها":"My previous requests","صندوق الدعم للمطور":"Developer support inbox","الأسئلة الشائعة":"Frequently asked questions","كيف أتابع طلبي؟":"How can I track my request?","كيف أبلغ عن مشكلة؟":"How do I report a problem?","كيف أبلغ عن إساءة؟":"How do I report abuse?","كيف أقترح ميزة؟":"How do I suggest a feature?","هل يمكنني متابعة رد المطور؟":"Can I follow the developer's reply?","إرسال طلب جديد":"Send a new request","رجوع للمساعدة والدعم":"Back to Help & Support","نوع الطلب":"Request type","مساعدة عامة":"General help","مشكلة تقنية":"Technical issue","الإبلاغ عن خلل":"Report a bug","الإبلاغ عن إساءة أو محتوى":"Report abuse or content","اقتراح ميزة":"Suggest a feature","أخرى":"Other","عنوان الطلب":"Request subject","اكتب عنوانًا مختصرًا":"Enter a short subject","التفاصيل":"Details","اشرح طلبك أو المشكلة بالتفصيل":"Describe your request or issue","إرسال الطلب":"Submit request","طلباتي السابقة":"My previous requests","تصفية الطلبات حسب الحالة":"Filter requests by status","كل الطلبات":"All requests","جديدة":"New","قيد المراجعة":"In review","تم الحل":"Resolved","مغلقة":"Closed","تحديث الطلبات":"Refresh requests","جميع طلبات المستخدمين":"All user requests","تفاصيل الطلب":"Request details","رجوع إلى الطلبات":"Back to requests","تحديث حالة الطلب":"Update request status","جديد":"New","مغلق":"Closed","حفظ الحالة":"Save status","المراسلات":"Messages","اكتب ردًا":"Write a reply","اكتب رسالتك لفريق الدعم":"Write your message to support","إرسال الرد":"Send reply","المطور":"Developer","أنت":"You","لا توجد طلبات حتى الآن.":"No requests yet.","لا توجد طلبات تطابق التصفية.":"No requests match this filter.","لا توجد مراسلات بعد.":"No messages yet.","رقم الطلب":"Ticket number","الحالة":"Status","تم إرسال طلبك بنجاح.":"Your request was submitted successfully.","تم إرسال الرد.":"Your reply was sent.","تم تحديث حالة الطلب.":"Request status updated.","تعذر تحميل طلبات الدعم: ":"Could not load support requests: ","تعذر تحميل تفاصيل الطلب: ":"Could not load request details: ","تعذر إرسال الطلب: ":"Could not submit request: ","تعذر إرسال الرد: ":"Could not send reply: ","تعذر تحديث الحالة: ":"Could not update status: ","لم يتم العثور على الطلب.":"Request not found.","طلب جديد":"New request","قيد المراجعة":"In review","تم الحل":"Resolved","مغلق":"Closed","جارٍ تحميل الطلبات…":"Loading requests…","جارٍ تحميل المراسلات…":"Loading messages…","طلبات الدعم":"Support requests","الرد من المطور":"Reply from developer","رد من المستخدم":"User reply","لا يمكن فتح هذا الطلب.":"This request cannot be opened.""حجم نص الرسائل داخل المحادثة":"Message text size in chats","عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يؤثر هذا الخيار في نصوص الرسائل داخل المحادثات فقط.":"This affects message text inside chats only.","إرسال الرسالة بالضغط على Enter":"Press Enter to send messages","عند التفعيل، يرسل Enter الرسالة، ويضيف Shift مع Enter سطرًا جديدًا.":"When enabled, Enter sends the message; Shift + Enter inserts a new line.","تأكيد قبل حذف الرسائل":"Confirm before deleting messages","عند إيقافه، تُحذف الرسائل مباشرة عند اختيار الحذف.":"When disabled, messages are deleted immediately when you choose Delete.","إظهار وقت الرسائل":"Show message timestamps","يؤدي إيقاف هذا الخيار إلى إخفاء أوقات الرسائل داخل المحادثة فقط.":"Turn this off to hide timestamps inside chats only.","تقليل المسافات بين الرسائل":"Compact message spacing","يعرض الرسائل بمسافات أقل لتسهيل استعراض المحادثات الطويلة.":"Use tighter spacing to make long conversations easier to browse.","تم تشغيل إظهار وقت الرسائل.":"Message timestamps are now shown.","تم إيقاف إظهار وقت الرسائل.":"Message timestamps are now hidden.","تم تفعيل العرض المضغوط للرسائل.":"Compact message spacing enabled.","تم إيقاف العرض المضغوط للرسائل.":"Compact message spacing disabled.","آخر ظهور":"Last seen","حالة الاتصال":"Online status","صورة الملف الشخصي":"Profile photo","النبذة":"About",
   "من يستطيع رؤية صورة ملفك الشخصي":"Who can see your profile photo","من يستطيع رؤية نبذتك":"Who can see your About",
   "نبذة عني":"About me","اكتب نبذة قصيرة عنك":"Write a short About","لا توجد نبذة متاحة.":"No About available.",
   "تتحكم هذه الإعدادات في ظهور صورة حسابك للأشخاص الآخرين.":"These settings control who can see your profile photo.",
@@ -287,6 +287,28 @@ const developerContactPanel = $("#developer-contact-panel");
 const openDeveloperContactButton = $("#open-developer-contact");
 const closeDeveloperContactButton = $("#close-developer-contact");
 let developerContactReturnFocus = null;
+const DEVELOPER_USER_ID = "62fa5885-8d7c-4379-95e6-a8031e4f73ab";
+const openHelpSupportButton = $("#open-help-support");
+const helpSupportPanel = $("#help-support-panel");
+const closeHelpSupportButton = $("#close-help-support");
+const supportHomeView = $("#support-home-view");
+const supportFormView = $("#support-form-view");
+const supportRequestsView = $("#support-requests-view");
+const supportAdminView = $("#support-admin-view");
+const supportThreadView = $("#support-thread-view");
+const supportAdminButton = $("#support-admin-button");
+const supportRequestForm = $("#support-request-form");
+const supportReplyForm = $("#support-reply-form");
+const supportAdminFilter = $("#support-admin-filter");
+const supportStatusSelect = $("#support-status-select");
+const supportAdminStatusTools = $("#support-admin-status-tools");
+let supportRealtimeChannel = null;
+let activeSupportRequest = null;
+let supportThreadOrigin = "requests";
+let supportReturnFocus = null;
+const supportStatusLabels = {new:"جديد",in_progress:"قيد المراجعة",resolved:"تم الحل",closed:"مغلق"};
+const supportCategoryLabels = {help:"مساعدة عامة",technical:"مشكلة تقنية",bug:"الإبلاغ عن خلل",abuse:"الإبلاغ عن إساءة أو محتوى",suggestion:"اقتراح ميزة",other:"أخرى"};
+const isMersalDeveloper = () => currentUser?.id === DEVELOPER_USER_ID;
 const settingsForm = $("#settings-form");
 const displayNameInput = $("#settings-display-name");
 const profileSettingsView = $("#profile-settings-view");
@@ -441,6 +463,10 @@ function setActiveBottomTab(tab) {
 function returnToHomeTab() {
   if (settingsPanel && !settingsPanel.hidden) {
     settingsPanel.hidden = true;
+  if (helpSupportPanel) helpSupportPanel.hidden = true;
+  document.body.classList.remove("help-support-open");
+  if (supportRealtimeChannel) supabase.removeChannel(supportRealtimeChannel);
+  supportRealtimeChannel = null;
     document.body.classList.remove("settings-open");
   }
   statusView.hidden = true;
@@ -768,6 +794,246 @@ function appendProfileAvatar(container, profile) {
   container.append(avatar);
   return avatar;
 }
+function formatSupportDate(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  return date.toLocaleString("ar-JO", { dateStyle: "medium", timeStyle: "short" });
+}
+function setSupportView(view) {
+  for (const [name, element] of Object.entries({
+    home: supportHomeView, form: supportFormView, requests: supportRequestsView,
+    admin: supportAdminView, thread: supportThreadView
+  })) element.hidden = name !== view;
+}
+function openHelpSupport() {
+  if (!currentUser) return;
+  supportReturnFocus = document.activeElement;
+  settingsPanel.hidden = true;
+  document.body.classList.remove("settings-open");
+  helpSupportPanel.hidden = false;
+  document.body.classList.add("help-support-open");
+  setSupportView("home");
+  closeHelpSupportButton.focus();
+  startSupportRealtime();
+  if (isMersalDeveloper()) void refreshSupportAdminBadge();
+}
+function closeHelpSupport() {
+  helpSupportPanel.hidden = true;
+  document.body.classList.remove("help-support-open");
+  if (supportRealtimeChannel) supabase.removeChannel(supportRealtimeChannel);
+  supportRealtimeChannel = null;
+  settingsPanel.hidden = false;
+  document.body.classList.add("settings-open");
+  (supportReturnFocus || openHelpSupportButton).focus();
+}
+async function refreshSupportAdminBadge() {
+  if (!isMersalDeveloper() || !supportAdminButton) return;
+  const { count, error } = await supabase.from("support_requests")
+    .select("id", { count: "exact", head: true })
+    .in("status", ["new", "in_progress"]);
+  if (error) { console.warn("تعذر تحديث عداد الدعم:", error.message); return; }
+  supportAdminButton.textContent = "صندوق الدعم للمطور (" + (count || 0) + ")";
+}
+function startSupportRealtime() {
+  if (!currentUser) return;
+  if (supportRealtimeChannel) supabase.removeChannel(supportRealtimeChannel);
+  const requestConfig = { event: "*", schema: "public", table: "support_requests" };
+  if (!isMersalDeveloper()) requestConfig.filter = "user_id=eq." + currentUser.id;
+  supportRealtimeChannel = supabase.channel("mersal-support-" + currentUser.id)
+    .on("postgres_changes", requestConfig, () => {
+      if (isMersalDeveloper()) void refreshSupportAdminBadge();
+      if (!helpSupportPanel.hidden) {
+        if (!supportAdminView.hidden) void loadSupportRequests(true);
+        else if (!supportRequestsView.hidden) void loadSupportRequests(false);
+        else if (activeSupportRequest) void loadSupportMessages(activeSupportRequest.id);
+      }
+    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "support_request_messages" }, payload => {
+      if (activeSupportRequest && payload.new?.request_id === activeSupportRequest.id) {
+        void loadSupportMessages(activeSupportRequest.id);
+      }
+    }).subscribe();
+}
+function renderSupportRequests(target, rows, profiles = new Map()) {
+  target.replaceChildren();
+  if (!rows.length) {
+    target.append(safeText("li", "empty-item", isMersalDeveloper() && target.id === "support-admin-list" ? "لا توجد طلبات تطابق التصفية." : "لا توجد طلبات حتى الآن."));
+    return;
+  }
+  for (const request of rows) {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "support-request-card";
+    const title = safeText("strong", "support-request-subject", request.subject);
+    const meta = safeText("span", "support-request-meta",
+      "رقم الطلب " + request.ticket_code + " · " + (supportCategoryLabels[request.category] || "أخرى"));
+    const status = safeText("span", "support-request-status status-" + request.status,
+      "الحالة: " + (supportStatusLabels[request.status] || request.status));
+    const date = safeText("span", "support-request-date", formatSupportDate(request.created_at));
+    button.append(title, meta);
+    if (isMersalDeveloper() && profiles.has(request.user_id)) {
+      button.append(safeText("span", "support-request-meta", "صاحب الطلب: " + profiles.get(request.user_id)));
+    }
+    button.append(status, date);
+    button.setAttribute("aria-label", request.subject + "، رقم الطلب " + request.ticket_code + "، الحالة " + (supportStatusLabels[request.status] || request.status));
+    button.addEventListener("click", () => void openSupportRequest(request.id, target.id === "support-admin-list" ? "admin" : "requests"));
+    item.append(button);
+    target.append(item);
+  }
+}
+async function loadSupportRequests(admin = false) {
+  const target = admin ? $("#support-admin-list") : $("#support-requests-list");
+  target.replaceChildren(safeText("li", "empty-item", "جارٍ تحميل الطلبات…"));
+  let query = supabase.from("support_requests").select("*").order("created_at", { ascending: false }).limit(100);
+  if (!admin) query = query.eq("user_id", currentUser.id);
+  else if (supportAdminFilter.value !== "all") query = query.eq("status", supportAdminFilter.value);
+  const { data, error } = await query;
+  if (error) { announce("تعذر تحميل طلبات الدعم: " + error.message, "error"); return; }
+  const rows = data || [];
+  const profiles = new Map();
+  if (admin && rows.length) {
+    const ids = [...new Set(rows.map(row => row.user_id))];
+    const result = await supabase.from("profiles").select("id,display_name").in("id", ids);
+    if (!result.error) for (const profile of result.data || []) profiles.set(profile.id, profile.display_name || "مستخدم مرسال");
+  }
+  renderSupportRequests(target, rows, profiles);
+}
+async function loadSupportMessages(requestId) {
+  const list = $("#support-messages-list");
+  list.replaceChildren(safeText("li", "empty-item", "جارٍ تحميل المراسلات…"));
+  const { data, error } = await supabase.from("support_request_messages")
+    .select("id,request_id,author_id,body,created_at")
+    .eq("request_id", requestId).order("created_at", { ascending: true }).limit(200);
+  if (error) { announce("تعذر تحميل تفاصيل الطلب: " + error.message, "error"); return; }
+  list.replaceChildren();
+  if (!data?.length) list.append(safeText("li", "empty-item", "لا توجد مراسلات بعد."));
+  for (const message of data || []) {
+    const item = document.createElement("li");
+    item.className = "support-message " + (message.author_id === currentUser.id ? "is-own" : "is-other");
+    const author = message.author_id === currentUser.id ? "أنت" :
+      (isMersalDeveloper() ? "صاحب الطلب" : "المطور");
+    item.append(safeText("strong", "support-message-author", author));
+    item.append(safeText("p", "support-message-body", message.body));
+    item.append(safeText("time", "support-message-time", formatSupportDate(message.created_at)));
+    list.append(item);
+  }
+}
+async function openSupportRequest(requestId, origin = "requests") {
+  const { data, error } = await supabase.from("support_requests").select("*").eq("id", requestId).maybeSingle();
+  if (error || !data) { announce("لا يمكن فتح هذا الطلب.", "error"); return; }
+  activeSupportRequest = data;
+  supportThreadOrigin = origin;
+  $("#support-thread-title").textContent = data.subject || "تفاصيل الطلب";
+  $("#support-ticket-code").textContent = "رقم الطلب: " + data.ticket_code;
+  $("#support-ticket-category").textContent = "نوع الطلب: " + (supportCategoryLabels[data.category] || "أخرى");
+  $("#support-ticket-status").textContent = "الحالة: " + (supportStatusLabels[data.status] || data.status);
+  $("#support-request-description").textContent = data.description;
+  supportAdminStatusTools.hidden = !isMersalDeveloper();
+  $("#support-reply-form").hidden = data.status === "closed" && !isMersalDeveloper();
+  supportStatusSelect.value = data.status;
+  setSupportView("thread");
+  await loadSupportMessages(data.id);
+  $("#support-reply-input").focus();
+}
+openHelpSupportButton.addEventListener("click", openHelpSupport);
+closeHelpSupportButton.addEventListener("click", closeHelpSupport);
+helpSupportPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeHelpSupport();
+});
+$("#support-new-request").addEventListener("click", () => {
+  supportRequestForm.reset();
+  setSupportView("form");
+  $("#support-subject").focus();
+});
+$("#support-my-requests").addEventListener("click", async () => {
+  setSupportView("requests");
+  await loadSupportRequests(false);
+  $("#support-requests-back").focus();
+});
+supportAdminButton.addEventListener("click", async () => {
+  if (!isMersalDeveloper()) return;
+  setSupportView("admin");
+  await loadSupportRequests(true);
+  $("#support-admin-filter").focus();
+});
+for (const id of ["support-form-back", "support-requests-back", "support-admin-back"]) {
+  $("#" + id).addEventListener("click", () => { setSupportView("home"); $("#support-new-request").focus(); });
+}
+$("#support-admin-refresh").addEventListener("click", () => void loadSupportRequests(true));
+supportAdminFilter.addEventListener("change", () => void loadSupportRequests(true));
+supportRequestForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!currentUser) return;
+  const button = $("#support-submit-request");
+  button.disabled = true;
+  const payload = {
+    user_id: currentUser.id,
+    category: $("#support-category").value,
+    subject: $("#support-subject").value.trim(),
+    description: $("#support-description").value.trim()
+  };
+  try {
+    const { data, error } = await supabase.from("support_requests").insert(payload).select("*").single();
+    if (error) throw error;
+    supportRequestForm.reset();
+    announce("تم إرسال طلبك بنجاح.");
+    await openSupportRequest(data.id, "created");
+    if (isMersalDeveloper()) void refreshSupportAdminBadge();
+  } catch (error) {
+    announce("تعذر إرسال الطلب: " + (error.message || "حاول مرة أخرى."), "error");
+  } finally { button.disabled = false; }
+});
+supportReplyForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!activeSupportRequest || !currentUser) return;
+  const input = $("#support-reply-input");
+  const button = $("#support-send-reply");
+  const body = input.value.trim();
+  if (!body) return;
+  button.disabled = true;
+  try {
+    const { error } = await supabase.from("support_request_messages").insert({
+      request_id: activeSupportRequest.id, author_id: currentUser.id, body
+    });
+    if (error) throw error;
+    input.value = "";
+    await loadSupportMessages(activeSupportRequest.id);
+    announce("تم إرسال الرد.");
+  } catch (error) {
+    announce("تعذر إرسال الرد: " + (error.message || "حاول مرة أخرى."), "error");
+  } finally { button.disabled = false; }
+});
+$("#support-save-status").addEventListener("click", async () => {
+  if (!isMersalDeveloper() || !activeSupportRequest) return;
+  const button = $("#support-save-status");
+  button.disabled = true;
+  try {
+    const { data, error } = await supabase.from("support_requests")
+      .update({ status: supportStatusSelect.value, updated_at: new Date().toISOString() })
+      .eq("id", activeSupportRequest.id).select("*").single();
+    if (error) throw error;
+    activeSupportRequest = data;
+    $("#support-ticket-status").textContent = "الحالة: " + (supportStatusLabels[data.status] || data.status);
+    $("#support-reply-form").hidden = data.status === "closed" && !isMersalDeveloper();
+    announce("تم تحديث حالة الطلب.");
+    void refreshSupportAdminBadge();
+  } catch (error) { announce("تعذر تحديث الحالة: " + (error.message || "حاول مرة أخرى."), "error"); }
+  finally { button.disabled = false; }
+});
+$("#support-thread-back").addEventListener("click", async () => {
+  activeSupportRequest = null;
+  if (supportThreadOrigin === "admin") {
+    setSupportView("admin");
+    await loadSupportRequests(true);
+    $("#support-admin-filter").focus();
+  } else {
+    setSupportView("requests");
+    await loadSupportRequests(false);
+    $("#support-requests-back").focus();
+  }
+});
+
 function safeText(tag, className, value) {
   const node = document.createElement(tag);
   if (className) node.className = className;
@@ -842,6 +1108,7 @@ async function handleSession(session, authEvent = "UNKNOWN") {
     onlineUserIds.clear();
   }
   currentUser = session.user;
+  supportAdminButton.hidden = !isMersalDeveloper();
   authPanel.hidden = true;
   workspace.hidden = false;
   bottomNavigation.hidden = false;
