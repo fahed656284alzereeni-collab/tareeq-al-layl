@@ -14,6 +14,7 @@ const $ = (selector) => document.querySelector(selector);
 
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
+  "صورة المجموعة":"Group photo","وصف المجموعة":"Group description","أضف وصفًا يعرّف بالمجموعة":"Add a description for this group","يمكن أن يصل الوصف إلى 500 حرف.":"The description can be up to 500 characters.","حفظ وصف المجموعة":"Save group description","اختيار صورة للمجموعة":"Choose group photo","إزالة صورة المجموعة":"Remove group photo","حفظ صورة المجموعة":"Save group photo","معاينة صورة المجموعة":"Group photo preview","لا يوجد وصف للمجموعة.":"No group description.","تم حفظ وصف المجموعة.":"Group description saved.","تم حفظ صورة المجموعة.":"Group photo saved.","تمت إزالة صورة المجموعة.":"Group photo removed.","تعذر حفظ وصف المجموعة:":"Could not save group description:","تعذر حفظ صورة المجموعة:":"Could not save group photo:","صورة المجموعة يجب أن تكون بصيغة JPG أو PNG أو WebP أو GIF.":"Group photo must be JPG, PNG, WebP, or GIF.","حجم صورة المجموعة أكبر من 50 ميغابايت.":"Group photo exceeds 50 MB.",
   "الملف الشخصي":"Profile","الحساب":"Account",
   "عام":"General","الخصوصية":"Privacy","الدردشات":"Chats","المساعدة والدعم":"Help & Support","مركز المساعدة":"Help Center","كيف يمكننا مساعدتك؟":"How can we help?","إرسال طلب مساعدة جديد":"Send a new support request","طلباتي السابقة ومتابعتها":"My previous requests","صندوق الدعم للمطور":"Developer support inbox","الأسئلة الشائعة":"Frequently asked questions","كيف أتابع طلبي؟":"How can I track my request?","كيف أبلغ عن مشكلة؟":"How do I report a problem?","كيف أبلغ عن إساءة؟":"How do I report abuse?","كيف أقترح ميزة؟":"How do I suggest a feature?","هل يمكنني متابعة رد المطور؟":"Can I follow the developer's reply?","إرسال طلب جديد":"Send a new request","رجوع للمساعدة والدعم":"Back to Help & Support","نوع الطلب":"Request type","مساعدة عامة":"General help","مشكلة تقنية":"Technical issue","الإبلاغ عن خلل":"Report a bug","الإبلاغ عن إساءة أو محتوى":"Report abuse or content","اقتراح ميزة":"Suggest a feature","أخرى":"Other","عنوان الطلب":"Request subject","اكتب عنوانًا مختصرًا":"Enter a short subject","التفاصيل":"Details","اشرح طلبك أو المشكلة بالتفصيل":"Describe your request or issue","إرسال الطلب":"Submit request","طلباتي السابقة":"My previous requests","تصفية الطلبات حسب الحالة":"Filter requests by status","كل الطلبات":"All requests","جديدة":"New","قيد المراجعة":"In review","تم الحل":"Resolved","مغلقة":"Closed","تحديث الطلبات":"Refresh requests","جميع طلبات المستخدمين":"All user requests","تفاصيل الطلب":"Request details","رجوع إلى الطلبات":"Back to requests","تحديث حالة الطلب":"Update request status","جديد":"New","مغلق":"Closed","حفظ الحالة":"Save status","المراسلات":"Messages","اكتب ردًا":"Write a reply","اكتب رسالتك لفريق الدعم":"Write your message to support","إرسال الرد":"Send reply","المطور":"Developer","أنت":"You","لا توجد طلبات حتى الآن.":"No requests yet.","لا توجد طلبات تطابق التصفية.":"No requests match this filter.","لا توجد مراسلات بعد.":"No messages yet.","رقم الطلب":"Ticket number","الحالة":"Status","تم إرسال طلبك بنجاح.":"Your request was submitted successfully.","تم إرسال الرد.":"Your reply was sent.","تم تحديث حالة الطلب.":"Request status updated.","تعذر تحميل طلبات الدعم: ":"Could not load support requests: ","تعذر تحميل تفاصيل الطلب: ":"Could not load request details: ","تعذر إرسال الطلب: ":"Could not submit request: ","تعذر إرسال الرد: ":"Could not send reply: ","تعذر تحديث الحالة: ":"Could not update status: ","لم يتم العثور على الطلب.":"Request not found.","طلب جديد":"New request","قيد المراجعة":"In review","تم الحل":"Resolved","مغلق":"Closed","جارٍ تحميل الطلبات…":"Loading requests…","جارٍ تحميل المراسلات…":"Loading messages…","طلبات الدعم":"Support requests","الرد من المطور":"Reply from developer","رد من المستخدم":"User reply","لا يمكن فتح هذا الطلب.":"This request cannot be opened.","إرفاق صورة أو فيديو أو ملف PDF (اختياري)":"Attach an image, video, or PDF (optional)","يمكنك إرفاق صورة أو فيديو أو PDF، بحد أقصى 20 ميغابايت. سيُعرض المرفق داخل مرسال.":"You can attach an image, video, or PDF up to 20 MB. It will be displayed inside Mersal.","حجم نص الرسائل داخل المحادثة":"Message text size in chats","عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يؤثر هذا الخيار في نصوص الرسائل داخل المحادثات فقط.":"This affects message text inside chats only.","إرسال الرسالة بالضغط على Enter":"Press Enter to send messages","عند التفعيل، يرسل Enter الرسالة، ويضيف Shift مع Enter سطرًا جديدًا.":"When enabled, Enter sends the message; Shift + Enter inserts a new line.","تأكيد قبل حذف الرسائل":"Confirm before deleting messages","عند إيقافه، تُحذف الرسائل مباشرة عند اختيار الحذف.":"When disabled, messages are deleted immediately when you choose Delete.","إظهار وقت الرسائل":"Show message timestamps","يؤدي إيقاف هذا الخيار إلى إخفاء أوقات الرسائل داخل المحادثة فقط.":"Turn this off to hide timestamps inside chats only.","تقليل المسافات بين الرسائل":"Compact message spacing","يعرض الرسائل بمسافات أقل لتسهيل استعراض المحادثات الطويلة.":"Use tighter spacing to make long conversations easier to browse.","تم تشغيل إظهار وقت الرسائل.":"Message timestamps are now shown.","تم إيقاف إظهار وقت الرسائل.":"Message timestamps are now hidden.","تم تفعيل العرض المضغوط للرسائل.":"Compact message spacing enabled.","تم إيقاف العرض المضغوط للرسائل.":"Compact message spacing disabled.","آخر ظهور":"Last seen","حالة الاتصال":"Online status","صورة الملف الشخصي":"Profile photo","النبذة":"About",
   "من يستطيع رؤية صورة ملفك الشخصي":"Who can see your profile photo","من يستطيع رؤية نبذتك":"Who can see your About",
@@ -513,6 +514,11 @@ const closeGroupAddButton = $("#close-group-add");
 const groupAdminTools = $("#group-admin-tools");
 const groupRenameInput = $("#group-rename-input");
 const groupRenameSaveButton = $("#group-rename-save");
+const groupDescriptionInput=$("#group-description-input"),groupDescriptionSaveButton=$("#group-description-save");
+const groupPhotoInput=$("#group-photo-input"),groupPhotoPreview=$("#group-photo-preview"),groupPhotoChooseButton=$("#group-photo-choose"),groupPhotoRemoveButton=$("#group-photo-remove"),groupPhotoSaveButton=$("#group-photo-save");
+const groupInfoPhotoRow=$("#group-info-photo-row"),groupInfoPhoto=$("#group-info-photo"),groupInfoDescriptionRow=$("#group-info-description-row"),groupInfoDescription=$("#group-info-description");
+let groupDescriptionSavedValue=null,groupDescriptionSaveInProgress=false,selectedGroupPhotoFile=null,groupPhotoSavedPath=null,groupPhotoRemoveRequested=false,groupPhotoSaveInProgress=false,groupPhotoPreviewObjectUrl=null;
+const groupPhotoUrlCache=new Map();
 const groupAddSearch = $("#group-add-search");
 const groupAddPeople = $("#group-add-people");
 const groupAddSelectedButton = $("#group-add-selected");
@@ -777,18 +783,25 @@ function setProfilePhotoPreview(url) {
 }
 function appendProfileAvatar(container, profile) {
   let imageUrl=null;
-  try {
-    const candidate=new URL(profile?.avatar_url || "");
-    if(candidate.protocol==="https:" || candidate.protocol==="http:") imageUrl=candidate.href;
-  } catch {}
+  try { const candidate=new URL(profile?.avatar_url || ""); if(candidate.protocol==="https:" || candidate.protocol==="http:") imageUrl=candidate.href; } catch {}
   if(!imageUrl) return null;
-  const avatar=document.createElement("span");
-  avatar.className="profile-avatar";
-  avatar.setAttribute("aria-hidden","true");
-  const image=document.createElement("img");
-  image.src=imageUrl; image.alt=""; image.loading="lazy"; image.referrerPolicy="no-referrer";
-  avatar.append(image);
-  container.append(avatar);
+  const avatar=document.createElement("span");avatar.className="profile-avatar";avatar.setAttribute("aria-hidden","true");
+  const image=document.createElement("img");image.src=imageUrl;image.alt="";image.loading="lazy";image.referrerPolicy="no-referrer";
+  avatar.append(image);container.append(avatar);return avatar;
+}
+async function resolveGroupPhotoUrl(path){
+  if(!path)return null;
+  const cached=groupPhotoUrlCache.get(path);if(cached&&cached.expiresAt>Date.now())return cached.url;
+  const {data,error}=await supabase.storage.from("mersal-group-photos").createSignedUrl(path,3600);
+  if(error||!data?.signedUrl){console.warn("تعذر تجهيز صورة المجموعة:",error?.message||"رابط الصورة غير متاح");return null;}
+  groupPhotoUrlCache.set(path,{url:data.signedUrl,expiresAt:Date.now()+3300000});return data.signedUrl;
+}
+function appendGroupAvatar(container,conversation){
+  if(!conversation?.group_photo_path)return null;
+  const avatar=document.createElement("span");avatar.className="group-avatar";avatar.setAttribute("aria-hidden","true");
+  const image=document.createElement("img");image.alt="";image.loading="lazy";image.referrerPolicy="no-referrer";
+  avatar.append(image);container.append(avatar);
+  void resolveGroupPhotoUrl(conversation.group_photo_path).then(url=>{if(url&&image.isConnected)image.src=url;else if(!url)avatar.remove();});
   return avatar;
 }
 function formatSupportDate(value) {
@@ -2499,7 +2512,7 @@ async function loadConversations() {
   if(membershipError) throw membershipError;
   const groupIds=(memberships||[]).map(m=>m.conversation_id);
   let groupRows=[];
-  if(groupIds.length){const result=await supabase.from("conversations").select("id,user_one,user_two,last_message_at,is_group,group_name,created_at").in("id",groupIds);if(result.error)throw result.error;groupRows=result.data||[];}
+  if(groupIds.length){const result=await supabase.from("conversations").select("id,user_one,user_two,last_message_at,is_group,group_name,group_description,group_photo_path,created_at").in("id",groupIds);if(result.error)throw result.error;groupRows=result.data||[];}
   conversations=[...new Map([...conversations,...groupRows].map(c=>[c.id,c])).values()].sort((a,b)=>new Date(b.last_message_at||b.created_at||0)-new Date(a.last_message_at||a.created_at||0));
   const {data:hiddenRows,error:hiddenError}=await supabase.from("conversation_hidden_for").select("conversation_id,hidden_at").eq("user_id",currentUser.id);
   if(hiddenError)throw hiddenError;
@@ -2579,7 +2592,7 @@ async function loadConversations() {
     button.type = "button";
     button.className = "conversation-button";
     button.dataset.partnerId = partnerId;
-    if(!conversation.is_group)appendProfileAvatar(button,person);
+    if(conversation.is_group)appendGroupAvatar(button,conversation);else appendProfileAvatar(button,person);
     button.append(safeText("span", "conversation-person-name", displayName(person)));
     const latestMessage = latestMessageByConversation.get(conversation.id);
     const unreadCount = unreadCountByConversation.get(conversation.id) || 0;
@@ -2762,7 +2775,17 @@ async function updateConversationInfo() {
   conversationInfoStatusRow.hidden = isGroup;
   if(conversationInfoPhotoRow)conversationInfoPhotoRow.hidden=isGroup;
   if(conversationInfoAboutRow)conversationInfoAboutRow.hidden=isGroup;
+  groupInfoPhotoRow.hidden=!isGroup||!activeConversation.group_photo_path;
+  groupInfoDescriptionRow.hidden=!isGroup;
   setConversationInfoValue(conversationInfoName, isGroup ? (activeConversation.group_name || "مجموعة") : displayName(activePartner));
+  if(isGroup){
+    setConversationInfoValue(groupInfoDescription,activeConversation.group_description?.trim()||"لا يوجد وصف للمجموعة.");
+    if(activeConversation.group_photo_path){
+      const url=await resolveGroupPhotoUrl(activeConversation.group_photo_path);
+      if(url){groupInfoPhoto.src=url;groupInfoPhoto.alt="صورة مجموعة "+(activeConversation.group_name||"");groupInfoPhoto.hidden=false;}
+      else{groupInfoPhoto.removeAttribute("src");groupInfoPhoto.alt="";groupInfoPhoto.hidden=true;}
+    }else{groupInfoPhoto.removeAttribute("src");groupInfoPhoto.alt="";groupInfoPhoto.hidden=true;}
+  }
   if (!isGroup) {
     const visibleProfile=await supabase.rpc("get_visible_profiles",{p_user_ids:[activePartner.id]});
     if(visibleProfile.error)console.warn("تعذر تحميل بيانات الحساب:",visibleProfile.error.message);
@@ -2794,6 +2817,13 @@ async function updateConversationInfo() {
   if(isGroup){activeBlockState={blockedByMe:false,blockedByThem:false};updateBlockedControls();}
   else await loadBlockState();
   selectedAdditionalMembers.clear(); groupRenameInput.value = activeConversation.group_name || "";
+  groupDescriptionInput.value=activeConversation.group_description||"";
+  groupDescriptionSavedValue=groupDescriptionInput.value.trim();updateGroupDescriptionSaveButton();
+  groupPhotoSavedPath=activeConversation.group_photo_path||null;selectedGroupPhotoFile=null;groupPhotoRemoveRequested=false;groupPhotoInput.value="";
+  if(groupPhotoPreviewObjectUrl){URL.revokeObjectURL(groupPhotoPreviewObjectUrl);groupPhotoPreviewObjectUrl=null;}
+  if(groupPhotoSavedPath){const previewUrl=await resolveGroupPhotoUrl(groupPhotoSavedPath);if(previewUrl){groupPhotoPreview.src=previewUrl;groupPhotoPreview.hidden=false;}else{groupPhotoPreview.removeAttribute("src");groupPhotoPreview.hidden=true;}}
+  else{groupPhotoPreview.removeAttribute("src");groupPhotoPreview.hidden=true;}
+  groupPhotoRemoveButton.hidden=!groupPhotoSavedPath;updateGroupPhotoSaveButton();
   updateGroupRenameSaveButton();
   const [{count,error},{data:preference,error:preferenceError}] = await Promise.all([
     supabase.from("messages").select("id",{count:"exact",head:true}).eq("conversation_id",activeConversation.id),
@@ -2938,6 +2968,66 @@ groupAddSelectedButton.addEventListener("click",async()=>{
   finally{groupAddSelectedButton.disabled=false;}
 });
 let groupRenameSaveInProgress = false;
+function updateGroupDescriptionSaveButton(){
+  groupDescriptionSaveButton.disabled=groupDescriptionSaveInProgress||!activeConversation?.is_group||activeConversation.user_one!==currentUser?.id||groupDescriptionInput.value.trim()===groupDescriptionSavedValue;
+}
+groupDescriptionInput.addEventListener("input",updateGroupDescriptionSaveButton);
+groupDescriptionSaveButton.addEventListener("click",async()=>{
+  if(!activeConversation?.is_group||activeConversation.user_one!==currentUser?.id||groupDescriptionSaveInProgress)return;
+  const description=groupDescriptionInput.value.trim();if(description===groupDescriptionSavedValue)return;
+  groupDescriptionSaveInProgress=true;updateGroupDescriptionSaveButton();
+  try{
+    const {data,error}=await supabase.from("conversations").update({group_description:description||null}).eq("id",activeConversation.id).eq("user_one",currentUser.id).select("id").maybeSingle();
+    if(error||!data)throw error||new Error("لا تملك صلاحية تعديل وصف المجموعة.");
+    activeConversation.group_description=description||null;groupDescriptionSavedValue=description;
+    await loadConversations();await updateConversationInfo();announce("تم حفظ وصف المجموعة.");
+  }catch(error){announce("تعذر حفظ وصف المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}
+  finally{groupDescriptionSaveInProgress=false;updateGroupDescriptionSaveButton();}
+});
+function updateGroupPhotoSaveButton(){
+  groupPhotoSaveButton.disabled=groupPhotoSaveInProgress||!activeConversation?.is_group||activeConversation.user_one!==currentUser?.id||(!selectedGroupPhotoFile&&!groupPhotoRemoveRequested);
+}
+groupPhotoChooseButton.addEventListener("click",()=>{if(activeConversation?.is_group&&activeConversation.user_one===currentUser?.id)groupPhotoInput.click();});
+groupPhotoInput.addEventListener("change",()=>{
+  const file=groupPhotoInput.files?.[0];if(!file)return;
+  if(!["image/jpeg","image/png","image/webp","image/gif"].includes(file.type)){announce("صورة المجموعة يجب أن تكون بصيغة JPG أو PNG أو WebP أو GIF.","error");groupPhotoInput.value="";return;}
+  if(file.size>50*1024*1024){announce("حجم صورة المجموعة أكبر من 50 ميغابايت.","error");groupPhotoInput.value="";return;}
+  selectedGroupPhotoFile=file;groupPhotoRemoveRequested=false;
+  if(groupPhotoPreviewObjectUrl)URL.revokeObjectURL(groupPhotoPreviewObjectUrl);
+  groupPhotoPreviewObjectUrl=URL.createObjectURL(file);groupPhotoPreview.src=groupPhotoPreviewObjectUrl;groupPhotoPreview.alt="معاينة صورة المجموعة المحددة";groupPhotoPreview.hidden=false;
+  groupPhotoRemoveButton.hidden=!groupPhotoSavedPath;updateGroupPhotoSaveButton();
+});
+groupPhotoRemoveButton.addEventListener("click",()=>{
+  if(!groupPhotoSavedPath)return;selectedGroupPhotoFile=null;groupPhotoRemoveRequested=true;groupPhotoInput.value="";
+  if(groupPhotoPreviewObjectUrl){URL.revokeObjectURL(groupPhotoPreviewObjectUrl);groupPhotoPreviewObjectUrl=null;}
+  groupPhotoPreview.removeAttribute("src");groupPhotoPreview.hidden=true;updateGroupPhotoSaveButton();
+});
+groupPhotoSaveButton.addEventListener("click",async()=>{
+  if(!activeConversation?.is_group||activeConversation.user_one!==currentUser?.id||groupPhotoSaveInProgress)return;
+  const conversationId=activeConversation.id,oldPath=groupPhotoSavedPath;groupPhotoSaveInProgress=true;updateGroupPhotoSaveButton();
+  let uploadedPath=null;
+  try{
+    let nextPath=oldPath;
+    if(selectedGroupPhotoFile){
+      const ext={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif"}[selectedGroupPhotoFile.type];
+      uploadedPath=conversationId+"/"+currentUser.id+"/"+crypto.randomUUID()+"."+ext;
+      const {error:uploadError}=await supabase.storage.from("mersal-group-photos").upload(uploadedPath,selectedGroupPhotoFile,{contentType:selectedGroupPhotoFile.type,upsert:false});
+      if(uploadError)throw uploadError;nextPath=uploadedPath;
+    }else if(groupPhotoRemoveRequested)nextPath=null;
+    const {data,error}=await supabase.from("conversations").update({group_photo_path:nextPath}).eq("id",conversationId).eq("user_one",currentUser.id).select("id").maybeSingle();
+    if(error||!data)throw error||new Error("لا تملك صلاحية تعديل صورة المجموعة.");
+    activeConversation.group_photo_path=nextPath;groupPhotoSavedPath=nextPath;selectedGroupPhotoFile=null;groupPhotoRemoveRequested=false;groupPhotoInput.value="";
+    if(groupPhotoPreviewObjectUrl){URL.revokeObjectURL(groupPhotoPreviewObjectUrl);groupPhotoPreviewObjectUrl=null;}
+    if(oldPath&&oldPath!==nextPath)await supabase.storage.from("mersal-group-photos").remove([oldPath]);
+    if(nextPath){groupPhotoUrlCache.delete(nextPath);const url=await resolveGroupPhotoUrl(nextPath);if(url){groupPhotoPreview.src=url;groupPhotoPreview.hidden=false;}else groupPhotoPreview.hidden=true;}
+    else{groupPhotoPreview.removeAttribute("src");groupPhotoPreview.hidden=true;}
+    groupPhotoRemoveButton.hidden=!nextPath;await loadConversations();await updateConversationInfo();
+    announce(nextPath?"تم حفظ صورة المجموعة.":"تمت إزالة صورة المجموعة.");
+  }catch(error){
+    if(uploadedPath)await supabase.storage.from("mersal-group-photos").remove([uploadedPath]).catch(()=>{});
+    announce("تعذر حفظ صورة المجموعة: "+(error.message||"حاول مرة أخرى."),"error");
+  }finally{groupPhotoSaveInProgress=false;updateGroupPhotoSaveButton();}
+});
 function updateGroupRenameSaveButton() {
   if (!groupRenameSaveButton) return;
   const original = String(activeConversation?.group_name || "").trim();
