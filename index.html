@@ -75,6 +75,75 @@
           </section>
           <p class="settings-credit">من تطوير fahed alzereeni</p>
         </div>
+        <div id="chats-settings-view" hidden>
+          <button id="back-chats-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
+          <section class="settings-section chats-options">
+            <label for="chat-message-text-size">حجم نص الرسائل داخل المحادثة</label>
+            <select id="chat-message-text-size" name="chat_message_text_size">
+              <option value="normal">عادي</option>
+              <option value="large">كبير</option>
+              <option value="xlarge">كبير جدًا</option>
+            </select>
+            <p class="settings-help">يؤثر هذا الخيار في نصوص الرسائل داخل المحادثات فقط.</p>
+            <label class="privacy-toggle"><input id="chat-enter-to-send" type="checkbox"> إرسال الرسالة بالضغط على Enter</label>
+            <p class="settings-help">عند التفعيل، يرسل Enter الرسالة، ويضيف Shift مع Enter سطرًا جديدًا.</p>
+            <label class="privacy-toggle"><input id="chat-confirm-delete" type="checkbox" checked> تأكيد قبل حذف الرسائل</label>
+            <p class="settings-help">عند إيقافه، تُحذف الرسائل مباشرة عند اختيار الحذف.</p>
+            <label class="privacy-toggle"><input id="chat-show-message-time" type="checkbox" checked> إظهار وقت الرسائل</label>
+            <p class="settings-help">يؤدي إيقاف هذا الخيار إلى إخفاء أوقات الرسائل داخل المحادثة فقط.</p>
+            <label class="privacy-toggle"><input id="chat-compact-layout" type="checkbox"> تقليل المسافات بين الرسائل</label>
+            <p class="settings-help">يعرض الرسائل بمسافات أقل لتسهيل استعراض المحادثات الطويلة.</p>
+          </section>
+        </div>
+        <section id="privacy-contact-picker" class="privacy-contact-picker" role="dialog" aria-modal="true" aria-labelledby="privacy-contact-picker-title" hidden>
+          <header class="privacy-contact-picker-header">
+            <button id="close-privacy-contact-picker" type="button" class="quiet-button">رجوع</button>
+  
+            <div id="privacy-contact-picker-title">اختيار جهات الاتصال</div>
+          </header>
+          <ul id="privacy-contact-picker-list" class="privacy-people-list" aria-label="جهات الاتصال"></ul>
+          <button id="save-privacy-contact-picker" type="button" class="primary-button" disabled>حفظ الاختيار</button>
+        </section>
+        <div id="profile-settings-view" hidden>
+          <button id="back-profile-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
+          <form id="settings-form" class="profile-settings-form">
+            <section class="settings-section profile-photo-editor">
+              <img id="profile-photo-preview" class="profile-photo-preview" alt="معاينة الصورة الشخصية" hidden>
+              <p id="profile-photo-placeholder" class="profile-photo-placeholder" hidden aria-hidden="true"></p>
+              <input id="profile-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة شخصية">
+              <button id="choose-profile-photo" type="button" class="quiet-button">رفع صورة شخصية</button>
+              <button id="remove-profile-photo" type="button" class="quiet-button" hidden>إزالة الصورة الشخصية</button>
+              <p id="profile-photo-help" class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 5 ميغابايت.</p>
+            </section>
+            <label for="settings-display-name">الاسم الظاهر للآخرين</label>
+            <input id="settings-display-name" name="display_name" type="text" minlength="2" maxlength="40" autocomplete="name" required>
+            <section class="settings-section account-about-section">
+              <label for="settings-about">نبذة عني</label>
+              <textarea id="settings-about" name="about" maxlength="200" rows="3" aria-describedby="settings-about-help" placeholder="اكتب نبذة قصيرة عنك"></textarea>
+              <p id="settings-about-help" class="settings-help">يمكن أن تصل النبذة إلى 200 حرف.</p>
+            </section>
+            <button id="save-settings" type="submit" class="primary-button" disabled>حفظ الملف الشخصي</button>
+          </form>
+        </div>
+        <div id="account-settings-view" hidden>
+          <button id="back-settings-home" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
+          <section class="settings-section account-information-section">
+            <p class="settings-section-title">معلومات الحساب</p>
+            <label for="settings-email">البريد الإلكتروني</label>
+            <input id="settings-email" type="email" readonly aria-describedby="email-help">
+            <p id="email-help" class="settings-help">البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.</p>
+            <p class="settings-help">طريقة تسجيل الدخول: Google</p>
+          </section>
+          <section class="settings-section account-security-section">
+            <p class="settings-section-title">إدارة الحساب</p>
+            <button id="account-logout-button" type="button" class="quiet-button account-action-button">تسجيل الخروج</button>
+            <button id="delete-account-button" type="button" class="danger-button account-action-button">حذف الحساب</button>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full-screen settings views are siblings of the scrollable settings card to prevent clipping. -->
         <div id="general-settings-view" hidden>
           <button id="back-general-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
           <section class="settings-section app-language-entry">
@@ -99,26 +168,6 @@
               <button id="enable-push-notifications" type="button" class="quiet-button push-notifications-button" aria-pressed="false">تشغيل إشعارات الهاتف</button>
               <p id="push-notifications-help" class="settings-help" role="status" aria-live="polite">لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.</p>
             </div>
-          </section>
-        </div>
-        <div id="chats-settings-view" hidden>
-          <button id="back-chats-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
-          <section class="settings-section chats-options">
-            <label for="chat-message-text-size">حجم نص الرسائل داخل المحادثة</label>
-            <select id="chat-message-text-size" name="chat_message_text_size">
-              <option value="normal">عادي</option>
-              <option value="large">كبير</option>
-              <option value="xlarge">كبير جدًا</option>
-            </select>
-            <p class="settings-help">يؤثر هذا الخيار في نصوص الرسائل داخل المحادثات فقط.</p>
-            <label class="privacy-toggle"><input id="chat-enter-to-send" type="checkbox"> إرسال الرسالة بالضغط على Enter</label>
-            <p class="settings-help">عند التفعيل، يرسل Enter الرسالة، ويضيف Shift مع Enter سطرًا جديدًا.</p>
-            <label class="privacy-toggle"><input id="chat-confirm-delete" type="checkbox" checked> تأكيد قبل حذف الرسائل</label>
-            <p class="settings-help">عند إيقافه، تُحذف الرسائل مباشرة عند اختيار الحذف.</p>
-            <label class="privacy-toggle"><input id="chat-show-message-time" type="checkbox" checked> إظهار وقت الرسائل</label>
-            <p class="settings-help">يؤدي إيقاف هذا الخيار إلى إخفاء أوقات الرسائل داخل المحادثة فقط.</p>
-            <label class="privacy-toggle"><input id="chat-compact-layout" type="checkbox"> تقليل المسافات بين الرسائل</label>
-            <p class="settings-help">يعرض الرسائل بمسافات أقل لتسهيل استعراض المحادثات الطويلة.</p>
           </section>
         </div>
         <div id="privacy-settings-view" hidden>
@@ -181,53 +230,7 @@
             <ul id="blocked-users-list" class="privacy-people-list" aria-label="الأشخاص المحظورون"></ul>
           </section>
         </div>
-        <section id="privacy-contact-picker" class="privacy-contact-picker" role="dialog" aria-modal="true" aria-labelledby="privacy-contact-picker-title" hidden>
-          <header class="privacy-contact-picker-header">
-            <button id="close-privacy-contact-picker" type="button" class="quiet-button">رجوع</button>
-  
-            <div id="privacy-contact-picker-title">اختيار جهات الاتصال</div>
-          </header>
-          <ul id="privacy-contact-picker-list" class="privacy-people-list" aria-label="جهات الاتصال"></ul>
-          <button id="save-privacy-contact-picker" type="button" class="primary-button" disabled>حفظ الاختيار</button>
-        </section>
-        <div id="profile-settings-view" hidden>
-          <button id="back-profile-settings" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
-          <form id="settings-form" class="profile-settings-form">
-            <section class="settings-section profile-photo-editor">
-              <img id="profile-photo-preview" class="profile-photo-preview" alt="معاينة الصورة الشخصية" hidden>
-              <p id="profile-photo-placeholder" class="profile-photo-placeholder" hidden aria-hidden="true"></p>
-              <input id="profile-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة شخصية">
-              <button id="choose-profile-photo" type="button" class="quiet-button">رفع صورة شخصية</button>
-              <button id="remove-profile-photo" type="button" class="quiet-button" hidden>إزالة الصورة الشخصية</button>
-              <p id="profile-photo-help" class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 5 ميغابايت.</p>
-            </section>
-            <label for="settings-display-name">الاسم الظاهر للآخرين</label>
-            <input id="settings-display-name" name="display_name" type="text" minlength="2" maxlength="40" autocomplete="name" required>
-            <section class="settings-section account-about-section">
-              <label for="settings-about">نبذة عني</label>
-              <textarea id="settings-about" name="about" maxlength="200" rows="3" aria-describedby="settings-about-help" placeholder="اكتب نبذة قصيرة عنك"></textarea>
-              <p id="settings-about-help" class="settings-help">يمكن أن تصل النبذة إلى 200 حرف.</p>
-            </section>
-            <button id="save-settings" type="submit" class="primary-button" disabled>حفظ الملف الشخصي</button>
-          </form>
-        </div>
-        <div id="account-settings-view" hidden>
-          <button id="back-settings-home" type="button" class="quiet-button settings-back">رجوع إلى الإعدادات</button>
-          <section class="settings-section account-information-section">
-            <p class="settings-section-title">معلومات الحساب</p>
-            <label for="settings-email">البريد الإلكتروني</label>
-            <input id="settings-email" type="email" readonly aria-describedby="email-help">
-            <p id="email-help" class="settings-help">البريد مرتبط بحساب Google ولا يمكن تغييره من هنا.</p>
-            <p class="settings-help">طريقة تسجيل الدخول: Google</p>
-          </section>
-          <section class="settings-section account-security-section">
-            <p class="settings-section-title">إدارة الحساب</p>
-            <button id="account-logout-button" type="button" class="quiet-button account-action-button">تسجيل الخروج</button>
-            <button id="delete-account-button" type="button" class="danger-button account-action-button">حذف الحساب</button>
-          </section>
-        </div>
-      </div>
-    </div>
+
 
     <div id="help-support-panel" class="help-support-overlay" role="dialog" aria-modal="true" aria-label="المساعدة والدعم" hidden>
       <div class="help-support-content">
