@@ -2416,12 +2416,17 @@ async function loadBlockState(){
 function isPrivateConversationBlocked(){
   return Boolean(activeConversation&&!activeConversation.is_group&&(activeBlockState.blockedByMe||activeBlockState.blockedByThem));
 }
+function updateSendButtonVisibility(){
+  if(!sendButton)return;
+  sendButton.hidden=!messageInput.value.trim();
+}
 function updateBlockedControls(){
   if(!blockPersonButton)return;
   const blocked=isPrivateConversationBlocked();
   messageInput.disabled=blocked;
   sendButton.disabled=blocked;
   attachButton.disabled=blocked;
+  updateSendButtonVisibility();
   if (confirmMessageScheduleButton) confirmMessageScheduleButton.disabled=blocked;
   voiceCallButton.disabled=blocked;
   messageInput.placeholder=blocked?"لا يمكن إرسال الرسائل بسبب الحظر.":"اكتب رسالتك هنا…";
@@ -3494,6 +3499,7 @@ confirmMessageScheduleButton.addEventListener("click", async () => {
     });
     if (error) throw error;
     messageInput.value = "";
+    updateSendButtonVisibility();
     replyingToMessage = null;
     replyingTo.hidden = true;
     closeMessageSchedulePanel();
@@ -3673,6 +3679,9 @@ for (const input of [imageFileInput, videoFileInput, documentFileInput]) {
     input.value = "";
   });
 }
+
+messageInput.addEventListener("input", updateSendButtonVisibility);
+updateSendButtonVisibility();
 
 messageInput.addEventListener("keydown", event => {
   if (event.key !== "Enter" || event.shiftKey || event.isComposing || !chatEnterToSendInput.checked) return;
