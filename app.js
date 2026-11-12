@@ -15,7 +15,7 @@ const $ = (selector) => document.querySelector(selector);
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
   "الملف الشخصي":"Profile","الحساب":"Account",
-  "عام":"General","الخصوصية":"Privacy","آخر ظهور":"Last seen","حالة الاتصال":"Online status","صورة الملف الشخصي":"Profile photo","النبذة":"About",
+  "عام":"General","الخصوصية":"Privacy","الدردشات":"Chats","حجم نص الرسائل داخل المحادثة":"Message text size in chats","عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يؤثر هذا الخيار في نصوص الرسائل داخل المحادثات فقط.":"This affects message text inside chats only.","إرسال الرسالة بالضغط على Enter":"Press Enter to send messages","عند التفعيل، يرسل Enter الرسالة، ويضيف Shift مع Enter سطرًا جديدًا.":"When enabled, Enter sends the message; Shift + Enter inserts a new line.","تأكيد قبل حذف الرسائل":"Confirm before deleting messages","عند إيقافه، تُحذف الرسائل مباشرة عند اختيار الحذف.":"When disabled, messages are deleted immediately when you choose Delete.","آخر ظهور":"Last seen","حالة الاتصال":"Online status","صورة الملف الشخصي":"Profile photo","النبذة":"About",
   "من يستطيع رؤية صورة ملفك الشخصي":"Who can see your profile photo","من يستطيع رؤية نبذتك":"Who can see your About",
   "نبذة عني":"About me","اكتب نبذة قصيرة عنك":"Write a short About","لا توجد نبذة متاحة.":"No About available.",
   "تتحكم هذه الإعدادات في ظهور صورة حسابك للأشخاص الآخرين.":"These settings control who can see your profile photo.",
@@ -310,6 +310,23 @@ const backGeneralSettingsButton = $("#back-general-settings");
 const privacySettingsView = $("#privacy-settings-view");
 const openPrivacySettingsButton = $("#open-privacy-settings");
 const backPrivacySettingsButton = $("#back-privacy-settings");
+const chatsSettingsView = $("#chats-settings-view");
+const openChatsSettingsButton = $("#open-chats-settings");
+const backChatsSettingsButton = $("#back-chats-settings");
+const chatMessageTextSizeSelect = $("#chat-message-text-size");
+const chatEnterToSendInput = $("#chat-enter-to-send");
+const chatConfirmDeleteInput = $("#chat-confirm-delete");
+function applyChatMessageTextSize(value) {
+  const size = ["normal", "large", "xlarge"].includes(value) ? value : "normal";
+  document.documentElement.dataset.chatMessageTextSize = size;
+  localStorage.setItem("mersal-chat-message-text-size", size);
+}
+function loadChatSettings() {
+  chatMessageTextSizeSelect.value = localStorage.getItem("mersal-chat-message-text-size") || "normal";
+  chatEnterToSendInput.checked = localStorage.getItem("mersal-chat-enter-to-send") === "true";
+  chatConfirmDeleteInput.checked = localStorage.getItem("mersal-chat-confirm-delete") !== "false";
+  applyChatMessageTextSize(chatMessageTextSizeSelect.value);
+}
 const privacyLastSeenSelect = $("#privacy-last-seen");
 const privacyOnlineSelect = $("#privacy-online");
 const privacyReadReceiptsInput = $("#privacy-read-receipts");
@@ -1460,6 +1477,7 @@ function openSettings() {
   settingsHome.hidden = false;
   generalSettingsView.hidden = true;
   privacySettingsView.hidden = true;
+  chatsSettingsView.hidden = true;
   profileSettingsView.hidden = true;
   accountSettingsView.hidden = true;
   settingsPanel.hidden = false;
@@ -1509,14 +1527,40 @@ settingsTabButton.addEventListener("click", openSettings);
 statusTabButton.addEventListener("click", openStatusTab);
 homeTabButton.addEventListener("click", returnToHomeTab);
 openGeneralSettingsButton.addEventListener("click", () => {
-  settingsHome.hidden = true; accountSettingsView.hidden = true; profileSettingsView.hidden = true; privacySettingsView.hidden = true;
+  settingsHome.hidden = true; accountSettingsView.hidden = true; profileSettingsView.hidden = true; privacySettingsView.hidden = true; chatsSettingsView.hidden = true;
   generalSettingsView.hidden = false; backGeneralSettingsButton.focus();
+});
+openChatsSettingsButton.addEventListener("click", () => {
+  settingsHome.hidden = true; accountSettingsView.hidden = true; profileSettingsView.hidden = true; privacySettingsView.hidden = true; generalSettingsView.hidden = true;
+  loadChatSettings();
+  chatsSettingsView.hidden = false;
+  chatMessageTextSizeSelect.focus();
+});
+backChatsSettingsButton.addEventListener("click", () => {
+  chatsSettingsView.hidden = true;
+  settingsHome.hidden = false;
+  openChatsSettingsButton.focus();
+});
+chatsSettingsView.addEventListener("keydown", event => {
+  if (event.key === "Escape") backChatsSettingsButton.click();
+});
+chatMessageTextSizeSelect.addEventListener("change", () => {
+  applyChatMessageTextSize(chatMessageTextSizeSelect.value);
+  announce("تم تحديث حجم نص الرسائل.");
+});
+chatEnterToSendInput.addEventListener("change", () => {
+  localStorage.setItem("mersal-chat-enter-to-send", String(chatEnterToSendInput.checked));
+  announce(chatEnterToSendInput.checked ? "تم تشغيل الإرسال بالضغط على Enter." : "تم إيقاف الإرسال بالضغط على Enter.");
+});
+chatConfirmDeleteInput.addEventListener("change", () => {
+  localStorage.setItem("mersal-chat-confirm-delete", String(chatConfirmDeleteInput.checked));
+  announce(chatConfirmDeleteInput.checked ? "تم تشغيل تأكيد حذف الرسائل." : "تم إيقاف تأكيد حذف الرسائل.");
 });
 privacySettingsView.addEventListener("keydown", event => {
   if (event.key === "Escape") backPrivacySettingsButton.click();
 });
 openPrivacySettingsButton.addEventListener("click", async () => {
-  settingsHome.hidden=true; accountSettingsView.hidden=true; profileSettingsView.hidden=true; generalSettingsView.hidden=true;
+  settingsHome.hidden=true; accountSettingsView.hidden=true; profileSettingsView.hidden=true; generalSettingsView.hidden=true; chatsSettingsView.hidden=true;
   privacySettingsView.hidden=false;
   try { await loadPrivacySettings(); privacyLastSeenSelect.focus(); }
   catch(error){announce("تعذر تحميل إعدادات الخصوصية: "+error.message,"error");}
@@ -1569,7 +1613,7 @@ backGeneralSettingsButton.addEventListener("click", () => {
   openGeneralSettingsButton.focus();
 });
 openProfileSettingsButton.addEventListener("click", async () => {
-  settingsHome.hidden = true; accountSettingsView.hidden = true; generalSettingsView.hidden = true; privacySettingsView.hidden = true;
+  settingsHome.hidden = true; accountSettingsView.hidden = true; generalSettingsView.hidden = true; privacySettingsView.hidden = true; chatsSettingsView.hidden = true;
   profileSettingsView.hidden = false;
   try { await loadOwnProfile(); displayNameInput.focus(); }
   catch (error) { announce("تعذر تحميل الملف الشخصي: " + error.message, "error"); }
@@ -1578,7 +1622,7 @@ backProfileSettingsButton.addEventListener("click", () => {
   profileSettingsView.hidden = true; settingsHome.hidden = false; openProfileSettingsButton.focus();
 });
 $("#open-account-settings").addEventListener("click", () => {
-  settingsHome.hidden = true; generalSettingsView.hidden = true; privacySettingsView.hidden = true; profileSettingsView.hidden = true;
+  settingsHome.hidden = true; generalSettingsView.hidden = true; privacySettingsView.hidden = true; chatsSettingsView.hidden = true; profileSettingsView.hidden = true;
   accountSettingsView.hidden = false; settingsEmail.focus();
 });
 $("#back-settings-home").addEventListener("click", () => { accountSettingsView.hidden = true; settingsHome.hidden = false; $("#open-account-settings").focus(); });
@@ -1644,6 +1688,12 @@ settingsPanel.addEventListener("keydown", (event) => {
     accountSettingsView.hidden = true;
     settingsHome.hidden = false;
     $("#open-account-settings").focus();
+    return;
+  }
+  if (!chatsSettingsView.hidden) {
+    chatsSettingsView.hidden = true;
+    settingsHome.hidden = false;
+    openChatsSettingsButton.focus();
     return;
   }
   if (!privacySettingsView.hidden) {
@@ -3086,7 +3136,7 @@ function closeMessageOptions(menu, toggle) {
 }
 async function deleteMessageForMe(message, item, menu, toggle) {
   if (!currentUser || !activeConversation) return;
-  if (!window.confirm("هل تريد حذف هذه الرسالة من محادثتك فقط؟")) return;
+  if (localStorage.getItem("mersal-chat-confirm-delete") !== "false" && !window.confirm("هل تريد حذف هذه الرسالة من محادثتك فقط؟")) return;
   const { error } = await supabase.from("message_hidden_for").insert({
     message_id: message.id, user_id: currentUser.id
   });
@@ -3104,7 +3154,7 @@ async function deleteMessageForEveryone(message, item, menu, toggle) {
     announce("يمكنك حذف رسائلك أنت لدى الجميع فقط.", "error");
     return;
   }
-  if (!window.confirm("سيتم حذف محتوى الرسالة من محادثتك ومحادثة الطرف الآخر. هل تريد المتابعة؟")) return;
+  if (localStorage.getItem("mersal-chat-confirm-delete") !== "false" && !window.confirm("سيتم حذف محتوى الرسالة من محادثتك ومحادثة الطرف الآخر. هل تريد المتابعة؟")) return;
   const { data, error } = await supabase.from("messages")
     .update({ is_deleted: true }).eq("id", message.id).eq("sender_id", currentUser.id)
     .select("id").maybeSingle();
@@ -3536,6 +3586,12 @@ for (const input of [imageFileInput, videoFileInput, documentFileInput]) {
     input.value = "";
   });
 }
+
+messageInput.addEventListener("keydown", event => {
+  if (event.key !== "Enter" || event.shiftKey || event.isComposing || !chatEnterToSendInput.checked) return;
+  event.preventDefault();
+  messageForm.requestSubmit();
+});
 
 messageForm.addEventListener("submit", async (event) => {
   event.preventDefault();
