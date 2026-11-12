@@ -18,7 +18,7 @@ function enhanceMersalMessages(root = document) {
     if (time?.dateTime) item.dataset.messageCreatedAt = time.dateTime;
     const messageText = item.classList.contains("message-deleted")
       ? "تم حذف هذه الرسالة"
-      : (body?.textContent || attachmentName?.textContent?.replace(/^📎\\s*/, "") || "مرفق").trim();
+      : (body?.textContent || attachmentName?.textContent?.replace(/^📎\s*/, "") || "مرفق").trim();
     const date = item.dataset.messageCreatedAt ? new Date(item.dataset.messageCreatedAt) : null;
     const spokenDateTime = date && !Number.isNaN(date.getTime())
       ? new Intl.DateTimeFormat("ar-JO", { dateStyle: "full", timeStyle: "short" }).format(date)
