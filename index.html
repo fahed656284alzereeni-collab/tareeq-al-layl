@@ -231,7 +231,7 @@
 
     <div id="help-support-panel" class="help-support-overlay" role="dialog" aria-modal="true" aria-label="المساعدة والدعم" hidden>
       <div class="help-support-content">
-        <section id="support-home-view" class="support-view">
+        <div id="support-home-view" class="support-view">
           <div class="support-view-header">
             <button id="close-help-support" type="button" class="quiet-button">رجوع إلى الإعدادات</button>
             <p class="support-screen-title">المساعدة والدعم</p>
@@ -250,9 +250,9 @@
             <details><summary>كيف أقترح ميزة؟</summary><p>اختر «اقتراح ميزة» واشرح فكرتك وكيف يمكن أن تفيد مستخدمي مرسال.</p></details>
             <details><summary>هل يمكنني متابعة رد المطور؟</summary><p>نعم، ستجد ردود فريق مرسال وتحديثات حالة الطلب داخل صفحة الطلب نفسها.</p></details>
           </div>
-        </section>
+        </div>
 
-        <section id="support-form-view" class="support-view" hidden>
+        <div id="support-form-view" class="support-view" hidden>
           <div class="support-view-header">
             <button id="support-form-back" type="button" class="quiet-button">رجوع للمساعدة والدعم</button>
             <p class="support-screen-title">إرسال طلب جديد</p>
@@ -277,17 +277,17 @@
             <p class="settings-help">سيظهر طلبك للمطور داخل صندوق الدعم في مرسال، ويمكنك متابعة الردود من طلباتك السابقة.</p>
             <button id="support-submit-request" type="submit" class="primary-button">إرسال الطلب</button>
           </form>
-        </section>
+        </div>
 
-        <section id="support-requests-view" class="support-view" hidden>
+        <div id="support-requests-view" class="support-view" hidden>
           <div class="support-view-header">
             <button id="support-requests-back" type="button" class="quiet-button">رجوع للمساعدة والدعم</button>
             <p class="support-screen-title">طلباتي السابقة</p>
           </div>
           <ul id="support-requests-list" class="support-request-list" aria-label="طلبات المساعدة السابقة" aria-live="polite"></ul>
-        </section>
+        </div>
 
-        <section id="support-admin-view" class="support-view" hidden>
+        <div id="support-admin-view" class="support-view" hidden>
           <div class="support-view-header">
             <button id="support-admin-back" type="button" class="quiet-button">رجوع للمساعدة والدعم</button>
             <p class="support-screen-title">صندوق الدعم للمطور</p>
@@ -304,9 +304,9 @@
             <button id="support-admin-refresh" type="button" class="quiet-button">تحديث الطلبات</button>
           </div>
           <ul id="support-admin-list" class="support-request-list" aria-label="جميع طلبات المستخدمين" aria-live="polite"></ul>
-        </section>
+        </div>
 
-        <section id="support-thread-view" class="support-view" hidden>
+        <div id="support-thread-view" class="support-view" hidden>
           <div class="support-view-header">
             <button id="support-thread-back" type="button" class="quiet-button">رجوع إلى الطلبات</button>
             <p id="support-thread-title" class="support-screen-title">تفاصيل الطلب</p>
@@ -335,7 +335,7 @@
             <textarea id="support-reply-input" rows="3" maxlength="4000" required placeholder="اكتب رسالتك لفريق الدعم"></textarea>
             <button id="support-send-reply" type="submit" class="primary-button">إرسال الرد</button>
           </form>
-        </section>
+        </div>
       </div>
     </div>
 
