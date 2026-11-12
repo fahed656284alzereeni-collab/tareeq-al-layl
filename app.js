@@ -2204,6 +2204,11 @@ async function loadConversations() {
     const visibleMap=new Map(resolvedProfiles.map(profile=>[profile.id,profile]));
     profileMap=new Map((profiles||[]).map(profile=>[profile.id,{...profile,...(visibleMap.get(profile.id)||{})}]));
   }
+  conversationList.replaceChildren();
+  if (!conversations.length) {
+    conversationList.append(safeText("li", "empty-item", "لا توجد محادثات بعد."));
+    return;
+  }
   const conversationIds = conversations.map(conversation => conversation.id);
   const [latestMessagesResult, unreadNotificationsResult] = await Promise.all([
     supabase.from("messages")
@@ -2241,11 +2246,6 @@ async function loadConversations() {
       .in("message_id", latestMessageIds);
     if (hiddenMessagesError) throw hiddenMessagesError;
     hiddenMessageIds = new Set((hiddenMessages || []).map(row => row.message_id));
-  }
-  conversationList.replaceChildren();
-  if (!conversations.length) {
-    conversationList.append(safeText("li", "empty-item", "لا توجد محادثات بعد."));
-    return;
   }
   for (const conversation of conversations) {
     const partnerId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
