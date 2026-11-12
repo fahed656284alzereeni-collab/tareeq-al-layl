@@ -1942,13 +1942,13 @@ html[dir="ltr"] #privacy-settings-view{text-align:left}
 .help-support-content { width: min(100%, 900px); min-height: 100%; margin: 0 auto; }
 .support-view { display: block; }
 .support-view-header { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; padding-bottom: 18px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
-.support-view-header h1, .support-view-header h2 { margin: 0; font-size: clamp(1.25rem, 3vw, 1.7rem); }
+.support-view-header .support-screen-title { margin: 0; font-size: clamp(1.25rem, 3vw, 1.7rem); font-weight: 800; line-height: 1.5; }
 .support-view-header button { min-width: 190px; min-height: 48px; }
 .support-intro { line-height: 1.9; color: var(--muted); }
 .support-actions-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin: 22px 0; }
 .support-actions-grid button { min-height: 66px; text-align: right; }
 .support-faq-section { margin-top: 28px; }
-.support-faq-section h2 { font-size: 1.15rem; }
+.support-faq-section .support-section-title { margin: 0 0 12px; font-size: 1.15rem; font-weight: 800; line-height: 1.6; }
 .support-faq-section details { padding: 15px 16px; margin: 10px 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised); }
 .support-faq-section summary { min-height: 30px; cursor: pointer; font-weight: 800; line-height: 1.8; }
 .support-faq-section details p { color: var(--muted); line-height: 1.9; margin-bottom: 0; }
@@ -1979,7 +1979,7 @@ html[dir="ltr"] #privacy-settings-view{text-align:left}
 .support-ticket-summary { display: grid; gap: 8px; padding: 16px; margin: 16px 0; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-raised); }
 .support-ticket-summary p { margin: 0; line-height: 1.8; overflow-wrap: anywhere; }
 #support-request-description { white-space: pre-wrap; }
-.support-thread-view h3 { font-size: 1.1rem; }
+.support-thread-view .support-section-title { margin: 0 0 10px; font-size: 1.1rem; font-weight: 800; line-height: 1.6; }
 .support-message { display: grid; gap: 6px; max-width: 88%; padding: 13px 15px; border: 1px solid var(--border); border-radius: 13px; background: var(--surface-raised); }
 .support-message.is-own { margin-inline-start: auto; }
 .support-message.is-other { margin-inline-end: auto; }
