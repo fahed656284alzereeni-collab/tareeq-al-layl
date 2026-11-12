@@ -2214,6 +2214,7 @@ async function loadConversations() {
     supabase.from("messages")
       .select("id,conversation_id,sender_id,body,created_at,is_deleted")
       .in("conversation_id", conversationIds)
+      .eq("is_deleted", false)
       .order("created_at", { ascending: false })
       .limit(1000),
     supabase.from("notifications")
