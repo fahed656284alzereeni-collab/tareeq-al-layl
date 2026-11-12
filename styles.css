@@ -2014,3 +2014,16 @@ html[dir="ltr"] #privacy-settings-view{text-align:left}
 .support-attachment-pdf { display: block; width: 100%; height: min(70vh, 720px); border: 1px solid var(--border); border-radius: 10px; background: #fff; }
 .support-form input[type="file"] { min-height: 54px; padding: 10px; border: 1px dashed var(--border); border-radius: 12px; background: var(--surface-raised); color: var(--text); font: inherit; }
 :root[data-theme="light"] .support-form input[type="file"] { background: #fff; color: #20334d; }
+
+
+/* Group identity: photos and descriptions for all members, with creator-only editing. */
+.group-avatar,.group-info-photo,.group-photo-preview{display:inline-flex;align-items:center;justify-content:center;overflow:hidden;border:1px solid var(--border);background:var(--surface-raised);border-radius:50%;flex:0 0 auto}
+.group-avatar{width:42px;height:42px;margin-inline-end:10px}
+.group-avatar img{width:100%;height:100%;object-fit:cover}
+.group-info-photo,.group-photo-preview{width:112px;height:112px;object-fit:cover}
+.group-photo-preview{border-radius:16px}
+.group-admin-tools textarea{width:100%;min-height:90px;resize:vertical;padding:13px 15px;border:1px solid var(--border);border-radius:12px;background:var(--surface);color:var(--text);font:inherit;line-height:1.7}
+.group-photo-editor{display:grid;gap:10px;margin-top:12px;padding-top:16px;border-top:1px solid var(--border)}
+.group-photo-editor button{width:100%;min-height:50px}
+#group-info-description{white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:720px){.group-avatar{width:38px;height:38px}.group-info-photo,.group-photo-preview{width:104px;height:104px}}
