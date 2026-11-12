@@ -941,7 +941,7 @@ async function renderSupportAttachment(request) {
     image.src = data.signedUrl;
     image.alt = "المرفق المرفوع: " + (request.attachment_name || "صورة");
     host.append(image);
-  } else if (mime === "video/mp4") {
+  } else if (mime.startsWith("video/")) {
     const video = document.createElement("video");
     video.className = "support-attachment-video";
     video.controls = true;
@@ -1021,7 +1021,7 @@ supportRequestForm.addEventListener("submit", async event => {
   };
   try {
     if (file) {
-      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf", "video/mp4"];
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "application/pdf", "video/mp4", "video/quicktime"];
       if (!allowedTypes.includes(file.type)) throw new Error("نوع الملف غير مدعوم.");
       if (file.size > 20 * 1024 * 1024) throw new Error("حجم المرفق يتجاوز 20 ميغابايت.");
       const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "attachment";
