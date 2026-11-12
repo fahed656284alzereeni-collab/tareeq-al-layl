@@ -1178,6 +1178,13 @@ function startNotificationsRealtime() {
         announce("وصلك إشعار جديد، لكن تعذر تحديث القائمة: " + error.message, "error");
       }
     })
+    .on("postgres_changes", {
+      event: "UPDATE", schema: "public", table: "messages"
+    }, payload => {
+      if (payload.new?.is_deleted) {
+        void loadConversations().catch(error => console.warn("تعذر تحديث معاينة الرسالة المحذوفة:", error));
+      }
+    })
     .subscribe();
 }
 function closeNotifications() {
@@ -2214,7 +2221,6 @@ async function loadConversations() {
     supabase.from("messages")
       .select("id,conversation_id,sender_id,body,created_at,is_deleted")
       .in("conversation_id", conversationIds)
-      .eq("is_deleted", false)
       .order("created_at", { ascending: false })
       .limit(1000),
     supabase.from("notifications")
@@ -2261,10 +2267,10 @@ async function loadConversations() {
     const latestMessage = latestMessageByConversation.get(conversation.id);
     const unreadCount = unreadCountByConversation.get(conversation.id) || 0;
     let lastMessageText = "لا توجد رسائل بعد";
-    if (latestMessage && !hiddenMessageIds.has(latestMessage.id)) {
-      lastMessageText = latestMessage.is_deleted
-        ? "تم حذف هذه الرسالة"
-        : (String(latestMessage.body || "").trim() || "رسالة غير نصية");
+    if (latestMessage?.is_deleted) {
+      lastMessageText = "تم حذف هذه الرسالة";
+    } else if (latestMessage && !hiddenMessageIds.has(latestMessage.id)) {
+      lastMessageText = String(latestMessage.body || "").trim() || "رسالة غير نصية";
       if (latestMessage.sender_id === currentUser.id) lastMessageText = "أنت: " + lastMessageText;
     } else if (latestMessage) {
       lastMessageText = "آخر رسالة مخفية";
@@ -3245,6 +3251,7 @@ async function deleteMessageForEveryone(message, item, menu, toggle) {
   item.replaceChildren(safeText("p", "message-body deleted-message", "تم حذف هذه الرسالة."));
   item.classList.add("message-deleted");
   closeMessageOptions(menu, toggle);
+  void loadConversations().catch(error => console.warn("تعذر تحديث معاينة المحادثة بعد الحذف:", error));
   announce("تم الحذف.", "success");
 }
 function appendMessage(message) {
