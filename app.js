@@ -440,6 +440,8 @@ const pushNotificationsHelp = $("#push-notifications-help");
 let settingsReturnFocus = null;
 const newChatButton=$("#new-chat-button"),newChatPanel=$("#new-chat-panel"),closeNewChatButton=$("#close-new-chat");
 const privateChatView=$("#private-chat-view"),groupChatView=$("#group-chat-view"),groupNameInput=$("#group-name");
+const newGroupDescriptionInput=$("#new-group-description"),newGroupPhotoInput=$("#new-group-photo-input"),newGroupPhotoPreview=$("#new-group-photo-preview"),newGroupPhotoChooseButton=$("#new-group-photo-choose"),newGroupPhotoRemoveButton=$("#new-group-photo-remove");
+let selectedGroupCreationPhoto=null,newGroupPhotoPreviewUrl=null;
 const groupPeopleSearch=$("#group-people-search"),groupPeopleList=$("#group-people-list"),createGroupButton=$("#create-group-button");
 const newPrivateChatButton=$("#new-private-chat"),newGroupChatButton=$("#new-group-chat");
 let selectedGroupMembers=new Set(),newChatReturnFocus=null;
@@ -2283,15 +2285,30 @@ function closeNewChat(){newChatPanel.hidden=true;if(newChatReturnFocus?.isConnec
 newChatButton.addEventListener("click",openNewChat);closeNewChatButton.addEventListener("click",closeNewChat);
 newChatPanel.addEventListener("keydown",e=>{if(e.key==="Escape")closeNewChat();});
 newPrivateChatButton.addEventListener("click",()=>{privateChatView.hidden=false;groupChatView.hidden=true;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;peopleSearch.value="";renderPeople();peopleSearch.focus();});
-newGroupChatButton.addEventListener("click",()=>{selectedGroupMembers.clear();groupNameInput.value="";groupPeopleSearch.value="";privateChatView.hidden=true;groupChatView.hidden=false;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;renderGroupPeople();groupNameInput.focus();});
+newGroupChatButton.addEventListener("click",()=>{selectedGroupMembers.clear();groupNameInput.value="";newGroupDescriptionInput.value="";groupPeopleSearch.value="";selectedGroupCreationPhoto=null;newGroupPhotoInput.value="";if(newGroupPhotoPreviewUrl){URL.revokeObjectURL(newGroupPhotoPreviewUrl);newGroupPhotoPreviewUrl=null;}newGroupPhotoPreview.removeAttribute("src");newGroupPhotoPreview.hidden=true;newGroupPhotoRemoveButton.hidden=true;privateChatView.hidden=true;groupChatView.hidden=false;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;renderGroupPeople();groupNameInput.focus();});
 peopleSearch.addEventListener("input",renderPeople);groupPeopleSearch.addEventListener("input",renderGroupPeople);
+newGroupPhotoChooseButton.addEventListener("click",()=>newGroupPhotoInput.click());
+newGroupPhotoInput.addEventListener("change",()=>{
+ const file=newGroupPhotoInput.files?.[0];if(!file)return;
+ if(!["image/jpeg","image/png","image/webp","image/gif"].includes(file.type)){announce("صورة المجموعة يجب أن تكون بصيغة JPG أو PNG أو WebP أو GIF.","error");newGroupPhotoInput.value="";return;}
+ if(file.size>50*1024*1024){announce("حجم صورة المجموعة يجب ألا يتجاوز 50 ميغابايت.","error");newGroupPhotoInput.value="";return;}
+ selectedGroupCreationPhoto=file;
+ if(newGroupPhotoPreviewUrl)URL.revokeObjectURL(newGroupPhotoPreviewUrl);
+ newGroupPhotoPreviewUrl=URL.createObjectURL(file);newGroupPhotoPreview.src=newGroupPhotoPreviewUrl;newGroupPhotoPreview.alt="معاينة صورة المجموعة المحددة";newGroupPhotoPreview.hidden=false;newGroupPhotoRemoveButton.hidden=false;
+});
+newGroupPhotoRemoveButton.addEventListener("click",()=>{
+ selectedGroupCreationPhoto=null;newGroupPhotoInput.value="";
+ if(newGroupPhotoPreviewUrl){URL.revokeObjectURL(newGroupPhotoPreviewUrl);newGroupPhotoPreviewUrl=null;}
+ newGroupPhotoPreview.removeAttribute("src");newGroupPhotoPreview.hidden=true;newGroupPhotoRemoveButton.hidden=true;
+});
 createGroupButton.addEventListener("click",async()=>{
- if(!currentUser)return;const ids=[...selectedGroupMembers],name=groupNameInput.value.trim();
+ if(!currentUser)return;const ids=[...selectedGroupMembers],name=groupNameInput.value.trim(),description=newGroupDescriptionInput.value.trim();
  if(!name){announce("اكتب اسم المجموعة.","error");groupNameInput.focus();return;}
+ if(description.length>500){announce("وصف المجموعة يجب ألا يتجاوز 500 حرف.","error");newGroupDescriptionInput.focus();return;}
  if(ids.length<1){announce("اختر شخصًا واحدًا على الأقل لإنشاء المجموعة.","error");return;}
  createGroupButton.disabled=true;
  try{
-  const {data:conv,error}=await supabase.from("conversations").insert({user_one:currentUser.id,user_two:ids[0],is_group:true,group_name:name}).select("id,user_one,user_two,last_message_at,is_group,group_name,created_at").single();if(error)throw error;
+  const {data:conv,error}=await supabase.from("conversations").insert({user_one:currentUser.id,user_two:ids[0],is_group:true,group_name:name,group_description:description||null}).select("id,user_one,user_two,last_message_at,is_group,group_name,group_description,group_photo_path,created_at").single();if(error)throw error;
   const rows=[currentUser.id,...ids].map(user_id=>({conversation_id:conv.id,user_id,role:user_id===currentUser.id?"admin":"member"}));
   const {error:memberError}=await supabase.from("conversation_members").insert(rows);
   if(memberError){
@@ -2299,8 +2316,28 @@ createGroupButton.addEventListener("click",async()=>{
     if(memberError.code==="42501")throw new Error("تعذر إضافة أحد الأشخاص؛ قد تمنع إعدادات الخصوصية أو الحظر إضافته مباشرة إلى المجموعة.");
     throw memberError;
   }
+  let photoWarning="";
+  if(selectedGroupCreationPhoto){
+    let uploadedPath=null;
+    try{
+      const ext={"image/jpeg":"jpg","image/png":"png","image/webp":"webp","image/gif":"gif"}[selectedGroupCreationPhoto.type];
+      uploadedPath=conv.id+"/"+currentUser.id+"/"+crypto.randomUUID()+"."+ext;
+      const {error:uploadError}=await supabase.storage.from("mersal-group-photos").upload(uploadedPath,selectedGroupCreationPhoto,{contentType:selectedGroupCreationPhoto.type,upsert:false});
+      if(uploadError)throw uploadError;
+      const {data:updateData,error:updateError}=await supabase.from("conversations").update({group_photo_path:uploadedPath}).eq("id",conv.id).eq("user_one",currentUser.id).select("id").maybeSingle();
+      if(updateError||!updateData)throw updateError||new Error("تعذر ربط الصورة بالمجموعة.");
+      conv.group_photo_path=uploadedPath;
+    }catch(photoError){
+      if(uploadedPath)await supabase.storage.from("mersal-group-photos").remove([uploadedPath]).catch(()=>{});
+      photoWarning=" تم إنشاء المجموعة، لكن تعذر حفظ الصورة: "+(photoError.message||"حاول مرة أخرى.");
+    }
+  }
   const {data:person,error:profileError}=await supabase.from("profiles").select("id,display_name").eq("id",ids[0]).single();if(profileError)throw profileError;
-  await selectConversation(conv,{...person,display_name:name});await loadConversations();closeNewChat();announce("تم إنشاء المجموعة.","success");
+  selectedGroupCreationPhoto=null;newGroupPhotoInput.value="";
+  if(newGroupPhotoPreviewUrl){URL.revokeObjectURL(newGroupPhotoPreviewUrl);newGroupPhotoPreviewUrl=null;}
+  newGroupPhotoPreview.removeAttribute("src");newGroupPhotoPreview.hidden=true;newGroupPhotoRemoveButton.hidden=true;
+  await selectConversation(conv,{...person,display_name:name});await loadConversations();closeNewChat();
+  announce(photoWarning||"تم إنشاء المجموعة.","success");
  }catch(error){announce("تعذر إنشاء المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}finally{createGroupButton.disabled=false;}
 });
 
@@ -2503,7 +2540,7 @@ statusViewerPanel.addEventListener("keydown", event => { if (event.key === "Esca
 
 async function loadConversations() {
   const { data, error } = await supabase.from("conversations")
-    .select("id,user_one,user_two,last_message_at,is_group,group_name,created_at")
+    .select("id,user_one,user_two,last_message_at,is_group,group_name,group_description,group_photo_path,created_at")
     .or("user_one.eq." + currentUser.id + ",user_two.eq." + currentUser.id)
     .order("last_message_at", { ascending: false });
   if (error) throw error;
