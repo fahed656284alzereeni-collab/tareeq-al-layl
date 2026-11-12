@@ -283,6 +283,9 @@
             <input id="support-subject" name="subject" type="text" minlength="3" maxlength="120" required placeholder="اكتب عنوانًا مختصرًا">
             <label for="support-description">التفاصيل</label>
             <textarea id="support-description" name="description" rows="6" maxlength="5000" required placeholder="اشرح طلبك أو المشكلة بالتفصيل"></textarea>
+            <label for="support-attachment">إرفاق صورة أو فيديو أو ملف PDF (اختياري)</label>
+            <input id="support-attachment" name="attachment" type="file" accept="image/jpeg,image/png,image/webp,application/pdf,video/mp4">
+            <p class="settings-help">يمكنك إرفاق صورة أو فيديو أو PDF، بحد أقصى 20 ميغابايت. سيُعرض المرفق داخل مرسال.</p>
             <p class="settings-help">سيظهر طلبك للمطور داخل صندوق الدعم في مرسال، ويمكنك متابعة الردود من طلباتك السابقة.</p>
             <button id="support-submit-request" type="submit" class="primary-button">إرسال الطلب</button>
           </form>
@@ -325,6 +328,7 @@
             <p id="support-ticket-category"></p>
             <p id="support-ticket-status"></p>
             <p id="support-request-description"></p>
+            <div id="support-request-attachment" class="support-request-attachment" hidden></div>
           </div>
           <div id="support-admin-status-tools" class="support-admin-tools" hidden>
             <label for="support-status-select">تحديث حالة الطلب</label>

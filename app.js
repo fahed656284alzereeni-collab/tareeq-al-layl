@@ -298,6 +298,7 @@ const supportAdminView = $("#support-admin-view");
 const supportThreadView = $("#support-thread-view");
 const supportAdminButton = $("#support-admin-button");
 const supportRequestForm = $("#support-request-form");
+const supportAttachmentInput = $("#support-attachment");
 const supportReplyForm = $("#support-reply-form");
 const supportAdminFilter = $("#support-admin-filter");
 const supportStatusSelect = $("#support-status-select");
@@ -836,12 +837,17 @@ async function refreshSupportAdminBadge() {
 }
 function startSupportRealtime() {
   if (!currentUser) return;
-  if (supportRealtimeChannel) supabase.removeChannel(supportRealtimeChannel);
+  if (supportRealtimeChannel) return;
   const requestConfig = { event: "*", schema: "public", table: "support_requests" };
   if (!isMersalDeveloper()) requestConfig.filter = "user_id=eq." + currentUser.id;
   supportRealtimeChannel = supabase.channel("mersal-support-" + currentUser.id)
-    .on("postgres_changes", requestConfig, () => {
-      if (isMersalDeveloper()) void refreshSupportAdminBadge();
+    .on("postgres_changes", requestConfig, payload => {
+      if (isMersalDeveloper()) {
+        void refreshSupportAdminBadge();
+        if (payload.eventType === "INSERT" && payload.new?.user_id !== currentUser.id) {
+          announce("وصل طلب دعم جديد إلى صندوق المطور.");
+        }
+      }
       if (!helpSupportPanel.hidden) {
         if (!supportAdminView.hidden) void loadSupportRequests(true);
         else if (!supportRequestsView.hidden) void loadSupportRequests(false);
@@ -919,6 +925,44 @@ async function loadSupportMessages(requestId) {
     list.append(item);
   }
 }
+async function renderSupportAttachment(request) {
+  const host = $("#support-request-attachment");
+  host.replaceChildren();
+  host.hidden = true;
+  if (!request?.attachment_path) return;
+  const { data, error } = await supabase.storage.from("mersal-support-attachments")
+    .createSignedUrl(request.attachment_path, 900);
+  if (error || !data?.signedUrl) {
+    host.append(safeText("p", "support-attachment-name", "تعذر تحميل المرفق داخل مرسال."));
+    host.hidden = false;
+    return;
+  }
+  host.append(safeText("p", "support-attachment-name", "المرفق: " + (request.attachment_name || "ملف مرفق")));
+  const mime = request.attachment_type || "";
+  if (mime.startsWith("image/")) {
+    const image = document.createElement("img");
+    image.className = "support-attachment-image";
+    image.src = data.signedUrl;
+    image.alt = "المرفق المرفوع: " + (request.attachment_name || "صورة");
+    host.append(image);
+  } else if (mime === "video/mp4") {
+    const video = document.createElement("video");
+    video.className = "support-attachment-video";
+    video.controls = true;
+    video.playsInline = true;
+    video.preload = "metadata";
+    video.src = data.signedUrl;
+    video.setAttribute("aria-label", "الفيديو المرفق: " + (request.attachment_name || "فيديو"));
+    host.append(video);
+  } else if (mime === "application/pdf") {
+    const frame = document.createElement("iframe");
+    frame.className = "support-attachment-pdf";
+    frame.src = data.signedUrl;
+    frame.title = "معاينة ملف PDF داخل مرسال: " + (request.attachment_name || "ملف PDF");
+    host.append(frame);
+  }
+  host.hidden = false;
+}
 async function openSupportRequest(requestId, origin = "requests") {
   const { data, error } = await supabase.from("support_requests").select("*").eq("id", requestId).maybeSingle();
   if (error || !data) { announce("لا يمكن فتح هذا الطلب.", "error"); return; }
@@ -929,6 +973,7 @@ async function openSupportRequest(requestId, origin = "requests") {
   $("#support-ticket-category").textContent = "نوع الطلب: " + (supportCategoryLabels[data.category] || "أخرى");
   $("#support-ticket-status").textContent = "الحالة: " + (supportStatusLabels[data.status] || data.status);
   $("#support-request-description").textContent = data.description;
+  await renderSupportAttachment(data);
   supportAdminStatusTools.hidden = !isMersalDeveloper();
   $("#support-reply-form").hidden = data.status === "closed" && !isMersalDeveloper();
   supportStatusSelect.value = data.status;
@@ -967,20 +1012,43 @@ supportRequestForm.addEventListener("submit", async event => {
   if (!currentUser) return;
   const button = $("#support-submit-request");
   button.disabled = true;
+  const file = supportAttachmentInput.files?.[0] || null;
+  const requestId = crypto.randomUUID();
+  let uploadedPath = null;
+  let requestCreated = false;
   const payload = {
+    id: requestId,
     user_id: currentUser.id,
     category: $("#support-category").value,
     subject: $("#support-subject").value.trim(),
     description: $("#support-description").value.trim()
   };
   try {
+    if (file) {
+      const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf", "video/mp4"];
+      if (!allowedTypes.includes(file.type)) throw new Error("نوع الملف غير مدعوم.");
+      if (file.size > 20 * 1024 * 1024) throw new Error("حجم المرفق يتجاوز 20 ميغابايت.");
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-100) || "attachment";
+      uploadedPath = currentUser.id + "/" + requestId + "/" + Date.now() + "-" + safeName;
+      const upload = await supabase.storage.from("mersal-support-attachments").upload(uploadedPath, file, {
+        cacheControl: "3600", upsert: false, contentType: file.type
+      });
+      if (upload.error) throw upload.error;
+      payload.attachment_path = uploadedPath;
+      payload.attachment_name = file.name;
+      payload.attachment_type = file.type;
+    }
     const { data, error } = await supabase.from("support_requests").insert(payload).select("*").single();
     if (error) throw error;
+    requestCreated = true;
     supportRequestForm.reset();
     announce("تم إرسال طلبك بنجاح.");
     await openSupportRequest(data.id, "created");
     if (isMersalDeveloper()) void refreshSupportAdminBadge();
   } catch (error) {
+    if (uploadedPath && !requestCreated) {
+      await supabase.storage.from("mersal-support-attachments").remove([uploadedPath]).catch(() => {});
+    }
     announce("تعذر إرسال الطلب: " + (error.message || "حاول مرة أخرى."), "error");
   } finally { button.disabled = false; }
 });
@@ -1133,6 +1201,10 @@ async function handleSession(session, authEvent = "UNKNOWN") {
     }
     await startPresence();
     startNotificationsRealtime();
+    if (isMersalDeveloper()) {
+      void refreshSupportAdminBadge();
+      startSupportRealtime();
+    }
     if (!alreadyLoadedForThisUser && authEvent !== "TOKEN_REFRESHED") {
       announce("تم تسجيل الدخول. يمكنك بدء محادثة جديدة.");
     }
