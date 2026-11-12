@@ -3260,7 +3260,6 @@ function appendMessage(message) {
   const item = document.createElement("li");
   item.className = message.sender_id === currentUser.id ? "message mine" : "message theirs";
   item.dataset.messageId = message.id;
-  item.dataset.messageCreatedAt = message.created_at;
   if (message.is_deleted) {
     item.classList.add("message-deleted");
     item.append(safeText("p", "message-body deleted-message", "تم حذف هذه الرسالة."));
