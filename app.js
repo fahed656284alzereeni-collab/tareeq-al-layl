@@ -1597,7 +1597,7 @@ async function loadSupportMessages(requestId) {
     const author = message.author_id === currentUser.id ? "أنت" :
       (isMersalDeveloper() ? "صاحب الطلب" : "المطور");
     item.append(safeText("strong", "support-message-author", author));
-    item.append(safeText("p", "support-message-body", message.body));
+    item.append(safeText("p", "support-message-body", normalizeMessageLineBreaks(message.body)));
     item.append(safeText("time", "support-message-time", formatSupportDate(message.created_at)));
     list.append(item);
   }
@@ -4536,14 +4536,17 @@ async function deleteMessageForEveryone(message, item, menu, toggle) {
   announce("تم الحذف.", "success");
 }
 
+function normalizeMessageLineBreaks(value) {
+  return String(value ?? "").replace(/\\n/g, "\n").replace(/\r\n?/g, "\n");
+}
 function parsePollMessageBody(body) {
-  const raw = String(body || "");
+  const raw = normalizeMessageLineBreaks(body);
   const match = raw.match(/(?:^|\n)MERSAL_POLL:([0-9a-f-]{36})\s*$/i);
   if (!match) return null;
   return { pollId: match[1], preview: raw.slice(0, match.index).trim() };
 }
 function getMessagePreviewText(body) {
-  const raw = String(body || "");
+  const raw = normalizeMessageLineBreaks(body);
   const pollMessage = parsePollMessageBody(raw);
   if (pollMessage) return pollMessage.preview || "استطلاع رأي";
   const attachmentMarker = "MERSAL_ATTACHMENT:";
@@ -4556,7 +4559,7 @@ function getMessagePreviewText(body) {
       return "[مرفق]";
     }
   }
-  return raw.replace(/\\n/g, "\n");
+  return raw.trim();
 }
 async function renderConversationPoll(pollId, host, messageId, focusOptionIndex = null) {
   if (!host?.isConnected) return;
@@ -4932,7 +4935,7 @@ async function loadScheduledMessages() {
   for (const scheduled of data) {
     const item = document.createElement("li");
     item.className = "scheduled-message-item";
-    const body = safeText("p", "scheduled-message-body", scheduled.body);
+    const body = safeText("p", "scheduled-message-body", normalizeMessageLineBreaks(scheduled.body));
     const time = safeText("p", "scheduled-message-time", "موعد الإرسال: " + new Intl.DateTimeFormat("ar-JO", { dateStyle: "long", timeStyle: "short" }).format(new Date(scheduled.scheduled_at)));
     const cancel = safeText("button", "danger-button", "إلغاء الجدولة");
     cancel.type = "button";
