@@ -459,7 +459,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   });
 
 
-  // Download direct audio/video files only; no platform scraping or third-party downloader services.
+  // Download only direct media URLs that the source makes available without bypassing platform controls.
   const videoUrlInput = $("#video-url-input");
   const videoAnalyzeButton = $("#video-analyze-button");
   const videoDownloadButton = $("#video-download-button");
@@ -469,10 +469,12 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   const videoStatus = $("#video-downloader-status");
   let checkedMediaUrl = "";
   let checkedMediaType = "";
+  let checkedMediaFilename = "";
   function videoMessage(ar, en) { videoStatus.textContent = toolEnglish() ? en : ar; }
   function resetVideoPreview() {
     checkedMediaUrl = "";
     checkedMediaType = "";
+    checkedMediaFilename = "";
     videoDownloadButton.disabled = true;
     videoPreview.hidden = true;
     for (const player of [videoPlayer, audioPlayer]) {
@@ -482,43 +484,76 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       player.hidden = true;
     }
   }
+  function mediaTypeFromMime(mime) {
+    const type = (mime || "").split(";")[0].trim().toLowerCase();
+    if (type.startsWith("audio/") || ["application/ogg","application/x-flac"].includes(type)) return "audio";
+    if (type.startsWith("video/")) return "video";
+    return "";
+  }
+  function filenameFromHeaders(headers, fallback) {
+    const disposition = headers.get("content-disposition") || "";
+    const utf8 = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+    const plain = disposition.match(/filename="?([^";]+)"?/i);
+    let name = fallback || (utf8 ? decodeURIComponent(utf8[1]) : plain?.[1]) || "mersal-media";
+    return name.split(/[\\/]/).pop().replace(/[\u0000-\u001f]/g, "").slice(0, 180) || "mersal-media";
+  }
   videoUrlInput.addEventListener("input", () => { resetVideoPreview(); videoStatus.textContent = ""; });
-  videoAnalyzeButton.addEventListener("click", () => {
+  videoAnalyzeButton.addEventListener("click", async () => {
     let parsed;
     try { parsed = new URL(videoUrlInput.value.trim()); }
     catch { videoMessage("أدخل رابطًا صحيحًا يبدأ بـ https:// أو http://.", "Enter a valid URL starting with https:// or http://."); return; }
     if (!["https:", "http:"].includes(parsed.protocol)) { videoMessage("نوع الرابط غير مدعوم.", "This URL type is not supported."); return; }
-    const extension = (parsed.pathname.match(/\.([a-z0-9]+)$/i) || [,""])[1].toLowerCase();
-    const videoExtensions = ["mp4","webm","ogg","ogv","mov","m4v"];
-    const audioExtensions = ["mp3","m4a","wav","ogg","oga","opus","aac","flac"];
-    if (!videoExtensions.includes(extension) && !audioExtensions.includes(extension)) {
-      videoMessage("الرابط لا يشير إلى ملف صوت أو فيديو مباشر مدعوم. استخدم رابط الملف نفسه، وليس رابط صفحة من منصة اجتماعية.", "This is not a supported direct audio or video file link. Use the file URL itself, not a social-platform page URL."); return;
-    }
     resetVideoPreview();
-    checkedMediaUrl = parsed.href;
-    checkedMediaType = audioExtensions.includes(extension) && !videoExtensions.includes(extension) ? "audio" : "video";
-    const player = checkedMediaType === "audio" ? audioPlayer : videoPlayer;
-    player.hidden = false;
-    player.src = checkedMediaUrl;
-    videoPreview.hidden = false;
-    videoDownloadButton.disabled = false;
-    videoMessage(checkedMediaType === "audio" ? "تم تجهيز معاينة الملف الصوتي." : "تم تجهيز معاينة الفيديو.",
-      checkedMediaType === "audio" ? "Audio preview is ready." : "Video preview is ready.");
+    videoAnalyzeButton.disabled = true;
+    videoMessage("جارٍ التحقق من رابط التنزيل…", "Checking the download link…");
+    try {
+      const extension = (parsed.pathname.match(/\.([a-z0-9]+)$/i) || [,""])[1].toLowerCase();
+      const videoExtensions = ["mp4","webm","ogg","ogv","mov","m4v"];
+      const audioExtensions = ["mp3","m4a","wav","ogg","oga","opus","aac","flac"];
+      let mediaType = videoExtensions.includes(extension) ? "video" : audioExtensions.includes(extension) ? "audio" : "";
+      let responseHeaders = null;
+      if (!mediaType) {
+        const probe = await fetch(parsed.href, { method: "HEAD", mode: "cors", redirect: "follow" });
+        if (!probe.ok) throw new Error("HTTP " + probe.status);
+        responseHeaders = probe.headers;
+        mediaType = mediaTypeFromMime(probe.headers.get("content-type"));
+      }
+      if (!mediaType) {
+        videoMessage("هذا رابط صفحة وليس رابط ملف قابلًا للتنزيل مباشرة. إذا كانت المنصة تعرض خيار تنزيل رسميًا، استخدمه أو انسخ رابط ملف الوسائط المباشر الذي توفره. لن نتجاوز قيود المنصة أو المحتوى الخاص.", "This is a post page, not a directly downloadable media file. If the platform provides an official download option, use it or copy the direct media-file link it provides. Mersal will not bypass platform restrictions or private content.");
+        return;
+      }
+      checkedMediaUrl = parsed.href;
+      checkedMediaType = mediaType;
+      checkedMediaFilename = filenameFromHeaders(responseHeaders || new Headers(), parsed.pathname.split("/").pop());
+      const player = mediaType === "audio" ? audioPlayer : videoPlayer;
+      player.hidden = false;
+      player.src = checkedMediaUrl;
+      videoPreview.hidden = false;
+      videoDownloadButton.disabled = false;
+      videoMessage(mediaType === "audio" ? "تم التحقق من رابط الملف الصوتي وتجهيز المعاينة." : "تم التحقق من رابط الفيديو وتجهيز المعاينة.",
+        mediaType === "audio" ? "Audio file link verified and preview is ready." : "Video link verified and preview is ready.");
+    } catch (error) {
+      console.warn("Media link check failed:", error);
+      videoMessage("تعذر التحقق من الرابط. قد لا يسمح المصدر بالوصول المباشر أو قد يمنع المتصفح مشاركة الرابط (CORS). استخدم رابط تنزيل مباشرًا رسميًا من المصدر.", "Could not verify this link. The source may not allow direct access or may block browser cross-origin access (CORS). Use an official direct download link from the source.");
+    } finally {
+      videoAnalyzeButton.disabled = false;
+    }
   });
   videoDownloadButton.addEventListener("click", async () => {
     if (!checkedMediaUrl) return;
     videoDownloadButton.disabled = true;
     videoMessage("جارٍ تجهيز الملف للتنزيل…", "Preparing the file for download…");
     try {
-      const response = await fetch(checkedMediaUrl, { mode: "cors" });
+      const response = await fetch(checkedMediaUrl, { mode: "cors", redirect: "follow" });
       if (!response.ok) throw new Error("HTTP " + response.status);
+      const actualType = mediaTypeFromMime(response.headers.get("content-type"));
+      if (actualType && actualType !== checkedMediaType) throw new Error("Unexpected media type");
       const blob = await response.blob();
-      const expectedPrefix = checkedMediaType + "/";
-      if (blob.type && !blob.type.startsWith(expectedPrefix) && blob.type !== "application/octet-stream") throw new Error("Unexpected media type");
+      if (!blob.size || (blob.type && !mediaTypeFromMime(blob.type) && blob.type !== "application/octet-stream")) throw new Error("Unexpected media content");
       const objectUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = objectUrl;
-      link.download = new URL(checkedMediaUrl).pathname.split("/").pop() || (checkedMediaType === "audio" ? "mersal-audio" : "mersal-video");
+      link.download = filenameFromHeaders(response.headers, checkedMediaFilename || (checkedMediaType === "audio" ? "mersal-audio" : "mersal-video"));
       document.body.append(link);
       link.click();
       link.remove();
@@ -526,10 +561,9 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       videoMessage("بدأ تنزيل الملف.", "File download started.");
     } catch (error) {
       console.warn("Media download failed:", error);
-      videoMessage("تعذر تنزيل الملف مباشرة. قد يمنع المصدر التنزيل أو مشاركة الملفات عبر المتصفح (CORS). جرّب رابطًا مباشرًا آخر.", "Could not download this file directly. The source may block browser downloads or cross-origin access (CORS). Try another direct file URL.");
+      videoMessage("تعذر تنزيل الملف مباشرة. قد يمنع المصدر التنزيل أو مشاركة الملفات عبر المتصفح (CORS). جرّب رابط تنزيل رسميًا آخر.", "Could not download this file directly. The source may block downloads or cross-origin access (CORS). Try another official download link.");
     } finally { videoDownloadButton.disabled = false; }
   });
-
   localizeTools();
 
   return { closeTool, openTool };
