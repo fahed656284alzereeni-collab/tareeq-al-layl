@@ -299,7 +299,7 @@ const mersalTranslations = {
   "آخر ظهور أمس الساعة ":"Last seen yesterday at ","آخر ظهور ":"Last seen ",
   " الساعة ":" at ","أمس":"yesterday","اليوم":"today",
   "مستخدم مرسال":"Mersal user","منشئ المجموعة":"Group creator","مشرف":"Admin","عضو":"Member",
-  "مراسلة":"Message","إزالة صفة المشرف":"Remove admin role","تعيين مشرف":"Make admin",
+  "خيارات ":"Options for ","مراسلة":"Message","إزالة صفة المشرف":"Remove admin role","تعيين مشرف":"Make admin",
   "إزالة من المجموعة":"Remove from group","لا توجد إجراءات متاحة لهذا العضو.":"No actions are available for this member.",
   "لا يوجد أشخاص متاحون للإضافة.":"No people available to add.",
   "اكتب كلمة لعرض النتائج.":"Type a word to show results.",
@@ -3132,9 +3132,13 @@ async function loadGroupManagement(expectedConversationId = activeConversation?.
     const name=profileMap.get(member.user_id)?.display_name||"مستخدم مرسال";
     const roleLabel=isGroupOwner?"منشئ المجموعة":member.role==="admin"?"مشرف":"عضو";
     const item=document.createElement("li");
-    const memberButton=safeText("button","group-member-name",name+(isSelf?" (أنت)":""));
+    const memberButton=safeText("button","group-member-name","");
     memberButton.type="button";
-    memberButton.setAttribute("aria-label","خيارات "+name+(isSelf?"، أنت":""));
+    const memberName=safeText("span","group-member-display-name",name);
+    memberName.setAttribute("data-no-translate","");
+    memberButton.append(memberName);
+    if(isSelf)memberButton.append(document.createTextNode(localStorage.getItem("mersal-language")==="en"?" (You)":" (أنت)"));
+    memberButton.setAttribute("aria-label",(localStorage.getItem("mersal-language")==="en"?"Options for ":"خيارات ")+name+(isSelf?(localStorage.getItem("mersal-language")==="en"?", you":"، أنت"):""));
     memberButton.addEventListener("click",()=>openGroupMemberOptions(member.user_id,name,roleLabel,member.role,isGroupOwner,permissions,memberButton));
     item.append(memberButton,safeText("span","group-member-role",roleLabel));
     groupMemberList.append(item);
