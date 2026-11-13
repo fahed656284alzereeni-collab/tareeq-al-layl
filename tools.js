@@ -23,6 +23,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     detail.hidden = false;
     panels.forEach((panel) => { panel.hidden = panel.id !== name + "-tool"; });
     title.textContent = labels[name];
+    detail.setAttribute("aria-label", labels[name]);
     document.body.classList.add("tools-detail-open");
     title.focus();
     if (name === "notes") loadNotes();
@@ -36,6 +37,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     home.hidden = false;
     document.body.classList.remove("tools-detail-open");
     if (restoreFocus && returnFocus?.isConnected) returnFocus.focus();
+    else if (restoreFocus) $("#tools-title")?.focus();
     returnFocus = null;
   }
 
@@ -47,6 +49,25 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     if (event.key === "Escape") {
       event.preventDefault();
       closeTool();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = [...detail.querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+    )].filter((element) => !element.hidden && element.getClientRects().length);
+    if (!focusable.length) {
+      event.preventDefault();
+      title.focus();
+      return;
+    }
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (event.shiftKey && (document.activeElement === first || document.activeElement === title)) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
     }
   });
 
@@ -96,6 +117,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
 
   function renderCalculator() {
     calculatorDisplay.textContent = expression || "0";
+    calculatorDisplay.setAttribute("aria-label", document.documentElement.lang === "en" ? "Calculator display: " + (expression || "0") : "شاشة الآلة الحاسبة: " + (expression || "0"));
   }
 
   function calculatorInput(key) {
@@ -109,6 +131,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
         renderCalculator();
       } catch (error) {
         calculatorDisplay.textContent = error.message === "zero" ? "لا يمكن القسمة على صفر." : "عملية حسابية غير صحيحة.";
+      calculatorDisplay.setAttribute("aria-label", document.documentElement.lang === "en" ? "Calculation error" : "خطأ في العملية الحسابية");
         expression = "";
         hasResult = false;
       }
