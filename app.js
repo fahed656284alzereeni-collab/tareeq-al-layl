@@ -1277,6 +1277,8 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   document.body.classList.remove("settings-open");
   bottomNavigation.hidden = true;
   statusView.hidden = true;
+  if (aiToolsView) aiToolsView.hidden = true;
+  document.body.classList.remove("ai-tools-open");
   statusComposerPanel.hidden = true;
   statusViewerPanel.hidden = true;
   messageSchedulePanel.hidden = true;
