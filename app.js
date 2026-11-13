@@ -4805,7 +4805,8 @@ function appendMessage(message) {
 }
 async function loadMessages() {
   if (!activeConversation) return;
-  if (!privacySettingsLoaded) await loadPrivacySettings();
+  // Do not hold chat rendering while account-wide privacy controls are still loading.
+  // The session starts with the same safe defaults used by the privacy settings loader.
   const conversation = activeConversation;
   const conversationId = conversation.id;
   const partner = activePartner;
