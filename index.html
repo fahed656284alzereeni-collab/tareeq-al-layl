@@ -372,6 +372,14 @@
                 <button type="button" data-calc-key="1" class="tool-action-button">1</button><button type="button" data-calc-key="2" class="tool-action-button">2</button><button type="button" data-calc-key="3" class="tool-action-button">3</button><button type="button" data-calc-key="+" class="tool-action-button calculator-operator" aria-label="جمع">+</button>
                 <button type="button" data-calc-key="sign" class="tool-action-button" aria-label="تغيير إشارة الرقم">±</button><button type="button" data-calc-key="0" class="tool-action-button">0</button><button type="button" data-calc-key="." class="tool-action-button" aria-label="فاصلة عشرية">.</button><button type="button" data-calc-key="equals" class="tool-action-button calculator-equals">=</button>
               </div><p class="tool-help">يمكنك استخدام أزرار الآلة الحاسبة أو لوحة المفاتيح.</p>
+              <section class="bill-split-section" aria-labelledby="bill-split-title">
+                <h3 id="bill-split-title">تقسيم الفاتورة</h3>
+                <label for="bill-total-input">قيمة الفاتورة</label><input id="bill-total-input" type="number" min="0.01" step="0.01" inputmode="decimal">
+                <label for="bill-people-input">عدد الأشخاص</label><input id="bill-people-input" type="number" min="1" step="1" value="2" inputmode="numeric">
+                <label for="bill-tip-input">نسبة الإكرامية (%)</label><input id="bill-tip-input" type="number" min="0" max="100" step="0.1" value="0" inputmode="decimal">
+                <button id="bill-split-calculate" type="button" class="primary-button">احسب نصيب كل شخص</button>
+                <output id="bill-split-result" class="bill-split-result" role="status" aria-live="polite" aria-atomic="true">أدخل البيانات لحساب نصيب كل شخص.</output>
+              </section>
             </section>
             <section id="notes-tool" class="tool-panel" aria-label="المفكرة السريعة" hidden>
               <label for="note-title-input">عنوان الملاحظة</label><input id="note-title-input" type="text" maxlength="80" placeholder="اكتب عنوانًا للملاحظة">
