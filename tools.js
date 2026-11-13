@@ -194,7 +194,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       button.type = "button";
       button.setAttribute("data-no-translate", "");
       button.addEventListener("click", () => {
-        if (!noteSave.disabled && !window.confirm("لديك تغييرات غير محفوظة. هل تريد تجاهلها؟")) return;
+        if (!noteSave.disabled && !window.confirm(document.documentElement.lang === "en" ? "You have unsaved changes. Do you want to discard them?" : "لديك تغييرات غير محفوظة. هل تريد تجاهلها؟")) return;
         activeNoteId = note.id;
         noteTitle.value = note.title;
         noteBody.value = note.body;
@@ -249,7 +249,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     } catch { announce("تعذر حفظ الملاحظة.", "error"); }
   });
   noteDelete.addEventListener("click", () => {
-    if (!activeNoteId || !window.confirm("هل تريد حذف هذه الملاحظة؟")) return;
+    if (!activeNoteId || !window.confirm(document.documentElement.lang === "en" ? "Do you want to delete this note?" : "هل تريد حذف هذه الملاحظة؟")) return;
     notes = notes.filter((note) => note.id !== activeNoteId);
     localStorage.setItem(notesKey(), JSON.stringify(notes));
     activeNoteId = null;
