@@ -7,6 +7,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   const back = $("#tool-back-button");
   const panels = ["calculator", "notes", "qr", "polls"].map((name) => $("#" + name + "-tool"));
   let activeTool = null;
+  let returnFocus = null;
 
   function openTool(name) {
     const labels = {
@@ -17,6 +18,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     };
     if (!labels[name]) return;
     activeTool = name;
+    returnFocus = document.activeElement;
     home.hidden = true;
     detail.hidden = false;
     panels.forEach((panel) => { panel.hidden = panel.id !== name + "-tool"; });
@@ -33,7 +35,8 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     detail.hidden = true;
     home.hidden = false;
     document.body.classList.remove("tools-detail-open");
-    document.querySelector(".tool-launch-button")?.focus();
+    if (returnFocus?.isConnected) returnFocus.focus();
+    returnFocus = null;
   }
 
   document.querySelectorAll(".tool-launch-button").forEach((button) => {
@@ -151,7 +154,6 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     if (/^[0-9.+*/%-]$/.test(event.key)) { event.preventDefault(); calculatorInput(event.key); }
     else if (event.key === "Enter" || event.key === "=") { event.preventDefault(); calculatorInput("equals"); }
     else if (event.key === "Backspace") { event.preventDefault(); calculatorInput("backspace"); }
-    else if (event.key === "Escape") { event.preventDefault(); calculatorInput("clear"); }
   });
 
   // Quick notes stay on this device and are separated by signed-in account.
@@ -281,7 +283,8 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       qrStatus.textContent = "تم إنشاء رمز QR.";
     } catch (error) {
       qrResult.hidden = true;
-      qrStatus.textContent = "تعذر إنشاء رمز QR: " + (error.message || "حاول مرة أخرى.");
+      console.error("QR generation failed:", error);
+      qrStatus.textContent = "تعذر إنشاء رمز QR. حاول مرة أخرى.";
     } finally { qrGenerate.disabled = false; }
   });
   $("#qr-download-button").addEventListener("click", () => {
@@ -333,6 +336,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     const user = getCurrentUser();
     if (!user) return;
     groupSelect.disabled = true;
+    createPollButton.disabled = true;
     groupSelect.replaceChildren(safeText("option", "", "جارٍ تحميل المجموعات…"));
     try {
       const { data, error } = await supabase.from("conversations")
@@ -353,15 +357,19 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
         groupSelect.append(safeText("option", "", "لا توجد مجموعات متاحة لإنشاء استطلاع."));
         pollsList.replaceChildren(safeText("li", "empty-item", "لا توجد مجموعات متاحة لإنشاء استطلاع."));
         groupSelect.disabled = true;
+        createPollButton.disabled = true;
         return;
       }
       groupSelect.disabled = false;
+      createPollButton.disabled = false;
       groupSelect.value = groups[0].id;
       await loadGroupPolls();
     } catch (error) {
       groupSelect.replaceChildren(safeText("option", "", "تعذر تحميل المجموعات."));
       groupSelect.disabled = true;
-      announce("تعذر تحميل المجموعات: " + (error.message || ""), "error");
+      createPollButton.disabled = true;
+      console.error("Loading poll groups failed:", error);
+      announce("تعذر تحميل المجموعات. حاول مرة أخرى.", "error");
     }
   }
   async function loadGroupPolls() {
@@ -376,7 +384,8 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       renderPolls(data || []);
     } catch (error) {
       pollsList.replaceChildren(safeText("li", "empty-item", "تعذر تحميل الاستطلاعات."));
-      announce("تعذر تحميل الاستطلاعات: " + (error.message || ""), "error");
+      console.error("Loading group polls failed:", error);
+      announce("تعذر تحميل الاستطلاعات. حاول مرة أخرى.", "error");
     }
   }
   function renderPolls(polls) {
@@ -443,7 +452,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       if (error) throw error;
       await loadGroupPolls();
       announce("تم تسجيل صوتك.");
-    } catch (error) { announce("تعذر تسجيل التصويت: " + (error.message || "حاول مرة أخرى."), "error"); }
+    } catch (error) { console.error("Casting poll vote failed:", error); announce("تعذر تسجيل التصويت. حاول مرة أخرى.", "error"); }
   }
   createPollButton.addEventListener("click", async () => {
     const user = getCurrentUser();
@@ -469,7 +478,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       resetOptions();
       await loadGroupPolls();
       announce("تم إنشاء الاستطلاع.");
-    } catch (error) { announce("تعذر إنشاء الاستطلاع: " + (error.message || "حاول مرة أخرى."), "error"); }
+    } catch (error) { console.error("Creating group poll failed:", error); announce("تعذر إنشاء الاستطلاع. حاول مرة أخرى.", "error"); }
     finally { createPollButton.disabled = false; }
   });
   groupSelect.addEventListener("change", () => void loadGroupPolls());
