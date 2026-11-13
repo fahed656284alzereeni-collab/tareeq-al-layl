@@ -112,10 +112,11 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       return;
     }
     if (key === "sign") {
-      const match = expression.match(/(\d+(?:\.\d*)?|\.\d+)$/);
+      const match = expression.match(/(^|[+*/-])(-?(?:\d+(?:\.\d*)?|\.\d+))$/);
       if (match) {
         const start = expression.length - match[0].length;
-        expression = expression.slice(0, start) + (match[0].startsWith("-") ? match[0].slice(1) : "-" + match[0]);
+        const operand = match[2];
+        expression = expression.slice(0, start) + match[1] + (operand.startsWith("-") ? operand.slice(1) : "-" + operand);
       } else if (!expression) expression = "-";
       renderCalculator();
       return;
@@ -398,11 +399,14 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
         const count = votes.filter((vote) => vote.option_index === index).length;
         const row = document.createElement("div");
         row.className = "poll-option-row";
-        const button = safeText("button", "poll-vote-button", option + " — " + count + " " + (count === 1 ? "صوت" : "أصوات"));
+        const button = safeText("button", "poll-vote-button", "");
         button.type = "button";
         button.disabled = closed;
         button.setAttribute("aria-pressed", String(ownVote?.option_index === index));
-        button.setAttribute("data-no-translate", "");
+        const optionLabel = safeText("span", "poll-option-label", option);
+        optionLabel.setAttribute("data-no-translate", "");
+        const countLabel = safeText("span", "poll-option-count", " — " + count + (count === 1 ? " صوت" : " أصوات"));
+        button.append(optionLabel, countLabel);
         button.addEventListener("click", () => void castVote(poll.id, index));
         const track = document.createElement("div");
         track.className = "poll-result-track";
@@ -414,9 +418,16 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
         row.append(button, track);
         card.append(row);
       });
-      const meta = safeText("p", "poll-meta",
-        total + " أصوات" + (ownVote ? " · صوتك: " + (poll.options[ownVote.option_index] || "") : "") + (closed ? " · انتهى الاستطلاع" : ""));
-      meta.setAttribute("data-no-translate", "");
+      const meta = document.createElement("p");
+      meta.className = "poll-meta";
+      meta.append(safeText("span", "poll-total", total + (total === 1 ? " صوت" : " أصوات")));
+      if (ownVote) {
+        meta.append(safeText("span", "poll-own-vote-label", " · صوتك:"));
+        const ownVoteText = safeText("span", "poll-own-vote-value", poll.options[ownVote.option_index] || "");
+        ownVoteText.setAttribute("data-no-translate", "");
+        meta.append(ownVoteText);
+      }
+      if (closed) meta.append(safeText("span", "poll-closed-label", " · انتهى الاستطلاع"));
       card.append(meta);
       pollsList.append(card);
     });
