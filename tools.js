@@ -18,19 +18,13 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     text("#tools-title", "الأدوات", "Tools");
     text(".tools-intro > p:last-child", "أدوات عملية تساعدك أثناء استخدام مرسال.", "Useful tools to help you while using Mersal.");
     const cards = [
-      [".tool-launch-button[data-tool='calculator']", "الآلة الحاسبة", "Calculator", "عمليات حسابية ونسب مئوية وتقسيم الفواتير.", "Calculations, percentages, and bill splitting.", "فتح الأداة", "Open tool"],
-      [".tool-launch-button[data-tool='notes']", "المفكرة السريعة", "Quick notes", "اكتب ملاحظاتك واحفظها وابحث فيها على هذا الجهاز.", "Write, save, and search notes on this device.", "فتح الأداة", "Open tool"],
-      [".tool-launch-button[data-tool='qr']", "إنشاء رموز QR", "QR code generator", "حوّل رابطًا أو رقمًا أو نصًا إلى رمز QR.", "Turn a link, number, or text into a QR code.", "فتح الأداة", "Open tool"],
+      [".tool-launch-button[data-tool='calculator']", "الآلة الحاسبة", "Calculator"],
+      [".tool-launch-button[data-tool='notes']", "المفكرة السريعة", "Quick notes"],
+      [".tool-launch-button[data-tool='qr']", "إنشاء رموز QR", "QR code generator"],
     ];
-    for (const [selector, arTitle, enTitle, arDesc, enDesc, arAction, enAction] of cards) {
-      const card = $(selector);
-      if (!card) continue;
-      const titleNode = card.querySelector(".tool-card-title");
-      const descNode = card.querySelector(".tool-card-description");
-      const actionNode = card.querySelector(".tool-status");
+    for (const [selector, arTitle, enTitle] of cards) {
+      const titleNode = $(selector)?.querySelector(".tool-card-title");
       if (titleNode) titleNode.textContent = en ? enTitle : arTitle;
-      if (descNode) descNode.textContent = en ? enDesc : arDesc;
-      if (actionNode) actionNode.textContent = en ? enAction : arAction;
     }
     text("#tool-back-button", "العودة إلى الأدوات", "Back to tools");
     text("#tool-detail-title", ({calculator:"الآلة الحاسبة",notes:"المفكرة السريعة",qr:"إنشاء رموز QR"}[activeTool] || "الأداة"),
