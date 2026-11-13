@@ -35,7 +35,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       ["label[for='bill-tip-input']","نسبة الإكرامية (%)","Tip percentage (%)"],["label[for='note-title-input']","عنوان الملاحظة","Note title"],
       ["label[for='note-body-input']","نص الملاحظة","Note text"],["label[for='notes-search-input']","البحث في الملاحظات","Search notes"],
       ["label[for='qr-content-input']","النص أو الرابط أو رقم الهاتف","Text, link, or phone number"],
-      ["label[for='video-url-input']","رابط ملف الصوت أو الفيديو المباشر","Direct audio or video file URL"],
+      ["label[for='video-url-input']","رابط التنزيل المباشر للصوت أو الفيديو","Direct audio or video download URL"],
     ];
     for (const [selector, ar, enText] of labels) text(selector, ar, enText);
     const buttons = [
@@ -65,7 +65,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     attr("#notes-tool","aria-label","المفكرة السريعة","Quick notes");
     attr("#qr-tool","aria-label","إنشاء رموز QR","QR code generator");
     attr("#video-downloader-tool","aria-label","تحميل الصوت والفيديو","Audio & video downloader");
-    text("#video-downloader-help","ألصق رابطًا مباشرًا لملف صوت أو فيديو تملك حق تنزيله. لا تدعم الأداة استخراج الوسائط من روابط صفحات منصات التواصل.","Paste a direct link to an audio or video file you have permission to download. Social-platform page links are not supported.");
+    text("#video-downloader-help","ألصق رابط ملف صوت أو فيديو مباشرًا، بما في ذلك رابط تنزيل رسمي توفره المنصة. لا تتجاوز الأداة قيود التنزيل أو المحتوى الخاص.","Paste a direct audio or video file link, including an official download link provided by the platform. Mersal does not bypass download restrictions or private content.");
     attr("#video-downloader-player","aria-label","معاينة الفيديو","Video preview");
     attr("#audio-downloader-player","aria-label","معاينة الملف الصوتي","Audio preview");
     
