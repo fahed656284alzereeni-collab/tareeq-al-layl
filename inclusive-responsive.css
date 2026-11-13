@@ -541,3 +541,109 @@ body.tools-open #workspace .chat-panel { display: none !important; }
   background: #e5eefb;
   color: #20334d;
 }
+
+
+/* Mersal tools: responsive, full-screen detail views, visible focus and touch targets. */
+.tool-card.tool-launch-button {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-height: 190px;
+  text-align: start;
+  color: inherit;
+  cursor: pointer;
+  gap: 7px;
+}
+.tool-card-title { display:block; font-weight:800; font-size:1.08rem; line-height:1.45; }
+.tool-card-description { display:block; color:var(--muted,#c4cce0); line-height:1.7; }
+.tool-card .tool-status { margin-top:auto; }
+.tool-detail-view[hidden], .tool-panel[hidden] { display:none !important; }
+body.tools-detail-open { overflow:hidden; }
+body.tools-detail-open #bottom-navigation { display:none !important; }
+body.tools-detail-open .tools-view:not([hidden]) {
+  inset:0;
+  z-index:160;
+  padding:calc( max(14px, env(safe-area-inset-top)) + 8px ) max(14px, var(--mersal-page-gutter,16px)) max(24px, env(safe-area-inset-bottom));
+}
+body.tools-detail-open .tools-page { width:min(100%,820px); min-height:100%; margin-inline:auto; }
+.tool-detail-view:not([hidden]) { display:block; }
+.tool-detail-header {
+  display:flex; flex-wrap:wrap; align-items:center; gap:14px;
+  padding:4px 0 18px; margin-bottom:16px; border-bottom:1px solid var(--border,#405273);
+}
+.tool-detail-header h2 { flex:1 1 180px; min-width:0; margin:0; font-size:clamp(1.25rem,4vw,1.75rem); overflow-wrap:anywhere; }
+.tool-panel {
+  display:flex; flex-direction:column; gap:12px;
+  width:min(100%,680px); margin-inline:auto; padding:clamp(14px,3vw,24px);
+  border:1px solid var(--border,#405273); border-radius:18px;
+  background:var(--surface-raised,#182640);
+}
+.tool-panel label { display:block; margin-top:4px; font-weight:700; line-height:1.5; }
+.tool-panel input, .tool-panel textarea, .tool-panel select {
+  width:100%; min-width:0; min-height:48px; box-sizing:border-box;
+  padding:12px 14px; border:1px solid var(--ui-control-border,#7186a8);
+  border-radius:12px; background:var(--surface,#111a2d); color:var(--text,#f5f7ff);
+  font:inherit; line-height:1.55;
+}
+.tool-panel textarea { resize:vertical; }
+.tool-panel button { min-height:48px; }
+.tool-help { margin:0; color:var(--muted,#c4cce0); line-height:1.75; }
+.tool-action-row { display:flex; flex-wrap:wrap; gap:10px; }
+.tool-action-row > button { flex:1 1 140px; }
+.calculator-display {
+  display:block; min-height:74px; padding:16px; border:1px solid var(--border,#405273);
+  border-radius:14px; background:#0c1424; color:#fff; text-align:end;
+  font-size:clamp(1.7rem,7vw,2.5rem); font-weight:700; overflow-wrap:anywhere;
+  font-variant-numeric:tabular-nums;
+}
+.calculator-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; }
+.tool-action-button {
+  min-width:0; min-height:58px !important; border:1px solid var(--border,#526987);
+  border-radius:13px; background:var(--surface,#22334f); color:var(--text,#fff);
+  font:inherit; font-size:1.15rem; font-weight:700; cursor:pointer;
+}
+.tool-action-button.calculator-secondary { background:#40516c; }
+.tool-action-button.calculator-operator { background:#315a86; color:#fff; }
+.tool-action-button.calculator-equals { background:#245f51; color:#fff; }
+.note-list-button, .poll-vote-button {
+  width:100%; min-height:48px; padding:11px 13px; border:1px solid var(--border,#526987);
+  border-radius:11px; background:var(--surface,#22334f); color:var(--text,#fff);
+  text-align:start; font:inherit; overflow-wrap:anywhere; cursor:pointer;
+}
+.notes-list, .polls-list { display:grid; gap:10px; margin:0; padding:0; list-style:none; }
+.notes-list li, .polls-list > li { min-width:0; }
+.qr-result { display:flex; flex-direction:column; align-items:center; gap:12px; padding:16px; border:1px solid var(--border,#405273); border-radius:14px; }
+.qr-result canvas { display:block; width:min(100%,280px); height:auto; max-width:280px; image-rendering:pixelated; background:#fff; padding:8px; border-radius:8px; }
+.qr-content-preview { width:100%; margin:0; padding:10px; border-radius:10px; background:var(--surface,#111a2d); overflow-wrap:anywhere; line-height:1.6; }
+.poll-options-editor { display:grid; gap:9px; }
+.polls-list-header { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; padding-top:12px; border-top:1px solid var(--border,#405273); }
+.polls-list-header h3 { margin:0; font-size:1.05rem; }
+.poll-card { padding:14px; border:1px solid var(--border,#405273); border-radius:14px; background:var(--surface,#111a2d); }
+.poll-question { margin:0 0 12px; font-size:1.05rem; line-height:1.6; overflow-wrap:anywhere; }
+.poll-option-row { display:grid; gap:6px; margin:9px 0; }
+.poll-vote-button[aria-pressed="true"] { border-color:#8db6ff; background:#284d78; box-shadow:inset 0 0 0 1px #8db6ff; }
+.poll-vote-button:disabled { opacity:.7; cursor:default; }
+.poll-result-track { height:8px; overflow:hidden; border-radius:999px; background:#53627a; }
+.poll-result-fill { display:block; height:100%; border-radius:inherit; background:#69a5e8; }
+.poll-meta { margin:12px 0 0; color:var(--muted,#c4cce0); font-size:.9rem; line-height:1.6; overflow-wrap:anywhere; }
+:root[data-theme="light"] .tool-panel { background:#fff; }
+:root[data-theme="light"] .tool-panel input,
+:root[data-theme="light"] .tool-panel textarea,
+:root[data-theme="light"] .tool-panel select { background:#fff; color:#17253a; }
+:root[data-theme="light"] .calculator-display { background:#f0f3f8; color:#17253a; }
+:root[data-theme="light"] .tool-action-button,
+:root[data-theme="light"] .note-list-button,
+:root[data-theme="light"] .poll-vote-button { color:#17253a; background:#eef3fa; }
+:root[data-theme="light"] .poll-card { background:#f7f9fc; }
+@media (max-width:620px) {
+  .tool-card.tool-launch-button { min-height:0; }
+  .tool-detail-header { align-items:stretch; }
+  .tool-detail-header > button { width:100%; }
+  .tool-panel { padding:14px; }
+  .calculator-grid { gap:7px; }
+  .tool-action-button { min-height:54px !important; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .tool-card, .tool-action-button, .poll-vote-button { transition:none !important; }
+}
