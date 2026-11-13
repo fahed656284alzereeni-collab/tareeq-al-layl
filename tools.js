@@ -60,7 +60,10 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     text("#polls-list-header h3, .polls-list-header h3","استطلاعات المجموعة","Group polls");
     text("#notes-tool .tool-help","تُحفظ الملاحظات على هذا الجهاز فقط، ولا تُرسل إلى خوادم مرسال.","Notes are saved only on this device and are not sent to Mersal servers.");
     text("#calculator-tool > .tool-help","يمكنك استخدام أزرار الآلة الحاسبة أو لوحة المفاتيح.","Use the calculator buttons or your keyboard.");
-    text("#bill-split-result","أدخل البيانات لحساب نصيب كل شخص.","Enter the details to calculate each person's share.");
+    const splitOutput = $("#bill-split-result");
+    if (splitOutput && ["أدخل البيانات لحساب نصيب كل شخص.","Enter the details to calculate the share per person."].includes(splitOutput.textContent.trim())) {
+      splitOutput.textContent = en ? "Enter the details to calculate the share per person." : "أدخل البيانات لحساب نصيب كل شخص.";
+    }
     const placeholders = [
       ["#bill-total-input","",""],["#note-title-input","اكتب عنوانًا للملاحظة","Enter a note title"],
       ["#note-body-input","اكتب ملاحظتك هنا","Write your note here"],["#notes-search-input","ابحث في ملاحظاتك","Search your notes"],
@@ -68,7 +71,6 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       ["#poll-question-input","ما رأيك؟","What do you think?"],["#poll-option-1","الخيار الأول","Option one"],["#poll-option-2","الخيار الثاني","Option two"]
     ];
     for (const [selector, ar, enText] of placeholders) { const node=$(selector); if(node && (ar || enText)) node.placeholder=en?enText:ar; }
-    attr("#calculator-display","aria-label", "شاشة الآلة الحاسبة: " + (expression || "0"), "Calculator display: " + (expression || "0"));
     attr("#tools-home-view","aria-label","الأدوات","Tools");
     attr("#calculator-tool","aria-label","الآلة الحاسبة","Calculator");
     attr("#notes-tool","aria-label","المفكرة السريعة","Quick notes");
