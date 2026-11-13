@@ -543,6 +543,7 @@ const mersalTranslations = {
   "نسبة مئوية":"Percent",
   "تغيير إشارة الرقم":"Change number sign",
   "فاصلة عشرية":"Decimal point",
+  "إزالة آخر خيار":"Remove last option",
   "تقسيم الفاتورة":"Bill splitting",
   "قيمة الفاتورة":"Bill amount",
   "عدد الأشخاص":"Number of people",
