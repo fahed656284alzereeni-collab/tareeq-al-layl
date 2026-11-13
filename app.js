@@ -3453,14 +3453,21 @@ async function selectConversation(conversation, person) {
   }).catch(error=>console.warn("تعذر تحديث حالة الظهور:",error.message));
   if (conversation.is_group) void refreshGroupHeaderMemberCount(conversation.id);
 
-  await loadMessages();
-  if (!isCurrentSelection()) return;
+  // Render messages and retire the previous realtime channel in the background.
+  // Neither operation may delay opening the selected conversation on mobile.
+  void loadMessages().catch(error => {
+    if (isCurrentSelection()) announce("تعذر تحميل الرسائل: " + (error.message || "حاول مرة أخرى."), "error");
+  });
 
   // Details, read-state updates, and call setup must not block access to the chat.
   void updateConversationInfo().catch(error=>console.warn("تعذر تحميل معلومات المحادثة:",error.message));
   void markConversationNotificationsRead(conversation.id).catch(error=>console.warn("تعذر تحديث إشعارات المحادثة:",error.message));
 
-  if (realtimeChannel) await supabase.removeChannel(realtimeChannel);
+  const previousRealtimeChannel = realtimeChannel;
+  realtimeChannel = null;
+  if (previousRealtimeChannel) {
+    void supabase.removeChannel(previousRealtimeChannel).catch(error => console.warn("تعذر إنهاء قناة المحادثة السابقة:", error.message));
+  }
   if (!isCurrentSelection()) return;
   realtimeChannel = supabase.channel("messages-" + conversation.id)
     .on("postgres_changes", {
