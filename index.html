@@ -350,6 +350,57 @@
         </div>
         <ul id="status-list" class="status-list" aria-label="الحالات" aria-live="polite"></ul>
       </section>
+      <section id="ai-tools-view" class="ai-tools-view" aria-labelledby="ai-tools-title" hidden>
+        <div class="ai-tools-page">
+          <div class="ai-tools-intro">
+            <p class="ai-tools-eyebrow">مرسال</p>
+            <h1 id="ai-tools-title" tabindex="-1">أدوات الذكاء الاصطناعي</h1>
+            <p>مساحة مستقلة لمساعدتك في الكتابة والترجمة وفهم المحتوى، دون التدخل في محادثاتك.</p>
+          </div>
+          <div class="ai-tools-notice" role="status">
+            <strong>التفعيل التقني قيد التجهيز</strong>
+            <p>واجهة الأدوات جاهزة، لكن تشغيلها يحتاج ربط مزوّد ذكاء اصطناعي آمن. لن تُرسل رسائلك أو ملفاتك إلى أي خدمة قبل تفعيلها وموافقتك.</p>
+          </div>
+          <div class="ai-tools-grid" aria-label="أدوات الذكاء الاصطناعي">
+            <article class="ai-tool-card">
+              <span class="ai-tool-icon" aria-hidden="true">✦</span>
+              <h2>المساعد الذكي</h2>
+              <p>اسأل، استفسر، واحصل على مساعدة في مساحة مستقلة.</p>
+              <span class="ai-tool-status">يتطلب تفعيل الخدمة</span>
+            </article>
+            <article class="ai-tool-card">
+              <span class="ai-tool-icon" aria-hidden="true">Aa</span>
+              <h2>الترجمة</h2>
+              <p>ترجمة النصوص بين العربية والإنجليزية ولغات أخرى.</p>
+              <span class="ai-tool-status">يتطلب تفعيل الخدمة</span>
+            </article>
+            <article class="ai-tool-card">
+              <span class="ai-tool-icon" aria-hidden="true">✎</span>
+              <h2>مساعد الكتابة</h2>
+              <p>صياغة الرسائل وتحسين الأسلوب واختصار النصوص.</p>
+              <span class="ai-tool-status">يتطلب تفعيل الخدمة</span>
+            </article>
+            <article class="ai-tool-card">
+              <span class="ai-tool-icon" aria-hidden="true">≡</span>
+              <h2>تلخيص المحتوى</h2>
+              <p>تلخيص النصوص الطويلة والنقاط المهمة.</p>
+              <span class="ai-tool-status">يتطلب تفعيل الخدمة</span>
+            </article>
+            <article class="ai-tool-card">
+              <span class="ai-tool-icon" aria-hidden="true">♫</span>
+              <h2>تحويل الصوت إلى نص</h2>
+              <p>تفريغ التسجيلات الصوتية إلى نص قابل للقراءة.</p>
+              <span class="ai-tool-status">يتطلب تفعيل الخدمة</span>
+            </article>
+            <article class="ai-tool-card">
+              <span class="ai-tool-icon" aria-hidden="true">▧</span>
+              <h2>فهم الصور والملفات</h2>
+              <p>المساعدة في وصف الصور واستخراج وفهم محتوى الملفات.</p>
+              <span class="ai-tool-status">يتطلب تفعيل الخدمة</span>
+            </article>
+          </div>
+        </div>
+      </section>
       <div class="sidebar" >
         <section class="notifications-section" >
           <button id="notifications-toggle" class="notifications-toggle" type="button" aria-controls="notifications-panel" aria-label="الإشعارات">
@@ -493,15 +544,19 @@
     </div>
   </div>
     <div id="bottom-navigation" class="bottom-navigation" role="tablist" hidden>
-      <button id="home-tab" class="bottom-nav-button" type="button" role="tab" aria-label="الدردشات" aria-posinset="1" aria-setsize="3" aria-selected="true">
+      <button id="home-tab" class="bottom-nav-button" type="button" role="tab" aria-label="الدردشات، علامة تبويب 1 من 4" aria-posinset="1" aria-setsize="4" aria-selected="true">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1V10Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">الدردشات</span>
       </button>
-      <button id="status-tab" class="bottom-nav-button" type="button" role="tab" aria-label="الحالات" aria-posinset="2" aria-setsize="3" aria-selected="false">
+      <button id="status-tab" class="bottom-nav-button" type="button" role="tab" aria-label="الحالات، علامة تبويب 2 من 4" aria-posinset="2" aria-setsize="4" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">الحالات</span>
       </button>
-      <button id="settings-tab" class="bottom-nav-button" type="button" role="tab" aria-label="الإعدادات" aria-posinset="3" aria-setsize="3" aria-selected="false">
+      <button id="ai-tab" class="bottom-nav-button" type="button" role="tab" aria-label="الذكاء الاصطناعي، علامة تبويب 3 من 4" aria-posinset="3" aria-setsize="4" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5 13.8 9l5.2 2-5.2 2L12 18.5 10.2 13 5 11l5.2-2L12 3.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        <span class="bottom-nav-label" aria-hidden="true">الذكاء الاصطناعي</span>
+      </button>
+      <button id="settings-tab" class="bottom-nav-button" type="button" role="tab" aria-label="الإعدادات، علامة تبويب 4 من 4" aria-posinset="4" aria-setsize="4" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m19.4 13.5 1.1.9-1.5 2.6-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.2 1.5h-3l-.3-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.5-2.6 1.1-.9a7.3 7.3 0 0 1 0-1.8l-1.1-.9 1.5-2.6 1.4.5a7.8 7.8 0 0 1 1.5-.9l.3-1.5h3l.2 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.5 2.6-1.1.9a7.3 7.3 0 0 1 0 1.8Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">الإعدادات</span>
       </button>
