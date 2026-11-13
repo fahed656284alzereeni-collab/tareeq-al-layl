@@ -936,3 +936,35 @@ body.tools-detail-open .tool-detail-header {
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Tools: consistent cross-platform touch, focus, responsive and readable states. */
+.tools-view:not([hidden]) .tools-page { width:100%; max-width:1040px; margin-inline:auto; }
+.tools-view .tool-card, .tools-view .tool-panel button,
+.tools-view .tool-panel input, .tools-view .tool-panel textarea,
+.tools-view .tool-panel select { box-sizing:border-box; }
+.tools-view .tool-card { min-height:180px; padding:clamp(16px,2.5vw,24px); border-radius:16px; }
+.tools-view button, .tools-view input, .tools-view textarea, .tools-view select { font:inherit; }
+.tools-view button { touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+.tools-view button:disabled { opacity:.58; cursor:not-allowed; }
+.tools-view input, .tools-view textarea, .tools-view select { font-size:16px; }
+.tools-view .tool-panel label { color:var(--text,#f5f7ff); }
+:root[data-theme="light"] .tools-view .tool-panel label { color:#20334d; }
+.tools-view .tool-panel :focus-visible,
+.tools-view .tool-card:focus-visible { outline:3px solid var(--focus,#8db7ff); outline-offset:3px; }
+.tools-view .tool-detail-view:not([hidden]) { min-height:calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom)); }
+.tools-view .tool-panel { overflow-wrap:anywhere; }
+.tools-view .tool-action-row > button { min-height:52px; }
+@media(max-width:520px) {
+ .tools-view .tools-grid { grid-template-columns:minmax(0,1fr); }
+ .tools-view .tool-card { min-height:132px; }
+ .tools-view .tool-action-row { flex-direction:column; }
+ .tools-view .tool-action-row > button { width:100%; flex-basis:auto; }
+ .tools-view .tool-detail-header { position:sticky; top:0; z-index:2; padding-top:8px; background:var(--surface,#101b31); }
+}
+@media(min-width:521px) and (max-width:900px) {
+ .tools-view .tools-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}
+@media(prefers-reduced-motion:reduce) {
+ .tools-view *, .tools-view *::before, .tools-view *::after { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; }
+}
