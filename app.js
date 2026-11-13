@@ -267,7 +267,17 @@ const mersalTranslations = {
   "اختيار جهات الاتصال":"Choose contacts","الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 50 ميغابايت.":"Supported formats: JPG, PNG, WebP, and GIF. Maximum size: 50 MB.",
   "استثناءات إضافتك إلى المجموعات":"Exceptions to adding you to groups","استثناءات صورة ملفك الشخصي":"Profile photo exceptions",
   "تعذر تحديث معلومات المجموعة: ":"Could not update group information: ","تعذر تحديث قائمة المجموعات:":"Could not refresh group list:",
-  "صورة مجموعة ":"Group photo ","تعذر حفظ وصف المجموعة: ":"Could not save group description: ","تعذر حفظ صورة المجموعة: ":"Could not save group photo: "
+  "صورة مجموعة ":"Group photo ","تعذر حفظ وصف المجموعة: ":"Could not save group description: ","تعذر حفظ صورة المجموعة: ":"Could not save group photo: ",
+  "تم تشغيل الإرسال بالضغط على Enter.":"Enter to send is now enabled.",
+  "تم إيقاف الإرسال بالضغط على Enter.":"Enter to send is now disabled.",
+  "تم تشغيل تأكيد حذف الرسائل.":"Delete confirmation is now enabled.",
+  "تم إيقاف تأكيد حذف الرسائل.":"Delete confirmation is now disabled.",
+  "خيارات الرسالة":"Message options","إغلاق الخيارات":"Close options","نسخ الرسالة":"Copy message",
+  "الرد على الرسالة":"Reply to message","حذف لدي":"Delete for me","حذف لدى الجميع":"Delete for everyone",
+  "حذف الرسالة لدي فقط":"Delete message for me only","حذف الرسالة لدى الجميع":"Delete message for everyone",
+  "حذف هذه الرسالة لدى الجميع":"Delete this message for everyone",
+  "حذف لدى الجميع، متاح لرسائلك أنت فقط":"Delete for everyone, available only for your messages",
+  "تاريخ ووقت الإرسال: ":"Sent on: "
 
 };
 const mersalOriginalText = new WeakMap();
@@ -279,6 +289,12 @@ function mersalShouldSkip(node) {
 }
 function mersalTranslateValue(value) {
   if(Object.prototype.hasOwnProperty.call(mersalTranslations,value))return mersalTranslations[value];
+  // Preserve surrounding whitespace while translating fixed labels in checkbox and button text nodes.
+  const trimmed=value.trim();
+  if(trimmed!==value&&Object.prototype.hasOwnProperty.call(mersalTranslations,trimmed)){
+    const start=value.indexOf(trimmed);
+    return value.slice(0,start)+mersalTranslations[trimmed]+value.slice(start+trimmed.length);
+  }
   const prefix=Object.keys(mersalTranslations).filter(key=>key.endsWith(" ")&&value.startsWith(key)).sort((a,b)=>b.length-a.length)[0];
   const suffix=Object.keys(mersalTranslations).filter(key=>key.startsWith(" ")&&value.endsWith(key)).sort((a,b)=>b.length-a.length)[0];
   if(prefix&&suffix&&prefix.length+suffix.length<=value.length){
