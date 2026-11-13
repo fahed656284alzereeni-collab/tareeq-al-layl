@@ -602,7 +602,7 @@ function returnToHomeTab() {
   statusView.hidden = true;
   document.body.classList.remove("status-open");
   if (toolsView) toolsView.hidden = true;
-  document.body.classList.remove("ai-tools-open");
+  document.body.classList.remove("tools-open");
   setActiveBottomTab("home");
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
 }
@@ -618,9 +618,9 @@ function openToolsTab() {
   document.body.classList.remove("status-open");
   if (document.body.classList.contains("chat-fullscreen") && backToChatsButton) backToChatsButton.click();
   toolsView.hidden = false;
-  document.body.classList.add("ai-tools-open");
+  document.body.classList.add("tools-open");
   setActiveBottomTab("tools");
-  document.querySelector("#ai-tools-title")?.focus();
+  document.querySelector("#tools-title")?.focus();
 }
 function openStatusTab() {
   if (!currentUser) return;
@@ -629,7 +629,7 @@ function openStatusTab() {
     document.body.classList.remove("settings-open");
   }
   if (toolsView) toolsView.hidden = true;
-  document.body.classList.remove("ai-tools-open");
+  document.body.classList.remove("tools-open");
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
   statusView.hidden = false;
   document.body.classList.add("status-open");
@@ -1278,7 +1278,7 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   bottomNavigation.hidden = true;
   statusView.hidden = true;
   if (toolsView) toolsView.hidden = true;
-  document.body.classList.remove("ai-tools-open");
+  document.body.classList.remove("tools-open");
   statusComposerPanel.hidden = true;
   statusViewerPanel.hidden = true;
   messageSchedulePanel.hidden = true;
@@ -1998,7 +1998,7 @@ function openSettings() {
   statusView.hidden = true;
   document.body.classList.remove("status-open");
   if (toolsView) toolsView.hidden = true;
-  document.body.classList.remove("ai-tools-open");
+  document.body.classList.remove("tools-open");
   settingsReturnFocus = document.activeElement;
   settingsEmail.value = currentUser.email || "";
   textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
