@@ -494,7 +494,12 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     const disposition = headers.get("content-disposition") || "";
     const utf8 = disposition.match(/filename\*=UTF-8''([^;]+)/i);
     const plain = disposition.match(/filename="?([^";]+)"?/i);
-    let name = fallback || (utf8 ? decodeURIComponent(utf8[1]) : plain?.[1]) || "mersal-media";
+    let encodedName = utf8?.[1] || "";
+    let name = "";
+    if (encodedName) {
+      try { name = decodeURIComponent(encodedName); } catch { name = encodedName; }
+    }
+    name = name || plain?.[1] || fallback || "mersal-media";
     return name.split(/[\\/]/).pop().replace(/[\u0000-\u001f]/g, "").slice(0, 180) || "mersal-media";
   }
   videoUrlInput.addEventListener("input", () => { resetVideoPreview(); videoStatus.textContent = ""; });
