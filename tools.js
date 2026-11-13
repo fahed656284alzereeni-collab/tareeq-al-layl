@@ -51,8 +51,6 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     ];
     for (const [selector, ar, enText] of buttons) text(selector, ar, enText);
     text("#bill-split-title","تقسيم الفاتورة","Split a bill");
-    text("#notes-tool .tool-help","تُحفظ الملاحظات على هذا الجهاز فقط، ولا تُرسل إلى خوادم مرسال.","Notes are saved only on this device and are not sent to Mersal servers.");
-    text("#calculator-tool > .tool-help","يمكنك استخدام أزرار الآلة الحاسبة أو لوحة المفاتيح.","Use the calculator buttons or your keyboard.");
     const splitOutput = $("#bill-split-result");
     if (splitOutput && ["أدخل البيانات لحساب نصيب كل شخص.","Enter the details to calculate the share per person."].includes(splitOutput.textContent.trim())) {
       splitOutput.textContent = en ? "Enter the details to calculate the share per person." : "أدخل البيانات لحساب نصيب كل شخص.";
