@@ -277,12 +277,44 @@ const mersalTranslations = {
   "حذف الرسالة لدي فقط":"Delete message for me only","حذف الرسالة لدى الجميع":"Delete message for everyone",
   "حذف هذه الرسالة لدى الجميع":"Delete this message for everyone",
   "حذف لدى الجميع، متاح لرسائلك أنت فقط":"Delete for everyone, available only for your messages",
-  "تاريخ ووقت الإرسال: ":"Sent on: "
+  "تاريخ ووقت الإرسال: ":"Sent on: ",
+  "إغلاق المعلومات":"Close information","الاسم":"Name","اسم المجموعة":"Group name","اسم الشخص":"Person's name",
+  "اسم المجموعة الجديد":"New group name","حفظ اسم المجموعة":"Save group name",
+  "معاينة صورة المجموعة":"Group photo preview","الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 50 ميغابايت.":"Supported formats: JPG, PNG, WebP, and GIF. Maximum size: 50 MB.",
+  "يمكن أن يصل الوصف إلى 500 حرف.":"The description can be up to 500 characters.",
+  "صورة المجموعة":"Group photo","تاريخ إنشاء المجموعة":"Group creation date","الصورة الشخصية":"Profile photo",
+  "النبذة":"About","الحالة":"Status","تاريخ الانضمام إلى مرسال":"Joined Mersal","عدد الرسائل":"Message count",
+  "البحث في الرسائل":"Search messages","ابحث في الرسائل":"Search messages","تنزيل سجل المحادثة":"Download chat history",
+  "كتم إشعارات المحادثة":"Mute chat notifications","تشغيل إشعارات المحادثة":"Unmute chat notifications",
+  "مسح المحادثة من جهازي":"Clear chat on my device","حظر الشخص":"Block person","إلغاء الحظر":"Unblock person",
+  "هذا الشخص حظرك":"This person blocked you","إضافة أعضاء":"Add members","أعضاء المجموعة":"Group members",
+  "مغادرة المجموعة":"Leave group","حذف المجموعة للجميع":"Delete group for everyone","حذف الدردشة من عندي":"Delete chat for me",
+  "اختيار صورة للمجموعة":"Choose group photo","إزالة صورة المجموعة":"Remove group photo","حفظ صورة المجموعة":"Save group photo",
+  "وصف المجموعة":"Group description","أضف وصفًا يعرّف بالمجموعة":"Add a description for the group",
+  "حفظ وصف المجموعة":"Save group description","لا يوجد وصف للمجموعة.":"No group description.",
+  "لا توجد نبذة متاحة.":"No About information available.","غير متوفر":"Not available",
+  "جارٍ التحميل…":"Loading…","تعذر تحميل العدد":"Could not load count",
+  "حالة الظهور مخفية":"Presence hidden","متصل الآن":"Online now",
+  "آخر ظهور غير متوفر":"Last seen unavailable","آخر ظهور اليوم الساعة ":"Last seen today at ",
+  "آخر ظهور أمس الساعة ":"Last seen yesterday at ","آخر ظهور ":"Last seen ",
+  " الساعة ":" at ","أمس":"yesterday","اليوم":"today",
+  "مستخدم مرسال":"Mersal user","منشئ المجموعة":"Group creator","مشرف":"Admin","عضو":"Member",
+  "مراسلة":"Message","إزالة صفة المشرف":"Remove admin role","تعيين مشرف":"Make admin",
+  "إزالة من المجموعة":"Remove from group","لا توجد إجراءات متاحة لهذا العضو.":"No actions are available for this member.",
+  "لا يوجد أشخاص متاحون للإضافة.":"No people available to add.",
+  "اكتب كلمة لعرض النتائج.":"Type a word to show results.",
+  "تعذر تحميل أعضاء المجموعة: ":"Could not load group members: ","تعذر تحميل أسماء الأعضاء.":"Could not load member names.",
+  "الصورة الشخصية لـ ":"Profile photo of ","صورة مجموعة ":"Group photo ",
+  " (أنت)":" (You)","، أنت":" , you",
+  "تم تغيير اسم المجموعة.":"Group name changed.","تعذر تغيير الاسم.":"Could not change the name.",
+  "تم حفظ وصف المجموعة.":"Group description saved.","تم حفظ صورة المجموعة.":"Group photo saved.",
+  "تمت إزالة صورة المجموعة.":"Group photo removed."
+
 
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
-const mersalSkipTranslation = "#status-list,#people-list,#group-people-list,#group-add-people,#group-member-list,#scheduled-messages-list,#conversation-search-results,#conversation-info-name,#conversation-info-status,#group-member-options-name,#message-schedule-preview,#replying-to-text,[data-no-translate]";
+const mersalSkipTranslation = "#status-list,#people-list,#group-people-list,#group-add-people,#group-member-list,#scheduled-messages-list,#conversation-search-results,#conversation-info-name,#group-member-options-name,#message-schedule-preview,#replying-to-text,[data-no-translate]";
 function mersalShouldSkip(node) {
   const parent=node.parentElement;
   return !parent||Boolean(parent.closest(mersalSkipTranslation));
@@ -1341,10 +1373,12 @@ function formatLastSeen(value) {
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
   const sameYesterday = date.toDateString() === yesterday.toDateString();
-  const time = date.toLocaleTimeString("ar-JO", { hour: "numeric", minute: "2-digit" });
-  if (sameDay) return "آخر ظهور اليوم الساعة " + time;
-  if (sameYesterday) return "آخر ظهور أمس الساعة " + time;
-  return "آخر ظهور " + date.toLocaleDateString("ar-JO", { day: "numeric", month: "long" }) + " الساعة " + time;
+  const english = localStorage.getItem("mersal-language") === "en";
+  const locale = english ? "en-US" : "ar-JO";
+  const time = date.toLocaleTimeString(locale, { hour: "numeric", minute: "2-digit" });
+  if (sameDay) return english ? "Last seen today at " + time : "آخر ظهور اليوم الساعة " + time;
+  if (sameYesterday) return english ? "Last seen yesterday at " + time : "آخر ظهور أمس الساعة " + time;
+  return (english ? "Last seen " : "آخر ظهور ") + date.toLocaleDateString(locale, { day: "numeric", month: "long" }) + (english ? " at " : " الساعة ") + time;
 }
 function updateChatPartnerPresence() {
   if ((!activePartner && !activeConversation?.is_group) || !chatPartnerPresence) return;
@@ -2979,7 +3013,7 @@ async function updateConversationInfo() {
     const joinDateResult = await supabase.rpc("get_profile_join_date", { p_user_id: partner.id });
     if (!isCurrent()) return;
     const joinedAt = joinDateResult.error ? null : joinDateResult.data;
-    setConversationInfoValue(conversationInfoJoined, joinedAt ? new Date(joinedAt).toLocaleDateString("ar-JO", { dateStyle: "long" }) : "غير متوفر");
+    setConversationInfoValue(conversationInfoJoined, joinedAt ? new Date(joinedAt).toLocaleDateString(localStorage.getItem("mersal-language")==="en"?"en-US":"ar-JO", { dateStyle: "long" }) : "غير متوفر");
     setConversationInfoValue(conversationInfoAbout, partnerProfile?.about || "لا توجد نبذة متاحة.");
     if (partnerProfile?.avatar_url) {
       conversationInfoPhoto.src = partnerProfile.avatar_url;
@@ -2993,7 +3027,7 @@ async function updateConversationInfo() {
 
   if (!isCurrent()) return;
   const createdAt = conversation.created_at;
-  setConversationInfoValue(conversationInfoCreated, createdAt ? new Date(createdAt).toLocaleDateString("ar-JO", { dateStyle: "long" }) : "غير متوفر");
+  setConversationInfoValue(conversationInfoCreated, createdAt ? new Date(createdAt).toLocaleDateString(localStorage.getItem("mersal-language")==="en"?"en-US":"ar-JO", { dateStyle: "long" }) : "غير متوفر");
   setConversationInfoValue(conversationInfoCount, "جارٍ التحميل…");
   conversationSearchArea.hidden = true;
   conversationSearchInput.value = "";
@@ -3055,7 +3089,7 @@ async function updateConversationInfo() {
   ]);
   if (!isCurrent()) return;
   if (error) setConversationInfoValue(conversationInfoCount, "تعذر تحميل العدد");
-  else setConversationInfoValue(conversationInfoCount, new Intl.NumberFormat("ar-JO").format(count || 0));
+  else setConversationInfoValue(conversationInfoCount, new Intl.NumberFormat(localStorage.getItem("mersal-language")==="en"?"en-US":"ar-JO").format(count || 0));
   if (preferenceError) {
     activeConversationMuted = false;
     announce("تعذر تحميل إعداد الإشعارات لهذه المحادثة.", "error");
