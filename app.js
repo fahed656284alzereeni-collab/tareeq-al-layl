@@ -12,6 +12,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 });
 
 const $ = (selector) => document.querySelector(selector);
+const isMersalAuthPopup = window.name === "mersal-google-auth";
 
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
 const mersalTranslations = {
@@ -1578,6 +1579,10 @@ async function handleSession(session, authEvent = "UNKNOWN") {
     return;
   }
   const alreadyLoadedForThisUser = currentUser?.id === session.user.id && !workspace.hidden;
+  if (alreadyLoadedForThisUser) {
+    finishOAuthPopup();
+    return;
+  }
   if (currentUser?.id !== session.user.id) {
     privacySettings = { last_seen_visibility:"contacts", online_visibility:"everyone", read_receipts_enabled:true,
       group_add_visibility:"everyone", status_visibility:"contacts", hide_notification_preview:false,
@@ -1623,6 +1628,7 @@ async function handleSession(session, authEvent = "UNKNOWN") {
     finishStartup();
     announce("تعذر تحميل بعض بيانات الحساب: " + (error.message || "خطأ غير معروف"), "error");
   }
+  finishOAuthPopup();
 }
 
 async function touchLastSeen() {
@@ -2611,31 +2617,66 @@ settingsForm.addEventListener("submit", async (event) => {
 applyTextSize(localStorage.getItem("mersal-text-size") || "normal");
 applyTheme(localStorage.getItem("mersal-theme") || "system");
 
+function finishOAuthPopup() {
+  if (!isMersalAuthPopup || !window.opener) return;
+  try {
+    window.opener.postMessage({ type: "mersal-auth-complete" }, window.location.origin);
+  } catch (error) {
+    console.warn("Could not notify the original Mersal window:", error);
+  }
+  window.close();
+}
+let sessionHandlingQueue = Promise.resolve();
+function queueSessionHandling(session, event = "UNKNOWN") {
+  sessionHandlingQueue = sessionHandlingQueue
+    .then(() => handleSession(session, event))
+    .catch(error => {
+      console.error("Mersal session handling failed:", error);
+      announce("تعذر إكمال تسجيل الدخول: " + (error?.message || "حاول مرة أخرى."), "error");
+      finishStartup();
+    });
+  return sessionHandlingQueue;
+}
+window.addEventListener("message", event => {
+  if (event.origin !== window.location.origin || event.data?.type !== "mersal-auth-complete") return;
+  void supabase.auth.getSession().then(({ data, error }) => {
+    if (error) announce("تعذر استعادة جلسة تسجيل الدخول: " + error.message, "error");
+    else void queueSessionHandling(data.session, "SIGNED_IN");
+  });
+});
+
 loginButton.addEventListener("click", async () => {
   loginButton.disabled = true;
   announce("جارٍ فتح Google لتسجيل الدخول…");
+  // Opening the OAuth window synchronously keeps the callback in the installed iOS web app.
+  // The parent window remains available to receive the resulting Supabase session.
+  const authWindow = window.open("about:blank", "mersal-google-auth");
+  if (authWindow) authWindow.name = "mersal-google-auth";
   try {
     const redirectTo = new URL("/", window.location.origin).toString();
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
         redirectTo,
+        skipBrowserRedirect: true,
         queryParams: { prompt: "select_account" }
       }
     });
     if (error) throw error;
+    if (!data?.url) throw new Error("تعذر الحصول على رابط تسجيل الدخول من Google.");
+    if (authWindow && !authWindow.closed) authWindow.location.replace(data.url);
+    else window.location.assign(data.url);
   } catch (error) {
+    try { authWindow?.close(); } catch {}
     announce("تعذر بدء تسجيل الدخول: " + (error?.message || "خطأ غير معروف"), "error");
     loginButton.disabled = false;
   }
 });
 
 supabase.auth.onAuthStateChange((event, session) => {
-  setTimeout(() => {
-    if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED" || event === "SIGNED_OUT") {
-      void handleSession(session, event);
-    }
-  }, 0);
+  if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED" || event === "SIGNED_OUT") {
+    setTimeout(() => { void queueSessionHandling(session, event); }, 0);
+  }
 });
 
 async function loadPeople() {
@@ -4683,7 +4724,7 @@ const { data: initial, error: initialError } = await supabase.auth.getSession();
 if (initialError) {
   showLoggedOut("تعذر التحقق من الجلسة: " + initialError.message);
 } else {
-  await handleSession(initial.session);
+  await queueSessionHandling(initial.session, "INITIAL_SESSION");
 }
 const params = getCallbackParams();
 if (params.has("error") || params.has("error_code")) {
