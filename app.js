@@ -2644,6 +2644,9 @@ window.addEventListener("message", event => {
     else void queueSessionHandling(data.session, "SIGNED_IN");
   });
 });
+window.addEventListener("focus", () => {
+  if (!authPanel.hidden) loginButton.disabled = false;
+});
 
 loginButton.addEventListener("click", async () => {
   loginButton.disabled = true;
