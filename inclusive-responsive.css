@@ -468,11 +468,11 @@ body.chat-fullscreen .workspace.chat-open .message-form {
 .bottom-navigation { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .bottom-nav-button { gap: 8px; flex-wrap: wrap; }
 .bottom-nav-label { overflow-wrap: anywhere; }
-body.ai-tools-open { overflow: hidden; }
-body.ai-tools-open #workspace .sidebar,
-body.ai-tools-open #workspace .chat-panel { display: none !important; }
-.ai-tools-view[hidden] { display: none !important; }
-.ai-tools-view:not([hidden]) {
+body.tools-open { overflow: hidden; }
+body.tools-open #workspace .sidebar,
+body.tools-open #workspace .chat-panel { display: none !important; }
+.tools-view[hidden] { display: none !important; }
+.tools-view:not([hidden]) {
   position: fixed;
   inset: 0 0 calc(76px + env(safe-area-inset-bottom));
   z-index: 100;
@@ -482,44 +482,44 @@ body.ai-tools-open #workspace .chat-panel { display: none !important; }
   background: var(--page, #101827);
   color: var(--text, #f5f7ff);
 }
-.ai-tools-page { width: min(100%, 1040px); margin-inline: auto; }
-.ai-tools-intro { margin: 0 auto 22px; max-width: 820px; }
-.ai-tools-eyebrow { margin: 0 0 5px; color: var(--muted, #b9c8df); font-size: .9rem; }
-.ai-tools-intro h1 { margin: 0 0 8px; font-size: clamp(1.45rem, 4vw, 2rem); line-height: 1.35; }
-.ai-tools-intro > p:last-child { margin: 0; color: var(--muted, #c4cce0); line-height: 1.8; }
-.ai-tools-notice {
+.tools-page { width: min(100%, 1040px); margin-inline: auto; }
+.tools-intro { margin: 0 auto 22px; max-width: 820px; }
+.tools-eyebrow { margin: 0 0 5px; color: var(--muted, #b9c8df); font-size: .9rem; }
+.tools-intro h1 { margin: 0 0 8px; font-size: clamp(1.45rem, 4vw, 2rem); line-height: 1.35; }
+.tools-intro > p:last-child { margin: 0; color: var(--muted, #c4cce0); line-height: 1.8; }
+.tools-notice {
   max-width: 820px; margin: 0 auto 20px; padding: 16px;
   border: 1px solid #9b8548; border-radius: 14px;
   background: #5a48251f; line-height: 1.75;
 }
-.ai-tools-notice strong { display: block; margin-bottom: 5px; }
-.ai-tools-notice p { margin: 0; color: var(--muted, #c4cce0); }
-.ai-tools-grid {
+.tools-notice strong { display: block; margin-bottom: 5px; }
+.tools-notice p { margin: 0; color: var(--muted, #c4cce0); }
+.tools-grid {
   display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px; max-width: 920px; margin: 0 auto;
 }
-.ai-tool-card {
+.tool-card {
   min-width: 0; padding: 18px; border: 1px solid var(--border, #405273);
   border-radius: 16px; background: var(--surface-raised, #182640);
 }
-.ai-tool-icon {
+.tool-icon {
   display: inline-grid; place-items: center; width: 42px; height: 42px;
   margin-bottom: 8px; border-radius: 12px; background: #344c78;
   color: #fff; font-weight: 800;
 }
-.ai-tool-card h2 { margin: 0 0 6px; font-size: 1.08rem; line-height: 1.5; }
-.ai-tool-card p { min-height: 3.2em; margin: 0 0 12px; color: var(--muted, #c4cce0); line-height: 1.7; }
-.ai-tool-status {
+.tool-card h2 { margin: 0 0 6px; font-size: 1.08rem; line-height: 1.5; }
+.tool-card p { min-height: 3.2em; margin: 0 0 12px; color: var(--muted, #c4cce0); line-height: 1.7; }
+.tool-status {
   display: inline-block; padding: 6px 10px; border: 1px solid var(--border, #405273);
   border-radius: 999px; color: var(--muted, #c4cce0); font-size: .86rem;
 }
-:root[data-theme="light"] .ai-tools-view { background: #f5f8fd; color: #17253a; }
-:root[data-theme="light"] .ai-tool-card { background: #fff; }
-:root[data-theme="light"] .ai-tools-notice { background: #fff8e8; border-color: #a88a43; }
+:root[data-theme="light"] .tools-view { background: #f5f8fd; color: #17253a; }
+:root[data-theme="light"] .tool-card { background: #fff; }
+:root[data-theme="light"] .tools-notice { background: #fff8e8; border-color: #a88a43; }
 @media (max-width: 620px) {
-  .ai-tools-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-  .ai-tool-card { padding: 15px; }
-  .ai-tool-card p { min-height: 0; }
+  .tools-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .tool-card { padding: 15px; }
+  .tool-card p { min-height: 0; }
   .bottom-navigation { gap: 5px; }
   .bottom-nav-button { gap: 4px; padding-inline: 3px; }
   .bottom-nav-button svg { width: 22px; height: 22px; }
