@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.0";
 import { initMersalTools } from "./tools.js";
+import { initMersalTools } from "./tools.js";
 
 const SUPABASE_URL = "https://nnsleztgbqeuqavkhrpw.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_0V7aL9rnFz5hFjKoPhz2ig_mSbxBK-T";
@@ -2120,6 +2121,7 @@ async function loadOwnProfile() {
   const ownPhoto = await resolveProfileAvatar({ avatar_url: data?.avatar_url || null });
   setProfilePhotoPreview(ownPhoto?.avatar_url || null);
 }
+const mersalTools = initMersalTools({ supabase, getCurrentUser: () => currentUser, announce, safeText });
 const mersalTools = initMersalTools({ supabase, getCurrentUser: () => currentUser, announce, safeText });
 settingsLanguageSelect.addEventListener("change", () => {
   applyMersalLanguage(settingsLanguageSelect.value);
