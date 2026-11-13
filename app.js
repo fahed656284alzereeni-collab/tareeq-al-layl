@@ -533,7 +533,13 @@ const mersalTranslations = {
   " صوت":" vote",
   " أصوات":" votes",
   " · صوتك:":" · Your vote:",
-  " · انتهى الاستطلاع":" · Poll closed",
+  " · انتهى الاستطلاع":" · Poll closed",,
+  "رمز QR للمحتوى: ":"QR code for content: ",
+  "تعذر إنشاء رمز QR. حاول مرة أخرى.":"Could not generate the QR code. Please try again.",
+  "تعذر تحميل المجموعات. حاول مرة أخرى.":"Could not load groups. Please try again.",
+  "تعذر تحميل الاستطلاعات. حاول مرة أخرى.":"Could not load polls. Please try again.",
+  "تعذر تسجيل التصويت. حاول مرة أخرى.":"Could not record your vote. Please try again.",
+  "تعذر إنشاء الاستطلاع. حاول مرة أخرى.":"Could not create the poll. Please try again.",
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
