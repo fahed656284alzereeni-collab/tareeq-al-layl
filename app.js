@@ -46,6 +46,12 @@ const mersalTranslations = {
   "إنشاء رموز QR":"Create QR codes",
   "حوّل رابطًا أو رقمًا أو نصًا إلى رمز QR.":"Turn a link, number, or text into a QR code.",
   "استطلاعات الرأي":"Polls",
+  "إنشاء استطلاع رأي":"Create a poll",
+  "استطلاع رأي":"Poll",
+  "إرفاق ملف":"Attach a file",
+  "تعذر تحميل الاستطلاع.":"Could not load the poll.",
+  "لم يعد هذا الاستطلاع متاحًا.":"This poll is no longer available.",
+  "لا يمكنك التصويت في هذه المحادثة بسبب الحظر.":"You cannot vote in this chat because of a block.",
   "أنشئ تصويتًا داخل مجموعة وشاهد النتائج.":"Create a poll in a group and view the results.",
   "العودة إلى الأدوات":"Back to tools",
   "الأداة":"Tool",
@@ -1217,6 +1223,15 @@ const closeAttachmentChooserButton = $("#close-attachment-chooser");
 const imageFileInput = $("#image-file-input");
 const videoFileInput = $("#video-file-input");
 const documentFileInput = $("#document-file-input");
+const createPollFromAttachmentsButton = $("#create-poll-from-attachments");
+const pollComposerPanel = $("#poll-composer-panel");
+const pollComposerForm = $("#poll-composer-form");
+const pollComposerQuestion = $("#poll-question-input");
+const pollComposerOptions = $("#poll-options-editor");
+const pollComposerAddOption = $("#poll-add-option-button");
+const pollComposerRemoveOption = $("#poll-remove-option-button");
+const pollComposerCreateButton = $("#poll-create-button");
+let pollComposerOptionCount = 2;
 const attachmentViewer = document.createElement("section");
 attachmentViewer.className = "attachment-viewer";
 attachmentViewer.hidden = true;
@@ -3346,7 +3361,7 @@ async function loadConversations() {
     if (latestMessage?.is_deleted) {
       lastMessageText = "تم حذف هذه الرسالة";
     } else if (latestMessage && !hiddenMessageIds.has(latestMessage.id)) {
-      lastMessageText = String(latestMessage.body || "").trim() || "رسالة غير نصية";
+      lastMessageText = getMessagePreviewText(latestMessage.body || "").trim() || "رسالة غير نصية";
       if (latestMessage.sender_id === currentUser.id) lastMessageText = "أنت: " + lastMessageText;
     } else if (latestMessage) {
       lastMessageText = "آخر رسالة مخفية";
@@ -3444,6 +3459,12 @@ async function selectConversation(conversation, person) {
       event: "UPDATE", schema: "public", table: "messages",
       filter: "conversation_id=eq." + conversation.id
     }, () => { void loadMessages(); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "group_poll_votes" }, payload => {
+      const pollId = payload.new?.poll_id || payload.old?.poll_id;
+      if (!pollId) return;
+      const host = messagesList.querySelector('.message-poll[data-poll-id="' + pollId + '"]');
+      if (host) void renderConversationPoll(pollId, host, host.dataset.messageId);
+    })
     .on("postgres_changes", { event:"INSERT", schema:"public", table:"message_reads", ...(conversation.is_group ? {} : { filter:"user_id=eq."+(person?.id||"") }) }, async payload => {
       if(!privacySettings.read_receipts_enabled&&!conversation.is_group)return;
       const messageNode=document.querySelector('[data-message-id="'+payload.new.message_id+'"]');
@@ -4052,15 +4073,7 @@ conversationInfoExportButton.addEventListener("click", async () => {
     const lines = ["مرسال - " + title, "آخر " + visible.length + " رسالة", ""];
     for (const message of visible) {
       const date = new Date(message.created_at).toLocaleString("ar-JO");
-      let body = message.is_deleted ? "تم حذف هذه الرسالة." : (message.body || "");
-      const marker = "MERSAL_ATTACHMENT:";
-      const markerIndex = body.indexOf(marker);
-      if (markerIndex >= 0) {
-        try {
-          const attachment = JSON.parse(body.slice(markerIndex + marker.length));
-          body = "[مرفق: " + (attachment.name || "ملف") + "]";
-        } catch { body = "[مرفق]"; }
-      }
+      const body = message.is_deleted ? "تم حذف هذه الرسالة." : getMessagePreviewText(message.body || "");
       const sender = message.sender_id === currentUser.id ? "أنت" : (names.get(message.sender_id) || "مستخدم مرسال");
       lines.push(date + " — " + sender + ": " + body);
     }
@@ -4506,12 +4519,125 @@ async function deleteMessageForEveryone(message, item, menu, toggle) {
     announce("تعذر حذف الرسالة لدى الجميع: " + (error?.message || "لم يتم تحديث الرسالة."), "error");
     return;
   }
+  const pollMessage = parsePollMessageBody(message.body || "");
+  if (pollMessage) {
+    const { error: pollDeleteError } = await supabase.from("group_polls").delete().eq("id", pollMessage.pollId);
+    if (pollDeleteError) console.warn("Could not remove deleted poll data:", pollDeleteError.message);
+  }
   item.replaceChildren(safeText("p", "message-body deleted-message", "تم حذف هذه الرسالة."));
   item.classList.add("message-deleted");
   closeMessageOptions(menu, toggle);
   void loadConversations().catch(error => console.warn("تعذر تحديث معاينة المحادثة بعد الحذف:", error));
   announce("تم الحذف.", "success");
 }
+
+function parsePollMessageBody(body) {
+  const raw = String(body || "");
+  const match = raw.match(/(?:^|\n)MERSAL_POLL:([0-9a-f-]{36})\s*$/i);
+  if (!match) return null;
+  return { pollId: match[1], preview: raw.slice(0, match.index).trim() };
+}
+function getMessagePreviewText(body) {
+  const raw = String(body || "");
+  const pollMessage = parsePollMessageBody(raw);
+  if (pollMessage) return pollMessage.preview || "استطلاع رأي";
+  const attachmentMarker = "MERSAL_ATTACHMENT:";
+  const attachmentIndex = raw.indexOf(attachmentMarker);
+  if (attachmentIndex >= 0) {
+    try {
+      const attachment = JSON.parse(raw.slice(attachmentIndex + attachmentMarker.length));
+      return "[مرفق: " + (attachment.name || "ملف") + "]";
+    } catch {
+      return "[مرفق]";
+    }
+  }
+  return raw.replace(/\\n/g, "\n").trim();
+}
+async function renderConversationPoll(pollId, host, messageId, focusOptionIndex = null) {
+  if (!host?.isConnected) return;
+  const english = document.documentElement.lang === "en";
+  try {
+    const { data: poll, error } = await supabase.from("group_polls")
+      .select("id,conversation_id,question,options,created_at,closes_at,created_by,group_poll_votes(user_id,option_index)")
+      .eq("id", pollId).maybeSingle();
+    if (error) throw error;
+    if (!poll) {
+      host.replaceChildren(safeText("p", "poll-meta", english ? "This poll is no longer available." : "لم يعد هذا الاستطلاع متاحًا."));
+      return;
+    }
+    const card = document.createElement("div");
+    card.className = "poll-card";
+    card.setAttribute("role", "group");
+    card.setAttribute("aria-label", english ? "Poll" : "استطلاع رأي");
+    const question = safeText("p", "poll-question", poll.question);
+    question.setAttribute("data-no-translate", "");
+    card.append(question);
+    const votes = poll.group_poll_votes || [];
+    const total = votes.length;
+    const ownVote = votes.find(vote => vote.user_id === currentUser?.id);
+    const closed = Boolean(poll.closes_at && new Date(poll.closes_at) <= new Date());
+    (Array.isArray(poll.options) ? poll.options : []).forEach((option, index) => {
+      const count = votes.filter(vote => vote.option_index === index).length;
+      const percent = total ? Math.round(count * 100 / total) : 0;
+      const row = document.createElement("div");
+      row.className = "poll-option-row";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "poll-vote-button";
+      button.dataset.optionIndex = String(index);
+      button.disabled = closed || (activeConversation?.id === poll.conversation_id && isPrivateConversationBlocked());
+      button.setAttribute("aria-pressed", String(ownVote?.option_index === index));
+      const optionLabel = safeText("span", "poll-option-label", option);
+      optionLabel.setAttribute("data-no-translate", "");
+      const countText = english
+        ? count + " of " + total + " votes · " + percent + "%"
+        : count + " من " + total + " أصوات · " + percent + "%";
+      const countLabel = safeText("span", "poll-option-count", countText);
+      button.setAttribute("aria-label", (english ? "Vote for " : "التصويت لخيار ") + option + ". " + countText);
+      button.append(optionLabel, countLabel);
+      button.addEventListener("click", () => void castConversationPollVote(poll.id, index, host, messageId));
+      const track = document.createElement("div");
+      track.className = "poll-result-track";
+      track.setAttribute("aria-hidden", "true");
+      const fill = document.createElement("span");
+      fill.className = "poll-result-fill";
+      fill.style.width = percent + "%";
+      track.append(fill);
+      row.append(button, track);
+      card.append(row);
+    });
+    const meta = safeText("p", "poll-meta", english
+      ? "Total votes: " + total + (ownVote ? " · Your vote: " + (poll.options[ownVote.option_index] || "") : "") + (closed ? " · Poll closed" : "")
+      : "إجمالي الأصوات: " + total + (ownVote ? " · تصويتك: " + (poll.options[ownVote.option_index] || "") : "") + (closed ? " · انتهى الاستطلاع" : ""));
+    meta.setAttribute("data-no-translate", "");
+    card.append(meta);
+    host.replaceChildren(card);
+    if (focusOptionIndex !== null) host.querySelector('[data-option-index="' + focusOptionIndex + '"]')?.focus();
+  } catch (error) {
+    console.error("Loading conversation poll failed:", error);
+    host.replaceChildren(safeText("p", "poll-meta", english ? "Could not load the poll." : "تعذر تحميل الاستطلاع."));
+  }
+}
+async function castConversationPollVote(pollId, optionIndex, host, messageId) {
+  if (!currentUser) return;
+  if (activeConversation && !activeConversation.is_group && isPrivateConversationBlocked()) {
+    announce(document.documentElement.lang === "en" ? "You cannot vote in this chat because of a block." : "لا يمكنك التصويت في هذه المحادثة بسبب الحظر.", "error");
+    return;
+  }
+  try {
+    const { error } = await supabase.from("group_poll_votes").upsert(
+      { poll_id: pollId, user_id: currentUser.id, option_index: optionIndex },
+      { onConflict: "poll_id,user_id" }
+    );
+    if (error) throw error;
+    await renderConversationPoll(pollId, host, messageId, optionIndex);
+    announce(document.documentElement.lang === "en" ? "Your vote has been recorded." : "تم تسجيل صوتك.");
+  } catch (error) {
+    console.error("Voting in conversation poll failed:", error);
+    announce(document.documentElement.lang === "en" ? "Could not record your vote. Please try again." : "تعذر تسجيل التصويت. حاول مرة أخرى.", "error");
+  }
+}
+
 function appendMessage(message) {
   if (!message || document.querySelector('[data-message-id="' + message.id + '"]')) return;
   messagesList.querySelectorAll(".empty-item").forEach(node => node.remove());
@@ -4525,13 +4651,21 @@ function appendMessage(message) {
     messagesList.scrollTop = messagesList.scrollHeight;
     return;
   }
+  const pollMessage = parsePollMessageBody(message.body);
+  let pollHost = null;
   const attachmentPrefix = "MERSAL_ATTACHMENT:";
   const attachmentIndex = (message.body || "").indexOf(attachmentPrefix);
   let attachment = null;
   if (attachmentIndex >= 0) {
     try { attachment = JSON.parse(message.body.slice(attachmentIndex + attachmentPrefix.length)); } catch { attachment = null; }
   }
-  if (attachment?.path) {
+  if (pollMessage) {
+    pollHost = document.createElement("div");
+    pollHost.className = "message-poll";
+    pollHost.dataset.pollId = pollMessage.pollId;
+    pollHost.dataset.messageId = message.id;
+    item.append(pollHost);
+  } else if (attachment?.path) {
     const attachmentView = document.createElement("div");
     attachmentView.className = "message-attachment";
     const fileName = attachment.name || "ملف مرفق";
@@ -4562,7 +4696,7 @@ function appendMessage(message) {
     }).catch(() => attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق.")));
     item.append(attachmentView);
   } else {
-    const messageBodyNode=safeText("p", "message-body", message.body);messageBodyNode.setAttribute("data-no-translate","");item.append(messageBodyNode);
+    const messageBodyNode=safeText("p", "message-body", getMessagePreviewText(message.body));messageBodyNode.setAttribute("data-no-translate","");item.append(messageBodyNode);
   }
   const sentAt = new Date(message.created_at);
   const time = sentAt.toLocaleString("ar-JO", { dateStyle: "full", timeStyle: "short" });
@@ -4607,7 +4741,7 @@ function appendMessage(message) {
   copyButton.type = "button";
   copyButton.addEventListener("click", async () => {
     try {
-      await navigator.clipboard.writeText(message.body || "");
+      await navigator.clipboard.writeText(getMessagePreviewText(message.body || ""));
       announce("تم نسخ الرسالة.");
     } catch {
       announce("تعذر نسخ الرسالة من هذا المتصفح.", "error");
@@ -4618,8 +4752,8 @@ function appendMessage(message) {
   replyButton.setAttribute("aria-label", "الرد على الرسالة");
   replyButton.type = "button";
   replyButton.addEventListener("click", () => {
-    replyingToMessage = { id: message.id, body: message.body || "" };
-    replyingToText.textContent = "الرد على: " + (message.body || "");
+    replyingToMessage = { id: message.id, body: getMessagePreviewText(message.body || "") };
+    replyingToText.textContent = "الرد على: " + getMessagePreviewText(message.body || "");
     replyingTo.hidden = false;
     closeMessageOptions(menu, toggle);
     messageInput.focus();
@@ -4640,6 +4774,7 @@ function appendMessage(message) {
   messageFooter.append(actions);
   item.append(messageFooter);
   messagesList.append(item);
+  if (pollHost) void renderConversationPoll(pollMessage.pollId, pollHost, message.id);
   messagesList.scrollTop = messagesList.scrollHeight;
 }
 async function loadMessages() {
@@ -4882,6 +5017,139 @@ attachButton.addEventListener("click", () => {
   closeAttachmentChooserButton.focus();
 });
 closeAttachmentChooserButton.addEventListener("click", closeAttachmentChooser);
+
+function updatePollComposerOptionButtons() {
+  pollComposerAddOption.disabled = pollComposerOptionCount >= 10;
+  pollComposerRemoveOption.disabled = pollComposerOptionCount <= 2;
+}
+function addPollComposerOption(number) {
+  const english = document.documentElement.lang === "en";
+  const labelText = number === 1 ? (english ? "Option one" : "الخيار الأول")
+    : number === 2 ? (english ? "Option two" : "الخيار الثاني")
+    : (english ? "Option " : "الخيار ") + number;
+  const label = safeText("label", "", labelText);
+  const input = document.createElement("input");
+  input.type = "text";
+  input.maxLength = 120;
+  input.className = "poll-option-input";
+  input.id = "poll-option-" + number;
+  input.placeholder = labelText;
+  input.setAttribute("aria-label", labelText);
+  label.htmlFor = input.id;
+  pollComposerOptions.append(label, input);
+}
+function resetPollComposerOptions() {
+  pollComposerOptions.replaceChildren();
+  pollComposerOptionCount = 2;
+  addPollComposerOption(1);
+  addPollComposerOption(2);
+  updatePollComposerOptionButtons();
+}
+function closePollComposer() {
+  pollComposerPanel.hidden = true;
+  attachButton.focus();
+}
+function openPollComposer() {
+  if (!currentUser || !activeConversation) return;
+  closeAttachmentChooser();
+  pollComposerQuestion.value = "";
+  resetPollComposerOptions();
+  pollComposerPanel.hidden = false;
+  pollComposerQuestion.focus();
+}
+createPollFromAttachmentsButton.addEventListener("click", openPollComposer);
+$("#close-poll-composer").addEventListener("click", closePollComposer);
+pollComposerPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closePollComposer();
+  }
+});
+pollComposerAddOption.addEventListener("click", () => {
+  if (pollComposerOptionCount >= 10) return;
+  pollComposerOptionCount += 1;
+  addPollComposerOption(pollComposerOptionCount);
+  updatePollComposerOptionButtons();
+  $("#poll-option-" + pollComposerOptionCount).focus();
+});
+pollComposerRemoveOption.addEventListener("click", () => {
+  if (pollComposerOptionCount <= 2) return;
+  const lastId = "poll-option-" + pollComposerOptionCount;
+  pollComposerOptions.querySelector('label[for="' + lastId + '"]')?.remove();
+  $("#" + lastId)?.remove();
+  pollComposerOptionCount -= 1;
+  updatePollComposerOptionButtons();
+  $("#poll-option-" + pollComposerOptionCount)?.focus();
+});
+pollComposerForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  const user = currentUser;
+  const conversation = activeConversation;
+  if (!user || !conversation) return;
+  const english = document.documentElement.lang === "en";
+  const question = pollComposerQuestion.value.trim();
+  const options = [...pollComposerOptions.querySelectorAll("input")].map(input => input.value.trim());
+  if (!question) {
+    announce(english ? "Enter a poll question." : "أدخل سؤال الاستطلاع.", "error");
+    pollComposerQuestion.focus();
+    return;
+  }
+  if (options.length < 2) {
+    announce(english ? "Add at least two options." : "أضف خيارين على الأقل.", "error");
+    return;
+  }
+  if (options.length > 10) {
+    announce(english ? "A poll can have no more than ten options." : "لا يمكن أن يتجاوز الاستطلاع 10 خيارات.", "error");
+    return;
+  }
+  if (options.some(option => !option)) {
+    announce(english ? "Complete every poll option." : "املأ جميع خيارات الاستطلاع.", "error");
+    pollComposerOptions.querySelector("input:placeholder-shown")?.focus();
+    return;
+  }
+  if (new Set(options.map(option => option.toLocaleLowerCase())).size !== options.length) {
+    announce(english ? "Poll options must be different." : "يجب أن تكون خيارات الاستطلاع مختلفة.", "error");
+    return;
+  }
+  if (!conversation.is_group && isPrivateConversationBlocked()) {
+    announce(english ? "You cannot create a poll in this chat because of a block." : "لا يمكنك إنشاء استطلاع في هذه المحادثة بسبب الحظر.", "error");
+    return;
+  }
+  pollComposerCreateButton.disabled = true;
+  try {
+    const { data: poll, error: pollError } = await supabase.from("group_polls").insert({
+      conversation_id: conversation.id,
+      created_by: user.id,
+      question,
+      options
+    }).select("id").single();
+    if (pollError) throw pollError;
+    const body = "📊 " + question + "\nMERSAL_POLL:" + poll.id;
+    const { data: message, error: messageError } = await supabase.from("messages").insert({
+      conversation_id: conversation.id,
+      sender_id: user.id,
+      body
+    }).select("id,conversation_id,sender_id,body,created_at,is_deleted").single();
+    if (messageError) {
+      const { error: cleanupError } = await supabase.from("group_polls").delete().eq("id", poll.id);
+      if (cleanupError) console.warn("Could not clean up an unposted poll:", cleanupError.message);
+      throw messageError;
+    }
+    closePollComposer();
+    appendMessage(message);
+    void loadConversations().catch(error => console.warn("Could not refresh conversations after poll creation:", error));
+    const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: message.id } });
+    if (pushError) console.warn("Poll push notification could not be sent:", pushError.message);
+    announce(english ? "Poll created." : "تم إنشاء الاستطلاع.");
+  } catch (error) {
+    console.error("Creating conversation poll failed:", error);
+    announce(english ? "Could not create the poll. Please try again." : "تعذر إنشاء الاستطلاع. حاول مرة أخرى.", "error");
+  } finally {
+    pollComposerCreateButton.disabled = false;
+  }
+});
+resetPollComposerOptions();
+
 attachmentChooser.addEventListener("keydown", event => {
   if (event.key === "Escape") closeAttachmentChooser();
 });
@@ -4914,7 +5182,7 @@ async function uploadAttachments(fileList, options = {}) {
       });
       if (uploadError) throw uploadError;
       const attachment = { path: uploaded.path, name: file.name, type: file.type || "application/octet-stream", size: file.size, ...(options.voiceMessage ? { kind: "voice" } : {}) };
-      const body = (options.voiceMessage ? "رسالة صوتية" : "📎 " + file.name) + "\\nMERSAL_ATTACHMENT:" + JSON.stringify(attachment);
+      const body = (options.voiceMessage ? "رسالة صوتية" : "📎 " + file.name) + "\nMERSAL_ATTACHMENT:" + JSON.stringify(attachment);
       const { data, error } = await supabase.from("messages").insert({
         conversation_id: activeConversation.id, sender_id: currentUser.id, body
       }).select("id,conversation_id,sender_id,body,created_at").single();
