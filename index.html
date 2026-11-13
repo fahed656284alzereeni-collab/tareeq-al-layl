@@ -14,7 +14,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="icon" href="/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="/icon.svg">
-  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>\n  <link rel="preconnect" href="https://esm.sh" crossorigin>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="preconnect" href="https://esm.sh" crossorigin>
   <link rel="preconnect" href="https://nnsleztgbqeuqavkhrpw.supabase.co" crossorigin>
   <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.119.0" crossorigin>
   <link rel="stylesheet" href="/styles.css">
@@ -353,16 +354,15 @@
       <section id="tools-view" class="tools-view" role="tabpanel" aria-labelledby="tools-title" hidden>
         <div class="tools-page">
           <div id="tools-home-view">
-            <div class="tools-intro"><p class="tools-eyebrow">مرسال</p><h1 id="tools-title" tabindex="-1">الأدوات</h1><p>أدوات عملية تساعدك أثناء استخدام مرسال.</p></div>
+            <div class="tools-intro"><p class="tools-eyebrow">مرسال</p><p id="tools-title" class="tools-page-title" tabindex="-1">الأدوات</p><p>أدوات عملية تساعدك أثناء استخدام مرسال.</p></div>
             <div class="tools-grid" role="group" aria-label="أدوات مرسال">
               <button class="tool-card tool-launch-button" type="button" data-tool="calculator"><span class="tool-icon" aria-hidden="true">＋</span><span class="tool-card-title">الآلة الحاسبة</span><span class="tool-card-description">عمليات حسابية ونسب مئوية وتقسيم الفواتير.</span><span class="tool-status">فتح الأداة</span></button>
               <button class="tool-card tool-launch-button" type="button" data-tool="notes"><span class="tool-icon" aria-hidden="true">✎</span><span class="tool-card-title">المفكرة السريعة</span><span class="tool-card-description">اكتب ملاحظاتك واحفظها وابحث فيها على هذا الجهاز.</span><span class="tool-status">فتح الأداة</span></button>
               <button class="tool-card tool-launch-button" type="button" data-tool="qr"><span class="tool-icon" aria-hidden="true">▦</span><span class="tool-card-title">إنشاء رموز QR</span><span class="tool-card-description">حوّل رابطًا أو رقمًا أو نصًا إلى رمز QR.</span><span class="tool-status">فتح الأداة</span></button>
-              <button class="tool-card tool-launch-button" type="button" data-tool="polls"><span class="tool-icon" aria-hidden="true">☷</span><span class="tool-card-title">استطلاعات الرأي</span><span class="tool-card-description">أنشئ تصويتًا داخل مجموعة وشاهد النتائج.</span><span class="tool-status">فتح الأداة</span></button>
             </div>
           </div>
           <section id="tool-detail-view" class="tool-detail-view" role="dialog" aria-modal="true" aria-labelledby="tool-detail-title" hidden>
-            <header class="tool-detail-header"><button id="tool-back-button" type="button" class="quiet-button">العودة إلى الأدوات</button><h2 id="tool-detail-title" tabindex="-1">الأداة</h2></header>
+            <header class="tool-detail-header"><button id="tool-back-button" type="button" class="quiet-button">العودة إلى الأدوات</button><p id="tool-detail-title" class="tool-detail-title" tabindex="-1">الأداة</p></header>
             <section id="calculator-tool" class="tool-panel" aria-label="الآلة الحاسبة" hidden>
               <output id="calculator-display" class="calculator-display" role="status" aria-live="polite" aria-atomic="true" aria-label="النتيجة">0</output>
               <div class="calculator-grid" role="group" aria-label="أزرار الآلة الحاسبة">
@@ -373,7 +373,7 @@
                 <button type="button" data-calc-key="sign" class="tool-action-button" aria-label="تغيير إشارة الرقم">±</button><button type="button" data-calc-key="0" class="tool-action-button">0</button><button type="button" data-calc-key="." class="tool-action-button" aria-label="فاصلة عشرية">.</button><button type="button" data-calc-key="equals" class="tool-action-button calculator-equals">=</button>
               </div><p class="tool-help">يمكنك استخدام أزرار الآلة الحاسبة أو لوحة المفاتيح.</p>
               <section class="bill-split-section" aria-labelledby="bill-split-title">
-                <h3 id="bill-split-title">تقسيم الفاتورة</h3>
+                <p id="bill-split-title" class="bill-split-title">تقسيم الفاتورة</p>
                 <label for="bill-total-input">قيمة الفاتورة</label><input id="bill-total-input" type="number" min="0.01" step="0.01" inputmode="decimal">
                 <label for="bill-people-input">عدد الأشخاص</label><input id="bill-people-input" type="number" min="1" step="1" value="2" inputmode="numeric">
                 <label for="bill-tip-input">نسبة الإكرامية (%)</label><input id="bill-tip-input" type="number" min="0" max="100" step="0.1" value="0" inputmode="decimal">
@@ -393,16 +393,7 @@
               <button id="qr-generate-button" type="button" class="primary-button">إنشاء رمز QR</button><p id="qr-status" class="tool-help" role="status" aria-live="polite"></p>
               <div id="qr-result" class="qr-result" hidden><canvas id="qr-canvas" role="img" aria-label="رمز QR الذي تم إنشاؤه"></canvas><p id="qr-content-preview" class="qr-content-preview" data-no-translate=""></p><div class="tool-action-row"><button id="qr-download-button" type="button" class="quiet-button" disabled>تنزيل رمز QR</button><button id="qr-copy-button" type="button" class="quiet-button" disabled>نسخ المحتوى</button></div></div>
             </section>
-            <section id="polls-tool" class="tool-panel" aria-label="استطلاعات الرأي" hidden>
-              <p class="tool-help">أنشئ استطلاعًا في إحدى مجموعاتك. يمكن لكل عضو التصويت وتغيير صوته، وتظهر النتائج لأعضاء المجموعة فقط.</p>
-              <label for="poll-group-select">المجموعة</label><select id="poll-group-select"><option value="">جارٍ تحميل المجموعات…</option></select>
-              <label for="poll-question-input">سؤال الاستطلاع</label><input id="poll-question-input" type="text" maxlength="240" placeholder="ما رأيك؟">
-              <div id="poll-options-editor" class="poll-options-editor"><label for="poll-option-1">الخيار الأول</label><input id="poll-option-1" class="poll-option-input" type="text" maxlength="120" placeholder="الخيار الأول"><label for="poll-option-2">الخيار الثاني</label><input id="poll-option-2" class="poll-option-input" type="text" maxlength="120" placeholder="الخيار الثاني"></div>
-              <div class="tool-action-row"><button id="poll-add-option-button" type="button" class="quiet-button">إضافة خيار</button><button id="poll-remove-option-button" type="button" class="quiet-button" disabled>إزالة آخر خيار</button><button id="poll-create-button" type="button" class="primary-button">إنشاء الاستطلاع</button></div>
-              <div class="polls-list-header"><h3>استطلاعات المجموعة</h3><button id="poll-refresh-button" type="button" class="quiet-button">تحديث النتائج</button></div>
-              <ul id="polls-list" class="polls-list" aria-label="استطلاعات المجموعة" aria-live="polite"></ul>
-            </section>
-          </section>
+         </section>
         </div>
       </section>
       <div class="sidebar" >
@@ -627,7 +618,25 @@
       <button id="choose-images" type="button" class="attachment-choice">إرسال الصور</button>
       <button id="choose-videos" type="button" class="attachment-choice">إرسال الفيديوهات</button>
       <button id="choose-files" type="button" class="attachment-choice">إرسال الملفات</button>
+      <button id="create-poll-from-attachments" type="button" class="attachment-choice">إنشاء استطلاع رأي</button>
     </div>
   </section>
-</body>
+
+  <section id="poll-composer-panel" class="message-schedule-panel poll-composer-panel" role="dialog" aria-modal="true" aria-label="إنشاء استطلاع رأي" hidden>
+    <form id="poll-composer-form" class="message-schedule-card poll-composer-card">
+      <button id="close-poll-composer" type="button" class="quiet-button">إلغاء</button>
+      <label for="poll-question-input">سؤال الاستطلاع</label>
+      <input id="poll-question-input" type="text" maxlength="240" placeholder="ما رأيك؟" autocomplete="off">
+      <div id="poll-options-editor" class="poll-options-editor">
+        <label for="poll-option-1">الخيار الأول</label><input id="poll-option-1" class="poll-option-input" type="text" maxlength="120" placeholder="الخيار الأول">
+        <label for="poll-option-2">الخيار الثاني</label><input id="poll-option-2" class="poll-option-input" type="text" maxlength="120" placeholder="الخيار الثاني">
+      </div>
+      <div class="poll-composer-actions">
+        <button id="poll-add-option-button" type="button" class="quiet-button">إضافة خيار</button>
+        <button id="poll-remove-option-button" type="button" class="quiet-button" disabled>إزالة آخر خيار</button>
+      </div>
+      <button id="poll-create-button" type="submit" class="primary-button">إنشاء الاستطلاع</button>
+    </form>
+  </section>
+ </body>
 </html>
