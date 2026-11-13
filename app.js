@@ -834,7 +834,7 @@ function setActiveBottomTab(tab) {
   settingsTabButton.setAttribute("aria-selected", String(tab === "settings"));
 }
 function returnToHomeTab() {
-  mersalTools.closeTool();
+  mersalTools.closeTool(false);
   if (settingsPanel && !settingsPanel.hidden) {
     settingsPanel.hidden = true;
   if (helpSupportPanel) helpSupportPanel.hidden = true;
@@ -851,7 +851,7 @@ function returnToHomeTab() {
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
 }
 function openToolsTab() {
-  mersalTools.closeTool();
+  mersalTools.closeTool(false);
   if (!currentUser) return;
   if (settingsPanel && !settingsPanel.hidden) {
     settingsPanel.hidden = true;
@@ -868,7 +868,7 @@ function openToolsTab() {
   document.querySelector("#tools-title")?.focus();
 }
 function openStatusTab() {
-  mersalTools.closeTool();
+  mersalTools.closeTool(false);
   if (!currentUser) return;
   if (settingsPanel && !settingsPanel.hidden) {
     settingsPanel.hidden = true;
@@ -2240,7 +2240,7 @@ async function renderBlockedUsers() {
 }
 
 function openSettings() {
-  mersalTools.closeTool();
+  mersalTools.closeTool(false);
   if (!currentUser) return;
   statusView.hidden = true;
   document.body.classList.remove("status-open");
