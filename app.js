@@ -867,6 +867,7 @@ const status = $("#status");
 const startupRetryButton = $("#startup-retry");
 function finishStartup() {
   if (window.__mersalStartupTimer) window.clearTimeout(window.__mersalStartupTimer);
+  if (window.__mersalAuthWatchdog) window.clearTimeout(window.__mersalAuthWatchdog);
   if (startupRetryButton) startupRetryButton.hidden = true;
 }
 const loginButton = $("#google-login");
@@ -4951,12 +4952,12 @@ messageForm.addEventListener("submit", async (event) => {
   messageInput.focus();
 });
 
-const { data: initial, error: initialError } = await supabase.auth.getSession();
-if (initialError) {
-  showLoggedOut("تعذر التحقق من الجلسة: " + initialError.message);
-} else {
-  await queueSessionHandling(initial.session, "INITIAL_SESSION");
-}
+// Do not block application startup on getSession(). Supabase emits INITIAL_SESSION
+// through onAuthStateChange after restoring persisted auth state.
+window.__mersalAuthWatchdog = window.setTimeout(() => {
+  if (currentUser) return;
+  showLoggedOut("تأخر استعادة جلسة الدخول تلقائيًا. يمكنك إعادة المحاولة أو تسجيل الدخول باستخدام Google.");
+}, 12000);
 const params = getCallbackParams();
 if (params.has("error") || params.has("error_code")) {
   announce("فشل تسجيل الدخول: " + (params.get("error_description") || params.get("error_code") || params.get("error") || "رفض Google الطلب"), "error");
