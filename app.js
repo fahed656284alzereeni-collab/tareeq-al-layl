@@ -262,6 +262,12 @@ const mersalTranslations = {
   " داخل المحادثة":" in chat","الرد على: ":"Replying to: ","تم نسخ الرسالة.":"Message copied.",
   "تعذر نسخ الرسالة من هذا المتصفح.":"Could not copy the message in this browser.","اكتب ردك على الرسالة المحددة.":"Write your reply to the selected message.",
   "اكتب ردك":"Write your reply","تاريخ ووقت الرسالة وخياراتها":"Message date, time, and options"
+,
+
+  "اختيار جهات الاتصال":"Choose contacts","الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 50 ميغابايت.":"Supported formats: JPG, PNG, WebP, and GIF. Maximum size: 50 MB.",
+  "استثناءات إضافتك إلى المجموعات":"Exceptions to adding you to groups","استثناءات صورة ملفك الشخصي":"Profile photo exceptions",
+  "تعذر تحديث معلومات المجموعة: ":"Could not update group information: ","تعذر تحديث قائمة المجموعات:":"Could not refresh group list:",
+  "صورة مجموعة ":"Group photo ","تعذر حفظ وصف المجموعة: ":"Could not save group description: ","تعذر حفظ صورة المجموعة: ":"Could not save group photo: "
 
 };
 const mersalOriginalText = new WeakMap();
