@@ -249,7 +249,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     } catch { announce("تعذر حفظ الملاحظة.", "error"); }
   });
   noteDelete.addEventListener("click", () => {
-    if (!activeNoteId) return;
+    if (!activeNoteId || !window.confirm("هل تريد حذف هذه الملاحظة؟")) return;
     notes = notes.filter((note) => note.id !== activeNoteId);
     localStorage.setItem(notesKey(), JSON.stringify(notes));
     activeNoteId = null;
