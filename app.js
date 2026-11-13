@@ -3381,7 +3381,7 @@ async function loadConversations() {
       const presence = safeText("span", "conversation-presence is-online", "متصل الآن");
       button.append(presence);
     }
-    button.addEventListener("click", () => { void selectConversation(conversation, person).then(()=>{if(conversation.is_group){chatPartnerName.textContent=conversation.group_name||"مجموعة";chatPartnerPresence.textContent="مجموعة";chatPartnerAccessible.setAttribute("aria-label",chatPartnerName.textContent+", مجموعة");}}); });
+    button.addEventListener("click", () => { void selectConversation(conversation, person).then(()=>{if(conversation.is_group){chatPartnerName.textContent=conversation.group_name||"مجموعة";chatPartnerPresence.textContent="مجموعة";chatPartnerAccessible.setAttribute("aria-label",chatPartnerName.textContent+", مجموعة");}}).catch(error=>reportChatOpenFailure(error,conversation)); });
     item.append(button);
     conversationList.append(item);
   }
@@ -3419,6 +3419,62 @@ async function openConversation(person) {
   await selectConversation(data, person);
   await loadConversations();
 }
+function reportChatOpenFailure(error, conversation) {
+  const english = localStorage.getItem("mersal-language") === "en";
+  let panel = document.getElementById("chat-open-diagnostic");
+  if (!panel) {
+    panel = document.createElement("section");
+    panel.id = "chat-open-diagnostic";
+    panel.setAttribute("role", "alert");
+    panel.setAttribute("aria-live", "assertive");
+    panel.setAttribute("aria-atomic", "true");
+    panel.dir = english ? "ltr" : "rtl";
+    Object.assign(panel.style, {
+      position: "fixed", inset: "max(12px, env(safe-area-inset-top)) 12px auto",
+      zIndex: "2147483647", maxHeight: "70vh", overflow: "auto",
+      padding: "18px", border: "2px solid #b45309", borderRadius: "14px",
+      background: "#fff7ed", color: "#431407", boxShadow: "0 8px 35px #0006",
+      font: "16px/1.6 system-ui, sans-serif", textAlign: "start"
+    });
+    const title = document.createElement("p");
+    title.style.fontWeight = "800";
+    title.textContent = english ? "Mersal could not display this conversation" : "تعذر عرض المحادثة في مرسال";
+    const details = document.createElement("pre");
+    details.id = "chat-open-diagnostic-details";
+    details.style.whiteSpace = "pre-wrap";
+    details.style.overflowWrap = "anywhere";
+    details.style.font = "14px/1.5 ui-monospace, monospace";
+    const close = document.createElement("button");
+    close.type = "button";
+    close.textContent = english ? "Close diagnostic" : "إغلاق معلومات الفحص";
+    Object.assign(close.style, { minHeight: "44px", padding: "8px 14px", font: "inherit" });
+    close.addEventListener("click", () => { panel.hidden = true; });
+    panel.append(title, details, close);
+    document.body.append(panel);
+  }
+  const describe = (node) => {
+    if (!node) return "missing";
+    const style = getComputedStyle(node);
+    const rect = node.getBoundingClientRect();
+    return "hidden=" + Boolean(node.hidden) + ", display=" + style.display +
+      ", visibility=" + style.visibility + ", size=" +
+      Math.round(rect.width) + "x" + Math.round(rect.height);
+  };
+  const lines = [
+    (english ? "Conversation: " : "المحادثة: ") + (conversation?.is_group ? (english ? "group" : "جماعية") : (english ? "individual" : "فردية")),
+    "workspace: " + describe(document.getElementById("workspace")),
+    "chat panel: " + describe(document.querySelector("#workspace .chat-panel")),
+    "chat view: " + describe(document.getElementById("chat-view")),
+    "body classes: " + document.body.className,
+    "focus: " + (document.activeElement?.id || document.activeElement?.tagName || "none"),
+    "error: " + (error?.message || String(error || (english ? "Chat view is not visible" : "واجهة المحادثة غير ظاهرة")))
+  ];
+  const details = panel.querySelector("#chat-open-diagnostic-details");
+  if (details) details.textContent = lines.join("\n");
+  panel.hidden = false;
+  panel.querySelector("button")?.focus();
+}
+
 async function selectConversation(conversation, person) {
   const selectionId = (selectConversation.sequence = (selectConversation.sequence || 0) + 1);
   const isCurrentSelection = () => selectConversation.sequence === selectionId && activeConversation?.id === conversation.id;
@@ -3460,6 +3516,16 @@ async function selectConversation(conversation, person) {
   // Move focus to the conversation title so keyboard and VoiceOver users get
   // the selected chat context without forcing text entry.
   chatPartnerAccessible.focus();
+
+  // Expose a readable diagnostic only if the chat is still visually hidden after layout.
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const viewStyle = getComputedStyle(chatView);
+    const viewRect = chatView.getBoundingClientRect();
+    if (chatView.hidden || viewStyle.display === "none" || viewStyle.visibility === "hidden" ||
+        viewRect.width < 10 || viewRect.height < 10) {
+      reportChatOpenFailure(null, conversation);
+    }
+  }));
 
   // These requests are independent of rendering the conversation; run them in the background.
   void supabase.from("conversation_hidden_for").delete()
