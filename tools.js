@@ -17,7 +17,6 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     text(".tools-intro .tools-eyebrow", "مرسال", "Mersal");
     text("#tools-title", "الأدوات", "Tools");
     text(".tools-intro > p:last-child", "أدوات عملية تساعدك أثناء استخدام مرسال.", "Useful tools to help you while using Mersal.");
-    text(".tools-grid", "", "");
     const cards = [
       [".tool-launch-button[data-tool='calculator']", "الآلة الحاسبة", "Calculator", "عمليات حسابية ونسب مئوية وتقسيم الفواتير.", "Calculations, percentages, and bill splitting.", "فتح الأداة", "Open tool"],
       [".tool-launch-button[data-tool='notes']", "المفكرة السريعة", "Quick notes", "اكتب ملاحظاتك واحفظها وابحث فيها على هذا الجهاز.", "Write, save, and search notes on this device.", "فتح الأداة", "Open tool"],
@@ -82,7 +81,13 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     document.querySelectorAll("#polls-list").forEach(node=>node.setAttribute("aria-label",en?"Group polls":"استطلاعات المجموعة"));
   }
   const toolsLanguageObserver = new MutationObserver(records => {
-    if (records.some(record => record.attributeName === "lang")) localizeTools();
+    if (records.some(record => record.attributeName === "lang")) {
+      localizeTools();
+      if (activeTool === "polls") {
+        void loadPollGroups();
+        if (groupSelect.value) void loadGroupPolls();
+      }
+    }
   });
   toolsLanguageObserver.observe(document.documentElement,{attributes:true,attributeFilter:["lang"]});
 
