@@ -543,6 +543,15 @@ const mersalTranslations = {
   "نسبة مئوية":"Percent",
   "تغيير إشارة الرقم":"Change number sign",
   "فاصلة عشرية":"Decimal point",
+  "تقسيم الفاتورة":"Bill splitting",
+  "قيمة الفاتورة":"Bill amount",
+  "عدد الأشخاص":"Number of people",
+  "نسبة الإكرامية (%)":"Tip percentage (%)",
+  "احسب نصيب كل شخص":"Calculate each person's share",
+  "أدخل البيانات لحساب نصيب كل شخص.":"Enter the details to calculate each person's share.",
+  "تحقق من البيانات المدخلة.":"Check the entered values.",
+  "نصيب كل شخص:":"Each person's share:",
+  "الإجمالي مع الإكرامية:":"Total including tip:",
 
 };
 const mersalOriginalText = new WeakMap();
