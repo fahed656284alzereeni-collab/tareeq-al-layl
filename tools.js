@@ -1,5 +1,3 @@
-import QRCode from "https://esm.sh/qrcode@1.5.4";
-
 const $ = (selector) => document.querySelector(selector);
 
 export function initMersalTools({ supabase, getCurrentUser, announce, safeText }) {
@@ -273,7 +271,8 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     qrGenerate.disabled = true;
     qrStatus.textContent = "جارٍ إنشاء رمز QR…";
     try {
-      await QRCode.toCanvas(qrCanvas, value, { width: 280, margin: 2, errorCorrectionLevel: "M" });
+      const qrModule = await import("https://esm.sh/qrcode@1.5.4");
+      await qrModule.default.toCanvas(qrCanvas, value, { width: 280, margin: 2, errorCorrectionLevel: "M" });
       latestQrContent = value;
       $("#qr-content-preview").textContent = value;
       $("#qr-canvas").setAttribute("aria-label", "رمز QR للمحتوى: " + value.slice(0, 100));
