@@ -528,7 +528,12 @@ const mersalTranslations = {
   "لا توجد استطلاعات لعرضها.":"No polls to display.","الرجاء اختيار خيار للتصويت.":"Please choose an option to vote.",
   "أداة غير معروفة":"Unknown tool","جارٍ الحفظ…":"Saving…","جارٍ الحذف…":"Deleting…",
   "عنوان الاستطلاع":"Poll title","خيار الاستطلاع":"Poll option","نتائج الاستطلاع":"Poll results"
-
+,
+  "الخيار ":"Option ",
+  " صوت":" vote",
+  " أصوات":" votes",
+  " · صوتك:":" · Your vote:",
+  " · انتهى الاستطلاع":" · Poll closed",
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
