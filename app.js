@@ -3468,7 +3468,11 @@ async function selectConversation(conversation, person) {
       const pollId = payload.new?.poll_id || payload.old?.poll_id;
       if (!pollId) return;
       const host = messagesList.querySelector('.message-poll[data-poll-id="' + pollId + '"]');
-      if (host) void renderConversationPoll(pollId, host, host.dataset.messageId);
+      if (host) {
+        const focused = document.activeElement?.closest?.(".message-poll") === host;
+        const index = focused ? Number(document.activeElement.dataset.optionIndex) : null;
+        void renderConversationPoll(pollId, host, host.dataset.messageId, Number.isInteger(index) ? index : null);
+      }
     })
     .on("postgres_changes", { event:"INSERT", schema:"public", table:"message_reads", ...(conversation.is_group ? {} : { filter:"user_id=eq."+(person?.id||"") }) }, async payload => {
       if(!privacySettings.read_receipts_enabled&&!conversation.is_group)return;
