@@ -59,9 +59,9 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     attr("#calculator-tool","aria-label","الآلة الحاسبة","Calculator");
     attr("#notes-tool","aria-label","المفكرة السريعة","Quick notes");
     attr("#qr-tool","aria-label","إنشاء رموز QR","QR code generator");
-    attr(".tools-grid","aria-label","أدوات مرسال","Mersal tools");
+    
     const help = $("#qr-canvas"); if (help) help.setAttribute("aria-label", en ? "Generated QR code" : "رمز QR الذي تم إنشاؤه");
-    document.querySelectorAll(".calculator-grid").forEach(node=>node.setAttribute("aria-label",en?"Calculator keys":"أزرار الآلة الحاسبة"));
+    
     document.querySelectorAll("#notes-list").forEach(node=>node.setAttribute("aria-label",en?"Saved notes":"الملاحظات المحفوظة"));
   }
   const toolsLanguageObserver = new MutationObserver(records => {
