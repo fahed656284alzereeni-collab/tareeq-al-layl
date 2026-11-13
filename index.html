@@ -372,27 +372,27 @@
                 <button type="button" data-calc-key="1" class="tool-action-button">1</button><button type="button" data-calc-key="2" class="tool-action-button">2</button><button type="button" data-calc-key="3" class="tool-action-button">3</button><button type="button" data-calc-key="+" class="tool-action-button calculator-operator" aria-label="جمع">+</button>
                 <button type="button" data-calc-key="sign" class="tool-action-button" aria-label="تغيير إشارة الرقم">±</button><button type="button" data-calc-key="0" class="tool-action-button">0</button><button type="button" data-calc-key="." class="tool-action-button" aria-label="فاصلة عشرية">.</button><button type="button" data-calc-key="equals" class="tool-action-button calculator-equals">=</button>
               </div>
-              <section class="bill-split-section" aria-labelledby="bill-split-title">
+              <div class="bill-split-section">
                 <p id="bill-split-title" class="bill-split-title">تقسيم الفاتورة</p>
                 <label for="bill-total-input">قيمة الفاتورة</label><input id="bill-total-input" type="number" min="0.01" step="0.01" inputmode="decimal">
                 <label for="bill-people-input">عدد الأشخاص</label><input id="bill-people-input" type="number" min="1" step="1" value="2" inputmode="numeric">
                 <label for="bill-tip-input">نسبة الإكرامية (%)</label><input id="bill-tip-input" type="number" min="0" max="100" step="0.1" value="0" inputmode="decimal">
                 <button id="bill-split-calculate" type="button" class="primary-button">احسب نصيب كل شخص</button>
                 <output id="bill-split-result" class="bill-split-result" role="status" aria-live="polite" aria-atomic="true">أدخل البيانات لحساب نصيب كل شخص.</output>
-              </section>
-            </section>
+              </div>
+            </div>
             <div id="notes-tool" class="tool-panel" hidden>
               <label for="note-title-input">عنوان الملاحظة</label><input id="note-title-input" type="text" maxlength="80" placeholder="اكتب عنوانًا للملاحظة">
               <label for="note-body-input">نص الملاحظة</label><textarea id="note-body-input" rows="7" maxlength="10000" placeholder="اكتب ملاحظتك هنا"></textarea>
               <div class="tool-action-row"><button id="note-new-button" type="button" class="quiet-button">ملاحظة جديدة</button><button id="note-save-button" type="button" class="primary-button" disabled>حفظ الملاحظة</button><button id="note-delete-button" type="button" class="danger-button" disabled>حذف الملاحظة</button></div>
               <label for="notes-search-input">البحث في الملاحظات</label><input id="notes-search-input" type="search" placeholder="ابحث في ملاحظاتك">
               <ul id="notes-list" class="notes-list" aria-label="الملاحظات المحفوظة" aria-live="polite"></ul>
-            </section>
+            </div>
             <div id="qr-tool" class="tool-panel" hidden>
               <label for="qr-content-input">النص أو الرابط أو رقم الهاتف</label><textarea id="qr-content-input" rows="4" maxlength="2000" placeholder="اكتب المحتوى الذي تريد تحويله إلى رمز QR"></textarea>
               <button id="qr-generate-button" type="button" class="primary-button">إنشاء رمز QR</button><p id="qr-status" class="tool-help" role="status" aria-live="polite"></p>
               <div id="qr-result" class="qr-result" hidden><canvas id="qr-canvas" role="img" aria-label="رمز QR الذي تم إنشاؤه"></canvas><p id="qr-content-preview" class="qr-content-preview" data-no-translate=""></p><div class="tool-action-row"><button id="qr-download-button" type="button" class="quiet-button" disabled>تنزيل رمز QR</button><button id="qr-copy-button" type="button" class="quiet-button" disabled>نسخ المحتوى</button></div></div>
-            </section>
+            </div>
          </section>
         </div>
       </section>
