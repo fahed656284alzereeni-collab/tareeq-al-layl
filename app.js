@@ -314,7 +314,7 @@ const mersalTranslations = {
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
-const mersalSkipTranslation = "#status-list,#people-list,#group-people-list,#group-add-people,#group-member-list,#scheduled-messages-list,#conversation-search-results,#conversation-info-name,#group-member-options-name,#message-schedule-preview,#replying-to-text,[data-no-translate]";
+const mersalSkipTranslation = "#status-list,#people-list,#group-people-list,#group-add-people,#scheduled-messages-list,#conversation-search-results,#conversation-info-name,#group-member-options-name,#message-schedule-preview,#replying-to-text,[data-no-translate]";
 function mersalShouldSkip(node) {
   const parent=node.parentElement;
   return !parent||Boolean(parent.closest(mersalSkipTranslation));
