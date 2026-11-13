@@ -4812,11 +4812,14 @@ async function loadMessages() {
   const partner = activePartner;
   const isCurrent = () => activeConversation?.id === conversationId;
   messagesList.replaceChildren();
-  const { data, error } = await supabase.from("messages")
+  // Keep the first chat render lightweight on mobile: fetch only the newest
+  // 50 messages, then restore chronological order for the conversation view.
+  const { data: newestFirst, error } = await supabase.from("messages")
     .select("id,conversation_id,sender_id,body,created_at,is_deleted")
     .eq("conversation_id", conversationId)
-    .order("created_at", { ascending: true })
-    .limit(200);
+    .order("created_at", { ascending: false })
+    .limit(50);
+  const data = newestFirst ? [...newestFirst].reverse() : newestFirst;
   if (!isCurrent()) return;
   if (error) {
     announce("تعذر تحميل الرسائل: " + error.message, "error");
