@@ -4835,34 +4835,38 @@ async function loadMessages() {
   }
   const hiddenIds = new Set(hiddenRows.map(row => row.message_id));
   const visibleMessages = (data || []).filter(message => !hiddenIds.has(message.id));
-  if (privacySettings.read_receipts_enabled || conversation.is_group) {
-    const incomingIds=visibleMessages.filter(message => message.sender_id !== currentUser.id && !message.is_deleted).map(message => message.id);
-    if(incomingIds.length){
-      const receipts=await supabase.from("message_reads").upsert(incomingIds.map(message_id=>({message_id,user_id:currentUser.id})),{onConflict:"message_id,user_id",ignoreDuplicates:true});
-      if (!isCurrent()) return;
-      if(receipts.error)console.warn("تعذر تسجيل قراءة الرسائل:",receipts.error.message);
-    }
-    const ownIds=visibleMessages.filter(message => message.sender_id === currentUser.id).map(message => message.id);
-    if(ownIds.length){
-      let readQuery=supabase.from("message_reads").select("message_id,user_id").in("message_id",ownIds);
-      if(!conversation.is_group&&partner)readQuery=readQuery.eq("user_id",partner.id);
-      const readRows=await readQuery;
-      if (!isCurrent()) return;
-      if(!readRows.error){
-        const counts=new Map();
-        for(const row of readRows.data||[])counts.set(row.message_id,(counts.get(row.message_id)||0)+1);
-        visibleMessages.forEach(message=>{
-          if(message.sender_id===currentUser.id){
-            if(conversation.is_group)message._readCount=counts.get(message.id)||0;
-            else message._readByPartner=(counts.get(message.id)||0)>0;
-          }
-        });
-      }
-    }
-  }
   if (!isCurrent()) return;
   if (!visibleMessages.length) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
   for (const message of visibleMessages) appendMessage(message);
+
+  // Read receipts are secondary; never delay showing the actual conversation for them.
+  if (privacySettings.read_receipts_enabled || conversation.is_group) {
+    void (async () => {
+      const incomingIds=visibleMessages.filter(message => message.sender_id !== currentUser.id && !message.is_deleted).map(message => message.id);
+      if(incomingIds.length){
+        const receipts=await supabase.from("message_reads").upsert(incomingIds.map(message_id=>({message_id,user_id:currentUser.id})),{onConflict:"message_id,user_id",ignoreDuplicates:true});
+        if(receipts.error)console.warn("تعذر تسجيل قراءة الرسائل:",receipts.error.message);
+      }
+      if (!isCurrent()) return;
+      const ownIds=visibleMessages.filter(message => message.sender_id === currentUser.id).map(message => message.id);
+      if(!ownIds.length)return;
+      let readQuery=supabase.from("message_reads").select("message_id,user_id").in("message_id",ownIds);
+      if(!conversation.is_group&&partner)readQuery=readQuery.eq("user_id",partner.id);
+      const readRows=await readQuery;
+      if (!isCurrent() || readRows.error) return;
+      const counts=new Map();
+      for(const row of readRows.data||[])counts.set(row.message_id,(counts.get(row.message_id)||0)+1);
+      for(const message of visibleMessages){
+        if(message.sender_id!==currentUser.id)continue;
+        const count=counts.get(message.id)||0;
+        const node=messagesList.querySelector('[data-message-id="'+message.id+'"]');
+        const footer=node?.querySelector(".message-footer");
+        if(!footer||footer.querySelector(".message-read-state"))continue;
+        if(conversation.is_group&&count>0)footer.append(safeText("span","message-read-state","مقروء من "+count));
+        else if(!conversation.is_group&&count>0)footer.append(safeText("span","message-read-state","مقروء"));
+      }
+    })().catch(error=>console.warn("Read receipt refresh:",error));
+  }
 }
 cancelReplyButton.addEventListener("click", () => { replyingToMessage = null; replyingTo.hidden = true; messageInput.focus(); });
 $("#refresh-chat").addEventListener("click", () => { void loadMessages(); });
