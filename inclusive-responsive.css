@@ -566,7 +566,9 @@ body.tools-detail-open .tools-view:not([hidden]) {
   z-index:160;
   padding:calc( max(14px, env(safe-area-inset-top)) + 8px ) max(14px, var(--mersal-page-gutter,16px)) max(24px, env(safe-area-inset-bottom));
 }
-body.tools-detail-open .tools-page { width:min(100%,820px); min-height:100%; margin-inline:auto; }
+body.tools-detail-open .tools-page { width:100%; max-width:none; min-height:100dvh; margin:0; }
+body.tools-detail-open .tool-detail-view:not([hidden]) { min-height:100dvh; }
+body.tools-detail-open .tool-panel { width:100%; max-width:none; min-height:calc(100dvh - 100px); margin:0; border-radius:0; }
 .tool-detail-view:not([hidden]) { display:block; }
 .tool-detail-header {
   display:flex; flex-wrap:wrap; align-items:center; gap:14px;
