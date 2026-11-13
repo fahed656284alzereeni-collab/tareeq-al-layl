@@ -499,14 +499,15 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   async function deletePoll(pollId) {
     const english = document.documentElement.lang === "en";
     if (!window.confirm(english ? "Do you want to delete this poll?" : "هل تريد حذف هذا الاستطلاع؟")) return;
-    const { error } = await supabase.from("group_polls").delete().eq("id", pollId);
-    if (error) {
+    try {
+      const { error } = await supabase.from("group_polls").delete().eq("id", pollId);
+      if (error) throw error;
+      announce(english ? "Poll deleted." : "تم حذف الاستطلاع.");
+      await loadGroupPolls();
+    } catch (error) {
       console.error("Deleting poll failed:", error);
       announce(english ? "Could not delete the poll. Please try again." : "تعذر حذف الاستطلاع. حاول مرة أخرى.", "error");
-      return;
     }
-    announce(english ? "Poll deleted." : "تم حذف الاستطلاع.");
-    await loadGroupPolls();
   }
 
   async function castVote(pollId, optionIndex) {
@@ -563,6 +564,12 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
 
   groupSelect.addEventListener("change", () => void loadGroupPolls());
   $("#poll-refresh-button").addEventListener("click", () => void loadGroupPolls());
+  const pollLanguageObserver = new MutationObserver((records) => {
+    if (records.some((record) => record.attributeName === "lang") && activeTool === "polls" && groupSelect.value) {
+      void loadGroupPolls();
+    }
+  });
+  pollLanguageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
   resetOptions();
 
   return { closeTool, openTool };
