@@ -398,7 +398,7 @@ const mersalTranslations = {
   "جارٍ إنشاء رمز QR…":"Generating QR code…",
   "جارٍ تحميل الاستطلاعات…":"Loading polls…",
   "تعذر تحميل المجموعات.":"Could not load groups.",
-  "تعذر تحميل الاستطلاعات.":"Could not load polls.",,
+  "تعذر تحميل الاستطلاعات.":"Could not load polls.",
   "أدوات عملية تساعدك أثناء استخدام مرسال.":"Practical tools to help you use Mersal.",
   "أدوات مرسال":"Mersal tools",
   "الآلة الحاسبة":"Calculator",
@@ -483,7 +483,7 @@ const mersalTranslations = {
   "جارٍ إنشاء رمز QR…":"Generating QR code…",
   "جارٍ تحميل الاستطلاعات…":"Loading polls…",
   "تعذر تحميل المجموعات.":"Could not load groups.",
-  "تعذر تحميل الاستطلاعات.":"Could not load polls.",,
+  "تعذر تحميل الاستطلاعات.":"Could not load polls.",
 
   "أدوات عملية تساعدك أثناء استخدام مرسال.":"Practical tools to help you while using Mersal.",
   "الآلة الحاسبة":"Calculator","المفكرة السريعة":"Quick notes","إنشاء رموز QR":"Create QR codes","استطلاعات الرأي":"Group polls",
@@ -533,13 +533,13 @@ const mersalTranslations = {
   " صوت":" vote",
   " أصوات":" votes",
   " · صوتك:":" · Your vote:",
-  " · انتهى الاستطلاع":" · Poll closed",,
+  " · انتهى الاستطلاع":" · Poll closed",
   "رمز QR للمحتوى: ":"QR code for content: ",
   "تعذر إنشاء رمز QR. حاول مرة أخرى.":"Could not generate the QR code. Please try again.",
   "تعذر تحميل المجموعات. حاول مرة أخرى.":"Could not load groups. Please try again.",
   "تعذر تحميل الاستطلاعات. حاول مرة أخرى.":"Could not load polls. Please try again.",
   "تعذر تسجيل التصويت. حاول مرة أخرى.":"Could not record your vote. Please try again.",
-  "تعذر إنشاء الاستطلاع. حاول مرة أخرى.":"Could not create the poll. Please try again.",,
+  "تعذر إنشاء الاستطلاع. حاول مرة أخرى.":"Could not create the poll. Please try again.",
   "هل تريد حذف هذه الملاحظة؟":"Do you want to delete this note?",
 
 };
