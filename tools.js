@@ -119,8 +119,13 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     returnFocus = null;
   }
 
-  document.querySelectorAll(".tool-launch-button").forEach((button) => {
-    button.addEventListener("click", () => openTool(button.dataset.tool));
+  // Delegate tool-card activation from the stable home container so the
+  // downloader and other tools keep opening even if card contents are refreshed.
+  home.addEventListener("click", (event) => {
+    const button = event.target.closest(".tool-launch-button[data-tool]");
+    if (!button || !home.contains(button)) return;
+    event.preventDefault();
+    openTool(button.dataset.tool);
   });
   back.addEventListener("click", closeTool);
   detail.addEventListener("keydown", (event) => {
