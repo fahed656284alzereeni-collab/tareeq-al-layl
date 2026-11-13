@@ -2040,3 +2040,10 @@ html[dir="ltr"] #privacy-settings-view{text-align:left}
 .group-admin-tools-top .group-photo-editor button,
 .group-admin-tools-top>button{width:100%;min-height:50px}
 .group-admin-tools-top textarea{min-height:88px}
+
+
+/* Video downloader tool: responsive preview and clear touch targets. */
+.video-downloader-preview { display: grid; gap: 14px; margin-top: 18px; }
+.video-downloader-preview video { display: block; width: 100%; max-height: min(62vh, 560px); border: 1px solid var(--border); border-radius: 14px; background: #000; }
+#video-downloader-tool > .tool-help { color: var(--muted); line-height: 1.7; }
+#video-url-input { direction: ltr; text-align: left; }
