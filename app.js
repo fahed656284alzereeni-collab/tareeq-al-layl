@@ -1,5 +1,23 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.119.0";
 import { initMersalTools } from "./tools.js";
+
+// Load Supabase Auth through two independent ESM CDNs. A failed static import
+// prevents this entire module from running, leaving the HTML startup timer visible.
+let createClient;
+try {
+  ({ createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm"));
+} catch (primaryCdnError) {
+  console.warn("Primary Supabase module CDN failed; trying fallback:", primaryCdnError);
+  try {
+    ({ createClient } = await import("https://esm.sh/@supabase/supabase-js@2.119.0"));
+  } catch (fallbackCdnError) {
+    const startupStatus = document.querySelector("#status");
+    const startupRetry = document.querySelector("#startup-retry");
+    if (startupStatus) startupStatus.textContent = "تعذر تحميل خدمة تسجيل الدخول. أعد المحاولة بعد قليل.";
+    if (startupRetry) startupRetry.hidden = false;
+    console.error("Both Supabase module CDNs failed:", fallbackCdnError);
+    throw fallbackCdnError;
+  }
+}
 
 const SUPABASE_URL = "https://nnsleztgbqeuqavkhrpw.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_0V7aL9rnFz5hFjKoPhz2ig_mSbxBK-T";
