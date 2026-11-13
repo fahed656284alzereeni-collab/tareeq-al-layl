@@ -194,11 +194,79 @@ const mersalTranslations = {
   "تعذر تحميل الرسائل: ":"Could not load messages: ","تعذر إرسال الرسالة: ":"Could not send message: ","تعذر إنشاء المجموعة: ":"Could not create group: ",
   "تعذرت جدولة الرسالة: ":"Could not schedule message: ","تعذر تحميل الحالات: ":"Could not load statuses: ","تعذر تحميل الإشعارات: ":"Could not load notifications: ",
   "تعذر بدء المكالمة: ":"Could not start call: ","تعذر الرد على المكالمة: ":"Could not answer call: ","تعذر حفظ الاسم: ":"Could not save name: ",
-  "تعذر حذف الحساب: ":"Could not delete account: ","تعذر تسجيل الخروج: ":"Could not sign out: ","تعذر فتح المحادثة: ":"Could not open conversation: "
+  "تعذر حذف الحساب: ":"Could not delete account: ","تعذر تسجيل الخروج: ":"Could not sign out: ","تعذر فتح المحادثة: ":"Could not open conversation: ",
+
+  "لغة واجهة مرسال":"Mersal interface language","جهات الاتصال":"Contacts","معاينة الصورة الشخصية":"Profile photo preview","اختيار صورة شخصية":"Choose profile photo",
+  "الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 5 ميغابايت.":"Supported formats: JPG, PNG, WebP, and GIF. Maximum size: 5 MB.",
+  "معلومات الحساب":"Account information","طريقة تسجيل الدخول: Google":"Sign-in method: Google","إدارة الحساب":"Account management",
+  "استثناءات آخر ظهور":"Last-seen exceptions","استثناءات إضافة المجموعات":"Group-add exceptions","جهات اتصال جمهور الحالات":"Status audience contacts",
+  "حدد الأشخاص الذين تريد مشاركة حالاتك معهم.":"Select the people you want to share your statuses with.",
+  "استثناءات صورة الملف الشخصي":"Profile photo exceptions","استثناءات النبذة":"About exceptions",
+  "كيف يمكننا مساعدتك؟ اختر نوع المساعدة، وستصل طلباتك مباشرة إلى فريق مرسال.":"How can we help? Choose the type of help you need, and your request will go directly to the Mersal team.",
+  "افتح «طلباتي السابقة ومتابعتها» لعرض رقم الطلب وحالته والردود عليه.":"Open “My previous requests” to view the ticket number, status, and replies.",
+  "اختر «إرسال طلب مساعدة جديد»، ثم حدد الإبلاغ عن خلل أو مشكلة تقنية واشرح ما حدث.":"Choose “Send a new support request”, select a bug or technical issue, and describe what happened.",
+  "اختر «إبلاغ عن إساءة أو محتوى» واكتب التفاصيل اللازمة لمراجعة البلاغ.":"Choose “Report abuse or content” and provide the details needed to review the report.",
+  "اختر «اقتراح ميزة» واشرح فكرتك وكيف يمكن أن تفيد مستخدمي مرسال.":"Choose “Suggest a feature” and explain your idea and how it could help Mersal users.",
+  "نعم، ستجد ردود فريق مرسال وتحديثات حالة الطلب داخل صفحة الطلب نفسها.":"Yes. You can find Mersal team replies and ticket status updates on the ticket page.",
+  "سيظهر طلبك للمطور داخل صندوق الدعم في مرسال، ويمكنك متابعة الردود من طلباتك السابقة.":"Your request will appear in the developer support inbox in Mersal. You can follow replies under your previous requests.",
+  "طلبات المساعدة السابقة":"Previous support requests","رسائل الطلب":"Ticket messages","اختيار صورة للمجموعة عند إنشائها":"Choose a group photo when creating it",
+  "نص":"Text","صورة":"Photo","فيديو":"Video","نشر الحالة":"Post status","نص الحالة أو وصف الوسائط":"Status text or media description",
+  "اكتب حالتك":"Write your status","أضف وصفًا اختياريًا":"Add an optional description","عرض الحالة":"View status","مشاهدو الحالة":"Status viewers","حذف الحالة":"Delete status",
+  "إلغاء الرد":"Cancel reply","اكتب رسالتك هنا…":"Type your message…","نص الرسالة":"Message text","إرفاق":"Attach","إرسال":"Send",
+  "إغلاق الخيارات":"Close options","خيارات الرسالة":"Message options","نسخ الرسالة":"Copy message","الرد على الرسالة":"Reply to message",
+  "حذف لدي":"Delete for me","حذف لدى الجميع":"Delete for everyone","حذف الرسالة لدي فقط":"Delete message for me only",
+  "حذف الرسالة لدى الجميع":"Delete message for everyone","حذف هذه الرسالة لدى الجميع":"Delete this message for everyone",
+  "حذف لدى الجميع، متاح لرسائلك أنت فقط":"Delete for everyone, available only for your own messages",
+  "تاريخ ووقت الرسالة وخياراتها":"Message date, time, and options","تاريخ ووقت الإرسال: ":"Sent: ",
+  "مقروء":"Read","مقروء من ":"Read by ","متصل الآن":"Online","مجموعة":"Group",
+  "غير مقروءة":"unread","غير مقروءة ":"unread ","غير مقروء":"unread","الإشعارات، ":"Notifications, ",
+  "لا توجد محادثات بعد.":"No conversations yet.","لا توجد إشعارات بعد.":"No notifications yet.",
+  "لا توجد رسائل بعد":"No messages yet","رسالة غير نصية":"Non-text message","آخر رسالة مخفية":"Last message hidden","أنت: ":"You: ",
+  "آخر رسالة: ":"Last message: ",". لديك ":" . You have "," رسائل غير مقروءة": " unread messages",
+  ". لا توجد رسائل غير مقروءة":". No unread messages",
+  "تعذر تجهيز الصورة الشخصية:":"Could not prepare profile photo:","رابط الصورة غير متاح":"Image URL unavailable",
+  "تعذر تجهيز صورة المجموعة:":"Could not prepare group photo:","تعذر تحديث عداد الدعم:":"Could not update support count:",
+  "صندوق الدعم للمطور (":"Developer support inbox (","وصل طلب دعم جديد إلى صندوق المطور.":"A new support request arrived in the developer inbox.",
+  "رقم الطلب ":"Ticket number ","الحالة: ":"Status: ","صاحب الطلب: ":"Requester: ","، رقم الطلب ":", ticket number ",
+  "، الحالة ":", status ","صاحب الطلب":"Requester","تعذر تحميل المرفق داخل مرسال.":"Could not load the attachment inside Mersal.",
+  "المرفق: ":"Attachment: ","نوع الملف غير مدعوم.":"File type is not supported.",
+  "حجم المرفق يتجاوز 20 ميغابايت.":"Attachment exceeds 20 MB.","تعذر تحديث الحضور:":"Could not update presence:",
+  "تعذر تحديث معاينة الرسالة المحذوفة:":"Could not update deleted-message preview:",
+  "تم حفظ إعدادات الخصوصية.":"Privacy settings saved.","تعذر تحديث الحضور بعد حفظ الخصوصية:":"Could not update presence after saving privacy settings:",
+  "إعداد الخصوصية غير معروف.":"Unknown privacy setting.","اختيار من يستطيع مشاهدة حالاتك":"Choose who can view your statuses",
+  "استثناءات مشاهدة الحالات":"Status-viewing exceptions","تم حفظ جمهور الحالات.":"Status audience saved.",
+  "تعذر حفظ جمهور الحالات: ":"Could not save status audience: ","تعذر إلغاء الحظر: ":"Could not unblock user: ",
+  "تم تحديث حجم نص الرسائل.":"Message text size updated.","تم تشغيل الإرسال بالضغط على Enter.":"Press-Enter-to-send enabled.",
+  "تم إيقاف الإرسال بالضغط على Enter.":"Press-Enter-to-send disabled.","تم تشغيل تأكيد حذف الرسائل.":"Message deletion confirmation enabled.",
+  "تم إيقاف تأكيد حذف الرسائل.":"Message deletion confirmation disabled.","تعذر تحميل إعدادات الخصوصية: ":"Could not load privacy settings: ",
+  "تعذر حفظ إعداد الخصوصية: ":"Could not save privacy setting: ","تعذر الحفظ: ":"Could not save: ",
+  "تعذر تحميل الملف الشخصي: ":"Could not load profile: ","تعذر حذف الصورة السابقة:":"Could not delete previous photo:",
+  "تم تحديث الصورة الشخصية.":"Profile photo updated.","تعذر رفع الصورة الشخصية: ":"Could not upload profile photo: ",
+  "تعذر حذف ملف الصورة السابقة:":"Could not delete previous photo file:","تمت إزالة الصورة الشخصية.":"Profile photo removed.",
+  "تعذرت إزالة الصورة الشخصية: ":"Could not remove profile photo: ","تم حفظ الملف الشخصي. قد تحتاج بعض القوائم إلى تحديث.":"Profile saved. Some lists may need to be refreshed.",
+  "تم حفظ الملف الشخصي.":"Profile saved.","تعذر حفظ الملف الشخصي: ":"Could not save profile: ",
+  "تعذر ربط الصورة بالمجموعة.":"Could not link photo to group."," تم إنشاء المجموعة، لكن تعذر حفظ الصورة: ":" Group created, but the photo could not be saved: ",
+  "تم حذف هذه الرسالة":"This message was deleted","تعذر تحديث حالة الظهور:":"Could not update online status:",
+  "لا تملك صلاحية تغيير الاسم.":"You do not have permission to change the name.","لا تملك صلاحية تعديل وصف المجموعة.":"You do not have permission to edit the group description.",
+  "لا تملك صلاحية تعديل صورة المجموعة.":"You do not have permission to edit the group photo.","تعذر تحديث معاينة المحادثة بعد الحذف:":"Could not update conversation preview after deletion:",
+  "تعذر تسجيل قراءة الرسائل:":"Could not record message read status:","حالة الظهور مخفية":"Presence is hidden",
+  "جارٍ تحديث حالة الظهور":"Updating online status","تحديث حالة الظهور":"Update online status",
+  "إلغاء الحظر":"Unblock","هذا الشخص حظرك":"This person blocked you","لا يمكن إرسال الرسائل بسبب الحظر.":"Messages cannot be sent because of blocking.",
+  "اسم المجموعة":"Group name","اسم الشخص":"Person's name","اكتب كلمة لعرض النتائج.":"Type a word to show results.",
+  "تشغيل إشعارات المحادثة":"Unmute chat notifications","كتم إشعارات المحادثة":"Mute chat notifications",
+  "تم تغيير اسم المجموعة.":"Group name changed.","مغادرة المكالمة":"Leave call","إنهاء المكالمة":"End call",
+  "تشغيل الميكروفون":"Turn on microphone","كتم الميكروفون":"Mute microphone","مشارك في المكالمة":"Call participant",
+  "عرض الصورة داخل مرسال":"View image in Mersal","تشغيل الفيديو داخل مرسال":"Play video in Mersal","تشغيل الصوت داخل مرسال":"Play audio in Mersal",
+  "عرض الملف داخل مرسال":"View file in Mersal","تعذر فتح المرفق.":"Could not open attachment.","ملف مرفق":"Attached file",
+  "صورة مرفقة: ":"Attached image: ","عرض الصورة ":"View image ","تشغيل الفيديو ":"Play video ","تشغيل الصوت ":"Play audio ","عرض الملف ":"View file ",
+  " داخل المحادثة":" in chat","الرد على: ":"Replying to: ","تم نسخ الرسالة.":"Message copied.",
+  "تعذر نسخ الرسالة من هذا المتصفح.":"Could not copy the message in this browser.","اكتب ردك على الرسالة المحددة.":"Write your reply to the selected message.",
+  "اكتب ردك":"Write your reply","تاريخ ووقت الرسالة وخياراتها":"Message date, time, and options"
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
-const mersalSkipTranslation = "#messages,#status-list,#conversation-list,#people-list,#group-people-list,#group-add-people,#group-member-list,#scheduled-messages-list,#conversation-search-results,#notifications-list,#conversation-info-name,#conversation-info-status,#group-member-options-name,#message-schedule-preview,#replying-to-text,[data-no-translate],input,textarea";
+const mersalSkipTranslation = "#status-list,#people-list,#group-people-list,#group-add-people,#group-member-list,#scheduled-messages-list,#conversation-search-results,#conversation-info-name,#conversation-info-status,#group-member-options-name,#message-schedule-preview,#replying-to-text,[data-no-translate]";
 function mersalShouldSkip(node) {
   const parent=node.parentElement;
   return !parent||Boolean(parent.closest(mersalSkipTranslation));
@@ -223,8 +291,9 @@ function mersalTranslateTextNode(node, language) {
   if(node.nodeValue!==next){state.lastApplied=next;node.nodeValue=next;}else state.lastApplied=next;
 }
 function mersalTranslateAttributes(element, language) {
-  if(element.matches?.(mersalSkipTranslation))return;
+  if(element.matches?.("[data-no-translate]")||element.hasAttribute("data-no-translate-aria-label"))return;
   for(const attr of ["aria-label","aria-description","placeholder","title","alt"]){
+    if(element.hasAttribute("data-no-translate-aria-label")&&attr==="aria-label")continue;
     if(!element.hasAttribute(attr))continue;
     let originals=mersalOriginalAttributes.get(element);
     if(!originals){originals={};mersalOriginalAttributes.set(element,originals);}
@@ -1491,9 +1560,9 @@ function renderNotifications(profileMap = new Map()) {
     button.type = "button";
     button.className = "notification-item" + (notification.read_at ? " is-read" : " is-unread");
     const safePreview = (!privacySettingsLoaded || privacySettings.hide_notification_preview) ? "رسالة جديدة" : (notification.preview || "أرسل رسالة جديدة");
-    button.setAttribute("aria-label", (notification.read_at ? "مقروء: " : "غير مقروء: ") + displayName(sender) + ". " + safePreview);
-    button.append(safeText("span", "notification-sender", displayName(sender)));
-    button.append(safeText("span", "notification-preview", safePreview));
+    button.setAttribute("aria-label", (notification.read_at ? "مقروء: " : "غير مقروء: ") + displayName(sender) + ". " + safePreview);button.setAttribute("data-no-translate-aria-label","");
+    const senderNode=safeText("span", "notification-sender", displayName(sender));senderNode.setAttribute("data-no-translate","");button.append(senderNode);
+    const previewNode=safeText("span", "notification-preview", safePreview);previewNode.setAttribute("data-no-translate","");button.append(previewNode);
     button.append(safeText("time", "notification-time", new Date(notification.created_at).toLocaleString("ar-JO", { dateStyle: "short", timeStyle: "short" })));
     button.addEventListener("click", () => { void openNotification(notification, sender); });
     item.append(button);
@@ -2636,7 +2705,7 @@ async function loadConversations() {
     button.className = "conversation-button";
     button.dataset.partnerId = partnerId;
     if(conversation.is_group)appendGroupAvatar(button,conversation);else appendProfileAvatar(button,person);
-    button.append(safeText("span", "conversation-person-name", displayName(person)));
+    const personNameNode=safeText("span", "conversation-person-name", displayName(person));personNameNode.setAttribute("data-no-translate","");button.append(personNameNode);
     const latestMessage = latestMessageByConversation.get(conversation.id);
     const unreadCount = unreadCountByConversation.get(conversation.id) || 0;
     let lastMessageText = "لا توجد رسائل بعد";
@@ -2652,7 +2721,7 @@ async function loadConversations() {
     const accessibleConversationLabel = displayName(person) +
       ". آخر رسالة: " + lastMessageText +
       (unreadCount ? ". لديك " + unreadCount + " رسائل غير مقروءة" : ". لا توجد رسائل غير مقروءة");
-    button.setAttribute("aria-label", accessibleConversationLabel);
+    button.setAttribute("aria-label", accessibleConversationLabel);button.setAttribute("data-no-translate-aria-label","");
     const isOnline = onlineUserIds.has(partnerId);
     if (isOnline) {
       const presence = safeText("span", "conversation-presence is-online", "متصل الآن");
@@ -3828,7 +3897,7 @@ function appendMessage(message) {
     const attachmentView = document.createElement("div");
     attachmentView.className = "message-attachment";
     const fileName = attachment.name || "ملف مرفق";
-    const fileInfo = safeText("p", "attachment-file-name", "📎 " + fileName);
+    const fileInfo = safeText("p", "attachment-file-name", "📎 " + fileName);fileInfo.setAttribute("data-no-translate","");
     attachmentView.append(fileInfo);
     void supabase.storage.from("mersal-attachments").createSignedUrl(attachment.path, 3600).then(({ data, error }) => {
       if (error || !data?.signedUrl) {
@@ -3855,7 +3924,7 @@ function appendMessage(message) {
     }).catch(() => attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق.")));
     item.append(attachmentView);
   } else {
-    item.append(safeText("p", "message-body", message.body));
+    const messageBodyNode=safeText("p", "message-body", message.body);messageBodyNode.setAttribute("data-no-translate","");item.append(messageBodyNode);
   }
   const sentAt = new Date(message.created_at);
   const time = sentAt.toLocaleString("ar-JO", { dateStyle: "full", timeStyle: "short" });
