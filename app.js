@@ -3420,19 +3420,16 @@ async function openConversation(person) {
   await loadConversations();
 }
 async function selectConversation(conversation, person) {
+  const selectionId = (selectConversation.sequence = (selectConversation.sequence || 0) + 1);
+  const isCurrentSelection = () => selectConversation.sequence === selectionId && activeConversation?.id === conversation.id;
+
   if (!groupAddPanel.hidden) { groupAddPanel.hidden=true; document.body.classList.remove("group-add-fullscreen"); }
-  const {error:hiddenConversationError}=await supabase.from("conversation_hidden_for").delete().eq("conversation_id",conversation.id).eq("user_id",currentUser.id);
-  if(hiddenConversationError)console.warn("Could not unhide conversation:",hiddenConversationError.message);
-  status.textContent = "";
+  // Open the chat immediately. Cleanup and secondary data must never hold the screen transition.
   activeConversation = conversation;
   activePartner = person;
   activeGroupMemberCount = null;
   chatPartnerName.textContent = displayName(person);
   chatPartnerAccessible.setAttribute("aria-label", `${chatPartnerName.textContent}، جاري تحديث حالة الظهور`);
-  await refreshVisiblePresence().catch(error => console.warn("تعذر تحديث حالة الظهور:", error.message));
-  activePartnerLastSeenAt = presenceDetails.get(person.id)?.last_seen_at || null;
-  updateChatPartnerPresence();
-  if (activeConversation.is_group) void refreshGroupHeaderMemberCount(activeConversation.id);
   chatEmpty.hidden = true;
   chatView.hidden = false;
   workspace.classList.add("chat-open");
@@ -3442,18 +3439,38 @@ async function selectConversation(conversation, person) {
   document.body.classList.remove("conversation-info-fullscreen");
   messageSchedulePanel.hidden = true;
   scheduledMessagesPanel.hidden = true;
+  status.textContent = "";
+  messageInput.focus();
+
+  // These requests are independent of rendering the conversation; run them in the background.
+  void supabase.from("conversation_hidden_for").delete()
+    .eq("conversation_id",conversation.id).eq("user_id",currentUser.id)
+    .then(({error})=>{if(error)console.warn("Could not unhide conversation:",error.message);});
+  void refreshVisiblePresence().then(()=>{
+    if(!isCurrentSelection())return;
+    activePartnerLastSeenAt = presenceDetails.get(person?.id)?.last_seen_at || null;
+    updateChatPartnerPresence();
+  }).catch(error=>console.warn("تعذر تحديث حالة الظهور:",error.message));
+  if (conversation.is_group) void refreshGroupHeaderMemberCount(conversation.id);
+
   await loadMessages();
-  await updateConversationInfo();
-  await markConversationNotificationsRead(conversation.id);
+  if (!isCurrentSelection()) return;
+
+  // Details, read-state updates, and call setup must not block access to the chat.
+  void updateConversationInfo().catch(error=>console.warn("تعذر تحميل معلومات المحادثة:",error.message));
+  void markConversationNotificationsRead(conversation.id).catch(error=>console.warn("تعذر تحديث إشعارات المحادثة:",error.message));
+
   if (realtimeChannel) await supabase.removeChannel(realtimeChannel);
+  if (!isCurrentSelection()) return;
   realtimeChannel = supabase.channel("messages-" + conversation.id)
     .on("postgres_changes", {
       event: "INSERT", schema: "public", table: "messages",
       filter: "conversation_id=eq." + conversation.id
     }, async (payload) => {
+      if (!isCurrentSelection()) return;
       const { data: hidden } = await supabase.from("message_hidden_for").select("message_id")
         .eq("message_id", payload.new.id).eq("user_id", currentUser.id).maybeSingle();
-      if (!hidden) {
+      if (!hidden && isCurrentSelection()) {
         appendMessage(payload.new);
         if((privacySettings.read_receipts_enabled||conversation.is_group)&&payload.new.sender_id!==currentUser.id){
           void supabase.from("message_reads").upsert({message_id:payload.new.id,user_id:currentUser.id},{onConflict:"message_id,user_id",ignoreDuplicates:true});
@@ -3463,8 +3480,9 @@ async function selectConversation(conversation, person) {
     .on("postgres_changes", {
       event: "UPDATE", schema: "public", table: "messages",
       filter: "conversation_id=eq." + conversation.id
-    }, () => { void loadMessages(); })
+    }, () => { if(isCurrentSelection()) void loadMessages(); })
     .on("postgres_changes", { event: "*", schema: "public", table: "group_poll_votes" }, payload => {
+      if (!isCurrentSelection()) return;
       const pollId = payload.new?.poll_id || payload.old?.poll_id;
       if (!pollId) return;
       const host = messagesList.querySelector('.message-poll[data-poll-id="' + pollId + '"]');
@@ -3475,12 +3493,12 @@ async function selectConversation(conversation, person) {
       }
     })
     .on("postgres_changes", { event:"INSERT", schema:"public", table:"message_reads", ...(conversation.is_group ? {} : { filter:"user_id=eq."+(person?.id||"") }) }, async payload => {
-      if(!privacySettings.read_receipts_enabled&&!conversation.is_group)return;
+      if (!isCurrentSelection() || (!privacySettings.read_receipts_enabled&&!conversation.is_group))return;
       const messageNode=document.querySelector('[data-message-id="'+payload.new.message_id+'"]');
       if(!messageNode || !messageNode.classList.contains("mine"))return;
       if(conversation.is_group){
         const result=await supabase.from("message_reads").select("user_id").eq("message_id",payload.new.message_id);
-        if(!result.error){
+        if(!result.error && isCurrentSelection()){
           const label=messageNode.querySelector(".message-read-state")||safeText("span","message-read-state","");
           label.textContent=(result.data||[]).length ? "مقروء من "+result.data.length : "";
           if(!label.isConnected)messageNode.append(label);
@@ -3490,7 +3508,7 @@ async function selectConversation(conversation, person) {
     .on("postgres_changes", {
       event:"UPDATE",schema:"public",table:"conversations",filter:"id=eq."+conversation.id
     }, payload => {
-      if(activeConversation?.id!==conversation.id||!conversation.is_group)return;
+      if(!isCurrentSelection()||!conversation.is_group)return;
       activeConversation={...activeConversation,...payload.new};
       chatPartnerName.textContent=activeConversation.group_name||"مجموعة";
       updateGroupHeaderAccessibleLabel();
@@ -3502,13 +3520,9 @@ async function selectConversation(conversation, person) {
         announce("الاتصال المباشر بالرسائل غير مستقر. استخدم زر تحديث الرسائل للمزامنة.", "error");
       }
     });
-  await ensureCallChannel(conversation.id).catch(error => {
-    console.warn("Voice call channel:", error);
-    announce("تعذر تجهيز المكالمات الصوتية لهذه المحادثة.", "error");
-  });
-  messageInput.focus();
+  // A slow Realtime subscription must not keep the chat-opening action pending.
+  void ensureCallChannel(conversation.id).catch(error => console.warn("Voice call channel:",error));
 }
-
 function setConversationInfoValue(element, value) {
   if(!element)return;
   element.textContent = value;
@@ -4792,47 +4806,61 @@ function appendMessage(message) {
 async function loadMessages() {
   if (!activeConversation) return;
   if (!privacySettingsLoaded) await loadPrivacySettings();
+  const conversation = activeConversation;
+  const conversationId = conversation.id;
+  const partner = activePartner;
+  const isCurrent = () => activeConversation?.id === conversationId;
   messagesList.replaceChildren();
   const { data, error } = await supabase.from("messages")
     .select("id,conversation_id,sender_id,body,created_at,is_deleted")
-    .eq("conversation_id", activeConversation.id)
+    .eq("conversation_id", conversationId)
     .order("created_at", { ascending: true })
     .limit(200);
+  if (!isCurrent()) return;
   if (error) {
     announce("تعذر تحميل الرسائل: " + error.message, "error");
     return;
   }
-  const { data: hiddenRows, error: hiddenError } = await supabase.from("message_hidden_for")
-    .select("message_id").eq("user_id", currentUser.id);
-  if (hiddenError) {
-    announce("تعذر تحميل إعدادات إخفاء الرسائل: " + hiddenError.message, "error");
-    return;
+  const messageIds = (data || []).map(message => message.id);
+  let hiddenRows = [];
+  if (messageIds.length) {
+    const hiddenResult = await supabase.from("message_hidden_for")
+      .select("message_id").eq("user_id", currentUser.id).in("message_id", messageIds);
+    if (!isCurrent()) return;
+    if (hiddenResult.error) {
+      announce("تعذر تحميل إعدادات إخفاء الرسائل: " + hiddenResult.error.message, "error");
+      return;
+    }
+    hiddenRows = hiddenResult.data || [];
   }
-  const hiddenIds = new Set((hiddenRows || []).map(row => row.message_id));
+  const hiddenIds = new Set(hiddenRows.map(row => row.message_id));
   const visibleMessages = (data || []).filter(message => !hiddenIds.has(message.id));
-  if (privacySettings.read_receipts_enabled || activeConversation.is_group) {
-    const incomingIds=visibleMessages.filter(message=>message.sender_id!==currentUser.id&&!message.is_deleted).map(message=>message.id);
+  if (privacySettings.read_receipts_enabled || conversation.is_group) {
+    const incomingIds=visibleMessages.filter(message => message.sender_id !== currentUser.id && !message.is_deleted).map(message => message.id);
     if(incomingIds.length){
       const receipts=await supabase.from("message_reads").upsert(incomingIds.map(message_id=>({message_id,user_id:currentUser.id})),{onConflict:"message_id,user_id",ignoreDuplicates:true});
+      if (!isCurrent()) return;
       if(receipts.error)console.warn("تعذر تسجيل قراءة الرسائل:",receipts.error.message);
     }
-    const ownIds=visibleMessages.filter(message=>message.sender_id===currentUser.id).map(message=>message.id);
+    const ownIds=visibleMessages.filter(message => message.sender_id === currentUser.id).map(message => message.id);
     if(ownIds.length){
       let readQuery=supabase.from("message_reads").select("message_id,user_id").in("message_id",ownIds);
-      if(!activeConversation.is_group&&activePartner)readQuery=readQuery.eq("user_id",activePartner.id);
+      if(!conversation.is_group&&partner)readQuery=readQuery.eq("user_id",partner.id);
       const readRows=await readQuery;
+      if (!isCurrent()) return;
       if(!readRows.error){
         const counts=new Map();
         for(const row of readRows.data||[])counts.set(row.message_id,(counts.get(row.message_id)||0)+1);
         visibleMessages.forEach(message=>{
           if(message.sender_id===currentUser.id){
-            if(activeConversation.is_group)message._readCount=counts.get(message.id)||0;
+            if(conversation.is_group)message._readCount=counts.get(message.id)||0;
             else message._readByPartner=(counts.get(message.id)||0)>0;
           }
         });
       }
     }
   }
+  if (!isCurrent()) return;
   if (!visibleMessages.length) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
   for (const message of visibleMessages) appendMessage(message);
 }
