@@ -4559,7 +4559,7 @@ function getMessagePreviewText(body) {
       return "[مرفق]";
     }
   }
-  return raw.trim();
+  return raw;
 }
 async function renderConversationPoll(pollId, host, messageId, focusOptionIndex = null) {
   if (!host?.isConnected) return;
