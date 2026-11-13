@@ -340,7 +340,7 @@ const mersalTranslations = {
   "تعذر حذف الحساب: ":"Could not delete account: ","تعذر تسجيل الخروج: ":"Could not sign out: ","تعذر فتح المحادثة: ":"Could not open conversation: ",
 
   "لغة واجهة مرسال":"Mersal interface language","جهات الاتصال":"Contacts","معاينة الصورة الشخصية":"Profile photo preview","اختيار صورة شخصية":"Choose profile photo",
-  "الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 5 ميغابايت.":"Supported formats: JPG, PNG, WebP, and GIF. Maximum size: 5 MB.",
+  "الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى للصورة الشخصية: 5 ميغابايت.":"Supported formats: JPG, PNG, WebP, and GIF. Maximum profile photo size: 5 MB.",
   "معلومات الحساب":"Account information","طريقة تسجيل الدخول: Google":"Sign-in method: Google","إدارة الحساب":"Account management",
   "استثناءات آخر ظهور":"Last-seen exceptions","استثناءات إضافة المجموعات":"Group-add exceptions","جهات اتصال جمهور الحالات":"Status audience contacts",
   "حدد الأشخاص الذين تريد مشاركة حالاتك معهم.":"Select the people you want to share your statuses with.",
@@ -407,7 +407,7 @@ const mersalTranslations = {
   "اكتب ردك":"Write your reply","تاريخ ووقت الرسالة وخياراتها":"Message date, time, and options"
 ,
 
-  "اختيار جهات الاتصال":"Choose contacts","الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 50 ميغابايت.":"Supported formats: JPG, PNG, WebP, and GIF. Maximum size: 50 MB.",
+  "اختيار جهات الاتصال":"Choose contacts","الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى لصورة المجموعة: 50 ميغابايت.":"Supported formats: JPG, PNG, WebP, and GIF. Maximum group photo size: 50 MB.",
   "استثناءات إضافتك إلى المجموعات":"Exceptions to adding you to groups","استثناءات صورة ملفك الشخصي":"Profile photo exceptions",
   "تعذر تحديث معلومات المجموعة: ":"Could not update group information: ","تعذر تحديث قائمة المجموعات:":"Could not refresh group list:",
   "صورة مجموعة ":"Group photo ","تعذر حفظ وصف المجموعة: ":"Could not save group description: ","تعذر حفظ صورة المجموعة: ":"Could not save group photo: ",
@@ -423,7 +423,7 @@ const mersalTranslations = {
   "تاريخ ووقت الإرسال: ":"Sent on: ",
   "إغلاق المعلومات":"Close information","الاسم":"Name","اسم المجموعة":"Group name","اسم الشخص":"Person's name",
   "اسم المجموعة الجديد":"New group name","حفظ اسم المجموعة":"Save group name",
-  "معاينة صورة المجموعة":"Group photo preview","الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى 50 ميغابايت.":"Supported formats: JPG, PNG, WebP, and GIF. Maximum size: 50 MB.",
+  "معاينة صورة المجموعة":"Group photo preview","الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى لصورة المجموعة: 50 ميغابايت.":"Supported formats: JPG, PNG, WebP, and GIF. Maximum group photo size: 50 MB.",
   "يمكن أن يصل الوصف إلى 500 حرف.":"The description can be up to 500 characters.",
   "صورة المجموعة":"Group photo","تاريخ إنشاء المجموعة":"Group creation date","الصورة الشخصية":"Profile photo",
   "النبذة":"About","الحالة":"Status","تاريخ الانضمام إلى مرسال":"Joined Mersal","عدد الرسائل":"Message count",
