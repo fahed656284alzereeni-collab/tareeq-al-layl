@@ -5144,7 +5144,7 @@ pollComposerForm.addEventListener("submit", async event => {
       throw messageError;
     }
     closePollComposer();
-    appendMessage(message);
+    if (activeConversation?.id === conversation.id) appendMessage(message);
     void loadConversations().catch(error => console.warn("Could not refresh conversations after poll creation:", error));
     const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: message.id } });
     if (pushError) console.warn("Poll push notification could not be sent:", pushError.message);
