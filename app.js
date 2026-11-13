@@ -2533,7 +2533,18 @@ async function loadOwnProfile() {
   const ownPhoto = await resolveProfileAvatar({ avatar_url: data?.avatar_url || null });
   setProfilePhotoPreview(ownPhoto?.avatar_url || null);
 }
-const mersalTools = initMersalTools({ supabase, getCurrentUser: () => currentUser, announce, safeText });
+let mersalTools = {
+  closeTool() {},
+  openTool() {
+    announce(document.documentElement.lang === "en" ? "Tools are temporarily unavailable. Please try again later." : "الأدوات غير متاحة مؤقتًا. حاول مرة أخرى لاحقًا.", "error");
+  }
+};
+try {
+  mersalTools = initMersalTools({ supabase, getCurrentUser: () => currentUser, announce, safeText });
+} catch (toolsInitializationError) {
+  // Optional tools must never prevent the core messaging and authentication app from starting.
+  console.error("Mersal tools initialization failed; continuing core startup:", toolsInitializationError);
+}
 settingsLanguageSelect.addEventListener("change", () => {
   applyMersalLanguage(settingsLanguageSelect.value);
   announce(settingsLanguageSelect.value==="en"?"تم تغيير اللغة إلى الإنجليزية.":"تم تغيير اللغة إلى العربية.");
