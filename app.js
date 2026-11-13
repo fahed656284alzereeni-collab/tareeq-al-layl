@@ -539,7 +539,9 @@ const mersalTranslations = {
   "تعذر تحميل المجموعات. حاول مرة أخرى.":"Could not load groups. Please try again.",
   "تعذر تحميل الاستطلاعات. حاول مرة أخرى.":"Could not load polls. Please try again.",
   "تعذر تسجيل التصويت. حاول مرة أخرى.":"Could not record your vote. Please try again.",
-  "تعذر إنشاء الاستطلاع. حاول مرة أخرى.":"Could not create the poll. Please try again.",
+  "تعذر إنشاء الاستطلاع. حاول مرة أخرى.":"Could not create the poll. Please try again.",,
+  "هل تريد حذف هذه الملاحظة؟":"Do you want to delete this note?",
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
