@@ -180,7 +180,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   $("#calculator-tool").addEventListener("keydown", (event) => {
     if (event.target.matches("input,textarea,select")) return;
     if (/^[0-9.+*/%-]$/.test(event.key)) { event.preventDefault(); calculatorInput(event.key); return; }
-    if (event.target.closest("button")) return;
+    if (event.target.closest("button") && ["Enter", " ", "Spacebar"].includes(event.key)) return;
     if (event.key === "Enter" || event.key === "=") { event.preventDefault(); calculatorInput("equals"); }
     else if (event.key === "Backspace") { event.preventDefault(); calculatorInput("backspace"); }
     else if (event.key === "Escape") { event.preventDefault(); calculatorInput("clear"); }
@@ -338,7 +338,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     qrCopy.disabled = true;
   }
   qrInput.addEventListener("input", () => {
-    if (latestQrContent && qrInput.value.trim() !== latestQrContent) {
+    if (qrGenerate.disabled || (latestQrContent && qrInput.value.trim() !== latestQrContent)) {
       resetQrResult();
       qrStatus.textContent = "";
     }
