@@ -220,7 +220,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   noteBody.addEventListener("input", updateNoteButtons);
   notesSearch.addEventListener("input", renderNotes);
   $("#note-new-button").addEventListener("click", () => {
-    if (!noteSave.disabled && !window.confirm("لديك تغييرات غير محفوظة. هل تريد تجاهلها؟")) return;
+    if (!noteSave.disabled && !window.confirm(document.documentElement.lang === "en" ? "You have unsaved changes. Do you want to discard them?" : "لديك تغييرات غير محفوظة. هل تريد تجاهلها؟")) return;
     activeNoteId = null;
     originalNote = { title: "", body: "" };
     noteTitle.value = "";
@@ -339,14 +339,22 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   let groups = [];
   let optionCount = 2;
 
+  const addOptionButton = $("#poll-add-option-button");
+  const removeOptionButton = $("#poll-remove-option-button");
+  function updateOptionButtons() {
+    addOptionButton.disabled = optionCount >= 10;
+    removeOptionButton.disabled = optionCount <= 2;
+  }
   function addOptionInput(number) {
-    const label = safeText("label", "", number === 1 ? "الخيار الأول" : number === 2 ? "الخيار الثاني" : "الخيار " + number);
+    const labelText = number === 1 ? "الخيار الأول" : number === 2 ? "الخيار الثاني" : "الخيار " + number;
+    const label = safeText("label", "", labelText);
     const input = document.createElement("input");
     input.type = "text";
     input.maxLength = 120;
     input.className = "poll-option-input";
     input.id = "poll-option-" + number;
-    input.placeholder = number === 1 ? "الخيار الأول" : number === 2 ? "الخيار الثاني" : "الخيار " + number;
+    input.placeholder = labelText;
+    input.setAttribute("aria-label", labelText);
     label.htmlFor = input.id;
     optionsEditor.append(label, input);
   }
@@ -355,13 +363,25 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     optionCount = 2;
     addOptionInput(1);
     addOptionInput(2);
+    updateOptionButtons();
   }
-  $("#poll-add-option-button").addEventListener("click", () => {
-    if (optionCount >= 10) { announce("لا يمكن أن يتجاوز الاستطلاع 10 خيارات.", "error"); return; }
+  addOptionButton.addEventListener("click", () => {
+    if (optionCount >= 10) return;
     optionCount += 1;
     addOptionInput(optionCount);
+    updateOptionButtons();
     $("#poll-option-" + optionCount).focus();
   });
+  removeOptionButton.addEventListener("click", () => {
+    if (optionCount <= 2) return;
+    const lastId = "poll-option-" + optionCount;
+    optionsEditor.querySelector('label[for="' + lastId + '"]')?.remove();
+    $("#" + lastId)?.remove();
+    optionCount -= 1;
+    updateOptionButtons();
+    $("#poll-option-" + optionCount)?.focus();
+  });
+
   async function loadPollGroups() {
     const user = getCurrentUser();
     if (!user) return;
@@ -424,27 +444,32 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       pollsList.append(safeText("li", "empty-item", "لا توجد استطلاعات في هذه المجموعة بعد."));
       return;
     }
+    const english = document.documentElement.lang === "en";
     polls.forEach((poll) => {
       const card = document.createElement("li");
       card.className = "poll-card";
-      const question = safeText("h4", "poll-question", poll.question);
+      const question = safeText("h3", "poll-question", poll.question);
       question.setAttribute("data-no-translate", "");
       card.append(question);
       const votes = poll.group_poll_votes || [];
       const total = votes.length;
       const ownVote = votes.find((vote) => vote.user_id === getCurrentUser()?.id);
       const closed = Boolean(poll.closes_at && new Date(poll.closes_at) <= new Date());
-      poll.options.forEach((option, index) => {
+      (Array.isArray(poll.options) ? poll.options : []).forEach((option, index) => {
         const count = votes.filter((vote) => vote.option_index === index).length;
+        const percent = total ? Math.round(count * 100 / total) : 0;
         const row = document.createElement("div");
         row.className = "poll-option-row";
-        const button = safeText("button", "poll-vote-button", "");
+        const button = document.createElement("button");
         button.type = "button";
+        button.className = "poll-vote-button";
         button.disabled = closed;
         button.setAttribute("aria-pressed", String(ownVote?.option_index === index));
         const optionLabel = safeText("span", "poll-option-label", option);
         optionLabel.setAttribute("data-no-translate", "");
-        const countLabel = safeText("span", "poll-option-count", " — " + count + (count === 1 ? " صوت" : " أصوات"));
+        const countLabel = safeText("span", "poll-option-count",
+          english ? count + " of " + total + " votes · " + percent + "%" : count + " من " + total + " أصوات · " + percent + "%");
+        button.setAttribute("aria-label", (english ? "Vote for " : "التصويت لخيار ") + option + ". " + countLabel.textContent);
         button.append(optionLabel, countLabel);
         button.addEventListener("click", () => void castVote(poll.id, index));
         const track = document.createElement("div");
@@ -452,25 +477,38 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
         track.setAttribute("aria-hidden", "true");
         const fill = document.createElement("span");
         fill.className = "poll-result-fill";
-        fill.style.width = (total ? count / total * 100 : 0) + "%";
+        fill.style.width = percent + "%";
         track.append(fill);
         row.append(button, track);
         card.append(row);
       });
-      const meta = document.createElement("p");
-      meta.className = "poll-meta";
-      meta.append(safeText("span", "poll-total", total + (total === 1 ? " صوت" : " أصوات")));
-      if (ownVote) {
-        meta.append(safeText("span", "poll-own-vote-label", " · صوتك:"));
-        const ownVoteText = safeText("span", "poll-own-vote-value", poll.options[ownVote.option_index] || "");
-        ownVoteText.setAttribute("data-no-translate", "");
-        meta.append(ownVoteText);
-      }
-      if (closed) meta.append(safeText("span", "poll-closed-label", " · انتهى الاستطلاع"));
+      const meta = safeText("p", "poll-meta", english
+        ? "Total votes: " + total + (ownVote ? " · Your vote: " + (poll.options[ownVote.option_index] || "") : "") + (closed ? " · Poll closed" : "")
+        : "إجمالي الأصوات: " + total + (ownVote ? " · تصويتك: " + (poll.options[ownVote.option_index] || "") : "") + (closed ? " · انتهى الاستطلاع" : ""));
+      meta.setAttribute("data-no-translate", "");
       card.append(meta);
+      if (poll.created_by === getCurrentUser()?.id) {
+        const deleteButton = safeText("button", "danger-button", english ? "Delete poll" : "حذف الاستطلاع");
+        deleteButton.type = "button";
+        deleteButton.addEventListener("click", () => void deletePoll(poll.id));
+        card.append(deleteButton);
+      }
       pollsList.append(card);
     });
   }
+  async function deletePoll(pollId) {
+    const english = document.documentElement.lang === "en";
+    if (!window.confirm(english ? "Do you want to delete this poll?" : "هل تريد حذف هذا الاستطلاع؟")) return;
+    const { error } = await supabase.from("group_polls").delete().eq("id", pollId);
+    if (error) {
+      console.error("Deleting poll failed:", error);
+      announce(english ? "Could not delete the poll. Please try again." : "تعذر حذف الاستطلاع. حاول مرة أخرى.", "error");
+      return;
+    }
+    announce(english ? "Poll deleted." : "تم حذف الاستطلاع.");
+    await loadGroupPolls();
+  }
+
   async function castVote(pollId, optionIndex) {
     const user = getCurrentUser();
     if (!user) return;
@@ -487,14 +525,21 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   createPollButton.addEventListener("click", async () => {
     const user = getCurrentUser();
     if (!user || !groupSelect.value) return;
+    const english = document.documentElement.lang === "en";
     const question = questionInput.value.trim();
-    const options = [...optionsEditor.querySelectorAll("input")].map((input) => input.value.trim()).filter(Boolean);
-    if (!question) { announce("أدخل سؤال الاستطلاع.", "error"); questionInput.focus(); return; }
-    if (options.length < 2 || new Set(options.map((option) => option.toLocaleLowerCase())).size < 2) {
-      announce("أدخل خيارين مختلفين على الأقل.", "error");
+    const options = [...optionsEditor.querySelectorAll("input")].map((input) => input.value.trim());
+    if (!question) { announce(english ? "Enter a poll question." : "أدخل سؤال الاستطلاع.", "error"); questionInput.focus(); return; }
+    if (options.length < 2) { announce(english ? "Add at least two options." : "أضف خيارين على الأقل.", "error"); return; }
+    if (options.length > 10) { announce(english ? "A poll can have no more than ten options." : "لا يمكن أن يتجاوز الاستطلاع 10 خيارات.", "error"); return; }
+    if (options.some((option) => !option)) {
+      announce(english ? "Fill in every poll option." : "املأ جميع خيارات الاستطلاع.", "error");
+      optionsEditor.querySelector("input:placeholder-shown")?.focus();
       return;
     }
-    if (options.length > 10) { announce("لا يمكن أن يتجاوز الاستطلاع 10 خيارات.", "error"); return; }
+    if (new Set(options.map((option) => option.toLocaleLowerCase())).size !== options.length) {
+      announce(english ? "Poll options must be different." : "يجب أن تكون خيارات الاستطلاع مختلفة.", "error");
+      return;
+    }
     createPollButton.disabled = true;
     try {
       const { error } = await supabase.from("group_polls").insert({
@@ -507,10 +552,15 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       questionInput.value = "";
       resetOptions();
       await loadGroupPolls();
-      announce("تم إنشاء الاستطلاع.");
-    } catch (error) { console.error("Creating group poll failed:", error); announce("تعذر إنشاء الاستطلاع. حاول مرة أخرى.", "error"); }
-    finally { createPollButton.disabled = false; }
+      announce(english ? "Poll created." : "تم إنشاء الاستطلاع.");
+    } catch (error) {
+      console.error("Creating group poll failed:", error);
+      announce(english ? "Could not create the poll. Please try again." : "تعذر إنشاء الاستطلاع. حاول مرة أخرى.", "error");
+    } finally {
+      createPollButton.disabled = false;
+    }
   });
+
   groupSelect.addEventListener("change", () => void loadGroupPolls());
   $("#poll-refresh-button").addEventListener("click", () => void loadGroupPolls());
   resetOptions();
