@@ -871,6 +871,11 @@ function applyMersalLanguage(language, persist=true) {
   document.documentElement.dir=chosen==="ar"?"rtl":"ltr";
   document.documentElement.dataset.language=chosen;
   mersalTranslateTree();
+  document.querySelectorAll(".message-poll[data-poll-id]").forEach(host => {
+    const focused = document.activeElement?.closest?.(".message-poll") === host;
+    const index = focused ? Number(document.activeElement.dataset.optionIndex) : null;
+    void renderConversationPoll(host.dataset.pollId, host, host.dataset.messageId, Number.isInteger(index) ? index : null);
+  });
   const selector=document.querySelector("#settings-language");
   if(selector&&selector.value!==chosen)selector.value=chosen;
 }
@@ -4551,7 +4556,7 @@ function getMessagePreviewText(body) {
       return "[مرفق]";
     }
   }
-  return raw.replace(/\\n/g, "\n").trim();
+  return raw.replace(/\\n/g, "\n");
 }
 async function renderConversationPoll(pollId, host, messageId, focusOptionIndex = null) {
   if (!host?.isConnected) return;
