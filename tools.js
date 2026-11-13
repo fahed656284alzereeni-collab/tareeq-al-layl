@@ -488,6 +488,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     removeOptionButton.disabled = optionCount <= 2;
   }
   function addOptionInput(number) {
+    const english = document.documentElement.lang === "en";
     const labelText = number === 1 ? (english ? "Option one" : "الخيار الأول") : number === 2 ? (english ? "Option two" : "الخيار الثاني") : (english ? "Option " : "الخيار ") + number;
     const label = safeText("label", "", labelText);
     const input = document.createElement("input");
