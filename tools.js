@@ -9,6 +9,85 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   let activeTool = null;
   let returnFocus = null;
 
+  const toolEnglish = () => document.documentElement.lang === "en";
+  function localizeTools() {
+    const en = toolEnglish();
+    const text = (selector, ar, english) => { const node = $(selector); if (node) node.textContent = en ? english : ar; };
+    const attr = (selector, name, ar, english) => { const node = $(selector); if (node) node.setAttribute(name, en ? english : ar); };
+    text(".tools-intro .tools-eyebrow", "مرسال", "Mersal");
+    text("#tools-title", "الأدوات", "Tools");
+    text(".tools-intro > p:last-child", "أدوات عملية تساعدك أثناء استخدام مرسال.", "Useful tools to help you while using Mersal.");
+    text(".tools-grid", "", "");
+    const cards = [
+      [".tool-launch-button[data-tool='calculator']", "الآلة الحاسبة", "Calculator", "عمليات حسابية ونسب مئوية وتقسيم الفواتير.", "Calculations, percentages, and bill splitting.", "فتح الأداة", "Open tool"],
+      [".tool-launch-button[data-tool='notes']", "المفكرة السريعة", "Quick notes", "اكتب ملاحظاتك واحفظها وابحث فيها على هذا الجهاز.", "Write, save, and search notes on this device.", "فتح الأداة", "Open tool"],
+      [".tool-launch-button[data-tool='qr']", "إنشاء رموز QR", "QR code generator", "حوّل رابطًا أو رقمًا أو نصًا إلى رمز QR.", "Turn a link, number, or text into a QR code.", "فتح الأداة", "Open tool"],
+      [".tool-launch-button[data-tool='polls']", "استطلاعات الرأي", "Polls", "أنشئ تصويتًا داخل مجموعة وشاهد النتائج.", "Create a poll in a group and view the results.", "فتح الأداة", "Open tool"]
+    ];
+    for (const [selector, arTitle, enTitle, arDesc, enDesc, arAction, enAction] of cards) {
+      const card = $(selector);
+      if (!card) continue;
+      const titleNode = card.querySelector(".tool-card-title");
+      const descNode = card.querySelector(".tool-card-description");
+      const actionNode = card.querySelector(".tool-status");
+      if (titleNode) titleNode.textContent = en ? enTitle : arTitle;
+      if (descNode) descNode.textContent = en ? enDesc : arDesc;
+      if (actionNode) actionNode.textContent = en ? enAction : arAction;
+    }
+    text("#tool-back-button", "العودة إلى الأدوات", "Back to tools");
+    text("#tool-detail-title", ({calculator:"الآلة الحاسبة",notes:"المفكرة السريعة",qr:"إنشاء رموز QR",polls:"استطلاعات الرأي"}[activeTool] || "الأداة"),
+      ({calculator:"Calculator",notes:"Quick notes",qr:"QR code generator",polls:"Polls"}[activeTool] || "Tool"));
+    const labels = [
+      ["label[for='bill-total-input']","قيمة الفاتورة","Bill amount"],["label[for='bill-people-input']","عدد الأشخاص","Number of people"],
+      ["label[for='bill-tip-input']","نسبة الإكرامية (%)","Tip percentage (%)"],["label[for='note-title-input']","عنوان الملاحظة","Note title"],
+      ["label[for='note-body-input']","نص الملاحظة","Note text"],["label[for='notes-search-input']","البحث في الملاحظات","Search notes"],
+      ["label[for='qr-content-input']","النص أو الرابط أو رقم الهاتف","Text, link, or phone number"],
+      ["label[for='poll-group-select']","المجموعة","Group"],["label[for='poll-question-input']","سؤال الاستطلاع","Poll question"],
+      ["label[for='poll-option-1']","الخيار الأول","Option one"],["label[for='poll-option-2']","الخيار الثاني","Option two"]
+    ];
+    for (const [selector, ar, enText] of labels) text(selector, ar, enText);
+    const buttons = [
+      ["#calculator-tool [data-calc-key='clear']","مسح","Clear"],["#calculator-tool .calculator-secondary[aria-label='حذف آخر رقم']","حذف","Delete"],
+      ["#bill-split-calculate","احسب نصيب كل شخص","Calculate each person's share"],["#note-new-button","ملاحظة جديدة","New note"],
+      ["#note-save-button","حفظ الملاحظة","Save note"],["#note-delete-button","حذف الملاحظة","Delete note"],
+      ["#qr-generate-button","إنشاء رمز QR","Generate QR code"],["#qr-download-button","تنزيل رمز QR","Download QR code"],
+      ["#qr-copy-button","نسخ المحتوى","Copy content"],["#poll-add-option-button","إضافة خيار","Add option"],
+      ["#poll-remove-option-button","إزالة آخر خيار","Remove last option"],["#poll-create-button","إنشاء الاستطلاع","Create poll"],
+      ["#poll-refresh-button","تحديث النتائج","Refresh results"]
+    ];
+    for (const [selector, ar, enText] of buttons) text(selector, ar, enText);
+    text("#bill-split-title","تقسيم الفاتورة","Split a bill");
+    text("#polls-tool > .tool-help","أنشئ استطلاعًا في إحدى مجموعاتك. يمكن لكل عضو التصويت وتغيير صوته، وتظهر النتائج لأعضاء المجموعة فقط.","Create a poll in one of your groups. Members can vote and change their vote. Results are visible only to group members.");
+    text("#polls-list-header h3, .polls-list-header h3","استطلاعات المجموعة","Group polls");
+    text("#notes-tool .tool-help","تُحفظ الملاحظات على هذا الجهاز فقط، ولا تُرسل إلى خوادم مرسال.","Notes are saved only on this device and are not sent to Mersal servers.");
+    text("#calculator-tool > .tool-help","يمكنك استخدام أزرار الآلة الحاسبة أو لوحة المفاتيح.","Use the calculator buttons or your keyboard.");
+    text("#bill-split-result","أدخل البيانات لحساب نصيب كل شخص.","Enter the details to calculate each person's share.");
+    const placeholders = [
+      ["#bill-total-input","",""],["#note-title-input","اكتب عنوانًا للملاحظة","Enter a note title"],
+      ["#note-body-input","اكتب ملاحظتك هنا","Write your note here"],["#notes-search-input","ابحث في ملاحظاتك","Search your notes"],
+      ["#qr-content-input","اكتب المحتوى الذي تريد تحويله إلى رمز QR","Enter the content you want to turn into a QR code"],
+      ["#poll-question-input","ما رأيك؟","What do you think?"],["#poll-option-1","الخيار الأول","Option one"],["#poll-option-2","الخيار الثاني","Option two"]
+    ];
+    for (const [selector, ar, enText] of placeholders) { const node=$(selector); if(node && (ar || enText)) node.placeholder=en?enText:ar; }
+    attr("#calculator-display","aria-label", "شاشة الآلة الحاسبة: " + (expression || "0"), "Calculator display: " + (expression || "0"));
+    attr("#tools-home-view","aria-label","الأدوات","Tools");
+    attr("#calculator-tool","aria-label","الآلة الحاسبة","Calculator");
+    attr("#notes-tool","aria-label","المفكرة السريعة","Quick notes");
+    attr("#qr-tool","aria-label","إنشاء رموز QR","QR code generator");
+    attr("#polls-tool","aria-label","استطلاعات الرأي","Polls");
+    attr(".tools-grid","aria-label","أدوات مرسال","Mersal tools");
+    const help = $("#qr-canvas"); if (help) help.setAttribute("aria-label", en ? "Generated QR code" : "رمز QR الذي تم إنشاؤه");
+    document.querySelectorAll(".calculator-grid").forEach(node=>node.setAttribute("aria-label",en?"Calculator keys":"أزرار الآلة الحاسبة"));
+    document.querySelectorAll("#notes-list").forEach(node=>node.setAttribute("aria-label",en?"Saved notes":"الملاحظات المحفوظة"));
+    document.querySelectorAll("#polls-list").forEach(node=>node.setAttribute("aria-label",en?"Group polls":"استطلاعات المجموعة"));
+  }
+  const toolsLanguageObserver = new MutationObserver(records => {
+    if (records.some(record => record.attributeName === "lang")) localizeTools();
+  });
+  toolsLanguageObserver.observe(document.documentElement,{attributes:true,attributeFilter:["lang"]});
+
+  localizeTools();
+
   function openTool(name) {
     const labels = {
       calculator: "الآلة الحاسبة",
@@ -25,6 +104,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     detail.inert = false;
     panels.forEach((panel) => { panel.hidden = panel.id !== name + "-tool"; });
     title.textContent = labels[name];
+    localizeTools();
     detail.setAttribute("aria-labelledby", "tool-detail-title");
     detail.removeAttribute("aria-label");
     document.body.classList.add("tools-detail-open");
@@ -135,7 +215,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
         hasResult = true;
         renderCalculator();
       } catch (error) {
-        calculatorDisplay.textContent = error.message === "zero" ? "لا يمكن القسمة على صفر." : "عملية حسابية غير صحيحة.";
+        calculatorDisplay.textContent = error.message === "zero" ? (document.documentElement.lang === "en" ? "Cannot divide by zero." : "لا يمكن القسمة على صفر.") : (document.documentElement.lang === "en" ? "Invalid calculation." : "عملية حسابية غير صحيحة.");
       calculatorDisplay.setAttribute("aria-label", document.documentElement.lang === "en" ? "Calculation error" : "خطأ في العملية الحسابية");
         expression = "";
         hasResult = false;
@@ -215,12 +295,12 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     const query = notesSearch.value.trim().toLocaleLowerCase();
     const matches = notes.filter((note) => (note.title + " " + note.body).toLocaleLowerCase().includes(query));
     if (!matches.length) {
-      notesList.append(safeText("li", "empty-item", notes.length ? "لا توجد نتائج مطابقة." : "لا توجد ملاحظات محفوظة."));
+      notesList.append(safeText("li", "empty-item", notes.length ? (document.documentElement.lang === "en" ? "No matching results." : "لا توجد نتائج مطابقة.") : (document.documentElement.lang === "en" ? "No saved notes." : "لا توجد ملاحظات محفوظة.")));
       return;
     }
     matches.forEach((note) => {
       const item = document.createElement("li");
-      const button = safeText("button", "note-list-button", note.title || note.body.slice(0, 55) || "ملاحظة بدون عنوان");
+      const button = safeText("button", "note-list-button", note.title || note.body.slice(0, 55) || (document.documentElement.lang === "en" ? "Untitled note" : "ملاحظة بدون عنوان"));
       button.type = "button";
       button.setAttribute("data-no-translate", "");
       button.addEventListener("click", () => {
@@ -275,8 +355,8 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       originalNote = { title: titleValue, body: bodyValue };
       updateNoteButtons();
       renderNotes();
-      announce("تم حفظ الملاحظة.");
-    } catch { announce("تعذر حفظ الملاحظة.", "error"); }
+      announce(document.documentElement.lang === "en" ? "Note saved." : "تم حفظ الملاحظة.");
+    } catch { announce(document.documentElement.lang === "en" ? "Could not save the note." : "تعذر حفظ الملاحظة.", "error"); }
   });
   noteDelete.addEventListener("click", () => {
     if (!activeNoteId || !window.confirm(document.documentElement.lang === "en" ? "Do you want to delete this note?" : "هل تريد حذف هذه الملاحظة؟")) return;
@@ -289,7 +369,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     noteBody.value = "";
     updateNoteButtons();
     renderNotes();
-    announce("تم حذف الملاحظة.");
+    announce(document.documentElement.lang === "en" ? "Note deleted." : "تم حذف الملاحظة.");
   });
 
   // Split a bill evenly, with an optional tip percentage.
@@ -303,7 +383,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     const tipPercent = Number(billTipInput.value || 0);
     if (!Number.isFinite(amount) || amount <= 0 || !Number.isInteger(peopleCount) || peopleCount < 1 ||
         !Number.isFinite(tipPercent) || tipPercent < 0 || tipPercent > 100) {
-      billSplitResult.textContent = "تحقق من البيانات المدخلة.";
+      billSplitResult.textContent = document.documentElement.lang === "en" ? "Check the entered values." : "تحقق من البيانات المدخلة.";
       return;
     }
     const totalWithTip = amount * (1 + tipPercent / 100);
@@ -312,11 +392,11 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     });
     billSplitResult.replaceChildren();
     billSplitResult.append(
-      safeText("span", "bill-share-label", "نصيب كل شخص:"),
+      safeText("span", "bill-share-label", (document.documentElement.lang === "en" ? "Each person pays:" : "نصيب كل شخص:")),
       document.createTextNode(" "),
       safeText("strong", "bill-share-value", format.format(totalWithTip / peopleCount)),
       safeText("span", "bill-split-separator", " — "),
-      safeText("span", "bill-total-label", "الإجمالي مع الإكرامية:"),
+      safeText("span", "bill-total-label", (document.documentElement.lang === "en" ? "Total including tip:" : "الإجمالي مع الإكرامية:")),
       document.createTextNode(" "),
       safeText("strong", "bill-total-value", format.format(totalWithTip))
     );
@@ -347,12 +427,12 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     const value = qrInput.value.trim();
     if (!value) {
       resetQrResult();
-      qrStatus.textContent = "أدخل نصًا أو رابطًا أولًا.";
+      qrStatus.textContent = document.documentElement.lang === "en" ? "Enter text or a link first." : "أدخل نصًا أو رابطًا أولًا.";
       return;
     }
     resetQrResult();
     qrGenerate.disabled = true;
-    qrStatus.textContent = "جارٍ إنشاء رمز QR…";
+    qrStatus.textContent = document.documentElement.lang === "en" ? "Generating QR code…" : "جارٍ إنشاء رمز QR…";
     try {
       const qrModule = await import("https://esm.sh/qrcode@1.5.4");
       const qrLibrary = qrModule.default || qrModule;
@@ -361,15 +441,15 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       if (qrInput.value.trim() !== value) return;
       latestQrContent = value;
       $("#qr-content-preview").textContent = value;
-      $("#qr-canvas").setAttribute("aria-label", "رمز QR للمحتوى: " + value.slice(0, 100));
+      $("#qr-canvas").setAttribute("aria-label", (document.documentElement.lang === "en" ? "QR code for content: " : "رمز QR للمحتوى: ") + value.slice(0, 100));
       qrResult.hidden = false;
       qrDownload.disabled = false;
       qrCopy.disabled = false;
-      qrStatus.textContent = "تم إنشاء رمز QR.";
+      qrStatus.textContent = document.documentElement.lang === "en" ? "QR code created." : "تم إنشاء رمز QR.";
     } catch (error) {
       resetQrResult();
       console.error("QR generation failed:", error);
-      qrStatus.textContent = "تعذر إنشاء رمز QR. حاول مرة أخرى.";
+      qrStatus.textContent = document.documentElement.lang === "en" ? "Could not create the QR code. Please try again." : "تعذر إنشاء رمز QR. حاول مرة أخرى.";
     } finally { qrGenerate.disabled = false; }
   });
   qrDownload.addEventListener("click", () => {
@@ -381,8 +461,8 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   });
   qrCopy.addEventListener("click", async () => {
     if (!latestQrContent) return;
-    try { await navigator.clipboard.writeText(latestQrContent); announce("تم نسخ المحتوى."); }
-    catch { announce("تعذر نسخ المحتوى.", "error"); }
+    try { await navigator.clipboard.writeText(latestQrContent); announce(document.documentElement.lang === "en" ? "Content copied." : "تم نسخ المحتوى."); }
+    catch { announce(document.documentElement.lang === "en" ? "Could not copy the content." : "تعذر نسخ المحتوى.", "error"); }
   });
 
   // Group polls are stored in Supabase and protected by group-membership RLS.
@@ -401,7 +481,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     removeOptionButton.disabled = optionCount <= 2;
   }
   function addOptionInput(number) {
-    const labelText = number === 1 ? "الخيار الأول" : number === 2 ? "الخيار الثاني" : "الخيار " + number;
+    const labelText = number === 1 ? (english ? "Option one" : "الخيار الأول") : number === 2 ? (english ? "Option two" : "الخيار الثاني") : (english ? "Option " : "الخيار ") + number;
     const label = safeText("label", "", labelText);
     const input = document.createElement("input");
     input.type = "text";
@@ -442,25 +522,25 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     if (!user) return;
     groupSelect.disabled = true;
     createPollButton.disabled = true;
-    groupSelect.replaceChildren(safeText("option", "", "جارٍ تحميل المجموعات…"));
+    groupSelect.replaceChildren(safeText("option", "", document.documentElement.lang === "en" ? "Loading groups…" : "جارٍ تحميل المجموعات…"));
     try {
       const { data, error } = await supabase.from("conversations")
         .select("id,group_name,created_at").eq("is_group", true).order("created_at", { ascending: false });
       if (error) throw error;
       groups = data || [];
       groupSelect.replaceChildren();
-      const placeholder = safeText("option", "", "اختر مجموعة");
+      const placeholder = safeText("option", "", document.documentElement.lang === "en" ? "Select a group" : "اختر مجموعة");
       placeholder.value = "";
       groupSelect.append(placeholder);
       groups.forEach((group) => {
-        const option = safeText("option", "", group.group_name || "مجموعة");
+        const option = safeText("option", "", group.group_name || (document.documentElement.lang === "en" ? "Group" : "مجموعة"));
         option.value = group.id;
         option.setAttribute("data-no-translate", "");
         groupSelect.append(option);
       });
       if (!groups.length) {
-        groupSelect.append(safeText("option", "", "لا توجد مجموعات متاحة لإنشاء استطلاع."));
-        pollsList.replaceChildren(safeText("li", "empty-item", "لا توجد مجموعات متاحة لإنشاء استطلاع."));
+        groupSelect.append(safeText("option", "", (document.documentElement.lang === "en" ? "No groups are available to create a poll." : "لا توجد مجموعات متاحة لإنشاء استطلاع.")));
+        pollsList.replaceChildren(safeText("li", "empty-item", (document.documentElement.lang === "en" ? "No groups are available to create a poll." : "لا توجد مجموعات متاحة لإنشاء استطلاع.")));
         groupSelect.disabled = true;
         createPollButton.disabled = true;
         return;
@@ -470,17 +550,17 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       groupSelect.value = groups[0].id;
       await loadGroupPolls();
     } catch (error) {
-      groupSelect.replaceChildren(safeText("option", "", "تعذر تحميل المجموعات."));
+      groupSelect.replaceChildren(safeText("option", "", (document.documentElement.lang === "en" ? "Could not load groups." : "تعذر تحميل المجموعات.")));
       groupSelect.disabled = true;
       createPollButton.disabled = true;
       console.error("Loading poll groups failed:", error);
-      announce("تعذر تحميل المجموعات. حاول مرة أخرى.", "error");
+      announce(document.documentElement.lang === "en" ? "Could not load groups. Please try again." : "تعذر تحميل المجموعات. حاول مرة أخرى.", "error");
     }
   }
   async function loadGroupPolls() {
     const groupId = groupSelect.value;
     if (!groupId) { pollsList.replaceChildren(); return; }
-    pollsList.replaceChildren(safeText("li", "empty-item", "جارٍ تحميل الاستطلاعات…"));
+    pollsList.replaceChildren(safeText("li", "empty-item", (document.documentElement.lang === "en" ? "Loading polls…" : "جارٍ تحميل الاستطلاعات…")));
     try {
       const { data, error } = await supabase.from("group_polls")
         .select("id,conversation_id,question,options,created_at,closes_at,created_by,group_poll_votes(user_id,option_index)")
@@ -488,15 +568,15 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       if (error) throw error;
       renderPolls(data || []);
     } catch (error) {
-      pollsList.replaceChildren(safeText("li", "empty-item", "تعذر تحميل الاستطلاعات."));
+      pollsList.replaceChildren(safeText("li", "empty-item", (document.documentElement.lang === "en" ? "Could not load polls." : "تعذر تحميل الاستطلاعات.")));
       console.error("Loading group polls failed:", error);
-      announce("تعذر تحميل الاستطلاعات. حاول مرة أخرى.", "error");
+      announce(document.documentElement.lang === "en" ? "Could not load polls. Please try again." : "تعذر تحميل الاستطلاعات. حاول مرة أخرى.", "error");
     }
   }
   function renderPolls(polls) {
     pollsList.replaceChildren();
     if (!polls.length) {
-      pollsList.append(safeText("li", "empty-item", "لا توجد استطلاعات في هذه المجموعة بعد."));
+      pollsList.append(safeText("li", "empty-item", (document.documentElement.lang === "en" ? "There are no polls in this group yet." : "لا توجد استطلاعات في هذه المجموعة بعد.")));
       return;
     }
     const english = document.documentElement.lang === "en";
@@ -575,8 +655,8 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       );
       if (error) throw error;
       await loadGroupPolls();
-      announce("تم تسجيل صوتك.");
-    } catch (error) { console.error("Casting poll vote failed:", error); announce("تعذر تسجيل التصويت. حاول مرة أخرى.", "error"); }
+      announce(document.documentElement.lang === "en" ? "Your vote has been recorded." : "تم تسجيل صوتك.");
+    } catch (error) { console.error("Casting poll vote failed:", error); announce(document.documentElement.lang === "en" ? "Could not record your vote. Please try again." : "تعذر تسجيل التصويت. حاول مرة أخرى.", "error"); }
   }
   createPollButton.addEventListener("click", async () => {
     const user = getCurrentUser();
@@ -626,6 +706,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   });
   pollLanguageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
   resetOptions();
+  localizeTools();
 
   return { closeTool, openTool };
 }
