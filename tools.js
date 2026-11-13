@@ -261,6 +261,36 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     announce("تم حذف الملاحظة.");
   });
 
+  // Split a bill evenly, with an optional tip percentage.
+  const billTotalInput = $("#bill-total-input");
+  const billPeopleInput = $("#bill-people-input");
+  const billTipInput = $("#bill-tip-input");
+  const billSplitResult = $("#bill-split-result");
+  $("#bill-split-calculate").addEventListener("click", () => {
+    const amount = Number(billTotalInput.value);
+    const peopleCount = Number(billPeopleInput.value);
+    const tipPercent = Number(billTipInput.value || 0);
+    if (!Number.isFinite(amount) || amount <= 0 || !Number.isInteger(peopleCount) || peopleCount < 1 ||
+        !Number.isFinite(tipPercent) || tipPercent < 0 || tipPercent > 100) {
+      billSplitResult.textContent = "تحقق من البيانات المدخلة.";
+      return;
+    }
+    const totalWithTip = amount * (1 + tipPercent / 100);
+    const format = new Intl.NumberFormat(document.documentElement.lang === "en" ? "en" : "ar", {
+      minimumFractionDigits: 2, maximumFractionDigits: 2
+    });
+    billSplitResult.replaceChildren();
+    billSplitResult.append(
+      safeText("span", "bill-share-label", "نصيب كل شخص:"),
+      document.createTextNode(" "),
+      safeText("strong", "bill-share-value", format.format(totalWithTip / peopleCount)),
+      safeText("span", "bill-split-separator", " — "),
+      safeText("span", "bill-total-label", "الإجمالي مع الإكرامية:"),
+      document.createTextNode(" "),
+      safeText("strong", "bill-total-value", format.format(totalWithTip))
+    );
+  });
+
   // QR generation happens locally in the browser; the content is not sent to a QR service.
   const qrInput = $("#qr-content-input");
   const qrGenerate = $("#qr-generate-button");
