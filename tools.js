@@ -20,10 +20,13 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     activeTool = name;
     returnFocus = document.activeElement;
     home.hidden = true;
+    home.inert = true;
     detail.hidden = false;
+    detail.inert = false;
     panels.forEach((panel) => { panel.hidden = panel.id !== name + "-tool"; });
     title.textContent = labels[name];
-    detail.setAttribute("aria-label", labels[name]);
+    detail.setAttribute("aria-labelledby", "tool-detail-title");
+    detail.removeAttribute("aria-label");
     document.body.classList.add("tools-detail-open");
     title.focus();
     if (name === "notes") loadNotes();
@@ -34,7 +37,9 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   function closeTool(restoreFocus = true) {
     activeTool = null;
     detail.hidden = true;
+    detail.inert = true;
     home.hidden = false;
+    home.inert = false;
     document.body.classList.remove("tools-detail-open");
     if (restoreFocus && returnFocus?.isConnected) returnFocus.focus();
     else if (restoreFocus) $("#tools-title")?.focus();
@@ -130,7 +135,9 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
         hasResult = true;
         renderCalculator();
       } catch (error) {
-        calculatorDisplay.textContent = error.message === "zero" ? "لا يمكن القسمة على صفر." : "عملية حسابية غير صحيحة.";
+        calculatorDisplay.textContent = document.documentElement.lang === "en"
+        ? (error.message === "zero" ? "Cannot divide by zero." : "Invalid calculation.")
+        : (error.message === "zero" ? "لا يمكن القسمة على صفر." : "عملية حسابية غير صحيحة.");
       calculatorDisplay.setAttribute("aria-label", document.documentElement.lang === "en" ? "Calculation error" : "خطأ في العملية الحسابية");
         expression = "";
         hasResult = false;
@@ -298,7 +305,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     const tipPercent = Number(billTipInput.value || 0);
     if (!Number.isFinite(amount) || amount <= 0 || !Number.isInteger(peopleCount) || peopleCount < 1 ||
         !Number.isFinite(tipPercent) || tipPercent < 0 || tipPercent > 100) {
-      billSplitResult.textContent = "تحقق من البيانات المدخلة.";
+      billSplitResult.textContent = document.documentElement.lang === "en" ? "Check the entered values." : "تحقق من البيانات المدخلة.";
       return;
     }
     const totalWithTip = amount * (1 + tipPercent / 100);
@@ -307,11 +314,11 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     });
     billSplitResult.replaceChildren();
     billSplitResult.append(
-      safeText("span", "bill-share-label", "نصيب كل شخص:"),
+      safeText("span", "bill-share-label", document.documentElement.lang === "en" ? "Each person's share:" : "نصيب كل شخص:"),
       document.createTextNode(" "),
       safeText("strong", "bill-share-value", format.format(totalWithTip / peopleCount)),
       safeText("span", "bill-split-separator", " — "),
-      safeText("span", "bill-total-label", "الإجمالي مع الإكرامية:"),
+      safeText("span", "bill-total-label", document.documentElement.lang === "en" ? "Total including tip:" : "الإجمالي مع الإكرامية:"),
       document.createTextNode(" "),
       safeText("strong", "bill-total-value", format.format(totalWithTip))
     );
@@ -336,7 +343,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       await qrLibrary.toCanvas(qrCanvas, value, { width: 280, margin: 2, errorCorrectionLevel: "M", color: { dark: "#111827", light: "#ffffff" } });
       latestQrContent = value;
       $("#qr-content-preview").textContent = value;
-      $("#qr-canvas").setAttribute("aria-label", "رمز QR للمحتوى: " + value.slice(0, 100));
+      $("#qr-canvas").setAttribute("aria-label", (document.documentElement.lang === "en" ? "QR code for content: " : "رمز QR للمحتوى: ") + value.slice(0, 100));
       qrResult.hidden = false;
       qrStatus.textContent = "تم إنشاء رمز QR.";
     } catch (error) {
@@ -374,7 +381,8 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     removeOptionButton.disabled = optionCount <= 2;
   }
   function addOptionInput(number) {
-    const labelText = number === 1 ? "الخيار الأول" : number === 2 ? "الخيار الثاني" : "الخيار " + number;
+    const english = document.documentElement.lang === "en";
+    const labelText = english ? "Option " + number : number === 1 ? "الخيار الأول" : number === 2 ? "الخيار الثاني" : "الخيار " + number;
     const label = safeText("label", "", labelText);
     const input = document.createElement("input");
     input.type = "text";
