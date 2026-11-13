@@ -395,14 +395,15 @@
               <div id="qr-result" class="qr-result" hidden><canvas id="qr-canvas" role="img" aria-label="رمز QR الذي تم إنشاؤه"></canvas><p id="qr-content-preview" class="qr-content-preview" data-no-translate=""></p><div class="tool-action-row"><button id="qr-download-button" type="button" class="quiet-button" disabled>تنزيل رمز QR</button><button id="qr-copy-button" type="button" class="quiet-button" disabled>نسخ المحتوى</button></div></div>
             </div>
             <div id="video-downloader-tool" class="tool-panel" hidden>
-              <p class="tool-help" id="video-downloader-help">ألصق رابطًا مباشرًا لملف فيديو تملك حق تنزيله. لا تدعم الأداة استخراج المقاطع من روابط منصات التواصل.</p>
-              <label for="video-url-input">رابط ملف الفيديو المباشر</label>
-              <input id="video-url-input" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/video.mp4">
+              <p class="tool-help" id="video-downloader-help">ألصق رابطًا مباشرًا لملف صوت أو فيديو تملك حق تنزيله. لا تدعم الأداة استخراج الوسائط من روابط صفحات منصات التواصل.</p>
+              <label for="video-url-input">رابط ملف الصوت أو الفيديو المباشر</label>
+              <input id="video-url-input" type="url" inputmode="url" autocomplete="url" placeholder="https://example.com/file.mp3 أو video.mp4">
               <button id="video-analyze-button" type="button" class="primary-button">تحليل الرابط</button>
               <p id="video-downloader-status" class="tool-help" role="status" aria-live="polite" aria-atomic="true"></p>
               <div id="video-downloader-preview" class="video-downloader-preview" hidden>
-                <video id="video-downloader-player" controls playsinline preload="metadata" aria-label="معاينة المقطع"></video>
-                <button id="video-download-button" type="button" class="primary-button" disabled>تحميل المقطع</button>
+                <video id="video-downloader-player" controls playsinline preload="metadata" aria-label="معاينة الفيديو" hidden></video>
+                <audio id="audio-downloader-player" controls preload="metadata" aria-label="معاينة الملف الصوتي" hidden></audio>
+                <button id="video-download-button" type="button" class="primary-button" disabled>تحميل الملف</button>
               </div>
             </div>
             </div>
