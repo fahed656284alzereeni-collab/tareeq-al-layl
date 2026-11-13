@@ -715,3 +715,21 @@ body.tools-detail-open .tools-page { width:min(100%,820px); min-height:100%; mar
 }
 .bill-split-result strong { font-variant-numeric:tabular-nums; }
 :root[data-theme="light"] .bill-split-result { background:#f3f6fb; color:#17253a; }
+
+
+/* Accessible visual states for the tools module. */
+.note-list-button,.poll-vote-button {
+  display:grid; gap:6px; width:100%; min-height:50px; padding:12px 14px;
+  border:1px solid var(--border); border-radius:12px;
+  background:var(--surface-raised); color:var(--text); font:inherit; text-align:start;
+}
+.note-list-button { overflow-wrap:anywhere; }
+.poll-vote-button[aria-pressed="true"] { border-color:var(--focus,#8db7ff); box-shadow:inset 0 0 0 1px var(--focus,#8db7ff); }
+.poll-vote-button:disabled { opacity:.72; cursor:not-allowed; }
+.poll-option-count { color:var(--muted); font-size:.9rem; line-height:1.6; }
+.poll-result-track { height:8px; overflow:hidden; border-radius:99px; background:var(--border); }
+.poll-result-fill { display:block; height:100%; border-radius:inherit; background:var(--focus,#719bd2); }
+.poll-option-row { display:grid; gap:7px; }
+.poll-question { margin:0; font-size:1.05rem; line-height:1.6; overflow-wrap:anywhere; }
+.poll-meta { margin:0; color:var(--muted); font-size:.9rem; line-height:1.65; }
+.empty-item { padding:15px; border:1px dashed var(--border); border-radius:12px; color:var(--muted); line-height:1.7; }
