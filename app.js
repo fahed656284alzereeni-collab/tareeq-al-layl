@@ -3424,6 +3424,22 @@ async function selectConversation(conversation, person) {
   const isCurrentSelection = () => selectConversation.sequence === selectionId && activeConversation?.id === conversation.id;
 
   if (!groupAddPanel.hidden) { groupAddPanel.hidden=true; document.body.classList.remove("group-add-fullscreen"); }
+
+  // Clear any previous full-screen tab state before showing the conversation.
+  // These states intentionally hide .chat-panel or the whole workspace; if one
+  // survives navigation, the selected conversation becomes a completely blank screen.
+  statusView.hidden = true;
+  if (toolsView) toolsView.hidden = true;
+  settingsPanel.hidden = true;
+  if (helpSupportPanel) helpSupportPanel.hidden = true;
+  document.body.classList.remove(
+    "status-open",
+    "tools-open",
+    "settings-open",
+    "help-support-open",
+    "conversation-info-fullscreen"
+  );
+
   // Open the chat immediately. Cleanup and secondary data must never hold the screen transition.
   activeConversation = conversation;
   activePartner = person;
