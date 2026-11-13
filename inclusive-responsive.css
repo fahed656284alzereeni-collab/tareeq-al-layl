@@ -986,3 +986,7 @@ body.tools-detail-open .tool-detail-header {
 .message-poll { width:min(100%,620px); min-width:0; }
 .message-poll .poll-card { display:grid; gap:12px; width:100%; }
 .message-poll .poll-question { margin:0; font-size:1.05rem; font-weight:800; line-height:1.6; overflow-wrap:anywhere; }
+
+
+/* Keep the global welcome/account bar exclusive to the main home screen. */
+body.tools-open .topbar { display: none !important; }
