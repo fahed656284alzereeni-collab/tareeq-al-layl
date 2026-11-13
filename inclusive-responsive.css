@@ -702,3 +702,16 @@ body.tools-detail-open .tools-page { width:min(100%,820px); min-height:100%; mar
   .polls-list-header { align-items:flex-start; flex-direction:column; }
   .polls-list-header button { width:100%; }
 }
+
+.bill-split-section {
+  display:grid; gap:10px; margin-top:8px; padding-top:18px;
+  border-top:1px solid var(--border,#405273);
+}
+.bill-split-section h3 { margin:0; font-size:1.08rem; }
+.bill-split-result {
+  display:block; min-height:48px; padding:12px;
+  border:1px solid var(--border,#405273); border-radius:12px;
+  background:var(--surface,#111a2d); line-height:1.8; overflow-wrap:anywhere;
+}
+.bill-split-result strong { font-variant-numeric:tabular-nums; }
+:root[data-theme="light"] .bill-split-result { background:#f3f6fb; color:#17253a; }
