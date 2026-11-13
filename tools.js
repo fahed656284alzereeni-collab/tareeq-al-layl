@@ -330,10 +330,29 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   const qrCanvas = $("#qr-canvas");
   const qrResult = $("#qr-result");
   const qrStatus = $("#qr-status");
+  const qrDownload = $("#qr-download-button");
+  const qrCopy = $("#qr-copy-button");
   let latestQrContent = "";
+  function resetQrResult() {
+    latestQrContent = "";
+    qrResult.hidden = true;
+    qrDownload.disabled = true;
+    qrCopy.disabled = true;
+  }
+  qrInput.addEventListener("input", () => {
+    if (latestQrContent && qrInput.value.trim() !== latestQrContent) {
+      resetQrResult();
+      qrStatus.textContent = "";
+    }
+  });
   qrGenerate.addEventListener("click", async () => {
     const value = qrInput.value.trim();
-    if (!value) { qrStatus.textContent = "أدخل نصًا أو رابطًا أولًا."; qrResult.hidden = true; return; }
+    if (!value) {
+      resetQrResult();
+      qrStatus.textContent = "أدخل نصًا أو رابطًا أولًا.";
+      return;
+    }
+    resetQrResult();
     qrGenerate.disabled = true;
     qrStatus.textContent = "جارٍ إنشاء رمز QR…";
     try {
@@ -341,25 +360,28 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       const qrLibrary = qrModule.default || qrModule;
       if (typeof qrLibrary.toCanvas !== "function") throw new Error("QR library unavailable");
       await qrLibrary.toCanvas(qrCanvas, value, { width: 280, margin: 2, errorCorrectionLevel: "M", color: { dark: "#111827", light: "#ffffff" } });
+      if (qrInput.value.trim() !== value) return;
       latestQrContent = value;
       $("#qr-content-preview").textContent = value;
       $("#qr-canvas").setAttribute("aria-label", (document.documentElement.lang === "en" ? "QR code for content: " : "رمز QR للمحتوى: ") + value.slice(0, 100));
       qrResult.hidden = false;
+      qrDownload.disabled = false;
+      qrCopy.disabled = false;
       qrStatus.textContent = "تم إنشاء رمز QR.";
     } catch (error) {
-      qrResult.hidden = true;
+      resetQrResult();
       console.error("QR generation failed:", error);
       qrStatus.textContent = "تعذر إنشاء رمز QR. حاول مرة أخرى.";
     } finally { qrGenerate.disabled = false; }
   });
-  $("#qr-download-button").addEventListener("click", () => {
+  qrDownload.addEventListener("click", () => {
     if (!latestQrContent) return;
     const link = document.createElement("a");
     link.href = qrCanvas.toDataURL("image/png");
     link.download = "mersal-qr.png";
     link.click();
   });
-  $("#qr-copy-button").addEventListener("click", async () => {
+  qrCopy.addEventListener("click", async () => {
     if (!latestQrContent) return;
     try { await navigator.clipboard.writeText(latestQrContent); announce("تم نسخ المحتوى."); }
     catch { announce("تعذر نسخ المحتوى.", "error"); }
