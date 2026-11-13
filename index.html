@@ -351,7 +351,7 @@
         </div>
         <ul id="status-list" class="status-list" aria-label="الحالات" aria-live="polite"></ul>
       </section>
-      <section id="tools-view" class="tools-view" role="tabpanel" aria-labelledby="tools-title" hidden>
+      <div id="tools-view" class="tools-view" hidden>
         <div class="tools-page">
           <div id="tools-home-view">
             <div class="tools-intro"><p class="tools-eyebrow">مرسال</p><p id="tools-title" class="tools-page-title" tabindex="-1">الأدوات</p><p>أدوات عملية تساعدك أثناء استخدام مرسال.</p></div>
@@ -361,7 +361,7 @@
               <button class="tool-card tool-launch-button" type="button" data-tool="qr"><span class="tool-icon" aria-hidden="true">▦</span><span class="tool-card-title">إنشاء رموز QR</span></button>
             </div>
           </div>
-          <section id="tool-detail-view" class="tool-detail-view" role="dialog" aria-modal="true" aria-labelledby="tool-detail-title" hidden>
+          <div id="tool-detail-view" class="tool-detail-view" hidden>
             <header class="tool-detail-header"><button id="tool-back-button" type="button" class="quiet-button">العودة إلى الأدوات</button><p id="tool-detail-title" class="tool-detail-title" tabindex="-1">الأداة</p></header>
             <div id="calculator-tool" class="tool-panel" hidden>
               <output id="calculator-display" class="calculator-display" role="status" aria-live="polite" aria-atomic="true" aria-label="النتيجة">0</output>
@@ -393,9 +393,9 @@
               <button id="qr-generate-button" type="button" class="primary-button">إنشاء رمز QR</button><p id="qr-status" class="tool-help" role="status" aria-live="polite"></p>
               <div id="qr-result" class="qr-result" hidden><canvas id="qr-canvas" role="img" aria-label="رمز QR الذي تم إنشاؤه"></canvas><p id="qr-content-preview" class="qr-content-preview" data-no-translate=""></p><div class="tool-action-row"><button id="qr-download-button" type="button" class="quiet-button" disabled>تنزيل رمز QR</button><button id="qr-copy-button" type="button" class="quiet-button" disabled>نسخ المحتوى</button></div></div>
             </div>
-         </section>
+         </div>
         </div>
-      </section>
+      </div>
       <div class="sidebar" >
         <section class="notifications-section" >
           <button id="notifications-toggle" class="notifications-toggle" type="button" aria-controls="notifications-panel" aria-label="الإشعارات">
