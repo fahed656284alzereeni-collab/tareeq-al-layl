@@ -3440,7 +3440,10 @@ async function selectConversation(conversation, person) {
   messageSchedulePanel.hidden = true;
   scheduledMessagesPanel.hidden = true;
   status.textContent = "";
-  messageInput.focus();
+  // Keep iOS Safari from opening the software keyboard during navigation.
+  // Move focus to the conversation title so keyboard and VoiceOver users get
+  // the selected chat context without forcing text entry.
+  chatPartnerAccessible.focus();
 
   // These requests are independent of rendering the conversation; run them in the background.
   void supabase.from("conversation_hidden_for").delete()
