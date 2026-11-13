@@ -30,12 +30,12 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     if (name === "calculator") renderCalculator();
   }
 
-  function closeTool() {
+  function closeTool(restoreFocus = true) {
     activeTool = null;
     detail.hidden = true;
     home.hidden = false;
     document.body.classList.remove("tools-detail-open");
-    if (returnFocus?.isConnected) returnFocus.focus();
+    if (restoreFocus && returnFocus?.isConnected) returnFocus.focus();
     returnFocus = null;
   }
 
@@ -150,10 +150,12 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     button.addEventListener("click", () => calculatorInput(button.dataset.calcKey));
   });
   $("#calculator-tool").addEventListener("keydown", (event) => {
+    if (event.target.matches("input,textarea,select")) return;
+    if (/^[0-9.+*/%-]$/.test(event.key)) { event.preventDefault(); calculatorInput(event.key); return; }
     if (event.target.closest("button")) return;
-    if (/^[0-9.+*/%-]$/.test(event.key)) { event.preventDefault(); calculatorInput(event.key); }
-    else if (event.key === "Enter" || event.key === "=") { event.preventDefault(); calculatorInput("equals"); }
+    if (event.key === "Enter" || event.key === "=") { event.preventDefault(); calculatorInput("equals"); }
     else if (event.key === "Backspace") { event.preventDefault(); calculatorInput("backspace"); }
+    else if (event.key === "Escape") { event.preventDefault(); calculatorInput("clear"); }
   });
 
   // Quick notes stay on this device and are separated by signed-in account.
@@ -251,7 +253,8 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   noteDelete.addEventListener("click", () => {
     if (!activeNoteId || !window.confirm(document.documentElement.lang === "en" ? "Do you want to delete this note?" : "هل تريد حذف هذه الملاحظة؟")) return;
     notes = notes.filter((note) => note.id !== activeNoteId);
-    localStorage.setItem(notesKey(), JSON.stringify(notes));
+    try { localStorage.setItem(notesKey(), JSON.stringify(notes)); }
+    catch { announce(document.documentElement.lang === "en" ? "Could not delete the note." : "تعذر حذف الملاحظة.", "error"); return; }
     activeNoteId = null;
     originalNote = { title: "", body: "" };
     noteTitle.value = "";
@@ -305,7 +308,9 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     qrStatus.textContent = "جارٍ إنشاء رمز QR…";
     try {
       const qrModule = await import("https://esm.sh/qrcode@1.5.4");
-      await qrModule.default.toCanvas(qrCanvas, value, { width: 280, margin: 2, errorCorrectionLevel: "M" });
+      const qrLibrary = qrModule.default || qrModule;
+      if (typeof qrLibrary.toCanvas !== "function") throw new Error("QR library unavailable");
+      await qrLibrary.toCanvas(qrCanvas, value, { width: 280, margin: 2, errorCorrectionLevel: "M", color: { dark: "#111827", light: "#ffffff" } });
       latestQrContent = value;
       $("#qr-content-preview").textContent = value;
       $("#qr-canvas").setAttribute("aria-label", "رمز QR للمحتوى: " + value.slice(0, 100));
