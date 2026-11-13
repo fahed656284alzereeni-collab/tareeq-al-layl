@@ -871,3 +871,68 @@ body.tools-detail-open .tool-detail-header {
 @media (prefers-reduced-motion: reduce) {
   .tools-view *, .tools-view *::before, .tools-view *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+
+/* Tools: consistent keyboard focus, touch targets, and assistive-technology clarity. */
+.tool-card.tool-launch-button:focus-visible,
+.tool-detail-header button:focus-visible,
+.tool-panel button:focus-visible,
+.tool-panel input:focus-visible,
+.tool-panel textarea:focus-visible,
+.tool-panel select:focus-visible,
+.note-list-button:focus-visible,
+.poll-vote-button:focus-visible {
+  outline: 3px solid var(--focus-ring, #8db7ff);
+  outline-offset: 3px;
+  position: relative;
+  z-index: 1;
+}
+.tool-panel button:disabled,
+.tool-panel input:disabled,
+.tool-panel select:disabled {
+  cursor: not-allowed;
+  opacity: .58;
+}
+.tool-panel input,
+.tool-panel textarea,
+.tool-panel select {
+  font-size: max(16px, 1rem);
+}
+.tool-panel button { touch-action: manipulation; }
+.tool-card-description,
+.tool-help,
+.tool-panel label,
+.tool-detail-header h2 { overflow-wrap: anywhere; }
+@media (max-width: 420px) {
+  .tool-detail-header { align-items: stretch; gap: 10px; }
+  .tool-detail-header > button { width: 100%; }
+  .tool-detail-header h2 { flex-basis: 100%; }
+  .tool-panel { border-radius: 14px; }
+  .calculator-grid { gap: 7px; }
+  .tool-action-button { min-height: 54px !important; }
+}
+@media (orientation: landscape) and (max-height: 520px) {
+  .tools-view:not([hidden]) {
+    padding-top: max(10px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+  }
+  .tool-panel { gap: 9px; }
+}
+@media (forced-colors: active) {
+  .tool-card, .tool-panel, .tool-status, .calculator-display, .qr-result {
+    border: 1px solid CanvasText;
+  }
+  .tool-card.tool-launch-button:focus-visible,
+  .tool-panel button:focus-visible,
+  .tool-panel input:focus-visible,
+  .tool-panel textarea:focus-visible,
+  .tool-panel select:focus-visible { outline: 2px solid Highlight; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tools-view *, .tools-view *::before, .tools-view *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
