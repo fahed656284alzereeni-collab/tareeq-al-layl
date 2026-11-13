@@ -541,6 +541,9 @@ const mersalTranslations = {
   "تعذر تسجيل التصويت. حاول مرة أخرى.":"Could not record your vote. Please try again.",
   "تعذر إنشاء الاستطلاع. حاول مرة أخرى.":"Could not create the poll. Please try again.",
   "هل تريد حذف هذه الملاحظة؟":"Do you want to delete this note?",
+  "نسبة مئوية":"Percent",
+  "تغيير إشارة الرقم":"Change number sign",
+  "فاصلة عشرية":"Decimal point",
 
 };
 const mersalOriginalText = new WeakMap();
