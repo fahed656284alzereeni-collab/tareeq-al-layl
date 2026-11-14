@@ -2773,3 +2773,44 @@ body.conversation-info-fullscreen .conversation-info-list [hidden] {
   display: none !important;
   visibility: hidden !important;
 }
+
+
+/* Calls tab: full-screen, accessible call launcher for existing conversations. */
+.calls-view[hidden] { display:none !important; }
+.calls-view:not([hidden]) {
+  position:fixed; inset:0 0 calc(88px + env(safe-area-inset-bottom)); z-index:100;
+  box-sizing:border-box; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
+  padding:max(20px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-left)) 24px max(14px,env(safe-area-inset-right));
+  background:var(--page,#101827);
+}
+.calls-page { width:min(100%,900px); margin:0 auto; }
+.calls-intro { margin:0 0 18px; }
+.calls-page-title { margin:0 0 8px; font-size:clamp(1.45rem,4vw,2rem); font-weight:800; line-height:1.4; }
+.calls-description { margin:0; color:var(--muted,#b8c4d8); line-height:1.7; }
+.calls-toolbar { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:10px; margin:16px 0; }
+.calls-toolbar input { min-width:0; min-height:52px; box-sizing:border-box; padding:12px 14px; border:1px solid var(--border,#405273); border-radius:12px; background:var(--surface-raised,#17243a); color:var(--text,#f5f7ff); font:inherit; font-size:16px; }
+.calls-toolbar button { min-height:52px; }
+.calls-list { display:grid; gap:10px; margin:0; padding:0; list-style:none; }
+.calls-list-item { display:flex; align-items:center; justify-content:space-between; gap:14px; min-width:0; padding:14px; border:1px solid var(--border,#405273); border-radius:15px; background:var(--surface-raised,#17243a); }
+.calls-conversation-details { display:grid; gap:4px; min-width:0; }
+.calls-conversation-name { font-weight:750; line-height:1.5; overflow-wrap:anywhere; }
+.calls-conversation-kind { color:var(--muted,#b8c4d8); font-size:.9rem; line-height:1.5; }
+.calls-start-button { flex:0 0 auto; min-width:126px; min-height:50px; }
+.calls-view :focus-visible { outline:3px solid var(--focus,#8db7ff); outline-offset:3px; }
+.bottom-navigation { grid-template-columns:repeat(5,minmax(0,1fr)) !important; gap:clamp(3px,1vw,10px); }
+.bottom-nav-button { min-width:0; }
+@media(max-width:520px) {
+  .calls-toolbar { grid-template-columns:minmax(0,1fr); }
+  .calls-toolbar button { width:100%; }
+  .calls-list-item { align-items:stretch; flex-direction:column; }
+  .calls-start-button { width:100%; }
+  .bottom-navigation { gap:3px; padding-inline:5px; }
+  .bottom-nav-button { padding-inline:3px; }
+  .bottom-nav-label { font-size:clamp(.68rem,2.5vw,.8rem); }
+}
+:root[data-theme="light"] .calls-view { background:#f4f7fc; }
+:root[data-theme="light"] .calls-toolbar input { background:#fff; color:#20334d; }
+:root[data-theme="light"] .calls-list-item { background:#fff; }
+@media(prefers-reduced-motion:reduce) {
+  .calls-view *, .calls-view *::before, .calls-view *::after { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; }
+}
