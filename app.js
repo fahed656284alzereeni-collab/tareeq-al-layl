@@ -4039,19 +4039,6 @@ async function openGroupSettings() {
       return;
     }
     const canManage = Boolean(permissions.isAdmin);
-    const canEditInfo = Boolean(permissions.isOwner);
-    if (groupSettingsPermissionsSection) {
-      groupSettingsPermissionsSection.hidden = !canManage;
-      groupSettingsPermissionsSection.setAttribute("aria-hidden", String(!canManage));
-      if (canManage) groupSettingsPermissionsSection.removeAttribute("inert");
-      else groupSettingsPermissionsSection.setAttribute("inert", "");
-    }
-    if (groupSettingsInfoSection) {
-      groupSettingsInfoSection.hidden = !canEditInfo;
-      groupSettingsInfoSection.setAttribute("aria-hidden", String(!canEditInfo));
-      if (canEditInfo) groupSettingsInfoSection.removeAttribute("inert");
-      else groupSettingsInfoSection.setAttribute("inert", "");
-    }
     if (canManage) {
       const { data, error } = await supabase.from("group_settings")
         .select("send_messages_by,add_members_by")
