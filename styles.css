@@ -1031,7 +1031,7 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
   margin:12px auto 0;
 }
 .conversation-membership-actions > button {
-  flex:1 1 220px;
+  flex:1 1 150px;
   min-width:0;
   min-height:54px;
   margin:0;
