@@ -7324,10 +7324,10 @@ async function loadScheduledMessages() {
   if (!activeConversation || !currentUser) return;
   scheduledMessagesList.replaceChildren();
   const { data, error } = await supabase.from("scheduled_messages")
-    .select("id,body,scheduled_at,status")
+    .select("id,body,scheduled_at,status,failure_reason")
     .eq("conversation_id", activeConversation.id)
     .eq("sender_id", currentUser.id)
-    .eq("status", "pending")
+    .in("status", ["pending", "failed"])
     .order("scheduled_at", { ascending: true });
   if (error) {
     scheduledMessagesList.append(safeText("li", "empty-item", "تعذر تحميل الرسائل المجدولة: " + error.message));
@@ -7342,26 +7342,36 @@ async function loadScheduledMessages() {
     item.className = "scheduled-message-item";
     const body = safeText("p", "scheduled-message-body", normalizeMessageLineBreaks(scheduled.body));
     const time = safeText("p", "scheduled-message-time", "موعد الإرسال: " + new Intl.DateTimeFormat("ar-JO", { dateStyle: "long", timeStyle: "short" }).format(new Date(scheduled.scheduled_at)));
-    const cancel = safeText("button", "danger-button", "إلغاء الجدولة");
-    cancel.type = "button";
-    cancel.addEventListener("click", async () => {
-      cancel.disabled = true;
-      const { data: updated, error: updateError } = await supabase.from("scheduled_messages")
-        .update({ status: "cancelled" })
-        .eq("id", scheduled.id)
-        .eq("sender_id", currentUser.id)
-        .eq("status", "pending")
-        .select("id")
-        .maybeSingle();
-      if (updateError || !updated) {
-        cancel.disabled = false;
-        announce("تعذر إلغاء جدولة الرسالة: " + (updateError?.message || "ربما حان موعد إرسالها."), "error");
-        return;
-      }
-      announce("تم إلغاء جدولة الرسالة.", "success");
-      await loadScheduledMessages();
-    });
-    item.append(body, time, cancel);
+    const failed = scheduled.status === "failed";
+    const status = safeText("p", "scheduled-message-time", failed
+      ? "لم تُرسل الرسالة: " + (scheduled.failure_reason || "تعذر الإرسال.")
+      : "حالة الرسالة: بانتظار الإرسال.");
+    status.setAttribute("role", "status");
+    if (failed) {
+      item.classList.add("scheduled-message-failed");
+      item.append(body, time, status);
+    } else {
+      const cancel = safeText("button", "danger-button", "إلغاء الجدولة");
+      cancel.type = "button";
+      cancel.addEventListener("click", async () => {
+        cancel.disabled = true;
+        const { data: updated, error: updateError } = await supabase.from("scheduled_messages")
+          .update({ status: "cancelled" })
+          .eq("id", scheduled.id)
+          .eq("sender_id", currentUser.id)
+          .eq("status", "pending")
+          .select("id")
+          .maybeSingle();
+        if (updateError || !updated) {
+          cancel.disabled = false;
+          announce("تعذر إلغاء جدولة الرسالة: " + (updateError?.message || "ربما حان موعد إرسالها."), "error");
+          return;
+        }
+        announce("تم إلغاء جدولة الرسالة.", "success");
+        await loadScheduledMessages();
+      });
+      item.append(body, time, status, cancel);
+    }
     scheduledMessagesList.append(item);
   }
 }
