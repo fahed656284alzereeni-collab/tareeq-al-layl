@@ -3904,8 +3904,13 @@ function updateGroupSettingsSaveButton() {
 }
 async function openGroupSettings() {
   if (!activeConversation?.is_group || !currentUser || !groupSettingsPanel) return;
+  const conversationId = activeConversation.id;
   groupSettingsReturnFocus = document.activeElement;
-  if (groupSettingsPermissionsSection) { groupSettingsPermissionsSection.hidden = true; groupSettingsPermissionsSection.setAttribute("aria-hidden", "true"); groupSettingsPermissionsSection.setAttribute("inert", ""); }
+  if (groupSettingsPermissionsSection) {
+    groupSettingsPermissionsSection.hidden = true;
+    groupSettingsPermissionsSection.setAttribute("aria-hidden", "true");
+    groupSettingsPermissionsSection.setAttribute("inert", "");
+  }
   document.body.classList.add("group-settings-open");
   groupSettingsPanel.hidden = false;
   groupSettingsPanel.setAttribute("aria-hidden", "false");
@@ -3913,19 +3918,35 @@ async function openGroupSettings() {
   groupSettingsAddSelect.disabled = true;
   groupSettingsSaveButton.disabled = true;
   try {
-    const [{ data, error }, permissions] = await Promise.all([
-      supabase.from("group_settings")
-        .select("send_messages_by,add_members_by")
-        .eq("conversation_id", activeConversation.id)
-        .maybeSingle(),
-      getCurrentGroupPermissions()
-    ]);
-    if (error) throw error;
-    if (!activeConversation?.is_group) return;
-    groupSettingsSendSelect.value = data?.send_messages_by || "everyone";
-    groupSettingsAddSelect.value = data?.add_members_by || "admins";
+    const permissions = await getCurrentGroupPermissions();
+    if (!activeConversation?.is_group || activeConversation.id !== conversationId) {
+      closeGroupSettings();
+      return;
+    }
     const canManage = Boolean(permissions.isAdmin);
-    if (groupSettingsPermissionsSection) { groupSettingsPermissionsSection.hidden = !canManage; groupSettingsPermissionsSection.setAttribute("aria-hidden", String(!canManage)); if (canManage) groupSettingsPermissionsSection.removeAttribute("inert"); else groupSettingsPermissionsSection.setAttribute("inert", ""); }
+    if (groupSettingsPermissionsSection) {
+      groupSettingsPermissionsSection.hidden = !canManage;
+      groupSettingsPermissionsSection.setAttribute("aria-hidden", String(!canManage));
+      if (canManage) groupSettingsPermissionsSection.removeAttribute("inert");
+      else groupSettingsPermissionsSection.setAttribute("inert", "");
+    }
+    if (canManage) {
+      const { data, error } = await supabase.from("group_settings")
+        .select("send_messages_by,add_members_by")
+        .eq("conversation_id", conversationId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!activeConversation?.is_group || activeConversation.id !== conversationId) {
+        closeGroupSettings();
+        return;
+      }
+      groupSettingsSendSelect.value = data?.send_messages_by || "everyone";
+      groupSettingsAddSelect.value = data?.add_members_by || "admins";
+    } else {
+      // Members can open group settings for membership actions, but never load or see admin permissions.
+      groupSettingsSendSelect.value = "everyone";
+      groupSettingsAddSelect.value = "admins";
+    }
     groupSettingsSendSelect.disabled = !canManage;
     groupSettingsAddSelect.disabled = !canManage;
     groupSettingsSnapshot = getGroupSettingsSnapshot();
