@@ -194,7 +194,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     const user = getCurrentUser();
     activeChannel = channel;
     const followResult = await supabase.from("channel_followers")
-      .select("channel_id,notifications_enabled").eq("channel_id", channel.id)
+      .select("channel_id").eq("channel_id", channel.id)
       .eq("follower_id", user.id).maybeSingle();
     if (followResult.error) {
       announce(t("تعذر فتح القناة: ", "Could not open channel: ") + followResult.error.message, "error");
@@ -337,7 +337,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     const user = getCurrentUser();
     const result = activeFollow
       ? await supabase.from("channel_followers").delete().eq("channel_id", activeChannel.id).eq("follower_id", user.id)
-      : await supabase.from("channel_followers").insert({ channel_id: activeChannel.id, follower_id: user.id, notifications_enabled: true });
+      : await supabase.from("channel_followers").insert({ channel_id: activeChannel.id, follower_id: user.id });
     followButton.disabled = false;
     busy = false;
     if (result.error) {
