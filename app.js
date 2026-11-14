@@ -1961,6 +1961,19 @@ function updateGroupHeaderAccessibleLabel() {
     : (english ? "Members " : "عدد الأعضاء ") + new Intl.NumberFormat(english ? "en-US" : "ar-JO").format(activeGroupMemberCount);
   chatPartnerAccessible.setAttribute("aria-label", countLabel ? name + (english ? ", " : "، ") + countLabel : name);
 }
+async function refreshGroupHeaderMemberCount(conversationId = activeConversation?.id) {
+  if (!conversationId || !currentUser || !activeConversation?.is_group || activeConversation.id !== conversationId) return;
+  const { count, error } = await supabase.from("conversation_members")
+    .select("user_id", { count: "exact", head: true })
+    .eq("conversation_id", conversationId);
+  if (error) {
+    console.warn("تعذر تحميل عدد أعضاء المجموعة:", error.message);
+    return;
+  }
+  if (!activeConversation?.is_group || activeConversation.id !== conversationId) return;
+  activeGroupMemberCount = count || 0;
+  updateGroupHeaderAccessibleLabel();
+}
 
 async function refreshVisiblePresence() {
   if (!currentUser) return;
@@ -3532,6 +3545,7 @@ async function selectConversation(conversation, person) {
   void supabase.from("conversation_hidden_for").delete()
     .eq("conversation_id",conversation.id).eq("user_id",currentUser.id)
     .then(({error})=>{if(error)console.warn("Could not unhide conversation:",error.message);});
+  if (conversation.is_group) void refreshGroupHeaderMemberCount(conversation.id);
   // Render messages and retire the previous realtime channel in the background.
   // Neither operation may delay opening the selected conversation on mobile.
   void loadMessages().catch(error => {
