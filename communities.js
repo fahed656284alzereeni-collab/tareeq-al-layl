@@ -734,8 +734,8 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
       return;
     }
     if (event.key !== "Tab") return;
-    const focusable = [...panel.querySelectorAll('button:not([disabled]):not([hidden]),input:not([disabled]):not([hidden]),textarea:not([disabled]):not([hidden]),[tabindex]:not([tabindex="-1"])')]
-      .filter(element => !element.closest("[hidden]") && element.getClientRects().length);
+    const focusable = [...panel.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[contenteditable="true"],[tabindex]:not([tabindex="-1"])')]
+      .filter(element => !element.closest("[hidden]") && element.getAttribute("aria-hidden") !== "true" && element.getClientRects().length);
     if (!focusable.length) { event.preventDefault(); closeButton.focus(); return; }
     const first = focusable[0], last = focusable[focusable.length - 1];
     if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
