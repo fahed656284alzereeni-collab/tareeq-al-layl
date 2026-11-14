@@ -2315,3 +2315,16 @@ body.conversation-info-fullscreen .group-invite-actions p {
   color: var(--muted);
   line-height: 1.6;
 }
+
+
+/* The more-options panel is separate from the permissions-only group settings. */
+#group-more-options-panel:not([hidden]) {
+  position: fixed !important; inset: 0 !important; z-index: 2147483647 !important;
+  display: flex !important; flex-direction: column !important;
+  width: 100vw !important; height: 100vh !important; height: 100dvh !important;
+  max-width: none !important; max-height: none !important; box-sizing: border-box !important;
+  overflow-x: hidden !important; overflow-y: auto !important;
+  background: var(--surface); color: var(--text);
+}
+#group-more-options-panel[hidden] { display: none !important; }
+#group-more-options-panel .group-settings-content { width: 100%; max-width: 760px; margin: 0 auto; }
