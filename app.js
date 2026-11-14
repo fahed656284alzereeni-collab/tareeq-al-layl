@@ -6811,9 +6811,6 @@ function appendMessage(message) {
   const forwardButton = safeText("button", "message-option-button", "إعادة توجيه");
   forwardButton.type = "button";
   forwardButton.addEventListener("click", () => openForwardMessageDialog(message, menu, toggle));
-  menu.append(closeButton, copyButton, replyButton, forwardButton);
-  if (editButton) menu.append(editButton);
-  menu.append(starButton, pinButton, deleteMineButton, deleteEveryoneButton);
   actions.append(toggle, menu);
   messageFooter.append(actions);
   const stateIndicators = document.createElement("div");
@@ -6823,7 +6820,7 @@ function appendMessage(message) {
   const reactionHost = document.createElement("div");
   reactionHost.className = "message-reactions";
   reactionHost.setAttribute("role", "group");
-  reactionHost.setAttribute("aria-label", "تفاعلات الرسالة");
+  reactionHost.setAttribute("aria-label", document.documentElement.lang === "en" ? "Message reactions" : "تفاعلات الرسالة");
   item.append(stateIndicators, reactionHost, reactionPicker, messageFooter);
   void refreshMessageInteractions(message, item);
   messagesList.append(item);
