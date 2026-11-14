@@ -18,9 +18,9 @@
   <link rel="preconnect" href="https://esm.sh" crossorigin>
   <link rel="preconnect" href="https://nnsleztgbqeuqavkhrpw.supabase.co" crossorigin>
   <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.119.0" crossorigin>
-  <link rel="stylesheet" href="/styles.css?v=20261114-conversation-info-organized">
+  <link rel="stylesheet" href="/styles.css?v=20261114-group-more-options-invites">
   <link rel="stylesheet" href="/inclusive-responsive.css">
-  <script type="module" src="/app.js?v=20261114-message-status-v4"></script>
+  <script type="module" src="/app.js?v=20261114-group-more-options-invites"></script>
 </head>
 <body>
 <div class="topbar">
@@ -476,13 +476,6 @@
                 <button id="group-photo-save" type="button" class="quiet-button" disabled>حفظ صورة المجموعة</button>
                 <p class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى لصورة المجموعة: 50 ميغابايت.</p>
               </div>
-              <label for="group-description-input">وصف المجموعة</label>
-              <textarea id="group-description-input" rows="3" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea>
-              <p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p>
-              <button id="group-description-save" type="button" class="quiet-button" disabled>حفظ وصف المجموعة</button>
-              <label for="group-rename-input">اسم المجموعة الجديد</label>
-              <input id="group-rename-input" type="text" maxlength="60" autocomplete="off">
-              <button id="group-rename-save" type="button" class="quiet-button" disabled>حفظ اسم المجموعة</button>
             </div>
             <div class="conversation-info-tools">
               <label class="visually-hidden" for="conversation-search-input">البحث في الرسائل</label>
@@ -492,6 +485,7 @@
               <button id="conversation-info-clear" type="button" class="danger-button">مسح المحادثة من جهازي</button>
               <button id="block-person-button" type="button" class="danger-button" hidden>حظر الشخص</button>
               <button id="group-add-members-button" type="button" class="quiet-button" hidden>إضافة أعضاء</button>
+              <button id="group-more-options-button" type="button" class="quiet-button" hidden>المزيد من الخيارات</button>
             </div>
 
             <ul id="group-member-list" class="people-list group-member-list" aria-label="أعضاء المجموعة" hidden></ul>
@@ -503,6 +497,35 @@
             <div id="conversation-search-area" class="conversation-search-area" hidden>
               <p id="conversation-search-status" role="status" aria-live="polite">اكتب كلمة لعرض النتائج.</p>
               <ul id="conversation-search-results" class="conversation-search-results"></ul>
+            </div>
+          </section>
+          <section id="group-more-options-panel" class="group-more-options-panel" role="dialog" aria-modal="true" aria-label="المزيد من خيارات المجموعة" hidden>
+            <div class="group-more-options-card">
+              <button id="close-group-more-options" type="button" class="quiet-button">إغلاق الخيارات</button>
+              <div id="group-more-options-menu" class="group-more-options-menu">
+                <button id="group-edit-name-open" type="button" class="settings-menu-button" hidden>تغيير اسم المجموعة</button>
+                <button id="group-edit-description-open" type="button" class="settings-menu-button" hidden>تغيير وصف المجموعة</button>
+                <div class="group-invite-section">
+                  <label for="group-invite-url">رابط دعوة المجموعة</label>
+                  <input id="group-invite-url" type="url" readonly dir="ltr" autocomplete="off" aria-describedby="group-invite-status">
+                  <button id="group-invite-copy" type="button" class="quiet-button" disabled>نسخ رابط الدعوة</button>
+                  <button id="group-invite-reset" type="button" class="danger-button" hidden>إعادة تعيين رابط الدعوة</button>
+                  <p id="group-invite-status" class="settings-help" role="status" aria-live="polite">جارٍ تجهيز رابط الدعوة…</p>
+                </div>
+              </div>
+              <div id="group-edit-name-view" class="group-edit-view" hidden>
+                <button id="group-edit-name-back" type="button" class="quiet-button">العودة إلى المزيد من الخيارات</button>
+                <label for="group-rename-input">اسم المجموعة الجديد</label>
+                <input id="group-rename-input" type="text" maxlength="60" autocomplete="off">
+                <button id="group-rename-save" type="button" class="primary-button" disabled>حفظ اسم المجموعة</button>
+              </div>
+              <div id="group-edit-description-view" class="group-edit-view" hidden>
+                <button id="group-edit-description-back" type="button" class="quiet-button">العودة إلى المزيد من الخيارات</button>
+                <label for="group-description-input">وصف المجموعة</label>
+                <textarea id="group-description-input" rows="4" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea>
+                <p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p>
+                <button id="group-description-save" type="button" class="primary-button" disabled>حفظ وصف المجموعة</button>
+              </div>
             </div>
           </section>
           <section id="group-member-options-panel" class="group-member-options-panel" role="dialog" aria-modal="true" aria-label="خيارات عضو المجموعة" hidden>
