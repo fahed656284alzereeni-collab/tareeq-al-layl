@@ -210,7 +210,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     panel.hidden = false;
     showHome();
     void loadCommunities().catch(error => setStatus("تعذر تحميل المجتمعات: " + (error.message || ""), "Could not load communities: " + (error.message || ""), true));
-    closeButton.focus();
+    title?.focus();
   }
 
   function close() {
