@@ -5004,6 +5004,7 @@ async function finishVoiceCall() {
   if (voiceCallButton?.isConnected && !chatView.hidden) voiceCallButton.focus();
 }
 voiceCallButton.addEventListener("click", () => { void startVoiceCall(); });
+$("#group-info-call-button")?.addEventListener("click", () => { if (!voiceCallButton.disabled) voiceCallButton.click(); });
 voiceCallAcceptButton.addEventListener("click", () => { void acceptVoiceCall(); });
 voiceCallRejectButton.addEventListener("click", () => { void rejectVoiceCall(); });
 voiceCallMuteButton.addEventListener("click", toggleVoiceCallMute);
