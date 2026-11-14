@@ -2214,6 +2214,13 @@ function startNotificationsRealtime() {
       filter: "recipient_id=eq." + currentUser.id
     }, async (payload) => {
       try {
+        if(payload.new?.message_id && payload.new.sender_id !== currentUser.id){
+          const {error:deliveryError}=await supabase.from("message_deliveries").upsert(
+            {message_id:payload.new.message_id,user_id:currentUser.id},
+            {onConflict:"message_id,user_id",ignoreDuplicates:true}
+          );
+          if(deliveryError)console.warn("تعذر تسجيل تسليم الرسالة من الإشعار:",deliveryError.message);
+        }
         await loadNotifications();
         const { data } = await supabase.from("profiles").select("display_name")
           .eq("id", payload.new.sender_id).maybeSingle();
