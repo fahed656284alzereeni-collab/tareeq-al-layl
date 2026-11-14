@@ -6428,7 +6428,9 @@ async function refreshMessageInteractions(message, item) {
       const info = counts.get(emoji) || { count: 0, mine: false };
       const button = safeText("button", "message-reaction-button", emoji + (info.count > 1 ? " " + info.count : ""));
       button.type = "button";
-      button.setAttribute("aria-label", emoji + (info.count ? " " + info.count : "") + (info.mine ? "، إزالة تفاعلك" : "، إضافة تفاعلك"));
+      button.dataset.emoji = emoji;
+      const english = document.documentElement.lang === "en";
+      button.setAttribute("aria-label", emoji + (info.count ? " " + info.count : "") + (info.mine ? (english ? ", remove your reaction" : "، إزالة تفاعلك") : (english ? ", add your reaction" : "، إضافة تفاعلك")));
       button.setAttribute("aria-pressed", String(info.mine));
       button.addEventListener("click", async () => {
         button.disabled = true;
@@ -6462,8 +6464,8 @@ async function refreshMessageInteractions(message, item) {
   const indicators = item.querySelector(".message-state-indicators");
   if (indicators) {
     indicators.replaceChildren();
-    if (starResult.data) indicators.append(safeText("span", "message-state-indicator starred-indicator", "★ رسالة مميزة بنجمة"));
-    if (pinResult.data) indicators.append(safeText("span", "message-state-indicator pinned-indicator", "📌 رسالة مثبتة"));
+    if (starResult.data) indicators.append(safeText("span", "message-state-indicator starred-indicator", english ? "★ Starred message" : "★ رسالة مميزة بنجمة"));
+    if (pinResult.data) indicators.append(safeText("span", "message-state-indicator pinned-indicator", english ? "📌 Pinned message" : "📌 رسالة مثبتة"));
     indicators.hidden = !indicators.childNodes.length;
   }
 }
@@ -6752,6 +6754,42 @@ function appendMessage(message) {
   const pinButton = safeText("button", "message-option-button message-pin-button", "تثبيت الرسالة");
   pinButton.type = "button";
   pinButton.addEventListener("click", () => { void toggleMessagePin(message, item, menu, toggle); });
+  const reactionPicker = document.createElement("div");
+  reactionPicker.className = "message-reaction-picker";
+  reactionPicker.setAttribute("role", "group");
+  reactionPicker.setAttribute("aria-label", document.documentElement.lang === "en" ? "Choose a message reaction" : "اختيار تفاعل للرسالة");
+  reactionPicker.hidden = true;
+  for (const emoji of ["👍", "❤️", "😂", "😮", "😢", "🙏"]) {
+    const reactionChoice = safeText("button", "message-reaction-choice", emoji);
+    reactionChoice.type = "button";
+    reactionChoice.setAttribute("aria-label", (document.documentElement.lang === "en" ? "React with " : "التفاعل بـ ") + emoji);
+    reactionChoice.addEventListener("click", async () => {
+      reactionChoice.disabled = true;
+      try {
+        const existing = await supabase.from("message_reactions").select("emoji")
+          .eq("message_id", message.id).eq("user_id", currentUser.id).eq("emoji", emoji).maybeSingle();
+        if (existing.error) throw existing.error;
+        const result = existing.data
+          ? await supabase.from("message_reactions").delete().eq("message_id", message.id).eq("user_id", currentUser.id).eq("emoji", emoji)
+          : await supabase.from("message_reactions").insert({ message_id: message.id, user_id: currentUser.id, emoji });
+        if (result.error) throw result.error;
+        reactionPicker.hidden = true;
+        await refreshMessageInteractions(message, item);
+        item.querySelector('.message-reaction-button[data-emoji="' + emoji + '"]')?.focus();
+      } catch (error) {
+        announce((document.documentElement.lang === "en" ? "Could not save reaction: " : "تعذر حفظ التفاعل: ") + (error.message || ""), "error");
+        reactionChoice.disabled = false;
+      }
+    });
+    reactionPicker.append(reactionChoice);
+  }
+  const reactionPickerButton = safeText("button", "message-option-button", document.documentElement.lang === "en" ? "Add reaction" : "إضافة تفاعل");
+  reactionPickerButton.type = "button";
+  reactionPickerButton.addEventListener("click", () => {
+    closeMessageOptions(menu, toggle);
+    reactionPicker.hidden = !reactionPicker.hidden;
+    if (!reactionPicker.hidden) reactionPicker.querySelector("button")?.focus();
+  });
   const forwardButton = safeText("button", "message-option-button", "إعادة توجيه");
   forwardButton.type = "button";
   forwardButton.addEventListener("click", () => openForwardMessageDialog(message, menu, toggle));
@@ -6763,11 +6801,12 @@ function appendMessage(message) {
   const stateIndicators = document.createElement("div");
   stateIndicators.className = "message-state-indicators";
   stateIndicators.hidden = true;
+  menu.append(closeButton, copyButton, replyButton, reactionPickerButton, forwardButton);
   const reactionHost = document.createElement("div");
   reactionHost.className = "message-reactions";
   reactionHost.setAttribute("role", "group");
   reactionHost.setAttribute("aria-label", "تفاعلات الرسالة");
-  item.append(stateIndicators, reactionHost, messageFooter);
+  item.append(stateIndicators, reactionHost, reactionPicker, messageFooter);
   void refreshMessageInteractions(message, item);
   messagesList.append(item);
   if (pollHost) void renderConversationPoll(pollMessage.pollId, pollHost, message.id);
