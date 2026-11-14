@@ -423,8 +423,9 @@
         </div>
         <ul id="status-list" class="status-list" aria-label="الحالات" aria-live="polite"></ul>
       </section>
-      <section id="calls-view" class="calls-view" hidden aria-label="المكالمات">
+      <div id="calls-view" class="calls-view" hidden>
         <div class="calls-page">
+          <button id="calls-back-to-chats" type="button" class="quiet-button calls-back-button">العودة للمحادثات</button>
           <div class="calls-intro">
             <p id="calls-title" class="calls-page-title" tabindex="-1">المكالمات</p>
             <p class="calls-description">ابدأ مكالمة صوتية أو مرئية مع شخص أو مجموعة من محادثاتك.</p>
@@ -435,11 +436,11 @@
             <button id="refresh-calls" type="button" class="quiet-button">تحديث القائمة</button>
           </div>
           <p class="calls-section-title">بدء مكالمة</p>
-          <ul id="calls-list" class="calls-list" aria-label="المحادثات المتاحة للاتصال" aria-live="polite"></ul>
+          <ul id="calls-list" class="calls-list" aria-live="polite"></ul>
           <p class="calls-section-title">سجل المكالمات</p>
-          <ul id="calls-history-list" class="calls-list calls-history-list" aria-label="سجل المكالمات" aria-live="polite"></ul>
+          <ul id="calls-history-list" class="calls-list calls-history-list" aria-live="polite"></ul>
         </div>
-      </section>
+      </div>
       <div id="tools-view" class="tools-view" hidden>
         <div class="tools-page">
           <div id="tools-home-view">
@@ -532,6 +533,7 @@
             </button>
             <div class="chat-actions">
               <button id="voice-call-button" type="button" class="quiet-button">اتصال صوتي</button>
+              <button id="video-call-button" type="button" class="quiet-button">مكالمة مرئية</button>
               <button id="refresh-chat" type="button" class="quiet-button">تحديث الرسائل</button>
               <button id="scheduled-messages-button" type="button" class="quiet-button" aria-controls="scheduled-messages-panel">الرسائل المجدولة</button>
             </div>
