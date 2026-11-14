@@ -2580,6 +2580,8 @@ try {
 }
 settingsLanguageSelect.addEventListener("change", () => {
   applyMersalLanguage(settingsLanguageSelect.value);
+  updateChatPartnerPresence();
+  updateGroupHeaderAccessibleLabel();
   announce(settingsLanguageSelect.value==="en"?"تم تغيير اللغة إلى الإنجليزية.":"تم تغيير اللغة إلى العربية.");
 });
 settingsTabButton.addEventListener("click", openSettings);
