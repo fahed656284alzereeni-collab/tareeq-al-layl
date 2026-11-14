@@ -334,3 +334,17 @@ button:disabled { opacity: .48; cursor: not-allowed; }
 .starred-message-open { min-width:0; min-height:46px; border:0; background:transparent; color:var(--mx-text); text-align:start; overflow-wrap:anywhere; }
 .starred-message-item > .quiet-button { min-height:42px; }
 @media(max-width:520px) { .starred-messages-card { width:100%; max-height:94dvh; padding:14px; } .starred-message-item { grid-template-columns:1fr; } }
+
+.broadcast-panel { position:fixed; z-index:2147482600; inset:0; display:grid; place-items:center; padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom)); background:rgba(5,18,14,.58); backdrop-filter:blur(6px); }
+.broadcast-panel[hidden] { display:none; }
+.broadcast-card { width:min(100%,680px); max-height:92dvh; overflow:auto; display:grid; gap:14px; padding:18px; border:1px solid var(--mx-line); border-radius:20px; background:var(--mx-panel); color:var(--mx-text); box-shadow:var(--mx-shadow); }
+.broadcast-panel-title { margin:0; color:var(--mx-text); font-weight:800; }
+.broadcast-card label { display:grid; gap:6px; color:var(--mx-text); font-weight:650; }
+.broadcast-card input[type="text"],.broadcast-card input[type="search"] { width:100%; min-height:46px; padding:10px 12px; border:1px solid var(--mx-line); border-radius:12px; background:var(--mx-panel-soft); color:var(--mx-text); font:inherit; }
+.broadcast-lists,.broadcast-people-list { display:grid; gap:8px; margin:0; padding:0; list-style:none; }
+.broadcast-list-item { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; align-items:center; padding:8px; border:1px solid var(--mx-line); border-radius:12px; background:var(--mx-panel-soft); }
+.broadcast-list-send { min-height:46px; padding:8px 12px; border:0; border-radius:10px; background:transparent; color:var(--mx-text); text-align:start; overflow-wrap:anywhere; }
+.broadcast-person-choice { display:flex !important; align-items:center; gap:10px !important; min-height:48px; padding:7px 10px; border:1px solid var(--mx-line); border-radius:12px; background:var(--mx-panel-soft); }
+.broadcast-person-choice input { width:20px; height:20px; accent-color:var(--mx-brand); }
+.broadcast-card button:focus-visible,.broadcast-card input:focus-visible { outline:3px solid var(--mx-brand); outline-offset:3px; }
+@media(max-width:520px) { .broadcast-card { width:100%; max-height:95dvh; padding:14px; } .broadcast-list-item { grid-template-columns:1fr; } }
