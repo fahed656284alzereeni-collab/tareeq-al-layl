@@ -2208,10 +2208,14 @@ body.conversation-info-fullscreen #group-member-list {
 .group-settings-panel{position:fixed;inset:0;z-index:1200;display:flex;flex-direction:column;gap:18px;overflow:auto;padding:calc(16px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));background:var(--surface);color:var(--text)}
 .group-settings-panel[hidden]{display:none!important}
 .group-settings-header{display:flex;flex-direction:column;gap:12px;width:100%;max-width:760px;margin:0 auto}
-.group-settings-header h2{margin:0;font-size:1.25rem}
+.group-settings-title{margin:0;font-size:1.25rem;font-weight:800;line-height:1.5}
 .group-settings-content{display:grid;gap:12px;width:100%;max-width:760px;margin:0 auto}
-.group-settings-content h3{margin:0;font-size:1.05rem}
+.group-settings-section-title{margin:0;font-size:1.05rem;font-weight:800;line-height:1.6}
 .group-settings-content label{display:block;margin-top:8px;font-weight:750}
 .group-settings-content select{width:100%;min-height:48px;padding:10px 12px;border:1px solid var(--border);border-radius:11px;background:var(--surface-raised);color:var(--text);font:inherit}
 .group-settings-content button{width:100%;min-height:48px}
 .group-settings-content button:disabled{opacity:.55}
+
+/* Group settings is mounted at document root so fixed positioning is viewport-wide. */
+.group-settings-panel{z-index:2147483100;width:100vw;height:100vh;height:100dvh;box-sizing:border-box;overscroll-behavior:contain}
+.group-settings-panel[hidden]{display:none!important}
