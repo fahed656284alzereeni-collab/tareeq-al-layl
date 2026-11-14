@@ -467,23 +467,6 @@
             <div class="conversation-info-list conversation-info-common-list">
               <div role="group" aria-label="عدد الرسائل"><span class="conversation-info-label">عدد الرسائل</span><span class="conversation-info-value" id="conversation-info-count">—</span></div>
             </div>
-            <div id="group-admin-tools" class="group-admin-tools group-admin-tools-top" hidden>
-              <div class="group-photo-editor">
-                <img id="group-photo-preview" class="group-photo-preview" alt="معاينة صورة المجموعة" hidden>
-                <input id="group-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة للمجموعة">
-                <button id="group-photo-choose" type="button" class="quiet-button">اختيار صورة للمجموعة</button>
-                <button id="group-photo-remove" type="button" class="quiet-button" hidden>إزالة صورة المجموعة</button>
-                <button id="group-photo-save" type="button" class="quiet-button" disabled>حفظ صورة المجموعة</button>
-                <p class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى لصورة المجموعة: 50 ميغابايت.</p>
-              </div>
-              <label for="group-description-input">وصف المجموعة</label>
-              <textarea id="group-description-input" rows="3" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea>
-              <p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p>
-              <button id="group-description-save" type="button" class="quiet-button" disabled>حفظ وصف المجموعة</button>
-              <label for="group-rename-input">اسم المجموعة الجديد</label>
-              <input id="group-rename-input" type="text" maxlength="60" autocomplete="off">
-              <button id="group-rename-save" type="button" class="quiet-button" disabled>حفظ اسم المجموعة</button>
-            </div>
             <div class="conversation-info-tools">
               <label class="visually-hidden" for="conversation-search-input">البحث في الرسائل</label>
               <input id="conversation-search-input" class="conversation-search-input" type="search" autocomplete="off" placeholder="ابحث في الرسائل" aria-label="البحث في الرسائل">
@@ -491,16 +474,12 @@
               <button id="conversation-info-mute" type="button" class="quiet-button">كتم إشعارات المحادثة</button>
               <button id="conversation-info-clear" type="button" class="danger-button">مسح المحادثة من جهازي</button>
               <button id="block-person-button" type="button" class="danger-button" hidden>حظر الشخص</button>
-              <button id="group-add-members-button" type="button" class="quiet-button" hidden>إضافة أعضاء</button>
               <button id="group-settings-open" type="button" class="quiet-button" hidden>إعدادات المجموعة</button>
             </div>
 
-            <ul id="group-member-list" class="people-list group-member-list" aria-label="أعضاء المجموعة" hidden></ul>
             <div class="conversation-membership-actions">
               <button id="conversation-delete-button" type="button" class="danger-button">حذف الدردشة من عندي</button>
-              <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
             </div>
-            <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
             <div id="conversation-search-area" class="conversation-search-area" hidden>
               <p id="conversation-search-status" role="status" aria-live="polite">اكتب كلمة لعرض النتائج.</p>
               <ul id="conversation-search-results" class="conversation-search-results"></ul>
@@ -512,20 +491,55 @@
                 <h2 id="group-settings-title">إعدادات المجموعة</h2>
               </div>
               <div class="group-settings-content">
-                <h3>الصلاحيات</h3>
-                <p class="settings-help">يمكن للأعضاء الاطلاع على الصلاحيات الحالية. يقتصر تغييرها على مشرفي المجموعة.</p>
-                <label for="group-settings-send">من يستطيع إرسال الرسائل؟</label>
-                <select id="group-settings-send">
-                  <option value="everyone">جميع الأعضاء</option>
-                  <option value="admins">المشرفون فقط</option>
-                </select>
-                <label for="group-settings-add">من يستطيع إضافة أعضاء؟</label>
-                <select id="group-settings-add">
-                  <option value="everyone">جميع الأعضاء</option>
-                  <option value="admins">المشرفون فقط</option>
-                </select>
-                <p class="settings-help">تغيير اسم المجموعة ووصفها وصورتها متاح للمشرفين فقط.</p>
-                <button id="group-settings-save" type="button" class="quiet-button" disabled>حفظ إعدادات المجموعة</button>
+                <section class="group-settings-section" aria-label="صلاحيات المجموعة">
+                  <h3>الصلاحيات</h3>
+                  <p class="settings-help">يمكن للأعضاء الاطلاع على الصلاحيات الحالية. يقتصر تغييرها على مشرفي المجموعة.</p>
+                  <label for="group-settings-send">من يستطيع إرسال الرسائل؟</label>
+                  <select id="group-settings-send">
+                    <option value="everyone">جميع الأعضاء</option>
+                    <option value="admins">المشرفون فقط</option>
+                  </select>
+                  <label for="group-settings-add">من يستطيع إضافة أعضاء؟</label>
+                  <select id="group-settings-add">
+                    <option value="everyone">جميع الأعضاء</option>
+                    <option value="admins">المشرفون فقط</option>
+                  </select>
+                  <button id="group-settings-save" type="button" class="quiet-button" disabled>حفظ إعدادات المجموعة</button>
+                </section>
+                <section class="group-settings-section" aria-label="تعديل معلومات المجموعة">
+                  <h3>تعديل معلومات المجموعة</h3>
+                  <p class="settings-help">تغيير اسم المجموعة ووصفها وصورتها متاح لمنشئ المجموعة فقط.</p>
+                  <div id="group-admin-tools" class="group-admin-tools group-admin-tools-top" hidden>
+                    <div class="group-photo-editor">
+                      <img id="group-photo-preview" class="group-photo-preview" alt="معاينة صورة المجموعة" hidden>
+                      <input id="group-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة للمجموعة">
+                      <button id="group-photo-choose" type="button" class="quiet-button">اختيار صورة للمجموعة</button>
+                      <button id="group-photo-remove" type="button" class="quiet-button" hidden>إزالة صورة المجموعة</button>
+                      <button id="group-photo-save" type="button" class="quiet-button" disabled>حفظ صورة المجموعة</button>
+                      <p class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى لصورة المجموعة: 50 ميغابايت.</p>
+                    </div>
+                    <label for="group-description-input">وصف المجموعة</label>
+                    <textarea id="group-description-input" rows="3" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea>
+                    <p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p>
+                    <button id="group-description-save" type="button" class="quiet-button" disabled>حفظ وصف المجموعة</button>
+                    <label for="group-rename-input">اسم المجموعة الجديد</label>
+                    <input id="group-rename-input" type="text" maxlength="60" autocomplete="off">
+                    <button id="group-rename-save" type="button" class="quiet-button" disabled>حفظ اسم المجموعة</button>
+                  </div>
+                </section>
+                <section class="group-settings-section" aria-label="إدارة الأعضاء والمشرفين">
+                  <h3>إدارة الأعضاء والمشرفين</h3>
+                  <p class="settings-help">تظهر إجراءات العضوية والإشراف بحسب صلاحيتك في المجموعة.</p>
+                  <button id="group-add-members-button" type="button" class="quiet-button" hidden>إضافة أعضاء</button>
+                  <ul id="group-member-list" class="people-list group-member-list" aria-label="أعضاء المجموعة" hidden></ul>
+                </section>
+                <section class="group-settings-section" aria-label="إجراءات العضوية">
+                  <h3>إجراءات العضوية</h3>
+                  <div class="conversation-membership-actions">
+                    <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
+                    <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
+                  </div>
+                </section>
               </div>
             </section>
 </section>
