@@ -5900,6 +5900,17 @@ async function refreshMessageInteractions(message, item) {
   }
   item.classList.toggle("message-starred-by-me", Boolean(starResult.data));
   item.classList.toggle("message-pinned", Boolean(pinResult.data));
+  const english = document.documentElement.lang === "en";
+  const starControl = item.querySelector(".message-star-button");
+  if (starControl) {
+    starControl.textContent = starResult.data ? (english ? "Remove star" : "إزالة النجمة") : (english ? "Star message" : "تمييز بنجمة");
+    starControl.setAttribute("aria-label", starControl.textContent);
+  }
+  const pinControl = item.querySelector(".message-pin-button");
+  if (pinControl) {
+    pinControl.textContent = pinResult.data ? (english ? "Unpin message" : "إلغاء تثبيت الرسالة") : (english ? "Pin message" : "تثبيت الرسالة");
+    pinControl.setAttribute("aria-label", pinControl.textContent);
+  }
   const indicators = item.querySelector(".message-state-indicators");
   if (indicators) {
     indicators.replaceChildren();
@@ -6173,22 +6184,24 @@ function appendMessage(message) {
   deleteEveryoneButton.disabled = message.sender_id !== currentUser.id;
   deleteEveryoneButton.setAttribute("aria-label", message.sender_id === currentUser.id ? "حذف هذه الرسالة لدى الجميع" : "حذف لدى الجميع، متاح لرسائلك أنت فقط");
   deleteEveryoneButton.addEventListener("click", () => { void deleteMessageForEveryone(message, item, menu, toggle); });
+  let editButton = null;
   if (message.sender_id === currentUser.id) {
-    const editButton = safeText("button", "message-option-button", "تعديل الرسالة");
+    editButton = safeText("button", "message-option-button", "تعديل الرسالة");
     editButton.type = "button";
     editButton.addEventListener("click", () => { void editMessage(message, item, menu, toggle); });
-    menu.append(editButton);
   }
-  const starButton = safeText("button", "message-option-button", "تمييز بنجمة");
+  const starButton = safeText("button", "message-option-button message-star-button", "تمييز بنجمة");
   starButton.type = "button";
   starButton.addEventListener("click", () => { void toggleMessageStar(message, item, menu, toggle); });
-  const pinButton = safeText("button", "message-option-button", "تثبيت الرسالة");
+  const pinButton = safeText("button", "message-option-button message-pin-button", "تثبيت الرسالة");
   pinButton.type = "button";
   pinButton.addEventListener("click", () => { void toggleMessagePin(message, item, menu, toggle); });
   const forwardButton = safeText("button", "message-option-button", "إعادة توجيه");
   forwardButton.type = "button";
   forwardButton.addEventListener("click", () => openForwardMessageDialog(message, menu, toggle));
-  menu.append(closeButton, copyButton, replyButton, forwardButton, starButton, pinButton, deleteMineButton, deleteEveryoneButton);
+  menu.append(closeButton, copyButton, replyButton, forwardButton);
+  if (editButton) menu.append(editButton);
+  menu.append(starButton, pinButton, deleteMineButton, deleteEveryoneButton);
   actions.append(toggle, menu);
   messageFooter.append(actions);
   const stateIndicators = document.createElement("div");
