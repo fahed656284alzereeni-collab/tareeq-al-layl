@@ -202,6 +202,10 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
   }
 
   async function renderPosts(communityId) {
+    if (activeCommunity?.id === communityId && activeCommunity.owner_id !== getCurrentUser()?.id && !isMember) {
+      postsList.replaceChildren(safeText("li", "empty-item", t("انضم إلى المجتمع لمشاهدة الإعلانات.", "Join this community to view announcements.")));
+      return;
+    }
     const result = await supabase.from("community_posts")
       .select("id,community_id,author_id,body,created_at,edited_at,is_deleted")
       .eq("community_id", communityId).order("created_at", { ascending: false }).limit(100);
