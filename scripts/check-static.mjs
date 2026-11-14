@@ -40,6 +40,10 @@ for (const dialog of modalDialogs.filter(dialog => /\baria-modal=["']true["']/.t
 }
 
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
+assert.equal((app.match(/closeHelpSupportForNavigation\\(\\);/g) || []).length, 6,
+  "Every primary tab must close the Help & Support overlay and stop its realtime subscription");
+assert.equal((app.match(/closeNewChatForNavigation\\(\\);/g) || []).length, 6,
+  "Every primary tab must close the New Chat overlay before navigation");
 assert.match(app, /function getTopModalDialog\(/, "A topmost modal selector must be present");
 assert.match(app, /document\.addEventListener\("focusin"/, "Modal focus must be restored when it escapes");
 assert.match(app, /keepDialogFocusInside\(activeDialog, event\)/, "Tab focus must stay inside the topmost modal");
