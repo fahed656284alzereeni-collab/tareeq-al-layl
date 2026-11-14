@@ -3646,7 +3646,7 @@ async function openStatusViewer(row, name, trigger) {
   $("#status-viewer-content").replaceChildren(); $("#status-viewer-views").replaceChildren();
   $("#status-viewer-caption").textContent = row.content || "";
   $("#status-viewer-meta").textContent = name + "، " + statusTimeLabel(row.created_at);
-  await renderStatusInteractions(row, row.user_id === currentUser.id);
+  void renderStatusInteractions(row, row.user_id === currentUser.id).catch(error => console.warn("Status interactions could not be loaded:", error));
   const own = row.user_id === currentUser.id;
   $("#delete-status-button").hidden = !own;
   if (!own && privacySettings.read_receipts_enabled) {
@@ -3691,7 +3691,7 @@ async function openStatusViewer(row, name, trigger) {
   statusViewerPanel.hidden = false; $("#close-status-viewer").focus();
 }
 function closeStatusViewer() {
-  statusViewerPanel.hidden = true; $("#status-viewer-content").replaceChildren(); $("#status-viewer-interactions").replaceChildren();
+  statusViewerPanel.hidden = true; activeViewedStatus = null; $("#status-viewer-content").replaceChildren(); $("#status-viewer-interactions").replaceChildren();
   if (statusViewerReturnFocus?.isConnected) statusViewerReturnFocus.focus();
 }
 $("#close-status-viewer").addEventListener("click", closeStatusViewer);
@@ -6582,8 +6582,9 @@ async function loadStarredMessages() {
       await selectConversation(conversation, person);
       const target = messagesList.querySelector('[data-message-id="' + message.id + '"]');
       if (target) {
+        target.setAttribute("tabindex", "-1");
         target.scrollIntoView({ block: "center" });
-        target.focus?.();
+        target.focus();
       } else {
         announce(english ? "This message is older than the messages currently loaded. It remains starred." : "هذه الرسالة أقدم من الرسائل المحمّلة حاليًا، وما زالت مميزة بنجمة.");
       }
