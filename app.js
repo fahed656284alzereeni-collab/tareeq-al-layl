@@ -803,6 +803,7 @@ const mersalTranslations = {
   "إجمالي الأصوات: ": "Total votes: ",
   " · تصويتك: ": " · Your vote: ",
   " · انتهى الاستطلاع": " · Poll closed",
+  "تغيير اسم المجموعة ووصفها وصورتها متاح لمنشئ المجموعة فقط.": "Only the group creator can change the group name, description, and photo.",
   "تعديل معلومات المجموعة": "Edit group information",
   "إدارة الأعضاء والمشرفين": "Manage members and admins",
   "تظهر إجراءات العضوية والإشراف بحسب صلاحيتك في المجموعة.": "Membership and admin actions are shown according to your group permissions.",
