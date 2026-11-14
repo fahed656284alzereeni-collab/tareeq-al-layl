@@ -419,3 +419,12 @@ button:disabled { opacity: .48; cursor: not-allowed; }
   .sticker-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .sticker-picker-card { padding:15px; border-radius:18px; }
 }
+
+/* Channel owner edit form */
+.channel-edit-form { display:grid; gap:9px; margin:12px 0; padding:14px; border:1px solid var(--mx-line); border-radius:14px; background:var(--mx-panel-soft); }
+.channel-edit-form label { display:block; color:var(--mx-text); font-weight:650; }
+.channel-edit-form input,.channel-edit-form textarea { width:100%; min-height:46px; padding:10px 12px; border:1px solid var(--mx-line); border-radius:11px; background:var(--mx-panel); color:var(--mx-text); font:inherit; }
+.channel-edit-form textarea { min-height:88px; resize:vertical; }
+.channel-edit-actions { display:flex; flex-wrap:wrap; gap:8px; }
+.channel-edit-form button:focus-visible,.channel-edit-form input:focus-visible,.channel-edit-form textarea:focus-visible { outline:3px solid var(--mx-brand); outline-offset:3px; }
+.channel-edit-form button:disabled { opacity:.55; cursor:not-allowed; }
