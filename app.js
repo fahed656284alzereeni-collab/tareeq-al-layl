@@ -951,6 +951,13 @@ const mersalTranslations = {
   "تم تثبيت الرسالة.":"Message pinned.",
   "تم إلغاء تثبيت الرسالة.":"Message unpinned.",
 
+  "تعديل الرسالة":"Edit message",
+  "تم التعديل":"Edited",
+  "لا يمكن تعديل استطلاع أو مرفق.":"Polls and attachments cannot be edited.",
+  "يمكن تعديل الرسالة خلال 15 دقيقة من إرسالها فقط.":"Messages can only be edited within 15 minutes of sending.",
+  "لم يتم حفظ تعديل الرسالة.":"The message edit was not saved.",
+  "تم تعديل الرسالة.":"Message edited.",
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
@@ -5901,6 +5908,41 @@ async function refreshMessageInteractions(message, item) {
     indicators.hidden = !indicators.childNodes.length;
   }
 }
+async function editMessage(message, item, menu, toggle) {
+  const english = document.documentElement.lang === "en";
+  if (message.sender_id !== currentUser?.id) return;
+  if (parsePollMessageBody(message.body || "") || String(message.body || "").includes("MERSAL_ATTACHMENT:")) {
+    announce(english ? "Polls and attachments cannot be edited." : "لا يمكن تعديل استطلاع أو مرفق.", "error");
+    closeMessageOptions(menu, toggle);
+    return;
+  }
+  const sentAt = new Date(message.created_at).getTime();
+  if (!Number.isFinite(sentAt) || Date.now() - sentAt > 15 * 60 * 1000) {
+    announce(english ? "Messages can only be edited within 15 minutes of sending." : "يمكن تعديل الرسالة خلال 15 دقيقة من إرسالها فقط.", "error");
+    closeMessageOptions(menu, toggle);
+    return;
+  }
+  const edited = window.prompt(english ? "Edit message" : "تعديل الرسالة", message.body || "");
+  if (edited === null) { closeMessageOptions(menu, toggle); return; }
+  const nextBody = edited.trim();
+  if (!nextBody || nextBody.length > 5000) {
+    announce(english ? "Enter a message between 1 and 5000 characters." : "اكتب رسالة من حرف واحد إلى 5000 حرف.", "error");
+    return;
+  }
+  const result = await supabase.from("messages")
+    .update({ body: nextBody, edited_at: new Date().toISOString() })
+    .eq("id", message.id)
+    .eq("sender_id", currentUser.id)
+    .select("id")
+    .maybeSingle();
+  if (result.error || !result.data) {
+    announce((english ? "The message edit was not saved: " : "لم يتم حفظ تعديل الرسالة: ") + (result.error?.message || ""), "error");
+    return;
+  }
+  closeMessageOptions(menu, toggle);
+  await loadMessages();
+  announce(english ? "Message edited." : "تم تعديل الرسالة.", "success");
+}
 async function toggleMessageStar(message, item, menu, toggle) {
   const existing = await supabase.from("starred_messages").select("message_id")
     .eq("message_id", message.id).eq("user_id", currentUser.id).maybeSingle();
@@ -6070,6 +6112,7 @@ function appendMessage(message) {
   timeElement.dateTime = sentAt.toISOString();
   timeElement.setAttribute("aria-label", "تاريخ ووقت الإرسال: " + time);
   messageFooter.append(timeElement);
+  if (message.edited_at) messageFooter.append(safeText("span", "message-edited-label", "تم التعديل"));
   if (message.sender_id === currentUser.id) {
     setTimeout(() => setOutgoingMessageStatus(item, message._deliveredCount || 0, message._readCount || (message._readByPartner ? 1 : 0), Boolean(activeConversation?.is_group)), 0);
   }
@@ -6130,6 +6173,12 @@ function appendMessage(message) {
   deleteEveryoneButton.disabled = message.sender_id !== currentUser.id;
   deleteEveryoneButton.setAttribute("aria-label", message.sender_id === currentUser.id ? "حذف هذه الرسالة لدى الجميع" : "حذف لدى الجميع، متاح لرسائلك أنت فقط");
   deleteEveryoneButton.addEventListener("click", () => { void deleteMessageForEveryone(message, item, menu, toggle); });
+  if (message.sender_id === currentUser.id) {
+    const editButton = safeText("button", "message-option-button", "تعديل الرسالة");
+    editButton.type = "button";
+    editButton.addEventListener("click", () => { void editMessage(message, item, menu, toggle); });
+    menu.append(editButton);
+  }
   const starButton = safeText("button", "message-option-button", "تمييز بنجمة");
   starButton.type = "button";
   starButton.addEventListener("click", () => { void toggleMessageStar(message, item, menu, toggle); });
@@ -6167,7 +6216,7 @@ async function loadMessages() {
   // Keep the first chat render lightweight on mobile: fetch only the newest
   // 50 messages, then restore chronological order for the conversation view.
   const { data: newestFirst, error } = await supabase.from("messages")
-    .select("id,conversation_id,sender_id,body,created_at,is_deleted")
+    .select("id,conversation_id,sender_id,body,created_at,edited_at,is_deleted")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: false })
     .limit(50);
