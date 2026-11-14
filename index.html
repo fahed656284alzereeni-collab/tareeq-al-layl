@@ -141,6 +141,9 @@
           <section class="settings-section chats-settings-entry">
             <button id="open-chats-settings" type="button" class="settings-menu-button">الدردشات</button>
           </section>
+          <section class="settings-section broadcast-settings-entry">
+            <button id="open-broadcast-settings" type="button" class="settings-menu-button">قوائم الرسائل الجماعية</button>
+          </section>
           <section class="settings-section privacy-settings-entry">
             <button id="open-privacy-settings" type="button" class="settings-menu-button">الخصوصية</button>
           </section>
@@ -656,15 +659,23 @@
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">الحالات</span>
       </button>
-      <button id="calls-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="calls-view" aria-label="المكالمات، 3 من 5" aria-posinset="3" aria-setsize="5" aria-selected="false">
+      <button id="calls-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="calls-view" aria-label="المكالمات، 3 من 7" aria-posinset="3" aria-setsize="7" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 3.5h3l1.4 4.1-2 1.7a15 15 0 0 0 5.7 5.7l1.7-2 4.1 1.4v3c0 1-.8 1.8-1.8 1.8A15.2 15.2 0 0 1 4.8 5.3c0-1 .8-1.8 1.8-1.8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">المكالمات</span>
       </button>
-      <button id="tools-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="tools-view" aria-label="الأدوات، 4 من 5" aria-posinset="4" aria-setsize="5" aria-selected="false">
+      <button id="channels-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="channels-panel" aria-label="القنوات، 4 من 7" aria-posinset="4" aria-setsize="7" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v13H4zM8 9h8M8 12h8M8 15h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span class="bottom-nav-label" aria-hidden="true">القنوات</span>
+      </button>
+      <button id="communities-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="communities-panel" aria-label="المجتمعات، 5 من 7" aria-posinset="5" aria-setsize="7" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="9" r="2.3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.3-3.2 2.2-5 5.5-5s5.2 1.8 5.5 5M15 14c2.9-.2 4.7 1.3 5 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span class="bottom-nav-label" aria-hidden="true">المجتمعات</span>
+      </button>
+      <button id="tools-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="tools-view" aria-label="الأدوات، 6 من 7" aria-posinset="6" aria-setsize="7" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5 13.8 9l5.2 2-5.2 2L12 18.5 10.2 13 5 11l5.2-2L12 3.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">الأدوات</span>
       </button>
-      <button id="settings-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="settings-panel" aria-label="الإعدادات، 5 من 5" aria-posinset="5" aria-setsize="5" aria-selected="false">
+      <button id="settings-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="settings-panel" aria-label="الإعدادات، 7 من 7" aria-posinset="7" aria-setsize="7" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m19.4 13.5 1.1.9-1.5 2.6-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.2 1.5h-3l-.3-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.5-2.6 1.1-.9a7.3 7.3 0 0 1 0-1.8l-1.1-.9 1.5-2.6 1.4.5a7.8 7.8 0 0 1 1.5-.9l.3-1.5h3l.2 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.5 2.6-1.1.9a7.3 7.3 0 0 1 0 1.8Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">الإعدادات</span>
       </button>
@@ -700,23 +711,23 @@
         <button id="close-new-chat" type="button" class="quiet-button">إغلاق</button>
         <button id="new-private-chat" type="button" class="primary-button">محادثة جديدة</button>
         <button id="new-group-chat" type="button" class="quiet-button">مجموعة جديدة</button>
-        <button id="new-broadcast-list" type="button" class="quiet-button">قائمة بث جديدة</button>
+        <button id="new-broadcast-list" type="button" class="quiet-button">قائمة رسائل جماعية جديدة</button>
         <button id="open-channels-button" type="button" class="quiet-button">استكشاف القنوات</button>
         <button id="open-communities-button" type="button" class="quiet-button">استكشاف المجتمعات</button>
         <div id="private-chat-view" hidden><label for="people-search">ابحث عن شخص</label><input id="people-search" type="search" placeholder="اكتب الاسم للبحث" autocomplete="off"><ul id="people-list" class="people-list" aria-label="الأشخاص"></ul></div>
         <div id="group-chat-view" hidden><label for="group-name">اسم المجموعة</label><input id="group-name" type="text" maxlength="60" placeholder="اكتب اسم المجموعة"><label for="new-group-description">وصف المجموعة (اختياري)</label><textarea id="new-group-description" rows="3" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea><p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p><div class="group-photo-editor group-create-photo"><img id="new-group-photo-preview" class="group-photo-preview" alt="معاينة صورة المجموعة المحددة" hidden><input id="new-group-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة للمجموعة عند إنشائها"><button id="new-group-photo-choose" type="button" class="quiet-button">إضافة صورة للمجموعة (اختياري)</button><button id="new-group-photo-remove" type="button" class="quiet-button" hidden>إزالة الصورة المحددة</button><p class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى لصورة المجموعة: 50 ميغابايت.</p></div><label for="group-people-search">ابحث عن أعضاء</label><input id="group-people-search" type="search" placeholder="اكتب اسم الشخص" autocomplete="off"><ul id="group-people-list" class="people-list" aria-label="اختيار أعضاء المجموعة"></ul><button id="create-group-button" type="button" class="primary-button">إنشاء المجموعة</button></div>
       </div>
     </section>
-  <section id="broadcast-panel" class="broadcast-panel" role="dialog" aria-modal="true" aria-label="قوائم البث" hidden>
+  <section id="broadcast-panel" class="broadcast-panel" role="dialog" aria-modal="true" aria-label="قوائم الرسائل الجماعية" hidden>
       <div class="broadcast-card">
         <button id="close-broadcast-panel" type="button" class="quiet-button">إغلاق</button>
         <div id="broadcast-lists-view">
-          <p class="broadcast-panel-title">قوائم البث</p>
-          <button id="create-broadcast-list" type="button" class="primary-button">إنشاء قائمة بث</button>
-          <ul id="broadcast-lists" class="broadcast-lists" aria-label="قوائم البث"></ul>
+          <p class="broadcast-panel-title">قوائم الرسائل الجماعية</p>
+          <button id="create-broadcast-list" type="button" class="primary-button">إنشاء قائمة رسائل جماعية</button>
+          <ul id="broadcast-lists" class="broadcast-lists" aria-label="قوائم الرسائل الجماعية"></ul>
         </div>
         <div id="broadcast-create-view" hidden>
-          <label for="broadcast-list-name">اسم قائمة البث</label>
+          <label for="broadcast-list-name">اسم قائمة الرسائل الجماعية</label>
           <input id="broadcast-list-name" type="text" maxlength="60" placeholder="اكتب اسم القائمة">
           <label for="broadcast-people-search">ابحث عن مستلمين</label>
           <input id="broadcast-people-search" type="search" placeholder="اكتب اسم الشخص">
