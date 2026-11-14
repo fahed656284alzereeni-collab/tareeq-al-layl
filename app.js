@@ -4076,8 +4076,16 @@ async function manageGroupMember(userId,name,action){
   announce(action==="promote"?"تم تعيينه مشرفًا.":action==="demote"?"تمت إزالة صفة المشرف.":"تمت إزالة العضو.");
 }
 groupAddSearch.addEventListener("input",renderGroupAddPeople);
+async function canCurrentUserAddGroupMembers(){
+  if(!activeConversation?.is_group||!currentUser)return false;
+  const permissions=await getCurrentGroupPermissions();
+  if(permissions.isAdmin)return true;
+  const {data,error}=await supabase.from("group_settings").select("add_members_by").eq("conversation_id",activeConversation.id).maybeSingle();
+  if(error){console.warn("تعذر التحقق من صلاحية إضافة الأعضاء:",error.message);return false;}
+  return data?.add_members_by==="everyone";
+}
 groupAddMembersButton.addEventListener("click",async()=>{
-  if(!activeConversation?.is_group||!(await getCurrentGroupPermissions()).isAdmin)return;
+  if(!activeConversation?.is_group||!(await canCurrentUserAddGroupMembers()))return;
   conversationInfoPanel.hidden=true;
   document.body.classList.remove("conversation-info-fullscreen");
   groupAddPanel.hidden=false;
@@ -4093,7 +4101,7 @@ function closeGroupAddPanel(){
 closeGroupAddButton.addEventListener("click",closeGroupAddPanel);
 groupAddPanel.addEventListener("keydown",event=>{if(event.key==="Escape")closeGroupAddPanel();});
 groupAddSelectedButton.addEventListener("click",async()=>{
-  if(!activeConversation?.is_group||!(await getCurrentGroupPermissions()).isAdmin)return;
+  if(!activeConversation?.is_group||!(await canCurrentUserAddGroupMembers()))return;
   const ids=[...selectedAdditionalMembers].filter(id=>!activeGroupMemberIds.has(id));
   if(!ids.length){announce("اختر شخصًا واحدًا على الأقل.","error");return;}
   groupAddSelectedButton.disabled=true;
