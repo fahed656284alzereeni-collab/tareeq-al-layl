@@ -658,6 +658,9 @@ body.calls-open .calls-back-button {
   flex-wrap: nowrap;
   align-items: stretch;
 }
+#bottom-navigation[hidden] {
+  display: none !important;
+}
 #bottom-navigation > .bottom-nav-button {
   flex: 1 1 0;
   min-width: 0;
