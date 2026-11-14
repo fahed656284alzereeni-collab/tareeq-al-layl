@@ -3922,6 +3922,7 @@ async function openGroupSettings() {
   document.body.classList.add("group-settings-open");
   groupSettingsPanel.hidden = false;
   groupSettingsPanel.setAttribute("aria-hidden", "false");
+  groupSettingsPanel.scrollTop = 0;
   groupSettingsSendSelect.disabled = true;
   groupSettingsAddSelect.disabled = true;
   groupSettingsSaveButton.disabled = true;
