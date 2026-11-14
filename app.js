@@ -810,6 +810,22 @@ const mersalTranslations = {
   "إجراءات العضوية": "Membership actions",
   "صلاحيات المجموعة": "Group permissions",
   "إعدادات المجموعة": "Group settings",
+  "الدعوة عبر الرابط": "Invite via link",
+  "رابط دعوة المجموعة": "Group invite link",
+  "نسخ رابط الدعوة": "Copy invite link",
+  "إعادة تعيين رابط الدعوة": "Reset invite link",
+  "جارٍ تحميل رابط الدعوة…": "Loading invite link…",
+  "تم نسخ رابط الدعوة.": "Group invite link copied.",
+  "تم تجديد رابط الدعوة.": "Group invite link reset.",
+  "تم إنشاء رابط دعوة جديد، وأُلغي الرابط السابق.": "A new invite link was created. The previous link is no longer valid.",
+  "تعذر تحميل رابط الدعوة: ": "Could not load invite link: ",
+  "تعذر تجديد رابط الدعوة: ": "Could not reset invite link: ",
+  "سيصبح رابط الدعوة الحالي غير صالح. هل تريد إنشاء رابط جديد؟": "The current invite link will stop working. Create a new link?",
+  "تم الانضمام إلى المجموعة عبر رابط الدعوة.": "You joined the group using the invite link.",
+  "تعذر الانضمام إلى المجموعة. قد يكون الرابط غير صالح أو تم إلغاؤه.": "Could not join the group. The link may be invalid or revoked.",
+  "تعذر نسخ الرابط. يمكنك تحديده ونسخه يدويًا.": "Could not copy the link. You can select and copy it manually.",
+  "تعذر إنشاء رابط الدعوة.": "Could not create the invite link."
+
   "إغلاق إعدادات المجموعة": "Close group settings",
   "الصلاحيات": "Permissions",
   "من يستطيع إرسال الرسائل؟": "Who can send messages?",
@@ -1197,6 +1213,8 @@ const groupRenameSaveButton = $("#group-rename-save");
 const groupDescriptionInput=$("#group-description-input"),groupDescriptionSaveButton=$("#group-description-save");
 const groupPhotoInput=$("#group-photo-input"),groupPhotoPreview=$("#group-photo-preview"),groupPhotoChooseButton=$("#group-photo-choose"),groupPhotoRemoveButton=$("#group-photo-remove"),groupPhotoSaveButton=$("#group-photo-save");
 const groupInfoPhotoRow=$("#group-info-photo-row"),groupInfoPhoto=$("#group-info-photo"),groupInfoDescriptionRow=$("#group-info-description-row"),groupInfoDescription=$("#group-info-description");
+const groupInviteRow=$("#group-invite-row"),groupInviteUrl=$("#group-invite-url"),groupInviteCopyButton=$("#group-invite-copy"),groupInviteResetButton=$("#group-invite-reset"),groupInviteStatus=$("#group-invite-status");
+let groupInviteLoadSequence=0,pendingGroupInviteInProgress=false;
 let groupDescriptionSavedValue=null,groupDescriptionSaveInProgress=false,selectedGroupPhotoFile=null,groupPhotoSavedPath=null,groupPhotoRemoveRequested=false,groupPhotoSaveInProgress=false,groupPhotoPreviewObjectUrl=null;
 const groupPhotoUrlCache=new Map();
 const groupSettingsOpenButton = $("#group-settings-open");
@@ -2968,7 +2986,10 @@ function finishOAuthPopup() {
 let sessionHandlingQueue = Promise.resolve();
 function queueSessionHandling(session, event = "UNKNOWN") {
   sessionHandlingQueue = sessionHandlingQueue
-    .then(() => handleSession(session, event))
+    .then(async () => {
+      await handleSession(session, event);
+      await processPendingGroupInvite();
+    })
     .catch(error => {
       console.error("Mersal session handling failed:", error);
       announce("تعذر إكمال تسجيل الدخول: " + (error?.message || "حاول مرة أخرى."), "error");
@@ -3726,6 +3747,82 @@ function updateBlockedControls(){
   blockPersonButton.setAttribute("aria-label",blockPersonButton.textContent);
 }
 let conversationInfoLoadSequence = 0;
+
+async function loadGroupInviteLink(conversationId,isCurrent,isAdmin){
+  if(!groupInviteRow||!groupInviteUrl)return;
+  const sequence=++groupInviteLoadSequence;
+  groupInviteRow.hidden=false;
+  groupInviteUrl.value="";
+  groupInviteStatus.textContent="جارٍ تحميل رابط الدعوة…";
+  groupInviteResetButton.hidden=!isAdmin;
+  try{
+    const {data,error}=await supabase.rpc("get_or_create_group_invite",{p_conversation_id:conversationId});
+    if(error)throw error;
+    if(sequence!==groupInviteLoadSequence||!isCurrent())return;
+    const token=typeof data==="string"?data:data?.token;
+    if(!token)throw new Error("لم يتم إنشاء رابط الدعوة.");
+    groupInviteUrl.value=new URL("/?group_invite="+encodeURIComponent(token),window.location.origin).toString();
+    groupInviteStatus.textContent="";
+  }catch(error){
+    if(sequence!==groupInviteLoadSequence||!isCurrent())return;
+    groupInviteRow.hidden=true;
+    console.warn("تعذر تحميل رابط دعوة المجموعة:",error);
+    announce("تعذر تحميل رابط الدعوة: "+(error.message||"حاول مرة أخرى."),"error");
+  }
+}
+async function copyGroupInviteLink(){
+  const value=groupInviteUrl?.value||"";
+  if(!value)return;
+  try{
+    if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);
+    else{
+      groupInviteUrl.focus();groupInviteUrl.select();
+      if(!document.execCommand("copy"))throw new Error("Clipboard unavailable");
+    }
+    groupInviteStatus.textContent="تم نسخ رابط الدعوة.";
+    announce("تم نسخ رابط الدعوة.");
+  }catch(error){announce("تعذر نسخ الرابط. يمكنك تحديده ونسخه يدويًا.","error");}
+}
+if(groupInviteCopyButton)groupInviteCopyButton.addEventListener("click",()=>void copyGroupInviteLink());
+if(groupInviteResetButton)groupInviteResetButton.addEventListener("click",async()=>{
+  if(!activeConversation?.is_group||!groupInviteUrl||groupInviteResetButton.disabled)return;
+  const permissions=await getCurrentGroupPermissions();
+  if(!permissions.isAdmin)return;
+  if(!window.confirm("سيصبح رابط الدعوة الحالي غير صالح. هل تريد إنشاء رابط جديد؟"))return;
+  groupInviteResetButton.disabled=true;
+  try{
+    const {data,error}=await supabase.rpc("reset_group_invite",{p_conversation_id:activeConversation.id});
+    if(error)throw error;
+    const token=typeof data==="string"?data:data?.token;
+    if(!token)throw new Error("لم يتم تجديد رابط الدعوة.");
+    groupInviteUrl.value=new URL("/?group_invite="+encodeURIComponent(token),window.location.origin).toString();
+    groupInviteStatus.textContent="تم إنشاء رابط دعوة جديد، وأُلغي الرابط السابق.";
+    announce("تم تجديد رابط الدعوة.");
+  }catch(error){announce("تعذر تجديد رابط الدعوة: "+(error.message||"حاول مرة أخرى."),"error");}
+  finally{groupInviteResetButton.disabled=false;}
+});
+async function processPendingGroupInvite(){
+  if(pendingGroupInviteInProgress||!currentUser)return;
+  const params=new URLSearchParams(window.location.search);
+  const token=params.get("group_invite");
+  if(!token)return;
+  pendingGroupInviteInProgress=true;
+  try{
+    const {data,error}=await supabase.rpc("join_group_by_invite",{p_token:token});
+    if(error)throw error;
+    params.delete("group_invite");
+    const query=params.toString();
+    history.replaceState({},document.title,window.location.pathname+(query?"?"+query:"")+window.location.hash);
+    await loadConversations();
+    announce("تم الانضمام إلى المجموعة عبر رابط الدعوة.");
+  }catch(error){
+    params.delete("group_invite");
+    const query=params.toString();
+    history.replaceState({},document.title,window.location.pathname+(query?"?"+query:"")+window.location.hash);
+    announce("تعذر الانضمام إلى المجموعة. قد يكون الرابط غير صالح أو تم إلغاؤه.","error");
+  }finally{pendingGroupInviteInProgress=false;}
+}
+
 async function updateConversationInfo() {
   if (!activeConversation || (!activePartner && !activeConversation.is_group)) return;
   const conversation = activeConversation;
@@ -3752,6 +3849,9 @@ async function updateConversationInfo() {
   setConversationInfoValue(groupInfoDescription, "—");
   groupInfoPhotoRow.hidden = true;
   groupInfoDescriptionRow.hidden = true;
+  if(groupInviteRow)groupInviteRow.hidden=true;
+  if(groupInviteUrl)groupInviteUrl.value="";
+  if(groupInviteStatus)groupInviteStatus.textContent="";
 
   const { isOwner, isAdmin } = isGroup ? await getCurrentGroupPermissions() : { isOwner: false, isAdmin: false };
   if (!isCurrent()) return;
@@ -3798,6 +3898,7 @@ async function updateConversationInfo() {
       }
     }
   }
+  if(isGroup) await loadGroupInviteLink(conversationId,isCurrent,isAdmin);
 
   if (!isGroup) {
     const visibleProfile = await supabase.rpc("get_visible_profiles", { p_user_ids: [partner.id] });
