@@ -44,4 +44,5 @@ for delete to authenticated using (
     where c.id = community_groups.community_id and c.owner_id = (select auth.uid()))
 );
 
+revoke update on public.community_groups from authenticated;
 grant select, insert, delete on public.community_groups to authenticated;
