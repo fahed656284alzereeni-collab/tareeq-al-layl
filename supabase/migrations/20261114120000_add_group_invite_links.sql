@@ -52,6 +52,7 @@ end;
 $$;
 
 revoke all on function private.join_group_by_invite(text) from public, anon, authenticated;
+grant execute on function private.join_group_by_invite(text) to authenticated;
 
 create or replace function public.join_group_by_invite(p_token text)
 returns uuid
