@@ -2219,3 +2219,5 @@ body.conversation-info-fullscreen #group-member-list {
 /* Group settings is mounted at document root so fixed positioning is viewport-wide. */
 .group-settings-panel{z-index:2147483100;width:100vw;height:100vh;height:100dvh;box-sizing:border-box;overscroll-behavior:contain}
 .group-settings-panel[hidden]{display:none!important}
+
+body.group-settings-open{overflow:hidden!important;overscroll-behavior:none}
