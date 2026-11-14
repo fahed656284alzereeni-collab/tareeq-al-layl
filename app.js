@@ -3520,7 +3520,7 @@ $("#publish-status-button").addEventListener("click", async () => {
 });
 async function renderStatusInteractions(row, own) {
   const host = $("#status-viewer-interactions");
-  if (!host || !row?.id || !currentUser) return;
+  if (!host || !row?.id || !currentUser || activeViewedStatus?.id !== row.id) return;
   const english = document.documentElement.lang === "en";
   host.replaceChildren();
   const reactionsHeading = safeText("p", "status-interaction-heading", english ? "Status reactions" : "تفاعلات الحالة");
@@ -3528,6 +3528,7 @@ async function renderStatusInteractions(row, own) {
   if (!own) {
     const reactionsResult = await supabase.from("status_reactions")
       .select("user_id,emoji").eq("status_id", row.id);
+    if (activeViewedStatus?.id !== row.id) return;
     if (reactionsResult.error) {
       host.append(safeText("p", "empty-item", english ? "Could not load status reactions." : "تعذر تحميل تفاعلات الحالة."));
       return;
@@ -3579,6 +3580,7 @@ async function renderStatusInteractions(row, own) {
     .select("id,sender_id,body,created_at")
     .eq("status_id", row.id)
     .order("created_at", { ascending: true });
+  if (activeViewedStatus?.id !== row.id) return;
   if (repliesResult.error) {
     repliesList.append(safeText("li", "empty-item", english ? "Could not load replies." : "تعذر تحميل الردود."));
   } else if (!repliesResult.data?.length) {
@@ -3586,6 +3588,7 @@ async function renderStatusInteractions(row, own) {
   } else {
     const ids = [...new Set(repliesResult.data.map(reply => reply.sender_id))];
     const profilesResult = await supabase.from("profiles").select("id,display_name").in("id", ids);
+    if (activeViewedStatus?.id !== row.id) return;
     const names = new Map((profilesResult.data || []).map(profile => [profile.id, profile.display_name]));
     for (const reply of repliesResult.data) {
       const name = reply.sender_id === currentUser.id
