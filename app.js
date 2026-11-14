@@ -4104,9 +4104,9 @@ async function openGroupSettings() {
   const conversationId = activeConversation.id;
   groupSettingsReturnFocus = document.activeElement;
   if (groupSettingsPermissionsSection) {
-    groupSettingsPermissionsSection.hidden = true;
-    groupSettingsPermissionsSection.setAttribute("aria-hidden", "true");
-    groupSettingsPermissionsSection.setAttribute("inert", "");
+    groupSettingsPermissionsSection.hidden = false;
+    groupSettingsPermissionsSection.setAttribute("aria-hidden", "false");
+    groupSettingsPermissionsSection.removeAttribute("inert");
   }
   document.body.classList.add("group-settings-open");
   groupSettingsPanel.hidden = false;
@@ -4122,23 +4122,17 @@ async function openGroupSettings() {
       return;
     }
     const canManage = Boolean(permissions.isAdmin);
-    if (canManage) {
-      const { data, error } = await supabase.from("group_settings")
-        .select("send_messages_by,add_members_by")
-        .eq("conversation_id", conversationId)
-        .maybeSingle();
-      if (error) throw error;
-      if (!activeConversation?.is_group || activeConversation.id !== conversationId) {
-        closeGroupSettings();
-        return;
-      }
-      groupSettingsSendSelect.value = data?.send_messages_by || "everyone";
-      groupSettingsAddSelect.value = data?.add_members_by || "admins";
-    } else {
-      // Non-admin members cannot load or view group permission values.
-      groupSettingsSendSelect.value = "everyone";
-      groupSettingsAddSelect.value = "admins";
+    const { data, error } = await supabase.from("group_settings")
+      .select("send_messages_by,add_members_by")
+      .eq("conversation_id", conversationId)
+      .maybeSingle();
+    if (error) throw error;
+    if (!activeConversation?.is_group || activeConversation.id !== conversationId) {
+      closeGroupSettings();
+      return;
     }
+    groupSettingsSendSelect.value = data?.send_messages_by || "everyone";
+    groupSettingsAddSelect.value = data?.add_members_by || "admins";
     groupSettingsSendSelect.disabled = !canManage;
     groupSettingsAddSelect.disabled = !canManage;
     groupSettingsSnapshot = getGroupSettingsSnapshot();
