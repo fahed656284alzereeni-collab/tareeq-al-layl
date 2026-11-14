@@ -55,6 +55,9 @@ const mersalTranslations = {
   "معاينة الكاميرا":"Camera preview",
   "فيديو المشاركين":"Participants video",
   "يتصل بك مرئيًا.":" is video calling you.",
+  " يتصل بك مرئيًا.":" is video calling you.",
+  "لا توجد مكالمات سابقة.":"No previous calls.",
+  "فيديو مشارك في المكالمة":"Call participant video",
   "المكالمة المرئية متصلة.":"Video call connected.",
   "المكالمات المرئية تحتاج إذن الكاميرا.":"Video calls require camera permission.",
   "تعذر تجهيز سجل المكالمات: ":"Could not load call history: ",
@@ -5489,7 +5492,9 @@ async function endVoiceCall(notifyOthers = true) {
 async function finishVoiceCall() {
   const call = activeCall;
   activeCall = null;
-  if (call?.logId) void updateCallLogStatus(call.logId,call.finalStatus||(call.everConnected?"completed":(call.incoming?"missed":"cancelled")));
+  if (call?.logId && (call.initiatorId===currentUser?.id || call.finalStatus==="declined")) {
+    void updateCallLogStatus(call.logId,call.finalStatus||(call.everConnected?"completed":(call.incoming?"missed":"cancelled")));
+  }
   if (call?.peers) for (const pc of call.peers.values()) pc.close();
   if (call?.localStream) for (const track of call.localStream.getTracks()) track.stop();
   voiceCallAudio.replaceChildren();
