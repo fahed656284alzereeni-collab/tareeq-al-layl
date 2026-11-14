@@ -823,6 +823,8 @@ const mersalTranslations = {
   "نسخ رابط الدعوة":"Copy invite link",
   "إعادة تعيين رابط الدعوة":"Reset invite link",
   "جارٍ تجهيز رابط الدعوة…":"Preparing invite link…",
+  "رابط دعوة المجموعة جاهز.":"The group invite link is ready.",
+  "تعذر نسخ رابط الدعوة. حدد الرابط وانسخه يدويًا.":"Could not copy the invite link. Select and copy it manually.",
   "أنشئ منشئ المجموعة رابط الدعوة أولًا.":"The group creator must create the invite link first.",
   "تعذر تجهيز رابط الدعوة: ":"Could not prepare invite link: ",
   "تم نسخ رابط الدعوة.":"Invite link copied.",
