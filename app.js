@@ -1003,6 +1003,15 @@ const mersalTranslations = {
   "تعذر الإرسال إلى بعض المستلمين:":"Could not send to some recipients:",
   "إلغاء":"Cancel",
 
+  "اكتب اسم القائمة":"Enter a list name",
+  "اختيار مستلمي قائمة البث":"Choose broadcast list recipients",
+  "قائمة البث لا تحتوي على مستلمين.":"This broadcast list has no recipients.",
+  "تعذر تحميل مستلمي قوائم البث.":"Could not load broadcast recipients.",
+  "تعذر تحميل قوائم البث.":"Could not load broadcast lists.",
+  "لا يوجد أشخاص بهذا الاسم.":"No people found.",
+  "تم اختيار مستلم":"recipient selected",
+  "تم اختيار مستلمين":"recipients selected",
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
