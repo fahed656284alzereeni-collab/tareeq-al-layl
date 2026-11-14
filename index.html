@@ -484,6 +484,7 @@
               <button id="conversation-info-clear" type="button" class="danger-button">مسح المحادثة من جهازي</button>
               <button id="block-person-button" type="button" class="danger-button" hidden>حظر الشخص</button>
               <button id="group-settings-open" type="button" class="quiet-button" hidden>إعدادات المجموعة</button>
+              <button id="group-more-options-open" type="button" class="quiet-button" hidden>المزيد من الخيارات</button>
             </div>
 
             <div class="conversation-membership-actions">
@@ -646,6 +647,13 @@
                   </select>
                   <button id="group-settings-save" type="button" class="quiet-button" disabled>حفظ إعدادات المجموعة</button>
                 </div>
+
+          <section id="group-more-options-panel" class="group-settings-panel group-more-options-panel" role="dialog" aria-modal="true" aria-label="المزيد من الخيارات" aria-hidden="true" hidden>
+            <div class="group-settings-header">
+              <button id="group-more-options-close" type="button" class="quiet-button">إغلاق المزيد من الخيارات</button>
+              <div class="group-settings-title" role="none">المزيد من الخيارات</div>
+            </div>
+            <div class="group-settings-content">
                 <div id="group-settings-info" class="group-settings-section" aria-hidden="true" inert hidden>
                   <div id="group-admin-tools" class="group-admin-tools group-admin-tools-top" hidden>
                     <div class="group-photo-editor">
@@ -676,7 +684,9 @@
                   </div>
                 </div>
               </div>
-                        <section id="group-member-options-panel" class="group-member-options-panel" role="dialog" aria-modal="true" aria-label="خيارات عضو المجموعة" hidden>
+            </div>
+          </section>
+          <section id="group-member-options-panel" class="group-member-options-panel" role="dialog" aria-modal="true" aria-label="خيارات عضو المجموعة" hidden>
             <div class="group-member-options-card">
               <button id="close-group-member-options" type="button" class="quiet-button">إغلاق</button>
               <p id="group-member-options-name" class="group-member-options-name"></p>
