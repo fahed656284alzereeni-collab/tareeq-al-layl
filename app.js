@@ -1946,10 +1946,16 @@ function updateChatPartnerPresence() {
   const details = presenceDetails.get(activePartner.id);
   const online = reciprocalHidden ? false : Boolean(details?.is_online);
   const visibleLastSeen = reciprocalHidden ? null : details?.last_seen_at || null;
-  chatPartnerPresence.textContent = online ? "متصل الآن" : visibleLastSeen ? formatLastSeen(visibleLastSeen) : "حالة الظهور مخفية";
+  const english = localStorage.getItem("mersal-language") === "en";
+  const presenceLabel = online
+    ? (english ? "Online now" : "متصل الآن")
+    : visibleLastSeen
+      ? formatLastSeen(visibleLastSeen)
+      : (english ? "Presence hidden" : "حالة الظهور مخفية");
+  chatPartnerPresence.textContent = presenceLabel;
   chatPartnerPresence.classList.toggle("is-online", online);
   chatPartnerPresence.classList.toggle("is-offline", !online);
-  chatPartnerAccessible.setAttribute("aria-label", `${chatPartnerName.textContent}، ${chatPartnerPresence.textContent}`);
+  chatPartnerAccessible.setAttribute("aria-label", chatPartnerName.textContent + (english ? ", " : "، ") + presenceLabel);
 }
 
 function updateGroupHeaderAccessibleLabel() {
