@@ -1205,6 +1205,7 @@ const groupSettingsCloseButton = $("#group-settings-close");
 const groupSettingsSendSelect = $("#group-settings-send");
 const groupSettingsAddSelect = $("#group-settings-add");
 const groupSettingsSaveButton = $("#group-settings-save");
+const groupSettingsPermissionsSection = $("#group-settings-permissions");
 let groupSettingsSnapshot = null;
 let groupSettingsSaving = false;
 let groupSettingsReturnFocus = null;
@@ -3922,6 +3923,7 @@ async function openGroupSettings() {
     groupSettingsSendSelect.value = data?.send_messages_by || "everyone";
     groupSettingsAddSelect.value = data?.add_members_by || "admins";
     const canManage = Boolean(permissions.isAdmin);
+    if (groupSettingsPermissionsSection) groupSettingsPermissionsSection.hidden = !canManage;
     groupSettingsSendSelect.disabled = !canManage;
     groupSettingsAddSelect.disabled = !canManage;
     groupSettingsSnapshot = getGroupSettingsSnapshot();
