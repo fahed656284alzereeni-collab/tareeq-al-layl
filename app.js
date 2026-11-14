@@ -3746,7 +3746,18 @@ async function updateConversationInfo() {
   const { isOwner, isAdmin } = isGroup ? await getCurrentGroupPermissions() : { isOwner: false, isAdmin: false };
   if (!isCurrent()) return;
 
-  groupAddMembersButton.hidden = !isAdmin;
+  let groupAddPermission = "admins";
+  if (isGroup) {
+    const { data: groupSettingsForAdd, error: groupSettingsForAddError } = await supabase
+      .from("group_settings")
+      .select("add_members_by")
+      .eq("conversation_id", conversationId)
+      .maybeSingle();
+    if (!isCurrent()) return;
+    if (groupSettingsForAddError) console.warn("تعذر تحميل صلاحية إضافة الأعضاء:", groupSettingsForAddError.message);
+    else groupAddPermission = groupSettingsForAdd?.add_members_by || "admins";
+  }
+  groupAddMembersButton.hidden = !(isAdmin || (isGroup && groupAddPermission === "everyone"));
   if (groupSettingsOpenButton) groupSettingsOpenButton.hidden = !isGroup;
   blockPersonButton.hidden = isGroup;
   conversationDeleteButton.hidden = false;
