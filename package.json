@@ -6,6 +6,7 @@
   "type": "module",
   "scripts": {
     "check": "node --check app.js && node --check tools.js && node --check channels.js && node --check communities.js && node scripts/check-static.mjs",
-    "test": "npm run check"
+    "test": "npm run check",
+    "build": "npm run check"
   }
 }
