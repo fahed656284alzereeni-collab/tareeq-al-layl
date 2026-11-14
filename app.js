@@ -985,7 +985,7 @@ const mersalTranslations = {
   "استكشاف القنوات":"Explore channels",
   "استكشاف المجتمعات":"Explore communities",
   "عرض الصور والفيديوهات لمرة واحدة":"Send photos and videos for one-time viewing",
-  "تُتاح الوسائط للمستلم مرة واحدة فقط داخل مرسال.":"Each recipient can open this media only once inside Mersal.",
+  "يمكن فتح الوسائط مرة واحدة داخل مرسال، لكن لا يمكن منع تصوير الشاشة أو تسجيلها.":"Media can be opened once inside Mersal, but screenshots or screen recording cannot be prevented.",
   "عرض لمرة واحدة":"View once",
   "تم فتح هذه الوسائط. لا يمكن فتحها مجددًا.":"This media has already been opened and cannot be viewed again.",
   "وسائط مرسلة للعرض مرة واحدة.":"Media sent for one-time viewing.",
