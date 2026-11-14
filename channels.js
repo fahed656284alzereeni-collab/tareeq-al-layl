@@ -31,6 +31,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
   let activeFollow = null;
   let returnFocus = null;
   let busy = false;
+  let postsRealtimeChannel = null;
 
   const isEnglish = () => document.documentElement.lang === "en";
   const t = (ar, en) => isEnglish() ? en : ar;
@@ -127,7 +128,26 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     }
   }
 
+  async function stopPostsRealtime() {
+    if (!postsRealtimeChannel) return;
+    const channel = postsRealtimeChannel;
+    postsRealtimeChannel = null;
+    await supabase.removeChannel(channel);
+  }
+
+  async function startPostsRealtime(channelId) {
+    await stopPostsRealtime();
+    postsRealtimeChannel = supabase.channel("mersal-channel-posts-" + channelId)
+      .on("postgres_changes", {
+        event: "*", schema: "public", table: "channel_posts", filter: "channel_id=eq." + channelId
+      }, () => {
+        if (activeChannel?.id === channelId && !detailView.hidden) void renderPosts(channelId);
+      })
+      .subscribe();
+  }
+
   function showHome() {
+    void stopPostsRealtime();
     activeChannel = null;
     activeFollow = null;
     createView.hidden = true;
@@ -178,6 +198,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     deleteChannelButton.hidden = !own;
     localize();
     await renderPosts(channel.id);
+    void startPostsRealtime(channel.id);
     detailBack.focus();
   }
 
