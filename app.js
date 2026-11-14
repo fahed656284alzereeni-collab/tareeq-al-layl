@@ -7367,7 +7367,12 @@ messageForm.addEventListener("submit", async (event) => {
   }
   if (!activeConversation || !currentUser) return;
   if(isPrivateConversationBlocked()){announce("لا يمكنك إرسال رسائل في هذه المحادثة بسبب الحظر.","error");return;}
-  const body = replyingToMessage ? "ردًا على: " + replyingToMessage.body + "\n\n" + typedBody : typedBody;
+  const isStickerMessage = typedBody.startsWith("MERSAL_STICKER:");
+  const body = replyingToMessage && !isStickerMessage ? "ردًا على: " + replyingToMessage.body + "\n\n" + typedBody : typedBody;
+  if (isStickerMessage && replyingToMessage) {
+    replyingToMessage = null;
+    replyingTo.hidden = true;
+  }
   sendButton.disabled = true;
   const { data, error } = await supabase.from("messages").insert({
     conversation_id: activeConversation.id, sender_id: currentUser.id, body
