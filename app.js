@@ -6624,6 +6624,7 @@ function appendMessage(message) {
     try { attachment = JSON.parse(message.body.slice(attachmentIndex + attachmentPrefix.length)); } catch { attachment = null; }
   }
   if (stickerMessage) {
+    item.classList.add("message-sticker-message");
     const english = document.documentElement.lang === "en";
     const sticker = safeText("span", "message-sticker", stickerMessage.emoji);
     sticker.setAttribute("role", "img");
