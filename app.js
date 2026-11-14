@@ -1073,7 +1073,7 @@ const mersalTranslations = {
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
-const mersalSkipTranslation = "#status-list,#people-list,#group-people-list,#group-add-people,#scheduled-messages-list,#conversation-search-results,#conversation-info-name,#group-info-name,#group-member-options-name,#message-schedule-preview,#replying-to-text,[data-no-translate]";
+const mersalSkipTranslation = "#status-list,#people-list,#group-people-list,#group-add-people,#scheduled-messages-list,#conversation-search-results,#conversation-info-name,#group-info-name,#group-member-options-name,#message-schedule-preview,#replying-to-text,#channels-list,#channel-posts-list,[data-no-translate]";
 function mersalShouldSkip(node) {
   const parent=node.parentElement;
   return !parent||Boolean(parent.closest(mersalSkipTranslation));
@@ -1135,6 +1135,7 @@ function applyMersalLanguage(language, persist=true) {
   document.documentElement.dataset.language=chosen;
   mersalTranslateTree();
   updateBottomTabAccessiblePositions(chosen);
+  document.dispatchEvent(new CustomEvent("mersal-language-changed", { detail: { language: chosen } }));
   document.querySelectorAll(".message-poll[data-poll-id]").forEach(host => {
     const focused = document.activeElement?.closest?.(".message-poll") === host;
     const index = focused ? Number(document.activeElement.dataset.optionIndex) : null;
@@ -1479,6 +1480,11 @@ let activeChannel = null;
 let activeChannelFollow = null;
 let channelDirectoryCache = [];
 let channelsReturnFocus = null;
+document.addEventListener("mersal-language-changed", () => {
+  if (!channelsPanel || channelsPanel.hidden) return;
+  if (activeChannel) void openChannelDetails(activeChannel).catch(error => announce(error.message, "error"));
+  else void loadChannels().catch(error => announce(error.message, "error"));
+});
 function closeChannelsPanel() {
   if (!channelsPanel || channelsPanel.hidden) return;
   channelsPanel.hidden = true;
@@ -1517,11 +1523,13 @@ function renderChannelDirectory() {
     const item = document.createElement("li");
     item.className = "channel-directory-item";
     const open = safeText("button", "channel-directory-open", channel.name);
+    open.dataset.noTranslate = "";
     open.type = "button";
     open.setAttribute("aria-label", channel.name + (channel.owner_id === currentUser.id
       ? (english ? ", your channel" : "، قناتك")
       : channel.follow ? (english ? ", following" : "، تتابعها") : ""));
     const description = safeText("p", "channel-directory-description", channel.description || (english ? "No description" : "لا يوجد وصف"));
+    description.dataset.noTranslate = "";
     const status = safeText("span", "channel-directory-status",
       channel.owner_id === currentUser.id
         ? (english ? "Your channel" : "قناتي")
@@ -1540,7 +1548,9 @@ async function openChannelDetails(channel, returnFocus = null) {
   channelsListView.hidden = true;
   channelDetailView.hidden = false;
   channelDetailName.textContent = channel.name;
+  channelDetailName.dataset.noTranslate = "";
   channelDetailDescription.textContent = channel.description || "";
+  channelDetailDescription.dataset.noTranslate = "";
   const own = channel.owner_id === currentUser.id;
   channelOwnerActions.hidden = !own;
   channelFollowActions.hidden = own;
@@ -1573,8 +1583,10 @@ async function loadChannelPosts(channelId) {
   for (const post of posts) {
     const item = document.createElement("li");
     item.className = "channel-post-item";
+    const postBody = safeText("p", "channel-post-body", post.body);
+    postBody.dataset.noTranslate = "";
     item.append(
-      safeText("p", "channel-post-body", post.body),
+      postBody,
       safeText("time", "channel-post-time", new Intl.DateTimeFormat(english ? "en" : "ar-JO", { dateStyle: "medium", timeStyle: "short" }).format(new Date(post.created_at)))
     );
     if (post.edited_at) item.append(safeText("span", "channel-post-edited", english ? "Edited" : "تم التعديل"));
