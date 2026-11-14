@@ -718,3 +718,32 @@ body.calls-open .calls-view:not([hidden]) {
   box-shadow: none;
   padding: max(16px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
 }
+
+
+/* Channels and communities are first-class bottom-navigation pages, not modal overlays. */
+.channels-panel,
+.communities-panel {
+  position: fixed;
+  z-index: 70;
+  inset: 0 0 calc(68px + env(safe-area-inset-bottom)) 0;
+  display: block;
+  overflow: auto;
+  padding: 0;
+  background: var(--mx-bg);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.channels-card,
+.communities-card {
+  width: 100%;
+  min-height: 100%;
+  height: auto;
+  max-height: none;
+  margin: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: clamp(16px, 3vw, 30px);
+  background: var(--mx-bg);
+}
