@@ -451,6 +451,7 @@
               <button class="tool-card tool-launch-button" type="button" data-tool="calculator"><span class="tool-icon" aria-hidden="true">＋</span><span class="tool-card-title">الآلة الحاسبة</span></button>
               <button class="tool-card tool-launch-button" type="button" data-tool="notes"><span class="tool-icon" aria-hidden="true">✎</span><span class="tool-card-title">المفكرة السريعة</span></button>
               <button class="tool-card tool-launch-button" type="button" data-tool="qr"><span class="tool-icon" aria-hidden="true">▦</span><span class="tool-card-title">إنشاء رموز QR</span></button>
+              <button id="open-channels" class="tool-card" type="button"><span class="tool-icon" aria-hidden="true">◉</span><span class="tool-card-title">القنوات</span><span class="tool-card-description">تابع القنوات وانشر تحديثاتك</span></button>
             </div>
           </div>
           <div id="tool-detail-view" class="tool-detail-view" hidden>
@@ -500,6 +501,41 @@
             </div>
          </div>
         </div>
+
+      <section id="channels-panel" class="channels-panel" role="dialog" aria-modal="true" aria-label="القنوات" hidden>
+        <div class="channels-card">
+          <div class="channels-header">
+            <button id="close-channels-panel" type="button" class="quiet-button">إغلاق القنوات</button>
+            <p id="channels-title" class="channels-title" tabindex="-1">القنوات</p>
+          </div>
+          <div id="channels-list-view">
+            <p class="channels-description">اكتشف القنوات العامة وتابع ما يهمك، أو أنشئ قناتك الخاصة.</p>
+            <button id="create-channel-button" type="button" class="primary-button">إنشاء قناة</button>
+            <label for="channels-search">ابحث عن قناة</label>
+            <input id="channels-search" type="search" placeholder="اكتب اسم القناة">
+            <ul id="channels-list" class="channels-list" aria-label="القنوات المتاحة" aria-live="polite"></ul>
+          </div>
+          <div id="channel-detail-view" hidden>
+            <button id="channel-back-button" type="button" class="quiet-button">العودة إلى القنوات</button>
+            <p id="channel-detail-name" class="channel-detail-name" tabindex="-1"></p>
+            <p id="channel-detail-description" class="channel-detail-description"></p>
+            <div id="channel-owner-actions" class="channel-owner-actions" hidden>
+              <button id="edit-channel-button" type="button" class="quiet-button">تعديل معلومات القناة</button>
+              <button id="delete-channel-button" type="button" class="danger-button">حذف القناة</button>
+            </div>
+            <div id="channel-follow-actions" class="channel-follow-actions" hidden>
+              <button id="channel-follow-button" type="button" class="primary-button">متابعة القناة</button>
+              <button id="channel-notifications-button" type="button" class="quiet-button" aria-pressed="true">إيقاف إشعارات القناة</button>
+            </div>
+            <div id="channel-post-composer" class="channel-post-composer" hidden>
+              <label for="channel-post-input">اكتب تحديثًا للقناة</label>
+              <textarea id="channel-post-input" rows="4" maxlength="5000" placeholder="اكتب تحديثك هنا"></textarea>
+              <button id="publish-channel-post" type="button" class="primary-button" disabled>نشر التحديث</button>
+            </div>
+            <ul id="channel-posts-list" class="channel-posts-list" aria-label="منشورات القناة" aria-live="polite"></ul>
+          </div>
+        </div>
+      </section>
       <div class="sidebar" >
         <section class="notifications-section" >
           <button id="notifications-toggle" class="notifications-toggle" type="button" aria-controls="notifications-panel" aria-label="الإشعارات">
