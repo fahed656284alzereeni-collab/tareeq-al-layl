@@ -818,6 +818,9 @@ const mersalTranslations = {
   "الدعوة عبر الرابط": "Invite via link",
   "رابط دعوة المجموعة": "Group invite link",
   "نسخ رابط الدعوة": "Copy invite link",
+  "مشاركة رابط الدعوة": "Share invite link",
+  "تمت مشاركة رابط الدعوة.": "Invite link shared.",
+  "تعذرت مشاركة رابط الدعوة. يمكنك نسخه بدلًا من ذلك.": "Could not share the invite link. You can copy it instead.",
   "إعادة تعيين رابط الدعوة": "Reset invite link",
   "جارٍ تحميل رابط الدعوة…": "Loading invite link…",
   "تم نسخ رابط الدعوة.": "Group invite link copied.",
@@ -851,7 +854,7 @@ const mersalTranslations = {
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
-const mersalSkipTranslation = "#status-list,#people-list,#group-people-list,#group-add-people,#scheduled-messages-list,#conversation-search-results,#conversation-info-name,#group-member-options-name,#message-schedule-preview,#replying-to-text,[data-no-translate]";
+const mersalSkipTranslation = "#status-list,#people-list,#group-people-list,#group-add-people,#scheduled-messages-list,#conversation-search-results,#conversation-info-name,#group-info-name,#group-member-options-name,#message-schedule-preview,#replying-to-text,[data-no-translate]";
 function mersalShouldSkip(node) {
   const parent=node.parentElement;
   return !parent||Boolean(parent.closest(mersalSkipTranslation));
@@ -1206,6 +1209,7 @@ const conversationInfoCreatedRow = $("#group-conversation-created-row");
 const conversationInfoJoined = $("#conversation-info-joined");
 const conversationInfoCount = $("#conversation-info-count");
 const conversationInfoNameLabel = $("#conversation-info-name-label");
+const conversationInfoNameRow = $("#conversation-info-name-row");
 const conversationInfoStatusRow = $("#conversation-info-status-row");
 const conversationInfoExportButton = $("#conversation-info-export");
 const conversationInfoMuteButton = $("#conversation-info-mute");
@@ -1220,10 +1224,12 @@ const groupRenameInput = $("#group-rename-input");
 const groupRenameSaveButton = $("#group-rename-save");
 const groupDescriptionInput=$("#group-description-input"),groupDescriptionSaveButton=$("#group-description-save");
 const groupPhotoInput=$("#group-photo-input"),groupPhotoPreview=$("#group-photo-preview"),groupPhotoChooseButton=$("#group-photo-choose"),groupPhotoRemoveButton=$("#group-photo-remove"),groupPhotoSaveButton=$("#group-photo-save");
-const groupInfoPhotoRow=$("#group-info-photo-row"),groupInfoPhoto=$("#group-info-photo"),groupInfoDescriptionRow=$("#group-info-description-row"),groupInfoDescription=$("#group-info-description");
-const groupInviteRow=$("#group-invite-row"),groupInviteUrl=$("#group-invite-url"),groupInviteCopyButton=$("#group-invite-copy"),groupInviteResetButton=$("#group-invite-reset"),groupInviteStatus=$("#group-invite-status");
+const groupInfoPhotoRow=$("#group-info-photo-row"),groupInfoPhoto=$("#group-info-photo"),groupInfoPhotoPlaceholder=$("#group-info-photo-placeholder"),groupInfoName=$("#group-info-name"),groupInfoDescriptionRow=$("#group-info-description-row"),groupInfoDescription=$("#group-info-description");
+const groupInviteRow=$("#group-invite-row"),groupInviteUrl=$("#group-invite-url"),groupInviteCopyButton=$("#group-invite-copy"),groupInviteShareButton=$("#group-invite-share"),groupInviteResetButton=$("#group-invite-reset"),groupInviteStatus=$("#group-invite-status");
 const groupInviteRetryButton=$("#group-invite-retry"),groupMemberCountLabel=$("#group-member-count");
-let groupInviteLoadSequence=0,pendingGroupInviteInProgress=false;
+const groupInviteTokenCache=new Map();
+const groupInviteRequests=new Map();
+let pendingGroupInviteInProgress=false;
 let groupDescriptionSavedValue=null,groupDescriptionSaveInProgress=false,selectedGroupPhotoFile=null,groupPhotoSavedPath=null,groupPhotoRemoveRequested=false,groupPhotoSaveInProgress=false,groupPhotoPreviewObjectUrl=null;
 const groupPhotoUrlCache=new Map();
 const groupSettingsOpenButton = $("#group-settings-open");
@@ -3762,46 +3768,61 @@ function updateBlockedControls(){
 }
 let conversationInfoLoadSequence = 0;
 
-async function loadGroupInviteLink(conversationId,isCurrent,isAdmin){
+function setGroupInviteUrl(token){
+  const url=new URL("/",window.location.origin);
+  url.searchParams.set("group_invite",token);
+  groupInviteUrl.value=url.href;
+}
+async function loadGroupInviteLink(conversationId,isAdmin){
   if(!groupInviteRow||!groupInviteUrl)return;
-  const sequence=++groupInviteLoadSequence;
   groupInviteRow.hidden=false;
-  groupInviteUrl.value="";
-  groupInviteStatus.textContent="جارٍ تحميل رابط الدعوة…";
-  if(groupInviteRetryButton)groupInviteRetryButton.hidden=true;
   groupInviteResetButton.hidden=!isAdmin;
-  let timeoutId=null;
-  try{
-    const request=(async()=>{
-      // Reuse an existing invite when readable; otherwise ask the membership-checked RPC
-      // to create one. This also supports legacy group creators without a member row.
-      const existing=await supabase.from("group_invites").select("token").eq("conversation_id",conversationId).maybeSingle();
-      let token=!existing.error?existing.data?.token:null;
-      if(!token){
-        const result=await supabase.rpc("get_or_create_group_invite",{p_conversation_id:conversationId});
-        if(result.error)throw result.error;
-        const data=result.data;
-        token=typeof data==="string"?data:Array.isArray(data)?(data[0]?.token||data[0]?.get_or_create_group_invite||data[0]||null):(data?.token||data?.get_or_create_group_invite||null);
-      }
-      return token;
-    })();
-    const timeout=new Promise((_,reject)=>{
-      timeoutId=window.setTimeout(()=>reject(new Error("انتهت مهلة تحميل رابط الدعوة. حاول مرة أخرى.")),12000);
-    });
-    const token=await Promise.race([request,timeout]);
-    if(sequence!==groupInviteLoadSequence||!isCurrent())return;
-    if(!token)throw new Error("لم يتم إنشاء رابط الدعوة.");
-    groupInviteUrl.value=new URL("/?group_invite="+encodeURIComponent(token),window.location.origin).toString();
+  if(groupInviteRetryButton)groupInviteRetryButton.hidden=true;
+  const showToken=token=>{
+    if(activeConversation?.id!==conversationId)return;
+    setGroupInviteUrl(token);
     groupInviteStatus.textContent="";
-    if(groupInviteRetryButton)groupInviteRetryButton.hidden=true;
+  };
+  const cachedToken=groupInviteTokenCache.get(conversationId);
+  if(cachedToken){showToken(cachedToken);return;}
+  groupInviteStatus.textContent="جارٍ تحميل رابط الدعوة…";
+  let request=groupInviteRequests.get(conversationId);
+  if(!request){
+    request=(async()=>{
+      let timeoutId=null;
+      try{
+        // The RPC checks group membership and creates the token atomically.
+        // Avoid a direct table read here: its RLS policy adds no value and can
+        // leave the invite screen waiting before the authorized RPC is reached.
+        const rpc=supabase.rpc("get_or_create_group_invite",{p_conversation_id:conversationId});
+        const timeout=new Promise((_,reject)=>{
+          timeoutId=window.setTimeout(()=>reject(new Error("انتهت مهلة تحميل رابط الدعوة.")),12000);
+        });
+        const {data,error}=await Promise.race([rpc,timeout]);
+        if(error)throw error;
+        const token=typeof data==="string"?data:Array.isArray(data)?(data[0]?.token||data[0]?.get_or_create_group_invite||data[0]||null):(data?.token||data?.get_or_create_group_invite||null);
+        if(typeof token!=="string"||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)){
+          throw new Error("لم تُرجع خدمة الدعوات رمزًا صالحًا.");
+        }
+        groupInviteTokenCache.set(conversationId,token);
+        return token;
+      }finally{
+        if(timeoutId!==null)window.clearTimeout(timeoutId);
+      }
+    })();
+    groupInviteRequests.set(conversationId,request);
+  }
+  try{
+    const token=await request;
+    showToken(token);
   }catch(error){
-    if(sequence!==groupInviteLoadSequence||!isCurrent())return;
+    if(activeConversation?.id!==conversationId)return;
     groupInviteUrl.value="";
     groupInviteStatus.textContent="تعذر تحميل رابط الدعوة. حاول مرة أخرى.";
     if(groupInviteRetryButton)groupInviteRetryButton.hidden=false;
     console.warn("تعذر تحميل رابط دعوة المجموعة:",error);
   }finally{
-    if(timeoutId!==null)window.clearTimeout(timeoutId);
+    if(groupInviteRequests.get(conversationId)===request)groupInviteRequests.delete(conversationId);
   }
 }
 async function copyGroupInviteLink(){
@@ -3818,13 +3839,25 @@ async function copyGroupInviteLink(){
   }catch(error){announce("تعذر نسخ الرابط. يمكنك تحديده ونسخه يدويًا.","error");}
 }
 if(groupInviteCopyButton)groupInviteCopyButton.addEventListener("click",()=>void copyGroupInviteLink());
+async function shareGroupInviteLink(){
+  const value=groupInviteUrl?.value||"";
+  if(!value)return;
+  if(typeof navigator.share!=="function"){await copyGroupInviteLink();return;}
+  try{
+    await navigator.share({title:activeConversation?.group_name||"مرسال",text:"دعوة للانضمام إلى المجموعة",url:value});
+    announce("تمت مشاركة رابط الدعوة.");
+  }catch(error){
+    if(error?.name!=="AbortError")announce("تعذرت مشاركة رابط الدعوة. يمكنك نسخه بدلًا من ذلك.","error");
+  }
+}
+if(groupInviteShareButton)groupInviteShareButton.addEventListener("click",()=>void shareGroupInviteLink());
 if(groupInviteRetryButton)groupInviteRetryButton.addEventListener("click",async()=>{
   const conversation=activeConversation;
   if(!conversation?.is_group||!currentUser)return;
   groupInviteRetryButton.disabled=true;
   try{
     const permissions=await getCurrentGroupPermissions();
-    await loadGroupInviteLink(conversation.id,()=>activeConversation?.id===conversation.id,permissions.isAdmin);
+    await loadGroupInviteLink(conversation.id,permissions.isAdmin);
   }finally{
     groupInviteRetryButton.disabled=false;
   }
@@ -3840,7 +3873,8 @@ if(groupInviteResetButton)groupInviteResetButton.addEventListener("click",async(
     if(error)throw error;
     const token=typeof data==="string"?data:Array.isArray(data)?(data[0]?.token||data[0]?.get_or_create_group_invite||data[0]||null):(data?.token||data?.get_or_create_group_invite||null);
     if(!token)throw new Error("لم يتم تجديد رابط الدعوة.");
-    groupInviteUrl.value=new URL("/?group_invite="+encodeURIComponent(token),window.location.origin).toString();
+    groupInviteTokenCache.set(activeConversation.id,token);
+    setGroupInviteUrl(token);
     groupInviteStatus.textContent="تم إنشاء رابط دعوة جديد، وأُلغي الرابط السابق.";
     announce("تم تجديد رابط الدعوة.");
   }catch(error){announce("تعذر تجديد رابط الدعوة: "+(error.message||"حاول مرة أخرى."),"error");}
@@ -3894,6 +3928,7 @@ async function updateConversationInfo() {
   }
   setConversationInfoValue(groupInfoDescription, "—");
   groupInfoPhotoRow.hidden = true;
+  if(groupInfoPhotoPlaceholder)groupInfoPhotoPlaceholder.hidden=false;
   groupInfoDescriptionRow.hidden = true;
   if(groupInviteRow)groupInviteRow.hidden=true;
   if(groupInviteUrl)groupInviteUrl.value="";
@@ -3919,15 +3954,22 @@ async function updateConversationInfo() {
   blockPersonButton.hidden = isGroup;
   conversationDeleteButton.hidden = false;
   conversationInfoNameLabel.textContent = isGroup ? "اسم المجموعة" : "اسم الشخص";
+  if(conversationInfoNameRow)conversationInfoNameRow.hidden=isGroup;
   conversationInfoStatusRow.hidden = isGroup;
   if (conversationInfoCreatedRow) conversationInfoCreatedRow.hidden = !isGroup;
   if (conversationInfoJoined?.parentElement) conversationInfoJoined.parentElement.hidden = isGroup;
   if (conversationInfoPhotoRow) conversationInfoPhotoRow.hidden = isGroup;
   individualConversationInfoList.hidden = isGroup;
   groupConversationInfoList.hidden = !isGroup;
-  groupInfoPhotoRow.hidden = !isGroup || !conversation.group_photo_path;
+  groupInfoPhotoRow.hidden = !isGroup;
+  if(groupInfoPhotoPlaceholder){
+    const groupNameForPlaceholder=String(conversation.group_name||"مجموعة").trim();
+    groupInfoPhotoPlaceholder.textContent=Array.from(groupNameForPlaceholder)[0]||"م";
+    groupInfoPhotoPlaceholder.hidden=Boolean(conversation.group_photo_path);
+  }
   groupInfoDescriptionRow.hidden = !isGroup;
   setConversationInfoValue(conversationInfoName, isGroup ? (conversation.group_name || "مجموعة") : displayName(partner));
+  if(groupInfoName)groupInfoName.textContent=conversation.group_name||"مجموعة";
 
   if (isGroup) {
     setConversationInfoValue(groupInfoDescription, conversation.group_description?.trim() || "لا يوجد وصف للمجموعة.");
@@ -3938,14 +3980,16 @@ async function updateConversationInfo() {
         groupInfoPhoto.src = url;
         groupInfoPhoto.alt = "صورة مجموعة " + (conversation.group_name || "");
         groupInfoPhoto.hidden = false;
+        if(groupInfoPhotoPlaceholder)groupInfoPhotoPlaceholder.hidden=true;
       } else {
         groupInfoPhoto.removeAttribute("src");
         groupInfoPhoto.alt = "";
         groupInfoPhoto.hidden = true;
+        if(groupInfoPhotoPlaceholder)groupInfoPhotoPlaceholder.hidden=false;
       }
     }
   }
-  if(isGroup) await loadGroupInviteLink(conversationId,isConversationCurrent,isAdmin);
+  if(isGroup) await loadGroupInviteLink(conversationId,isAdmin);
 
   if (!isGroup) {
     const visibleProfile = await supabase.rpc("get_visible_profiles", { p_user_ids: [partner.id] });
