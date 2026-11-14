@@ -880,6 +880,19 @@ const mersalTranslations = {
   "الآلة الحاسبة": "Calculator",
   "المفكرة السريعة": "Quick notes",
   "استطلاعات الرأي": "Polls",
+  "المكالمات": "Calls",
+  "ابدأ مكالمة صوتية مع شخص أو مجموعة من محادثاتك.": "Start a voice call with a person or group from your conversations.",
+  "ابحث عن شخص أو مجموعة": "Search for a person or group",
+  "تحديث القائمة": "Refresh list",
+  "المحادثات المتاحة للاتصال": "Conversations available to call",
+  "اتصال صوتي": "Voice call",
+  "اتصال صوتي مع ": "Voice call with ",
+  "مكالمة جماعية": "Group conversation",
+  "محادثة فردية": "Individual conversation",
+  "لا توجد محادثات متاحة للمكالمات.": "There are no conversations available for calls.",
+  "لا توجد نتائج مطابقة.": "No matching results.",
+  "تعذر تحميل قائمة المكالمات.": "Could not load the calls list.",
+  "لا يمكن الاتصال بهذا الشخص بسبب الحظر.": "You cannot call this person because of blocking.",
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
@@ -981,8 +994,13 @@ const homeTabButton = $("#home-tab");
 const settingsTabButton = $("#settings-tab");
 const statusTabButton = $("#status-tab");
 const toolsTabButton = $("#tools-tab");
+const callsTabButton = $("#calls-tab");
 const toolsView = $("#tools-view");
 const statusView = $("#status-view");
+const callsView = $("#calls-view");
+const callsList = $("#calls-list");
+const callsSearchInput = $("#calls-search");
+const refreshCallsButton = $("#refresh-calls");
 const statusList = $("#status-list");
 const statusComposerPanel = $("#status-composer-panel");
 const statusViewerPanel = $("#status-viewer-panel");
@@ -1163,10 +1181,11 @@ const notificationsList = $("#notifications-list");
 const notificationCount = $("#notification-count");
 
 function setActiveBottomTab(tab) {
-  if (!homeTabButton || !settingsTabButton || !statusTabButton || !toolsTabButton) return;
+  if (!homeTabButton || !settingsTabButton || !statusTabButton || !toolsTabButton || !callsTabButton) return;
   homeTabButton.setAttribute("aria-selected", String(tab === "home"));
   statusTabButton.setAttribute("aria-selected", String(tab === "statuses"));
   toolsTabButton.setAttribute("aria-selected", String(tab === "tools"));
+  callsTabButton.setAttribute("aria-selected", String(tab === "calls"));
   settingsTabButton.setAttribute("aria-selected", String(tab === "settings"));
 }
 function returnToHomeTab() {
@@ -1183,12 +1202,33 @@ function returnToHomeTab() {
   document.body.classList.remove("status-open");
   if (toolsView) toolsView.hidden = true;
   document.body.classList.remove("tools-open");
+  if (callsView) callsView.hidden = true;
+  document.body.classList.remove("calls-open");
   setActiveBottomTab("home");
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
+}
+function openCallsTab() {
+  mersalTools.closeTool(false);
+  if (!currentUser) return;
+  if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
+  if (helpSupportPanel) helpSupportPanel.hidden = true;
+  document.body.classList.remove("help-support-open");
+  statusView.hidden = true;
+  document.body.classList.remove("status-open");
+  if (toolsView) toolsView.hidden = true;
+  document.body.classList.remove("tools-open");
+  if (document.body.classList.contains("chat-fullscreen") && backToChatsButton) backToChatsButton.click();
+  callsView.hidden = false;
+  document.body.classList.add("calls-open");
+  setActiveBottomTab("calls");
+  renderCallsList();
+  document.querySelector("#calls-title")?.focus();
 }
 function openToolsTab() {
   mersalTools.closeTool(false);
   if (!currentUser) return;
+  if (callsView) callsView.hidden = true;
+  document.body.classList.remove("calls-open");
   if (settingsPanel && !settingsPanel.hidden) {
     settingsPanel.hidden = true;
     document.body.classList.remove("settings-open");
@@ -1212,6 +1252,8 @@ function openStatusTab() {
   }
   if (toolsView) toolsView.hidden = true;
   document.body.classList.remove("tools-open");
+  if (callsView) callsView.hidden = true;
+  document.body.classList.remove("calls-open");
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
   statusView.hidden = false;
   document.body.classList.add("status-open");
@@ -1506,6 +1548,8 @@ let activeConversationMuted = false;
 let activeBlockState = { blockedByMe: false, blockedByThem: false };
 let people = [];
 let conversations = [];
+let callsProfileCache = new Map();
+let voiceCallReturnFocus = null;
 let realtimeChannel = null;
 let presenceChannel = null;
 let onlineUserIds = new Set();
@@ -1909,6 +1953,8 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   statusView.hidden = true;
   if (toolsView) toolsView.hidden = true;
   document.body.classList.remove("tools-open");
+  if (callsView) callsView.hidden = true;
+  document.body.classList.remove("calls-open");
   statusComposerPanel.hidden = true;
   statusViewerPanel.hidden = true;
   messageSchedulePanel.hidden = true;
@@ -2671,6 +2717,8 @@ function openSettings() {
   document.body.classList.remove("status-open");
   if (toolsView) toolsView.hidden = true;
   document.body.classList.remove("tools-open");
+  if (callsView) callsView.hidden = true;
+  document.body.classList.remove("calls-open");
   settingsReturnFocus = document.activeElement;
   settingsEmail.value = currentUser.email || "";
   textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
@@ -2726,7 +2774,16 @@ settingsLanguageSelect.addEventListener("change", () => {
 settingsTabButton.addEventListener("click", openSettings);
 statusTabButton.addEventListener("click", openStatusTab);
 toolsTabButton.addEventListener("click", openToolsTab);
+callsTabButton.addEventListener("click", openCallsTab);
 homeTabButton.addEventListener("click", returnToHomeTab);
+callsSearchInput.addEventListener("input", renderCallsList);
+refreshCallsButton.addEventListener("click", async () => {
+  if (!currentUser) return;
+  refreshCallsButton.disabled = true;
+  try { await loadConversations(); renderCallsList(); }
+  catch (error) { announce("تعذر تحميل قائمة المكالمات: " + (error.message || "حاول مرة أخرى."), "error"); }
+  finally { refreshCallsButton.disabled = false; }
+});
 openGeneralSettingsButton.addEventListener("click", () => {
   settingsHome.hidden = true; accountSettingsView.hidden = true; profileSettingsView.hidden = true; privacySettingsView.hidden = true; chatsSettingsView.hidden = true;
   generalSettingsView.hidden = false; backGeneralSettingsButton.focus();
@@ -3464,9 +3521,11 @@ async function loadConversations() {
     const visibleMap=new Map(resolvedProfiles.map(profile=>[profile.id,profile]));
     profileMap=new Map((profiles||[]).map(profile=>[profile.id,{...profile,...(visibleMap.get(profile.id)||{})}]));
   }
+  callsProfileCache = profileMap;
   conversationList.replaceChildren();
   if (!conversations.length) {
     conversationList.append(safeText("li", "empty-item", "لا توجد محادثات بعد."));
+    renderCallsList();
     return;
   }
   const conversationIds = conversations.map(conversation => conversation.id);
@@ -3541,6 +3600,41 @@ async function loadConversations() {
     button.addEventListener("click", () => { void selectConversation(conversation, person).then(()=>{if(conversation.is_group){chatPartnerName.textContent=conversation.group_name||"مجموعة";chatPartnerPresence.textContent="مجموعة";chatPartnerAccessible.setAttribute("aria-label",chatPartnerName.textContent+", مجموعة");}}).catch(error=>reportChatOpenFailure(error,conversation)); });
     item.append(button);
     conversationList.append(item);
+  }
+  renderCallsList();
+}
+function renderCallsList() {
+  if (!callsList) return;
+  callsList.replaceChildren();
+  const query = (callsSearchInput?.value || "").trim().toLocaleLowerCase();
+  const entries = conversations.filter(conversation => {
+    const partnerId = conversation.user_one === currentUser?.id ? conversation.user_two : conversation.user_one;
+    const person = callsProfileCache.get(partnerId) || people.find(item => item.id === partnerId);
+    const name = conversation.is_group ? (conversation.group_name || "مجموعة") : (person ? displayName(person) : "مستخدم مرسال");
+    return !query || name.toLocaleLowerCase().includes(query);
+  });
+  if (!entries.length) {
+    callsList.append(safeText("li", "empty-item", query ? "لا توجد نتائج مطابقة." : "لا توجد محادثات متاحة للمكالمات."));
+    return;
+  }
+  for (const conversation of entries) {
+    const partnerId = conversation.user_one === currentUser?.id ? conversation.user_two : conversation.user_one;
+    const person = callsProfileCache.get(partnerId) || people.find(item => item.id === partnerId);
+    const name = conversation.is_group ? (conversation.group_name || "مجموعة") : (person ? displayName(person) : "مستخدم مرسال");
+    const item = document.createElement("li");
+    item.className = "calls-list-item";
+    const details = document.createElement("div");
+    details.className = "calls-conversation-details";
+    const title = safeText("span", "calls-conversation-name", name);
+    title.setAttribute("data-no-translate", "");
+    const kind = safeText("span", "calls-conversation-kind", conversation.is_group ? "مكالمة جماعية" : "محادثة فردية");
+    details.append(title, kind);
+    const button = safeText("button", "primary-button calls-start-button", "اتصال صوتي");
+    button.type = "button";
+    button.setAttribute("aria-label", "اتصال صوتي مع " + name);
+    button.addEventListener("click", () => { void startVoiceCall(conversation, button); });
+    item.append(details, button);
+    callsList.append(item);
   }
 }
 async function openConversation(person) {
@@ -3650,8 +3744,10 @@ async function selectConversation(conversation, person) {
     "tools-open",
     "settings-open",
     "help-support-open",
+    "calls-open",
     "conversation-info-fullscreen"
   );
+  if (callsView) callsView.hidden = true;
 
   // Open the chat immediately. Cleanup and secondary data must never hold the screen transition.
   closeGroupMoreOptions();
@@ -5002,15 +5098,25 @@ async function getVoiceCallParticipantIds(conversation=activeConversation) {
   if(error)throw error;
   return [...new Set([conversation.user_one,...(data||[]).map(row=>row.user_id)].filter(id=>id&&id!==currentUser.id))];
 }
-async function startVoiceCall() {
-  if (!activeConversation || !currentUser || activeCall) return;
+async function startVoiceCall(conversation = activeConversation, launchButton = voiceCallButton) {
+  if (!conversation || !currentUser || activeCall) return;
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
     announce("المكالمات الصوتية تحتاج متصفحًا آمنًا يدعم الميكروفون.", "error"); return;
   }
-  voiceCallButton.disabled = true;
+  if (launchButton) launchButton.disabled = true;
+  voiceCallReturnFocus = launchButton;
   try {
-    await ensureCallChannel(activeConversation.id);
-    const participants = await getVoiceCallParticipantIds();
+    await ensureCallChannel(conversation.id);
+    if (!conversation.is_group) {
+      const otherId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
+      const [blockedByMe, blockedByThem] = await Promise.all([
+        supabase.from("user_blocks").select("blocker_id").eq("blocker_id", currentUser.id).eq("blocked_id", otherId).maybeSingle(),
+        supabase.from("user_blocks").select("blocker_id").eq("blocker_id", otherId).eq("blocked_id", currentUser.id).maybeSingle()
+      ]);
+      if (blockedByMe.error || blockedByThem.error) throw blockedByMe.error || blockedByThem.error;
+      if (blockedByMe.data || blockedByThem.data) throw new Error("لا يمكن الاتصال بهذا الشخص بسبب الحظر.");
+    }
+    const participants = await getVoiceCallParticipantIds(conversation);
     if (!participants.length) throw new Error("لا يوجد مشاركون متاحون في هذه المحادثة.");
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
@@ -5018,7 +5124,7 @@ async function startVoiceCall() {
     });
     const participantSet = new Set([currentUser.id, ...participants]);
     activeCall = {
-      id: crypto.randomUUID(), conversationId: activeConversation.id, isGroup: Boolean(activeConversation.is_group),
+      id: crypto.randomUUID(), conversationId: conversation.id, isGroup: Boolean(conversation.is_group),
       initiatorId: currentUser.id, participants: participantSet, accepted: true,
       incoming: false, muted: false, localStream: stream, peers: new Map(),
       readyUsers: new Set([currentUser.id]), pendingOffers: new Map(), pendingIce: new Map()
@@ -5035,7 +5141,7 @@ async function startVoiceCall() {
     else await finishVoiceCall();
     announce("تعذر بدء المكالمة: " + (error.message || "تحقق من إذن الميكروفون."), "error");
   } finally {
-    voiceCallButton.disabled = false;
+    if (launchButton) launchButton.disabled = false;
   }
 }
 function createVoicePeer(peerId) {
@@ -5242,9 +5348,12 @@ async function finishVoiceCall() {
   voiceCallAudio.replaceChildren();
   if (voiceCallEnableAudioButton) voiceCallEnableAudioButton.hidden = true;
   voiceCallPanel.hidden = true;
-  if (voiceCallButton?.isConnected && !chatView.hidden) voiceCallButton.focus();
+  const returnFocus = voiceCallReturnFocus;
+  voiceCallReturnFocus = null;
+  if (returnFocus?.isConnected) returnFocus.focus();
+  else if (voiceCallButton?.isConnected && !chatView.hidden) voiceCallButton.focus();
 }
-voiceCallButton.addEventListener("click", () => { void startVoiceCall(); });
+voiceCallButton.addEventListener("click", () => { void startVoiceCall(activeConversation, voiceCallButton); });
 $("#group-info-call-button")?.addEventListener("click", () => { if (!voiceCallButton.disabled) voiceCallButton.click(); });
 voiceCallAcceptButton.addEventListener("click", () => { void acceptVoiceCall(); });
 voiceCallRejectButton.addEventListener("click", () => { void rejectVoiceCall(); });
