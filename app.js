@@ -1377,6 +1377,22 @@ function setActiveBottomTab(tab) {
   }
   updateBottomTabAccessiblePositions();
 }
+bottomNavigation?.addEventListener("keydown", event => {
+  const tabs = [...bottomNavigation.querySelectorAll('[role="tab"]:not([hidden])')];
+  const current = tabs.indexOf(document.activeElement);
+  if (current < 0 || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const rtl = getComputedStyle(bottomNavigation).direction === "rtl";
+  let next = current;
+  if (event.key === "Home") next = 0;
+  else if (event.key === "End") next = tabs.length - 1;
+  else {
+    const forward = (event.key === "ArrowRight") !== rtl;
+    next = (current + (forward ? 1 : -1) + tabs.length) % tabs.length;
+  }
+  tabs[next]?.click();
+  tabs[next]?.focus();
+});
 function returnToHomeTab() {
   mersalTools.closeTool(false);
   mersalChannels.close();
