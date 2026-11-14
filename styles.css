@@ -2485,3 +2485,60 @@ body.conversation-info-fullscreen #conversation-info-name-card .conversation-inf
 }
 :root[data-theme="light"] .group-info-profile,
 :root[data-theme="light"] .group-info-card { background: #fff; }
+
+/* Group information follows a familiar messaging-app hierarchy while preserving
+   Mersal's existing actions and accessible controls. */
+body.conversation-info-fullscreen #conversation-info-name-card {
+  width: min(100%, 820px);
+  margin: 0 auto;
+  padding: 8px 12px 2px;
+  border: 0;
+  background: transparent;
+  text-align: center;
+}
+body.conversation-info-fullscreen #conversation-info-name-card > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+body.conversation-info-fullscreen #conversation-info-name-card #conversation-info-name-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+body.conversation-info-fullscreen #conversation-info-name-card #conversation-info-name {
+  font-size: clamp(1.3rem, 4vw, 1.75rem);
+  font-weight: 850;
+  text-align: center;
+}
+.group-info-settings-actions { display: grid; gap: 10px; }
+.group-info-settings-actions > .conversation-info-label {
+  display: block;
+  font-weight: 850;
+  margin-bottom: 2px;
+}
+.group-info-settings-actions > button { width: 100%; min-height: 48px; }
+.group-info-profile { border-radius: 18px; }
+.group-members-section .group-member-list > li {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.group-member-name { min-width: 0; text-align: start; overflow-wrap: anywhere; }
+.group-member-role { flex: 0 0 auto; }
+@media (max-width: 520px) {
+  body.conversation-info-fullscreen #group-conversation-info-list.group-info-layout { gap: 11px; }
+  .group-info-profile, .group-info-card { padding: 14px; border-radius: 14px; }
+}
