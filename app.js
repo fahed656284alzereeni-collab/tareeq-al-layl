@@ -3905,6 +3905,8 @@ function updateGroupSettingsSaveButton() {
 async function openGroupSettings() {
   if (!activeConversation?.is_group || !currentUser || !groupSettingsPanel) return;
   groupSettingsReturnFocus = document.activeElement;
+  if (groupSettingsPermissionsSection) groupSettingsPermissionsSection.hidden = true;
+  document.body.classList.add("group-settings-open");
   groupSettingsPanel.hidden = false;
   groupSettingsPanel.setAttribute("aria-hidden", "false");
   groupSettingsSendSelect.disabled = true;
@@ -3938,6 +3940,7 @@ function closeGroupSettings() {
   if (!groupSettingsPanel) return;
   groupSettingsPanel.hidden = true;
   groupSettingsPanel.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("group-settings-open");
   const target = groupSettingsReturnFocus?.isConnected ? groupSettingsReturnFocus : groupSettingsOpenButton;
   groupSettingsReturnFocus = null;
   target?.focus?.();
