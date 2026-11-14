@@ -123,3 +123,13 @@ revoke update on public.channel_followers from authenticated;
 grant update (notifications_enabled) on public.channel_followers to authenticated;
 grant select, insert, delete on public.channel_followers to authenticated;
 grant select, insert, update, delete on public.channel_posts to authenticated;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'channel_posts'
+  ) then
+    alter publication supabase_realtime add table public.channel_posts;
+  end if;
+end $$;
