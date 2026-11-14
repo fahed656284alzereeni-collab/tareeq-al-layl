@@ -3413,8 +3413,9 @@ function renderBroadcastPeople() {
       else selectedBroadcastRecipients.delete(person.id);
       updateBroadcastSelectedCount();
     });
+    label.append(checkbox);
     appendProfileAvatar(label, person);
-    label.append(checkbox, document.createTextNode(displayName(person)));
+    label.append(document.createTextNode(displayName(person)));
     item.append(label);
     broadcastPeopleList.append(item);
   }
@@ -3802,6 +3803,7 @@ async function renderStatusInteractions(row, own) {
       const count = counts.get(emoji) || 0;
       const button = safeText("button", "status-reaction-button", emoji + (count ? " " + count : ""));
       button.type = "button";
+      button.dataset.emoji = emoji;
       button.setAttribute("aria-pressed", String(currentReaction?.emoji === emoji));
       button.setAttribute("aria-label", (english ? "React with " : "التفاعل بـ ") + emoji + (count ? (english ? ", " + count + " reactions" : "، " + count + " تفاعلات") : ""));
       button.addEventListener("click", async () => {
@@ -3821,6 +3823,7 @@ async function renderStatusInteractions(row, own) {
           }
           if (result.error) throw result.error;
           await renderStatusInteractions(row, false);
+          host.querySelector('button[data-emoji="' + emoji + '"]')?.focus();
         } catch (error) {
           announce((english ? "Could not update the reaction: " : "تعذر تحديث التفاعل: ") + (error.message || ""), "error");
           button.disabled = false;
@@ -6879,8 +6882,10 @@ async function loadStarredMessages() {
         announce((english ? "Could not remove star: " : "تعذر إزالة النجمة: ") + result.error.message, "error");
         return;
       }
+      const nextFocus = item.nextElementSibling?.querySelector("button") || item.previousElementSibling?.querySelector("button") || closeStarredMessagesButton;
       item.remove();
       if (!starredMessagesList.children.length) starredMessagesList.append(safeText("li", "empty-item", english ? "No starred messages." : "لا توجد رسائل مميزة بنجمة."));
+      nextFocus.focus();
       announce(english ? "Star removed." : "تمت إزالة النجمة.", "success");
     });
     item.append(open, remove);
