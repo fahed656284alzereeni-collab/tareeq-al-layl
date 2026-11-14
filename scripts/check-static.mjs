@@ -9,7 +9,7 @@ assert.deepEqual(duplicateIds, [], "index.html contains duplicate IDs");
 
 const migrationFiles = readdirSync(new URL("../supabase/migrations/", import.meta.url))
   .filter(file => file.endsWith(".sql"));
-assert.ok(migrationFiles.every(file => /^\\d{14}_[a-z0-9_]+\\.sql$/.test(file)),
+assert.ok(migrationFiles.every(file => /^\d{14}_[a-z0-9_]+\.sql$/.test(file)),
   "Every Supabase migration must use a 14-digit version and a snake_case name");
 const migrationVersions = migrationFiles.map(file => file.slice(0, 14));
 const duplicateMigrationVersions = [...new Set(migrationVersions.filter((version, index) => migrationVersions.indexOf(version) !== index))];
@@ -48,11 +48,11 @@ for (const dialog of modalDialogs.filter(dialog => /\baria-modal=["']true["']/.t
 }
 
 const experienceCss = readFileSync(new URL("../mersal-experience-v2.css", import.meta.url), "utf8");
-assert.match(experienceCss, /#bottom-navigation\\s*\\{[^}]*z-index:\\s*220/s,
+assert.match(experienceCss, /#bottom-navigation\s*\{[^}]*z-index:\s*220/s,
   "The primary tab bar must stay above full-screen tab panels");
-assert.match(experienceCss, /body\\.settings-open #bottom-navigation,[\\s\\S]*?display:\\s*flex !important/,
+assert.match(experienceCss, /body\.settings-open #bottom-navigation,[\s\S]*?display:\s*flex !important/,
   "The primary tab bar must remain visible while settings are open");
-assert.doesNotMatch(experienceCss, /body\\.calls-open \\.topbar,\\s*body\\.calls-open #bottom-navigation/,
+assert.doesNotMatch(experienceCss, /body\.calls-open \.topbar,\s*body\.calls-open #bottom-navigation/,
   "The calls full-screen rule must not hide the primary tab bar");
 
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
