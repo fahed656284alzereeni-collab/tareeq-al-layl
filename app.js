@@ -810,6 +810,10 @@ const mersalTranslations = {
   "إجراءات العضوية": "Membership actions",
   "صلاحيات المجموعة": "Group permissions",
   "إعدادات المجموعة": "Group settings",
+  "المزيد من الخيارات": "More options",
+  "إغلاق المزيد من الخيارات": "Close more options",
+  "تعذر تحميل المزيد من خيارات المجموعة: ": "Could not load more group options: ",
+
   "الدعوة عبر الرابط": "Invite via link",
   "رابط دعوة المجموعة": "Group invite link",
   "نسخ رابط الدعوة": "Copy invite link",
@@ -1218,6 +1222,10 @@ let groupInviteLoadSequence=0,pendingGroupInviteInProgress=false;
 let groupDescriptionSavedValue=null,groupDescriptionSaveInProgress=false,selectedGroupPhotoFile=null,groupPhotoSavedPath=null,groupPhotoRemoveRequested=false,groupPhotoSaveInProgress=false,groupPhotoPreviewObjectUrl=null;
 const groupPhotoUrlCache=new Map();
 const groupSettingsOpenButton = $("#group-settings-open");
+const groupMoreOptionsOpenButton=$("#group-more-options-open");
+const groupMoreOptionsPanel=$("#group-more-options-panel");
+const groupMoreOptionsCloseButton=$("#group-more-options-close");
+let groupMoreOptionsReturnFocus=null;
 const groupSettingsPanel = $("#group-settings-panel");
 // Keep this dialog at the document root so fixed positioning always covers the full viewport.
 if (groupSettingsPanel && groupSettingsPanel.parentElement !== document.body) document.body.append(groupSettingsPanel);
@@ -1226,7 +1234,7 @@ const groupSettingsSendSelect = $("#group-settings-send");
 const groupSettingsAddSelect = $("#group-settings-add");
 const groupSettingsSaveButton = $("#group-settings-save");
 const groupSettingsPermissionsSection = $("#group-settings-permissions");
-const groupSettingsInfoSection = $("#group-settings-info");
+const groupSettingsInfoSection = null;
 let groupSettingsSnapshot = null;
 let groupSettingsSaving = false;
 let groupSettingsReturnFocus = null;
@@ -3869,6 +3877,7 @@ async function updateConversationInfo() {
   }
   groupAddMembersButton.hidden = !(isAdmin || (isGroup && groupAddPermission === "everyone"));
   if (groupSettingsOpenButton) groupSettingsOpenButton.hidden = !isGroup;
+  if(groupMoreOptionsOpenButton)groupMoreOptionsOpenButton.hidden=!isGroup;
   blockPersonButton.hidden = isGroup;
   conversationDeleteButton.hidden = false;
   conversationInfoNameLabel.textContent = isGroup ? "اسم المجموعة" : "اسم الشخص";
@@ -4015,11 +4024,6 @@ async function openGroupSettings() {
     groupSettingsPermissionsSection.setAttribute("aria-hidden", "true");
     groupSettingsPermissionsSection.setAttribute("inert", "");
   }
-  if (groupSettingsInfoSection) {
-    groupSettingsInfoSection.hidden = true;
-    groupSettingsInfoSection.setAttribute("aria-hidden", "true");
-    groupSettingsInfoSection.setAttribute("inert", "");
-  }
   document.body.classList.add("group-settings-open");
   groupSettingsPanel.hidden = false;
   groupSettingsPanel.setAttribute("aria-hidden", "false");
@@ -4083,6 +4087,41 @@ function closeGroupSettings() {
   groupSettingsReturnFocus = null;
   target?.focus?.();
 }
+
+async function openGroupMoreOptions(){
+  if(!activeConversation?.is_group||!currentUser||!groupMoreOptionsPanel)return;
+  groupMoreOptionsReturnFocus=document.activeElement;
+  const conversationId=activeConversation.id;
+  groupMoreOptionsPanel.hidden=false;
+  groupMoreOptionsPanel.setAttribute("aria-hidden","false");
+  document.body.classList.add("group-settings-open");
+  groupMoreOptionsPanel.scrollTop=0;
+  const tools=$("#group-admin-tools");
+  if(tools)tools.hidden=true;
+  try{
+    const permissions=await getCurrentGroupPermissions();
+    if(!activeConversation?.is_group||activeConversation.id!==conversationId){closeGroupMoreOptions();return;}
+    if(tools)tools.hidden=!permissions.isOwner;
+    if(groupMemberList)groupMemberList.hidden=false;
+    groupMoreOptionsCloseButton?.focus();
+  }catch(error){
+    closeGroupMoreOptions();
+    announce("تعذر تحميل المزيد من خيارات المجموعة: "+(error.message||"حاول مرة أخرى."),"error");
+  }
+}
+function closeGroupMoreOptions(){
+  if(!groupMoreOptionsPanel)return;
+  groupMoreOptionsPanel.hidden=true;
+  groupMoreOptionsPanel.setAttribute("aria-hidden","true");
+  document.body.classList.remove("group-settings-open");
+  const target=groupMoreOptionsReturnFocus?.isConnected?groupMoreOptionsReturnFocus:groupMoreOptionsOpenButton;
+  groupMoreOptionsReturnFocus=null;
+  target?.focus?.();
+}
+if(groupMoreOptionsOpenButton)groupMoreOptionsOpenButton.addEventListener("click",()=>void openGroupMoreOptions());
+if(groupMoreOptionsCloseButton)groupMoreOptionsCloseButton.addEventListener("click",closeGroupMoreOptions);
+if(groupMoreOptionsPanel)groupMoreOptionsPanel.addEventListener("keydown",event=>{if(event.key==="Escape")closeGroupMoreOptions();});
+
 if (groupSettingsOpenButton) groupSettingsOpenButton.addEventListener("click", () => void openGroupSettings());
 if (groupSettingsCloseButton) groupSettingsCloseButton.addEventListener("click", closeGroupSettings);
 if (groupSettingsPanel) groupSettingsPanel.addEventListener("keydown", event => {
@@ -4238,6 +4277,7 @@ async function canCurrentUserAddGroupMembers(){
 }
 groupAddMembersButton.addEventListener("click",async()=>{
   if(!activeConversation?.is_group||!(await canCurrentUserAddGroupMembers()))return;
+  closeGroupMoreOptions();
   conversationInfoPanel.hidden=true;
   document.body.classList.remove("conversation-info-fullscreen");
   groupAddPanel.hidden=false;
