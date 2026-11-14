@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://esm.sh" crossorigin>
   <link rel="preconnect" href="https://nnsleztgbqeuqavkhrpw.supabase.co" crossorigin>
   <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.119.0" crossorigin>
-  <link rel="stylesheet" href="/styles.css?v=20261114-group-invite-more-v4">
+  <link rel="stylesheet" href="/styles.css?v=20261114-startup-diagnostics-v1">
   <link rel="stylesheet" href="/inclusive-responsive.css">
   <script type="module" src="/app.js?v=20261114-group-invite-more-v4"></script>
 </head>
@@ -32,18 +32,89 @@
   <div id="main-content" tabindex="-1">
     <p id="status" role="status" aria-live="polite" aria-atomic="true">جارٍ تجهيز مرسال…</p>
     <button id="startup-retry" type="button" class="quiet-button" hidden>إعادة المحاولة</button>
+    <section id="startup-diagnostics" class="startup-diagnostics" aria-labelledby="startup-diagnostics-title" hidden>
+      <p id="startup-diagnostics-title" class="startup-diagnostics-title">تفاصيل الخطأ</p>
+      <p id="startup-diagnostics-help" class="startup-diagnostics-help">انسخ التفاصيل وأرسلها للمطور للمساعدة في تحديد سبب المشكلة.</p>
+      <textarea id="startup-diagnostics-output" class="startup-diagnostics-output" rows="7" readonly aria-label="تفاصيل الخطأ للنسخ" spellcheck="false"></textarea>
+      <button id="startup-copy-diagnostics" type="button" class="quiet-button">نسخ تفاصيل الخطأ</button>
+      <p id="startup-copy-feedback" class="startup-diagnostics-feedback" role="status" aria-live="polite" aria-atomic="true"></p>
+    </section>
     <script>
-      window.__mersalStartupTimer = window.setTimeout(() => {
+      (() => {
         const status = document.getElementById("status");
         const retry = document.getElementById("startup-retry");
-        if (status && retry) {
-          status.textContent = "تأخر الاتصال بمرسال. تحقق من الإنترنت ثم أعد المحاولة.";
+        const panel = document.getElementById("startup-diagnostics");
+        const output = document.getElementById("startup-diagnostics-output");
+        const copyButton = document.getElementById("startup-copy-diagnostics");
+        const feedback = document.getElementById("startup-copy-feedback");
+        const errors = [];
+        const language = (() => { try { return localStorage.getItem("mersal-language") === "en" ? "en" : "ar"; } catch { return "ar"; } })();
+        const words = language === "en"
+          ? {timeout:"Mersal is taking too long to start. Copy the diagnostic details and send them to the developer.", title:"Error details", help:"Copy these details and send them to the developer to help identify the problem.", copy:"Copy error details", copied:"Error details copied.", failed:"Could not copy automatically. Select the text and copy it.", retry:"Retry"}
+          : {timeout:"تأخر تشغيل مرسال. انسخ تفاصيل الخطأ وأرسلها للمطور للمساعدة في تحديد المشكلة.", title:"تفاصيل الخطأ", help:"انسخ التفاصيل وأرسلها للمطور للمساعدة في تحديد سبب المشكلة.", copy:"نسخ تفاصيل الخطأ", copied:"تم نسخ تفاصيل الخطأ.", failed:"تعذر النسخ تلقائيًا. حدّد النص وانسخه يدويًا.", retry:"إعادة المحاولة"};
+        document.getElementById("startup-diagnostics-title").textContent = words.title;
+        document.getElementById("startup-diagnostics-help").textContent = words.help;
+        copyButton.textContent = words.copy;
+        retry.textContent = words.retry;
+        window.__mersalStartupDiagnostics = errors;
+        const clean = value => String(value ?? "").replace(/(access_token|refresh_token|authorization|apikey|password|token)\s*[:=]\s*[^\s&;,]+/gi, "$1=[redacted]").slice(0, 3500);
+        const refresh = () => {
+          const details = [
+            "Mersal startup diagnostics",
+            "Time: " + new Date().toISOString(),
+            "Language: " + language,
+            "Online: " + (navigator.onLine ? "yes" : "no"),
+            "Browser: " + navigator.userAgent,
+            "Page: " + location.origin + location.pathname,
+            "Errors:",
+            ...(errors.length ? errors.map((item, i) => (i + 1) + ". " + item) : ["No JavaScript error captured; startup timeout."])
+          ];
+          output.value = details.join("\n");
+          panel.hidden = false;
           retry.hidden = false;
-        }
-      }, 15000);
-      document.addEventListener("click", event => {
-        if (event.target?.id === "startup-retry") window.location.reload();
-      });
+        };
+        const record = (label, detail) => {
+          errors.push(clean(label + ": " + detail));
+          if (errors.length > 8) errors.shift();
+          refresh();
+          if (status && document.getElementById("workspace")?.hidden !== false) status.textContent = words.timeout;
+        };
+        window.addEventListener("error", event => {
+          if (event instanceof ErrorEvent) {
+            record("JavaScript error", [event.message, event.filename, event.lineno ? "line " + event.lineno : "", event.error?.stack || ""].filter(Boolean).join(" | "));
+          } else {
+            const target = event.target;
+            if (target && (target.tagName === "SCRIPT" || target.tagName === "LINK")) {
+              record("Resource load error", target.src || target.href || target.tagName);
+            }
+          }
+        }, true);
+        window.addEventListener("unhandledrejection", event => {
+          const reason = event.reason;
+          record("Unhandled promise rejection", reason?.stack || reason?.message || reason || "Unknown rejection");
+        });
+        window.__mersalStartupTimer = window.setTimeout(() => {
+          if (window.__mersalStartupFinished) return;
+          if (status) status.textContent = words.timeout;
+          refresh();
+        }, 15000);
+        copyButton.addEventListener("click", async () => {
+          try {
+            if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(output.value);
+            else {
+              output.focus();
+              output.select();
+              if (!document.execCommand("copy")) throw new Error("copy command unavailable");
+            }
+            feedback.textContent = words.copied;
+          } catch {
+            output.focus();
+            output.select();
+            feedback.textContent = words.failed;
+          }
+        });
+        retry.addEventListener("click", () => window.location.reload());
+      })();
     </script>
     <div id="auth-panel" class="auth-panel" >
       <div class="mark" aria-hidden="true">م</div>
