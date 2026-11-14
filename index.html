@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://esm.sh" crossorigin>
   <link rel="preconnect" href="https://nnsleztgbqeuqavkhrpw.supabase.co" crossorigin>
   <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.119.0" crossorigin>
-  <link rel="stylesheet" href="/styles.css?v=20261114-message-status-v4">
+  <link rel="stylesheet" href="/styles.css?v=20261114-conversation-info-organized">
   <link rel="stylesheet" href="/inclusive-responsive.css">
   <script type="module" src="/app.js?v=20261114-message-status-v4"></script>
 </head>
@@ -168,7 +168,24 @@
             <div class="settings-extra">
               <button id="enable-push-notifications" type="button" class="quiet-button push-notifications-button" aria-pressed="false">تشغيل إشعارات الهاتف</button>
               <p id="push-notifications-help" class="settings-help" role="status" aria-live="polite">لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.</p>
-            </div>
+      
+            <div id="group-admin-tools" class="group-admin-tools group-admin-tools-top" hidden>
+              <div class="group-photo-editor">
+                <img id="group-photo-preview" class="group-photo-preview" alt="معاينة صورة المجموعة" hidden>
+                <input id="group-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة للمجموعة">
+                <button id="group-photo-choose" type="button" class="quiet-button">اختيار صورة للمجموعة</button>
+                <button id="group-photo-remove" type="button" class="quiet-button" hidden>إزالة صورة المجموعة</button>
+                <button id="group-photo-save" type="button" class="quiet-button" disabled>حفظ صورة المجموعة</button>
+                <p class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى لصورة المجموعة: 50 ميغابايت.</p>
+              </div>
+              <label for="group-description-input">وصف المجموعة</label>
+              <textarea id="group-description-input" rows="3" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea>
+              <p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p>
+              <button id="group-description-save" type="button" class="quiet-button" disabled>حفظ وصف المجموعة</button>
+              <label for="group-rename-input">اسم المجموعة الجديد</label>
+              <input id="group-rename-input" type="text" maxlength="60" autocomplete="off">
+              <button id="group-rename-save" type="button" class="quiet-button" disabled>حفظ اسم المجموعة</button>
+            </div>      </div>
           </section>
         </div>
         <div id="privacy-settings-view" hidden>
@@ -451,23 +468,6 @@
             <button id="close-conversation-info" type="button" class="quiet-button">إغلاق المعلومات</button>
             <div class="conversation-info-list conversation-info-common-list">
               <div role="group" aria-label="الاسم"><span id="conversation-info-name-label" class="conversation-info-label">الاسم</span><span class="conversation-info-value" id="conversation-info-name">—</span></div>
-            </div>
-            <div id="group-admin-tools" class="group-admin-tools group-admin-tools-top" hidden>
-              <div class="group-photo-editor">
-                <img id="group-photo-preview" class="group-photo-preview" alt="معاينة صورة المجموعة" hidden>
-                <input id="group-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة للمجموعة">
-                <button id="group-photo-choose" type="button" class="quiet-button">اختيار صورة للمجموعة</button>
-                <button id="group-photo-remove" type="button" class="quiet-button" hidden>إزالة صورة المجموعة</button>
-                <button id="group-photo-save" type="button" class="quiet-button" disabled>حفظ صورة المجموعة</button>
-                <p class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى لصورة المجموعة: 50 ميغابايت.</p>
-              </div>
-              <label for="group-description-input">وصف المجموعة</label>
-              <textarea id="group-description-input" rows="3" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea>
-              <p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p>
-              <button id="group-description-save" type="button" class="quiet-button" disabled>حفظ وصف المجموعة</button>
-              <label for="group-rename-input">اسم المجموعة الجديد</label>
-              <input id="group-rename-input" type="text" maxlength="60" autocomplete="off">
-              <button id="group-rename-save" type="button" class="quiet-button" disabled>حفظ اسم المجموعة</button>
             </div>
             <div id="group-conversation-info-list" class="conversation-info-list" hidden>
               <div id="group-info-photo-row" role="group" aria-label="صورة المجموعة" hidden><span class="conversation-info-label">صورة المجموعة</span><img id="group-info-photo" class="group-info-photo" alt="" hidden></div>
