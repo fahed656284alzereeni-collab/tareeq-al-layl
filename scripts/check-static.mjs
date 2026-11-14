@@ -56,9 +56,9 @@ assert.doesNotMatch(experienceCss, /body\.calls-open \.topbar,\s*body\.calls-ope
   "The calls full-screen rule must not hide the primary tab bar");
 
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
-assert.equal((app.match(/closeHelpSupportForNavigation\(\);/g) || []).length, 6,
+assert.equal((app.match(/closeHelpSupportForNavigation\(\);/g) || []).length, 7,
   "Every primary tab must close the Help & Support overlay and stop its realtime subscription");
-assert.equal((app.match(/closeNewChatForNavigation\(\);/g) || []).length, 6,
+assert.equal((app.match(/closeNewChatForNavigation\(\);/g) || []).length, 7,
   "Every primary tab must close the New Chat overlay before navigation");
 assert.match(app, /\.in\("status", \["pending", "failed"\]\)/,
   "Scheduled messages must keep failed items visible to their sender");
