@@ -1,5 +1,6 @@
 import { initMersalTools } from "./tools.js?v=20261114-speed-v1";
 import { initMersalChannels } from "./channels.js?v=20261114-channels-v2";
+import { initMersalCommunities } from "./communities.js?v=20261114-communities-v1";
 
 // Load Supabase Auth through two independent ESM CDNs. A failed static import
 // prevents this entire module from running, leaving the HTML startup timer visible.
@@ -982,6 +983,7 @@ const mersalTranslations = {
 
   "قائمة بث جديدة":"New broadcast list",
   "استكشاف القنوات":"Explore channels",
+  "استكشاف المجتمعات":"Explore communities",
   "قوائم البث":"Broadcast lists",
   "إنشاء قائمة بث":"Create broadcast list",
   "اسم قائمة البث":"Broadcast list name",
@@ -1321,6 +1323,7 @@ const groupPeopleSearch=$("#group-people-search"),groupPeopleList=$("#group-peop
 const newPrivateChatButton=$("#new-private-chat"),newGroupChatButton=$("#new-group-chat");
 const newBroadcastListButton=$("#new-broadcast-list");
 const openChannelsButton=$("#open-channels-button");
+const openCommunitiesButton=$("#open-communities-button");
 const broadcastPanel=$("#broadcast-panel"),closeBroadcastPanelButton=$("#close-broadcast-panel");
 const broadcastListsView=$("#broadcast-lists-view"),broadcastCreateView=$("#broadcast-create-view");
 const broadcastLists=$("#broadcast-lists"),createBroadcastListButton=$("#create-broadcast-list");
@@ -1367,6 +1370,7 @@ function setActiveBottomTab(tab) {
 function returnToHomeTab() {
   mersalTools.closeTool(false);
   mersalChannels.close();
+  mersalCommunities.close();
   if (settingsPanel && !settingsPanel.hidden) {
     settingsPanel.hidden = true;
   if (helpSupportPanel) helpSupportPanel.hidden = true;
@@ -1387,6 +1391,7 @@ function returnToHomeTab() {
 function openCallsTab() {
   mersalTools.closeTool(false);
   mersalChannels.close();
+  mersalCommunities.close();
   if (!currentUser) return;
   if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
   if (helpSupportPanel) helpSupportPanel.hidden = true;
@@ -1406,6 +1411,7 @@ function openCallsTab() {
 function openToolsTab() {
   mersalTools.closeTool(false);
   mersalChannels.close();
+  mersalCommunities.close();
   if (!currentUser) return;
   if (callsView) callsView.hidden = true;
   document.body.classList.remove("calls-open");
@@ -1427,6 +1433,7 @@ function openToolsTab() {
 function openStatusTab() {
   mersalTools.closeTool(false);
   mersalChannels.close();
+  mersalCommunities.close();
   if (!currentUser) return;
   if (settingsPanel && !settingsPanel.hidden) {
     settingsPanel.hidden = true;
@@ -2956,6 +2963,7 @@ async function renderBlockedUsers() {
 function openSettings() {
   mersalTools.closeTool(false);
   mersalChannels.close();
+  mersalCommunities.close();
   if (!currentUser) return;
   statusView.hidden = true;
   document.body.classList.remove("status-open");
@@ -3018,6 +3026,16 @@ try {
 openChannelsButton?.addEventListener("click", () => {
   closeNewChat();
   mersalChannels.open(newChatButton);
+});
+let mersalCommunities = { open() {}, close() {} };
+try {
+  mersalCommunities = initMersalCommunities({ supabase, getCurrentUser: () => currentUser, announce, safeText });
+} catch (communitiesInitializationError) {
+  console.error("Mersal communities initialization failed; continuing core startup:", communitiesInitializationError);
+}
+openCommunitiesButton?.addEventListener("click", () => {
+  closeNewChat();
+  mersalCommunities.open(newChatButton);
 });
 settingsLanguageSelect.addEventListener("change", () => {
   applyMersalLanguage(settingsLanguageSelect.value);
@@ -3694,12 +3712,12 @@ saveBroadcastListButton.addEventListener("click", async () => {
     saveBroadcastListButton.disabled = false;
   }
 });
-function openNewChat(){newChatReturnFocus=newChatButton;newChatPanel.hidden=false;privateChatView.hidden=true;groupChatView.hidden=true;newPrivateChatButton.hidden=false;newGroupChatButton.hidden=false;newBroadcastListButton.hidden=false;if(openChannelsButton)openChannelsButton.hidden=false;closeNewChatButton.focus();}
+function openNewChat(){newChatReturnFocus=newChatButton;newChatPanel.hidden=false;privateChatView.hidden=true;groupChatView.hidden=true;newPrivateChatButton.hidden=false;newGroupChatButton.hidden=false;newBroadcastListButton.hidden=false;if(openChannelsButton)openChannelsButton.hidden=false;if(openCommunitiesButton)openCommunitiesButton.hidden=false;closeNewChatButton.focus();}
 function closeNewChat(){newChatPanel.hidden=true;if(newChatReturnFocus?.isConnected)newChatReturnFocus.focus();}
 newChatButton.addEventListener("click",openNewChat);closeNewChatButton.addEventListener("click",closeNewChat);
 newChatPanel.addEventListener("keydown",e=>{if(e.key==="Escape")closeNewChat();});
-newPrivateChatButton.addEventListener("click",()=>{privateChatView.hidden=false;groupChatView.hidden=true;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;if(openChannelsButton)openChannelsButton.hidden=true;peopleSearch.value="";renderPeople();peopleSearch.focus();});
-newGroupChatButton.addEventListener("click",()=>{selectedGroupMembers.clear();if(openChannelsButton)openChannelsButton.hidden=true;groupNameInput.value="";newGroupDescriptionInput.value="";groupPeopleSearch.value="";selectedGroupCreationPhoto=null;newGroupPhotoInput.value="";if(newGroupPhotoPreviewUrl){URL.revokeObjectURL(newGroupPhotoPreviewUrl);newGroupPhotoPreviewUrl=null;}newGroupPhotoPreview.removeAttribute("src");newGroupPhotoPreview.hidden=true;newGroupPhotoRemoveButton.hidden=true;privateChatView.hidden=true;groupChatView.hidden=false;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;renderGroupPeople();groupNameInput.focus();});
+newPrivateChatButton.addEventListener("click",()=>{privateChatView.hidden=false;groupChatView.hidden=true;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;if(openChannelsButton)openChannelsButton.hidden=true;if(openCommunitiesButton)openCommunitiesButton.hidden=true;peopleSearch.value="";renderPeople();peopleSearch.focus();});
+newGroupChatButton.addEventListener("click",()=>{selectedGroupMembers.clear();if(openChannelsButton)openChannelsButton.hidden=true;if(openCommunitiesButton)openCommunitiesButton.hidden=true;groupNameInput.value="";newGroupDescriptionInput.value="";groupPeopleSearch.value="";selectedGroupCreationPhoto=null;newGroupPhotoInput.value="";if(newGroupPhotoPreviewUrl){URL.revokeObjectURL(newGroupPhotoPreviewUrl);newGroupPhotoPreviewUrl=null;}newGroupPhotoPreview.removeAttribute("src");newGroupPhotoPreview.hidden=true;newGroupPhotoRemoveButton.hidden=true;privateChatView.hidden=true;groupChatView.hidden=false;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;renderGroupPeople();groupNameInput.focus();});
 peopleSearch.addEventListener("input",renderPeople);groupPeopleSearch.addEventListener("input",renderGroupPeople);
 newGroupPhotoChooseButton.addEventListener("click",()=>newGroupPhotoInput.click());
 newGroupPhotoInput.addEventListener("change",()=>{
