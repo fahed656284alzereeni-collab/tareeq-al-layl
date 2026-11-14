@@ -36,6 +36,28 @@ const isMersalAuthPopup = window.name === "mersal-google-auth";
 const mersalTranslations = {
   // Tools tab: complete Arabic/English coverage for static and dynamic interface text.
   "مرسال":"Mersal",
+  "المكالمات":"Calls",
+  "سجل المكالمات":"Call history",
+  "بدء مكالمة":"Start a call",
+  "ابدأ مكالمة صوتية أو مرئية مع شخص أو مجموعة من محادثاتك.":"Start an audio or video call with a person or group from your chats.",
+  "مكالمة مرئية":"Video call",
+  "مكالمة جماعية":"Group call",
+  "محادثة فردية":"Private chat",
+  "مكتملة":"Completed",
+  "فائتة":"Missed",
+  "مرفوضة":"Declined",
+  "ملغاة":"Cancelled",
+  "فشلت":"Failed",
+  "لم تكتمل":"Not completed",
+  "إعادة الاتصال":"Call again",
+  "إيقاف الكاميرا":"Turn camera off",
+  "تشغيل الكاميرا":"Turn camera on",
+  "معاينة الكاميرا":"Camera preview",
+  "فيديو المشاركين":"Participants video",
+  "يتصل بك مرئيًا.":" is video calling you.",
+  "المكالمة المرئية متصلة.":"Video call connected.",
+  "المكالمات المرئية تحتاج إذن الكاميرا.":"Video calls require camera permission.",
+  "تعذر تجهيز سجل المكالمات: ":"Could not load call history: ",
   "الأدوات":"Tools",
   "أدوات عملية تساعدك أثناء استخدام مرسال.":"Practical tools to use while chatting on Mersal.",
   "الآلة الحاسبة":"Calculator",
@@ -999,6 +1021,7 @@ const toolsView = $("#tools-view");
 const statusView = $("#status-view");
 const callsView = $("#calls-view");
 const callsList = $("#calls-list");
+const callsHistoryList = $("#calls-history-list");
 const callsSearchInput = $("#calls-search");
 const refreshCallsButton = $("#refresh-calls");
 const statusList = $("#status-list");
@@ -1222,6 +1245,7 @@ function openCallsTab() {
   document.body.classList.add("calls-open");
   setActiveBottomTab("calls");
   renderCallsList();
+  void loadCallHistory().catch(error => announce("تعذر تجهيز سجل المكالمات: " + (error.message || "حاول مرة أخرى."), "error"));
   document.querySelector("#calls-title")?.focus();
 }
 function openToolsTab() {
@@ -1358,6 +1382,10 @@ const voiceCallRejectButton = $("#voice-call-reject");
 const voiceCallMuteButton = $("#voice-call-mute");
 const voiceCallEndButton = $("#voice-call-end");
 const voiceCallEnableAudioButton = $("#voice-call-enable-audio");
+const voiceCallCameraButton = $("#voice-call-camera");
+const voiceCallVideoGrid = $("#voice-call-video-grid");
+const voiceCallLocalVideo = $("#voice-call-local-video");
+const voiceCallRemoteVideos = $("#voice-call-remote-videos");
 const callChannels = new Map();
 let activeCall = null;
 let activeGroupMemberIds = new Set();
@@ -2780,8 +2808,11 @@ callsSearchInput.addEventListener("input", renderCallsList);
 refreshCallsButton.addEventListener("click", async () => {
   if (!currentUser) return;
   refreshCallsButton.disabled = true;
-  try { await loadConversations(); renderCallsList(); }
-  catch (error) { announce("تعذر تحميل قائمة المكالمات: " + (error.message || "حاول مرة أخرى."), "error"); }
+  try {
+    await loadConversations();
+    renderCallsList();
+    await loadCallHistory();
+  } catch (error) { announce("تعذر تحميل قائمة المكالمات: " + (error.message || "حاول مرة أخرى."), "error"); }
   finally { refreshCallsButton.disabled = false; }
 });
 openGeneralSettingsButton.addEventListener("click", () => {
@@ -3617,6 +3648,7 @@ function renderCallsList() {
     callsList.append(safeText("li", "empty-item", query ? "لا توجد نتائج مطابقة." : "لا توجد محادثات متاحة للمكالمات."));
     return;
   }
+  const english = localStorage.getItem("mersal-language") === "en";
   for (const conversation of entries) {
     const partnerId = conversation.user_one === currentUser?.id ? conversation.user_two : conversation.user_one;
     const person = callsProfileCache.get(partnerId) || people.find(item => item.id === partnerId);
@@ -3629,13 +3661,80 @@ function renderCallsList() {
     title.setAttribute("data-no-translate", "");
     const kind = safeText("span", "calls-conversation-kind", conversation.is_group ? "مكالمة جماعية" : "محادثة فردية");
     details.append(title, kind);
-    const button = safeText("button", "primary-button calls-start-button", "اتصال صوتي");
-    button.type = "button";
-    button.setAttribute("aria-label", "اتصال صوتي مع " + name);
-    button.addEventListener("click", () => { void startVoiceCall(conversation, button); });
-    item.append(details, button);
+    const actions = document.createElement("div");
+    actions.className = "calls-start-actions";
+    const audioButton = safeText("button", "primary-button calls-start-button", "اتصال صوتي");
+    audioButton.type = "button";
+    audioButton.setAttribute("aria-label", (english ? "Start audio call with " : "بدء مكالمة صوتية مع ") + name);
+    audioButton.setAttribute("data-no-translate-aria-label", "");
+    audioButton.addEventListener("click", () => { void startVoiceCall(conversation, audioButton, "audio"); });
+    const videoButton = safeText("button", "quiet-button calls-start-button calls-video-button", "مكالمة مرئية");
+    videoButton.type = "button";
+    videoButton.setAttribute("aria-label", (english ? "Start video call with " : "بدء مكالمة مرئية مع ") + name);
+    videoButton.setAttribute("data-no-translate-aria-label", "");
+    videoButton.addEventListener("click", () => { void startVoiceCall(conversation, videoButton, "video"); });
+    actions.append(audioButton, videoButton);
+    item.append(details, actions);
     callsList.append(item);
   }
+}
+function callHistoryText(call) {
+  const english = localStorage.getItem("mersal-language") === "en";
+  const type = call.call_type === "video" ? (english ? "Video call" : "مكالمة مرئية") : (english ? "Audio call" : "مكالمة صوتية");
+  const direction = call.initiated_by === currentUser?.id ? (english ? "Outgoing" : "صادرة") : (english ? "Incoming" : "واردة");
+  const statusLabels = english
+    ? {completed:"Completed",missed:"Missed",declined:"Declined",cancelled:"Cancelled",failed:"Failed",ringing:"Not completed"}
+    : {completed:"مكتملة",missed:"فائتة",declined:"مرفوضة",cancelled:"ملغاة",failed:"فشلت",ringing:"لم تكتمل"};
+  const date = new Intl.DateTimeFormat(english ? "en" : "ar", {dateStyle:"medium",timeStyle:"short"}).format(new Date(call.started_at));
+  return [direction,type,statusLabels[call.status]||statusLabels.ringing,date].join(" · ");
+}
+function renderCallHistory(rows) {
+  if (!callsHistoryList) return;
+  callsHistoryList.replaceChildren();
+  if (!rows?.length) {
+    callsHistoryList.append(safeText("li","empty-item","لا توجد مكالمات سابقة."));
+    return;
+  }
+  const english = localStorage.getItem("mersal-language") === "en";
+  for (const call of rows) {
+    const conversation = conversations.find(item => item.id === call.conversation_id);
+    if (!conversation) continue;
+    const partnerId = conversation.user_one === currentUser?.id ? conversation.user_two : conversation.user_one;
+    const person = callsProfileCache.get(partnerId) || people.find(item => item.id === partnerId);
+    const name = conversation.is_group ? (conversation.group_name || (english ? "Group" : "مجموعة")) : (person ? displayName(person) : (english ? "Mersal user" : "مستخدم مرسال"));
+    const item = document.createElement("li");
+    item.className = "calls-list-item calls-history-item";
+    const details = document.createElement("div");
+    details.className = "calls-conversation-details";
+    const title = safeText("span","calls-conversation-name",name);
+    title.setAttribute("data-no-translate","");
+    const meta = safeText("span","calls-conversation-kind",callHistoryText(call));
+    meta.setAttribute("data-no-translate","");
+    details.append(title,meta);
+    const retry = safeText("button","quiet-button calls-start-button","إعادة الاتصال");
+    retry.type = "button";
+    retry.setAttribute("aria-label",(english ? "Call again: " : "إعادة الاتصال بـ ") + name);
+    retry.setAttribute("data-no-translate-aria-label","");
+    retry.addEventListener("click",()=>{ void startVoiceCall(conversation,retry,call.call_type==="video"?"video":"audio"); });
+    item.append(details,retry);
+    callsHistoryList.append(item);
+  }
+  if (!callsHistoryList.children.length) callsHistoryList.append(safeText("li","empty-item",english ? "No previous calls." : "لا توجد مكالمات سابقة."));
+}
+async function loadCallHistory() {
+  if (!currentUser || !callsHistoryList) return;
+  const {data,error}=await supabase.from("call_logs")
+    .select("id,conversation_id,initiated_by,call_type,status,started_at,ended_at")
+    .order("started_at",{ascending:false}).limit(100);
+  if(error)throw error;
+  renderCallHistory(data||[]);
+}
+async function updateCallLogStatus(callLogId,statusValue) {
+  if(!callLogId||!currentUser)return;
+  const {error}=await supabase.from("call_logs")
+    .update({status:statusValue,ended_at:new Date().toISOString()}).eq("id",callLogId);
+  if(error){console.warn("Call history update:",error);return;}
+  if(callsView&&!callsView.hidden)void loadCallHistory().catch(error=>console.warn("Call history refresh:",error));
 }
 async function openConversation(person) {
   if (!currentUser || person.id === currentUser.id) return;
@@ -5016,6 +5115,10 @@ function updateVoiceCallPanel() {
   voiceCallMuteButton.hidden = !activeCall.accepted;
   voiceCallEndButton.hidden = !activeCall.accepted;
   voiceCallMuteButton.textContent = activeCall.muted ? "تشغيل الميكروفون" : "كتم الميكروفون";
+  voiceCallPanel.setAttribute("aria-label",activeCall.callType==="video"?"مكالمة مرئية":"المكالمة الصوتية");
+  voiceCallVideoGrid.hidden=activeCall.callType!=="video";
+  voiceCallCameraButton.hidden=!activeCall.accepted||activeCall.callType!=="video";
+  if(activeCall.callType==="video")voiceCallCameraButton.textContent=activeCall.cameraEnabled?"إيقاف الكاميرا":"تشغيل الكاميرا";
   const callConversation=conversations.find(item=>item.id===activeCall.conversationId);
   voiceCallEndButton.textContent = activeCall.isGroup && activeCall.initiatorId !== currentUser.id ? "مغادرة المكالمة" : "إنهاء المكالمة";
   voiceCallParticipants.replaceChildren();
@@ -5098,13 +5201,15 @@ async function getVoiceCallParticipantIds(conversation=activeConversation) {
   if(error)throw error;
   return [...new Set([conversation.user_one,...(data||[]).map(row=>row.user_id)].filter(id=>id&&id!==currentUser.id))];
 }
-async function startVoiceCall(conversation = activeConversation, launchButton = voiceCallButton) {
+async function startVoiceCall(conversation = activeConversation, launchButton = voiceCallButton, callType = "audio") {
   if (!conversation || !currentUser || activeCall) return;
+  callType = callType === "video" ? "video" : "audio";
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
     announce("المكالمات الصوتية تحتاج متصفحًا آمنًا يدعم الميكروفون.", "error"); return;
   }
   if (launchButton) launchButton.disabled = true;
   voiceCallReturnFocus = launchButton;
+  let callLogId = null;
   try {
     await ensureCallChannel(conversation.id);
     if (!conversation.is_group) {
@@ -5120,25 +5225,38 @@ async function startVoiceCall(conversation = activeConversation, launchButton = 
     if (!participants.length) throw new Error("لا يوجد مشاركون متاحون في هذه المحادثة.");
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      video: false
+      video: callType === "video" ? { facingMode:"user", width:{ideal:1280}, height:{ideal:720} } : false
     });
+    const {data:callLog,error:callLogError}=await supabase.from("call_logs").insert({
+      conversation_id:conversation.id, initiated_by:currentUser.id, call_type:callType, status:"ringing"
+    }).select("id").single();
+    if(callLogError)throw callLogError;
+    callLogId=callLog.id;
     const participantSet = new Set([currentUser.id, ...participants]);
     activeCall = {
-      id: crypto.randomUUID(), conversationId: conversation.id, isGroup: Boolean(conversation.is_group),
+      id: callLog.id, logId:callLog.id, callType, conversationId: conversation.id, isGroup: Boolean(conversation.is_group),
       initiatorId: currentUser.id, participants: participantSet, accepted: true,
-      incoming: false, muted: false, localStream: stream, peers: new Map(),
-      readyUsers: new Set([currentUser.id]), pendingOffers: new Map(), pendingIce: new Map()
+      incoming: false, muted: false, cameraEnabled:callType==="video", localStream: stream, peers: new Map(),
+      readyUsers: new Set([currentUser.id]), pendingOffers: new Map(), pendingIce: new Map(), everConnected:false
     };
+    if(callType==="video"){
+      voiceCallVideoGrid.hidden=false;
+      voiceCallLocalVideo.srcObject=stream;
+      void voiceCallLocalVideo.play().catch(()=>{});
+    }
     updateVoiceCallPanel();
     voiceCallEndButton.focus();
     setVoiceCallStatus("جارٍ الاتصال بالمشاركين…");
     await Promise.all(participants.map(id => sendCallSignal("invite", id, {
-      participants: [...participantSet], initiatorId: currentUser.id
+      participants: [...participantSet], initiatorId: currentUser.id, callType, callLogId:callLog.id
     })));
     await sendCallSignalToAll("ready");
   } catch (error) {
-    if (activeCall) await endVoiceCall(true);
-    else await finishVoiceCall();
+    if (activeCall) { activeCall.finalStatus="failed"; await endVoiceCall(true); }
+    else {
+      if(callLogId)void updateCallLogStatus(callLogId,"failed");
+      await finishVoiceCall();
+    }
     announce("تعذر بدء المكالمة: " + (error.message || "تحقق من إذن الميكروفون."), "error");
   } finally {
     if (launchButton) launchButton.disabled = false;
@@ -5154,7 +5272,7 @@ function createVoicePeer(peerId) {
     ]
   });
   activeCall.peers.set(peerId, pc);
-  for (const track of activeCall.localStream.getAudioTracks()) pc.addTrack(track, activeCall.localStream);
+  for (const track of activeCall.localStream.getTracks()) pc.addTrack(track, activeCall.localStream);
   pc.onicecandidate = event => {
     if (event.candidate && activeCall?.peers.get(peerId) === pc) {
       void sendCallSignal("ice", peerId, { candidate: event.candidate.toJSON() }).catch(error => console.warn(error));
@@ -5162,6 +5280,21 @@ function createVoicePeer(peerId) {
   };
   pc.ontrack = event => {
     if (activeCall?.peers.get(peerId) !== pc) return;
+    const remoteStream=event.streams[0];
+    if(event.track.kind==="video"){
+      let video=voiceCallRemoteVideos.querySelector('[data-peer-id="' + peerId + '"]');
+      if(!video){
+        video=document.createElement("video");
+        video.className="voice-call-remote-video";
+        video.autoplay=true;video.playsInline=true;
+        video.dataset.peerId=peerId;
+        video.setAttribute("aria-label","فيديو مشارك في المكالمة");
+        voiceCallRemoteVideos.append(video);
+      }
+      video.srcObject=remoteStream;
+      void video.play().catch(()=>{});
+      return;
+    }
     let audio = voiceCallAudio.querySelector('[data-peer-id="' + peerId + '"]');
     if (!audio) {
       audio = document.createElement("audio");
@@ -5169,7 +5302,7 @@ function createVoicePeer(peerId) {
       audio.dataset.peerId = peerId;
       voiceCallAudio.append(audio);
     }
-    audio.srcObject = event.streams[0];
+    audio.srcObject = remoteStream;
     void audio.play().then(() => {
       if (voiceCallEnableAudioButton) voiceCallEnableAudioButton.hidden = true;
     }).catch(() => {
@@ -5180,7 +5313,10 @@ function createVoicePeer(peerId) {
   pc.onconnectionstatechange = () => {
     if (activeCall?.peers.get(peerId) !== pc) return;
     const states = [...activeCall.peers.values()].map(peer => peer.connectionState);
-    if (states.includes("connected")) setVoiceCallStatus("المكالمة الصوتية متصلة.");
+    if (states.includes("connected")) {
+      activeCall.everConnected=true;
+      setVoiceCallStatus(activeCall.callType==="video"?"المكالمة المرئية متصلة.":"المكالمة الصوتية متصلة.");
+    }
     else if (states.some(state => state === "failed" || state === "disconnected")) {
       setVoiceCallStatus("الاتصال بأحد المشاركين غير مستقر. تحقق من الشبكة.");
     }
@@ -5237,16 +5373,17 @@ async function handleCallSignal(signal) {
       }
       return;
     }
+    const incomingCallType=details.callType==="video"?"video":"audio";
     activeCall = {
-      id: signal.callId, conversationId: signal.conversationId, isGroup: Boolean(callConversation.is_group),
+      id: signal.callId, logId:details.callLogId||signal.callId, callType:incomingCallType, conversationId: signal.conversationId, isGroup: Boolean(callConversation.is_group),
       initiatorId: from,
       participants: new Set([currentUser.id,...validParticipants]),
-      accepted: false, incoming: true, muted: false, localStream: null,
+      accepted: false, incoming: true, muted: false, cameraEnabled:incomingCallType==="video", localStream: null,
       peers: new Map(), readyUsers: new Set([from]),
-      pendingOffers: new Map(), pendingIce: new Map()
+      pendingOffers: new Map(), pendingIce: new Map(), everConnected:false
     };
     updateVoiceCallPanel();
-    setVoiceCallStatus((people.find(person => person.id === from) ? displayName(people.find(person => person.id === from)) : "أحد المشاركين") + " يتصل بك صوتيًا.");
+    setVoiceCallStatus((people.find(person => person.id === from) ? displayName(people.find(person => person.id === from)) : "أحد المشاركين") + (incomingCallType==="video"?" يتصل بك مرئيًا.":" يتصل بك صوتيًا."));
     voiceCallAcceptButton.focus();
     return;
   }
@@ -5273,16 +5410,18 @@ async function handleCallSignal(signal) {
     }
   } else if (signal.type === "decline") {
     setVoiceCallStatus("رفض أحد المشاركين المكالمة.");
-    if (!activeConversation?.is_group) await finishVoiceCall();
+    if (!activeCall.isGroup) { activeCall.finalStatus="declined"; await finishVoiceCall(); }
   } else if (signal.type === "busy") {
     setVoiceCallStatus("أحد المشاركين مشغول حاليًا.");
   } else if (signal.type === "leave") {
     const pc = activeCall.peers.get(from); if (pc) pc.close();
     activeCall.peers.delete(from); activeCall.participants.delete(from); activeCall.readyUsers.delete(from);
     voiceCallAudio.querySelector('[data-peer-id="' + from + '"]')?.remove();
+    voiceCallRemoteVideos.querySelector('[data-peer-id="' + from + '"]')?.remove();
     updateVoiceCallPanel();
-    if (activeCall.participants.size <= 1) await finishVoiceCall();
+    if (activeCall.participants.size <= 1) { activeCall.finalStatus=activeCall.everConnected?"completed":"cancelled"; await finishVoiceCall(); }
   } else if (signal.type === "end") {
+    activeCall.finalStatus=activeCall.everConnected?"completed":(activeCall.incoming?"missed":"cancelled");
     await finishVoiceCall();
   }
 }
@@ -5292,9 +5431,14 @@ async function acceptVoiceCall() {
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-      video: false
+      video: activeCall.callType==="video" ? { facingMode:"user", width:{ideal:1280}, height:{ideal:720} } : false
     });
     activeCall.localStream = stream;
+    if(activeCall.callType==="video"){
+      voiceCallVideoGrid.hidden=false;
+      voiceCallLocalVideo.srcObject=stream;
+      void voiceCallLocalVideo.play().catch(()=>{});
+    }
     activeCall.accepted = true;
     activeCall.readyUsers.add(currentUser.id);
     updateVoiceCallPanel();
@@ -5317,6 +5461,7 @@ async function rejectVoiceCall() {
   if (!activeCall) return;
   const caller = activeCall.initiatorId;
   try { await sendCallSignal("decline", caller); } catch {}
+  activeCall.finalStatus="declined";
   await finishVoiceCall();
 }
 function toggleVoiceCallMute() {
@@ -5338,14 +5483,21 @@ async function endVoiceCall(notifyOthers = true) {
       else await sendCallSignal("decline", caller);
     } catch (error) { console.warn("End call signal:", error); }
   }
+  if(!activeCall.finalStatus)activeCall.finalStatus=activeCall.everConnected?"completed":(activeCall.incoming&&!activeCall.accepted?"missed":"cancelled");
   await finishVoiceCall();
 }
 async function finishVoiceCall() {
   const call = activeCall;
   activeCall = null;
+  if (call?.logId) void updateCallLogStatus(call.logId,call.finalStatus||(call.everConnected?"completed":(call.incoming?"missed":"cancelled")));
   if (call?.peers) for (const pc of call.peers.values()) pc.close();
   if (call?.localStream) for (const track of call.localStream.getTracks()) track.stop();
   voiceCallAudio.replaceChildren();
+  voiceCallRemoteVideos.replaceChildren();
+  voiceCallLocalVideo.pause();
+  voiceCallLocalVideo.srcObject=null;
+  voiceCallVideoGrid.hidden=true;
+  if(voiceCallCameraButton){voiceCallCameraButton.hidden=true;voiceCallCameraButton.setAttribute("aria-pressed","false");}
   if (voiceCallEnableAudioButton) voiceCallEnableAudioButton.hidden = true;
   voiceCallPanel.hidden = true;
   const returnFocus = voiceCallReturnFocus;
@@ -5358,6 +5510,13 @@ $("#group-info-call-button")?.addEventListener("click", () => { if (!voiceCallBu
 voiceCallAcceptButton.addEventListener("click", () => { void acceptVoiceCall(); });
 voiceCallRejectButton.addEventListener("click", () => { void rejectVoiceCall(); });
 voiceCallMuteButton.addEventListener("click", toggleVoiceCallMute);
+voiceCallCameraButton?.addEventListener("click", () => {
+  if(!activeCall?.localStream||activeCall.callType!=="video")return;
+  activeCall.cameraEnabled=!activeCall.cameraEnabled;
+  for(const track of activeCall.localStream.getVideoTracks())track.enabled=activeCall.cameraEnabled;
+  voiceCallCameraButton.textContent=activeCall.cameraEnabled?"إيقاف الكاميرا":"تشغيل الكاميرا";
+  voiceCallCameraButton.setAttribute("aria-pressed",String(activeCall.cameraEnabled));
+});
 voiceCallEndButton.addEventListener("click", () => { void endVoiceCall(); });
 voiceCallEnableAudioButton?.addEventListener("click", async () => {
   voiceCallEnableAudioButton.disabled = true;
