@@ -527,3 +527,21 @@ button:disabled { opacity: .48; cursor: not-allowed; }
 @media (prefers-reduced-motion:reduce) {
   .communities-panel,.communities-card { scroll-behavior:auto; }
 }
+
+
+.community-edit-form,.community-post-edit-form {
+  display:grid; gap:9px; padding:14px; margin:10px 0;
+  border:1px solid var(--mx-line); border-radius:14px; background:var(--mx-panel-soft);
+}
+.community-edit-form label,.community-post-edit-form label {
+  display:block; margin:4px 0; color:var(--mx-text); font-weight:700;
+}
+.community-edit-form input,.community-edit-form textarea,.community-post-edit-form textarea {
+  width:100%; min-height:46px; padding:11px 12px; border:1px solid var(--mx-line);
+  border-radius:12px; background:var(--mx-panel); color:var(--mx-text); font:inherit;
+}
+.community-edit-form textarea,.community-post-edit-form textarea { min-height:100px; resize:vertical; }
+.community-edit-form button:focus-visible,.community-post-edit-form button:focus-visible,
+.community-edit-form input:focus-visible,.community-edit-form textarea:focus-visible,
+.community-post-edit-form textarea:focus-visible { outline:3px solid var(--mx-brand); outline-offset:3px; }
+.community-edit-form button:disabled,.community-post-edit-form button:disabled { opacity:.55; cursor:not-allowed; }
