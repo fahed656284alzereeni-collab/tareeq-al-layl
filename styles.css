@@ -2814,3 +2814,20 @@ body.conversation-info-fullscreen .conversation-info-list [hidden] {
 @media(prefers-reduced-motion:reduce) {
   .calls-view *, .calls-view *::before, .calls-view *::after { scroll-behavior:auto!important; animation-duration:.01ms!important; transition-duration:.01ms!important; }
 }
+
+
+/* Calls history and video-call presentation */
+.calls-section-title { margin:22px 0 10px; font-size:1.08rem; font-weight:800; line-height:1.6; }
+.calls-start-actions { display:flex; flex-wrap:wrap; gap:8px; justify-content:flex-end; }
+.calls-start-actions .calls-start-button { min-width:118px; }
+.calls-history-item .calls-conversation-kind { overflow-wrap:anywhere; }
+.calls-history-list { margin-bottom:18px; }
+.voice-call-video-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:10px; width:100%; }
+.voice-call-video-grid[hidden] { display:none!important; }
+.voice-call-local-video,.voice-call-remote-video { display:block; width:100%; max-height:52vh; min-height:150px; object-fit:cover; background:#05080e; border:1px solid #49658b; border-radius:14px; }
+.voice-call-remote-videos { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr)); gap:10px; }
+@media(max-width:520px) {
+  .calls-start-actions { display:grid; grid-template-columns:1fr 1fr; width:100%; }
+  .calls-start-actions .calls-start-button { width:100%; min-width:0; }
+  .voice-call-video-grid { grid-template-columns:1fr; }
+}
