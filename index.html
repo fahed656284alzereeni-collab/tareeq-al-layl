@@ -714,6 +714,7 @@
         <button id="new-group-chat" type="button" class="quiet-button">مجموعة جديدة</button>
         <button id="new-broadcast-list" type="button" class="quiet-button">قائمة بث جديدة</button>
         <button id="open-channels-button" type="button" class="quiet-button">استكشاف القنوات</button>
+        <button id="open-communities-button" type="button" class="quiet-button">استكشاف المجتمعات</button>
         <div id="private-chat-view" hidden><label for="people-search">ابحث عن شخص</label><input id="people-search" type="search" placeholder="اكتب الاسم للبحث" autocomplete="off"><ul id="people-list" class="people-list" aria-label="الأشخاص"></ul></div>
         <div id="group-chat-view" hidden><label for="group-name">اسم المجموعة</label><input id="group-name" type="text" maxlength="60" placeholder="اكتب اسم المجموعة"><label for="new-group-description">وصف المجموعة (اختياري)</label><textarea id="new-group-description" rows="3" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea><p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p><div class="group-photo-editor group-create-photo"><img id="new-group-photo-preview" class="group-photo-preview" alt="معاينة صورة المجموعة المحددة" hidden><input id="new-group-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة للمجموعة عند إنشائها"><button id="new-group-photo-choose" type="button" class="quiet-button">إضافة صورة للمجموعة (اختياري)</button><button id="new-group-photo-remove" type="button" class="quiet-button" hidden>إزالة الصورة المحددة</button><p class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى لصورة المجموعة: 50 ميغابايت.</p></div><label for="group-people-search">ابحث عن أعضاء</label><input id="group-people-search" type="search" placeholder="اكتب اسم الشخص" autocomplete="off"><ul id="group-people-list" class="people-list" aria-label="اختيار أعضاء المجموعة"></ul><button id="create-group-button" type="button" class="primary-button">إنشاء المجموعة</button></div>
       </div>
@@ -788,6 +789,46 @@
             <button id="channel-post-submit" type="submit" class="primary-button">نشر التحديث</button>
           </form>
           <ul id="channel-posts" class="channel-posts" aria-label="تحديثات القناة" aria-live="polite"></ul>
+        </div>
+      </div>
+    </section>
+    <section id="communities-panel" class="communities-panel" role="dialog" aria-modal="true" aria-label="المجتمعات" hidden>
+      <div class="communities-card">
+        <button id="communities-close" type="button" class="quiet-button" aria-label="إغلاق المجتمعات">إغلاق</button>
+        <div id="communities-home-view">
+          <p id="communities-title" class="communities-title" tabindex="-1">المجتمعات</p>
+          <p id="communities-intro" class="communities-intro">انضم إلى مجتمعات عامة وتابع إعلاناتها، أو أنشئ مجتمعك الخاص.</p>
+          <button id="community-create-button" type="button" class="primary-button">إنشاء مجتمع</button>
+          <label for="communities-search">البحث في المجتمعات</label>
+          <input id="communities-search" type="search" placeholder="ابحث عن مجتمع" autocomplete="off">
+          <p id="communities-status" class="communities-status" role="status" aria-live="polite"></p>
+          <ul id="communities-list" class="communities-list" aria-label="المجتمعات العامة"></ul>
+        </div>
+        <div id="communities-create-view" hidden>
+          <p id="communities-create-title" class="communities-title">إنشاء مجتمع</p>
+          <form id="community-create-form" class="community-create-form">
+            <label for="community-name-input">اسم المجتمع</label>
+            <input id="community-name-input" type="text" maxlength="80" required autocomplete="off" placeholder="اسم المجتمع">
+            <label for="community-description-input">وصف المجتمع</label>
+            <textarea id="community-description-input" rows="3" maxlength="500" placeholder="وصف مختصر للمجتمع"></textarea>
+            <button id="community-create-save" type="submit" class="primary-button">حفظ المجتمع</button>
+          </form>
+          <button id="community-create-cancel" type="button" class="quiet-button">إلغاء</button>
+        </div>
+        <div id="community-detail-view" hidden>
+          <button id="community-detail-back" type="button" class="quiet-button">العودة إلى المجتمعات</button>
+          <p id="community-detail-name" class="communities-title" tabindex="-1"></p>
+          <p id="community-detail-description" class="communities-intro"></p>
+          <div class="community-actions">
+            <button id="community-join-toggle" type="button" class="primary-button">الانضمام إلى المجتمع</button>
+            <button id="community-delete-button" type="button" class="danger-button" hidden>حذف المجتمع</button>
+          </div>
+          <form id="community-post-form" class="community-post-form" hidden>
+            <label for="community-post-input">إعلان جديد</label>
+            <textarea id="community-post-input" rows="3" maxlength="5000" placeholder="اكتب إعلانًا لأعضاء المجتمع"></textarea>
+            <button id="community-post-submit" type="submit" class="primary-button">نشر الإعلان</button>
+          </form>
+          <ul id="community-posts" class="community-posts" aria-label="إعلانات المجتمع" aria-live="polite"></ul>
         </div>
       </div>
     </section>
