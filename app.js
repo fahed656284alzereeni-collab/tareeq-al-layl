@@ -982,6 +982,7 @@ const mersalTranslations = {
   "الرسالة غير متاحة":"Message unavailable",
 
   "قائمة رسائل جماعية جديدة":"New broadcast list",
+  "قوائم الرسائل الجماعية":"Broadcast lists",
   "استكشاف القنوات":"Explore channels",
   "استكشاف المجتمعات":"Explore communities",
   "عرض الصور والفيديوهات لمرة واحدة":"Send photos and videos for one-time viewing",
@@ -3090,8 +3091,6 @@ async function renderBlockedUsers() {
 
 function openSettings() {
   mersalTools.closeTool(false);
-  mersalChannels.close();
-  mersalCommunities.close();
   mersalChannels.close();
   mersalCommunities.close();
   if (!currentUser) return;
