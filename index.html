@@ -834,6 +834,20 @@
               <button id="community-edit-cancel" type="button" class="quiet-button">إلغاء</button>
             </div>
           </form>
+          <section id="community-groups-section" class="community-groups-section" aria-label="مجموعات المجتمع" hidden>
+            <p id="community-groups-title" class="community-groups-title">مجموعات المجتمع</p>
+            <button id="community-groups-manage" type="button" class="quiet-button" hidden>إدارة المجموعات</button>
+            <ul id="community-groups-list" class="community-groups-list" aria-label="مجموعات المجتمع"></ul>
+            <div id="community-groups-editor" class="community-groups-editor" hidden>
+              <p id="community-groups-editor-title" class="community-groups-title">إدارة مجموعات المجتمع</p>
+              <p id="community-groups-editor-help" class="communities-intro">اختر المجموعات التي تريد ربطها بهذا المجتمع. يجب أن تكون مشرفًا في المجموعة.</p>
+              <ul id="community-groups-available" class="community-groups-available" aria-label="المجموعات المتاحة"></ul>
+              <div class="community-actions">
+                <button id="community-groups-save" type="button" class="primary-button" disabled>حفظ المجموعات</button>
+                <button id="community-groups-cancel" type="button" class="quiet-button">إلغاء</button>
+              </div>
+            </div>
+          </section>
           <form id="community-post-form" class="community-post-form" hidden>
             <label for="community-post-input">إعلان جديد</label>
             <textarea id="community-post-input" rows="3" maxlength="5000" placeholder="اكتب إعلانًا لأعضاء المجتمع"></textarea>
