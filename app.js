@@ -2344,6 +2344,18 @@ function startNotificationsRealtime() {
         announce("وصلك إشعار جديد، لكن تعذر تحديث القائمة: " + error.message, "error");
       }
     })
+    // When an administrator approves a group join request, the approved
+    // user's membership row is inserted. Refresh that user's conversation
+    // list immediately so the newly available group appears without reload.
+    .on("postgres_changes", {
+      event: "INSERT", schema: "public", table: "conversation_members",
+      filter: "user_id=eq." + currentUser.id
+    }, payload => {
+      if (!payload.new?.conversation_id) return;
+      void loadConversations().catch(error =>
+        console.warn("تعذر إظهار المجموعة بعد الموافقة على طلب الانضمام:", error)
+      );
+    })
     .on("postgres_changes", {
       event: "UPDATE", schema: "public", table: "messages"
     }, payload => {
