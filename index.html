@@ -824,9 +824,18 @@
       <button id="choose-images" type="button" class="attachment-choice">إرسال الصور</button>
       <button id="choose-videos" type="button" class="attachment-choice">إرسال الفيديوهات</button>
       <button id="choose-files" type="button" class="attachment-choice">إرسال الملفات</button>
+      <button id="open-sticker-picker" type="button" class="attachment-choice">إرسال ملصق</button>
     </div>
   </section>
 
+  <section id="sticker-picker-panel" class="sticker-picker-panel" role="dialog" aria-modal="true" aria-label="اختيار ملصق" hidden>
+    <div class="sticker-picker-card">
+      <button id="close-sticker-picker" type="button" class="quiet-button">إغلاق الملصقات</button>
+      <p id="sticker-picker-title" class="sticker-picker-title" tabindex="-1">الملصقات</p>
+      <p class="sticker-picker-description">اختر ملصقًا لإرساله في المحادثة.</p>
+      <div id="sticker-grid" class="sticker-grid" role="group" aria-label="ملصقات جاهزة"></div>
+    </div>
+  </section>
   <section id="poll-composer-panel" class="message-schedule-panel poll-composer-panel" role="dialog" aria-modal="true" aria-label="إنشاء استطلاع رأي" hidden>
     <form id="poll-composer-form" class="message-schedule-card poll-composer-card">
       <button id="close-poll-composer" type="button" class="quiet-button">إلغاء</button>
