@@ -265,6 +265,8 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
           const label = document.createElement("label");
           label.textContent = t("تعديل الإعلان", "Edit announcement");
           const textarea = document.createElement("textarea");
+          textarea.id = "community-post-edit-" + post.id;
+          label.htmlFor = textarea.id;
           textarea.rows = 4;
           textarea.maxLength = 5000;
           textarea.required = true;
