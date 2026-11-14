@@ -492,6 +492,7 @@
               <button id="conversation-info-clear" type="button" class="danger-button">مسح المحادثة من جهازي</button>
               <button id="block-person-button" type="button" class="danger-button" hidden>حظر الشخص</button>
               <button id="group-add-members-button" type="button" class="quiet-button" hidden>إضافة أعضاء</button>
+              <button id="group-settings-open" type="button" class="quiet-button" hidden>إعدادات المجموعة</button>
             </div>
 
             <ul id="group-member-list" class="people-list group-member-list" aria-label="أعضاء المجموعة" hidden></ul>
@@ -504,7 +505,30 @@
               <p id="conversation-search-status" role="status" aria-live="polite">اكتب كلمة لعرض النتائج.</p>
               <ul id="conversation-search-results" class="conversation-search-results"></ul>
             </div>
-          </section>
+          
+            <section id="group-settings-panel" class="group-settings-panel" aria-labelledby="group-settings-title" aria-hidden="true" hidden>
+              <div class="group-settings-header">
+                <button id="group-settings-close" type="button" class="quiet-button">إغلاق إعدادات المجموعة</button>
+                <h2 id="group-settings-title">إعدادات المجموعة</h2>
+              </div>
+              <div class="group-settings-content">
+                <h3>الصلاحيات</h3>
+                <p class="settings-help">يمكن للأعضاء الاطلاع على الصلاحيات الحالية. يقتصر تغييرها على مشرفي المجموعة.</p>
+                <label for="group-settings-send">من يستطيع إرسال الرسائل؟</label>
+                <select id="group-settings-send">
+                  <option value="everyone">جميع الأعضاء</option>
+                  <option value="admins">المشرفون فقط</option>
+                </select>
+                <label for="group-settings-add">من يستطيع إضافة أعضاء؟</label>
+                <select id="group-settings-add">
+                  <option value="everyone">جميع الأعضاء</option>
+                  <option value="admins">المشرفون فقط</option>
+                </select>
+                <p class="settings-help">تغيير اسم المجموعة ووصفها وصورتها متاح للمشرفين فقط.</p>
+                <button id="group-settings-save" type="button" class="quiet-button" disabled>حفظ إعدادات المجموعة</button>
+              </div>
+            </section>
+</section>
           <section id="group-member-options-panel" class="group-member-options-panel" role="dialog" aria-modal="true" aria-label="خيارات عضو المجموعة" hidden>
             <div class="group-member-options-card">
               <button id="close-group-member-options" type="button" class="quiet-button">إغلاق</button>
