@@ -1568,6 +1568,16 @@ const messageScheduleTimeInput = $("#message-schedule-time");
 const messageSchedulePreview = $("#message-schedule-preview");
 const confirmMessageScheduleButton = $("#confirm-message-schedule");
 const messageScheduleHelp = $("#message-schedule-help");
+const attachmentChooser = $("#attachment-chooser");
+const closeAttachmentChooserButton = $("#close-attachment-chooser");
+const imageFileInput = $("#image-file-input");
+const videoFileInput = $("#video-file-input");
+const documentFileInput = $("#document-file-input");
+const createPollFromAttachmentsButton = $("#create-poll-from-attachments");
+const openStickerPickerButton = $("#open-sticker-picker");
+const stickerPickerPanel = $("#sticker-picker-panel");
+const closeStickerPickerButton = $("#close-sticker-picker");
+const stickerGrid = $("#sticker-grid");
 function renderStickerPicker() {
   if (!stickerGrid) return;
   const english = document.documentElement.lang === "en";
@@ -1607,19 +1617,19 @@ stickerPickerPanel?.addEventListener("click", event => {
   if (event.target === stickerPickerPanel) closeStickerPicker();
 });
 stickerPickerPanel?.addEventListener("keydown", event => {
-  if (event.key === "Escape") { event.preventDefault(); closeStickerPicker(); }
+  if (event.key === "Escape") { event.preventDefault(); closeStickerPicker(); return; }
+  if (event.key !== "Tab") return;
+  const focusable = [...stickerPickerPanel.querySelectorAll('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(element => !element.hidden && element.getClientRects().length);
+  if (!focusable.length) { event.preventDefault(); $("#sticker-picker-title").focus(); return; }
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
 });
-const attachmentChooser = $("#attachment-chooser");
-const closeAttachmentChooserButton = $("#close-attachment-chooser");
-const imageFileInput = $("#image-file-input");
-const videoFileInput = $("#video-file-input");
-const documentFileInput = $("#document-file-input");
-const createPollFromAttachmentsButton = $("#create-poll-from-attachments");
-const openStickerPickerButton = $("#open-sticker-picker");
-const stickerPickerPanel = $("#sticker-picker-panel");
-const closeStickerPickerButton = $("#close-sticker-picker");
-const stickerGrid = $("#sticker-grid");
-
+const stickerLanguageObserver = new MutationObserver(records => {
+  if (records.some(record => record.attributeName === "lang") && !stickerPickerPanel.hidden) renderStickerPicker();
+});
+stickerLanguageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
 const pollComposerPanel = $("#poll-composer-panel");
 const pollComposerForm = $("#poll-composer-form");
 const pollComposerQuestion = $("#poll-question-input");
