@@ -1704,6 +1704,23 @@ function trapDialogTabKey(event, dialog) {
     first.focus();
   }
 }
+function keepDialogFocusInside(dialog, event) {
+  if (event.key !== "Tab") return;
+  const focusable = [...dialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(element => !element.hidden && element.getAttribute("aria-hidden") !== "true" && element.getClientRects().length);
+  if (!focusable.length) {
+    event.preventDefault();
+    if (!dialog.hasAttribute("tabindex")) dialog.setAttribute("tabindex", "-1");
+    dialog.focus();
+    return;
+  }
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+    event.preventDefault(); last.focus();
+  } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+    event.preventDefault(); first.focus();
+  }
+}
 function closeAttachmentViewer() {
   attachmentViewer.hidden = true;
   attachmentViewerContent.replaceChildren();
