@@ -4797,23 +4797,57 @@ function setOutgoingMessageStatus(messageNode, deliveredCount = 0, readCount = 0
   const delivered = Math.max(0, Number(deliveredCount) || 0);
   const read = Math.max(0, Number(readCount) || 0);
   messageNode.dataset.deliveredCount = String(delivered);
-  const readNode = footer.querySelector(".message-read-state");
-  const deliveryNode = footer.querySelector(".message-delivery-state");
   const canShowRead = Boolean(isGroup || privacySettings.read_receipts_enabled);
-  if (canShowRead && read > 0) {
-    deliveryNode?.remove();
-    const label = readNode || safeText("span", "message-read-state", "");
-    label.textContent = isGroup ? "مقروء من " + read : "مقروء";
-    if (!label.isConnected) footer.append(label);
+  const isEnglish = document.documentElement.lang === "en";
+  const hasBeenRead = canShowRead && read > 0;
+  const hasBeenDelivered = delivered > 0;
+  const className = hasBeenRead ? "message-read-state" : "message-delivery-state";
+  const label = footer.querySelector(".message-read-state, .message-delivery-state") || safeText("span", className, "");
+  label.className = className;
+  const tick = document.createElement("span");
+  tick.className = "message-status-ticks";
+  tick.setAttribute("aria-hidden", "true");
+  tick.textContent = hasBeenRead || hasBeenDelivered ? "✓✓" : "✓";
+  const statusText = document.createElement("span");
+  statusText.className = "message-status-text";
+  statusText.textContent = hasBeenRead
+    ? (isGroup ? (isEnglish ? "Read by " + read : "مقروء من " + read) : (isEnglish ? "Read" : "تمت القراءة"))
+    : isGroup
+      ? (hasBeenDelivered ? (isEnglish ? "Delivered to " + delivered : "تم التسليم إلى " + delivered) : (isEnglish ? "Sent" : "تم الإرسال"))
+      : (hasBeenDelivered ? (isEnglish ? "Delivered" : "تم التسليم") : (isEnglish ? "Sent" : "تم الإرسال"));
+  const accessibleStatus = statusText.textContent;
+  label.replaceChildren(tick, statusText);
+  label.setAttribute("aria-label", accessibleStatus);
+  label.setAttribute("title", accessibleStatus);
+  if (!label.isConnected) footer.append(label);
+}
+
+async function refreshOutgoingMessageStatus(messageId, conversation = activeConversation, partner = activePartner) {
+  if (!currentUser || !messageId || !conversation) return;
+  const isGroup = Boolean(conversation.is_group);
+  let deliveryQuery = supabase.from("message_deliveries").select("user_id").eq("message_id", messageId);
+  if (!isGroup && partner?.id) deliveryQuery = deliveryQuery.eq("user_id", partner.id);
+  const deliveryResult = await deliveryQuery;
+  if (deliveryResult.error) {
+    console.warn("تعذر تحديث حالة تسليم الرسالة:", deliveryResult.error.message);
     return;
   }
-  if (canShowRead && readNode) return;
-  readNode?.remove();
-  const label = deliveryNode || safeText("span", "message-delivery-state", "");
-  label.textContent = isGroup
-    ? (delivered > 0 ? "تم التسليم إلى " + delivered : "تم الإرسال")
-    : (delivered > 0 ? "تم التسليم" : "تم الإرسال");
-  if (!label.isConnected) footer.append(label);
+  let readCount = 0;
+  if (isGroup || privacySettings.read_receipts_enabled) {
+    let readQuery = supabase.from("message_reads").select("user_id").eq("message_id", messageId);
+    if (!isGroup && partner?.id) readQuery = readQuery.eq("user_id", partner.id);
+    const readResult = await readQuery;
+    if (readResult.error) {
+      console.warn("تعذر تحديث حالة قراءة الرسالة:", readResult.error.message);
+      return;
+    }
+    readCount = (readResult.data || []).length;
+  }
+  if (activeConversation?.id !== conversation.id) return;
+  const messageNode = messagesList.querySelector('[data-message-id="' + messageId + '"]');
+  if (messageNode?.classList.contains("mine")) {
+    setOutgoingMessageStatus(messageNode, (deliveryResult.data || []).length, readCount, isGroup);
+  }
 }
 
 function appendMessage(message) {
@@ -5346,7 +5380,10 @@ pollComposerForm.addEventListener("submit", async event => {
       throw messageError;
     }
     closePollComposer();
-    if (activeConversation?.id === conversation.id) appendMessage(message);
+    if (activeConversation?.id === conversation.id) {
+      appendMessage(message);
+      void refreshOutgoingMessageStatus(message.id, activeConversation, activePartner).catch(error => console.warn("Could not refresh poll message status:", error));
+    }
     void loadConversations().catch(error => console.warn("Could not refresh conversations after poll creation:", error));
     const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: message.id } });
     if (pushError) console.warn("Poll push notification could not be sent:", pushError.message);
@@ -5401,6 +5438,7 @@ async function uploadAttachments(fileList, options = {}) {
         throw error;
       }
       appendMessage(data);
+      void refreshOutgoingMessageStatus(data.id, activeConversation, activePartner).catch(error => console.warn("Could not refresh attachment message status:", error));
       await loadConversations();
       const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
       if (pushError) console.warn("Push notification could not be sent:", pushError.message);
@@ -5450,6 +5488,7 @@ messageForm.addEventListener("submit", async (event) => {
     replyingToMessage = null;
     replyingTo.hidden = true;
     appendMessage(data);
+    void refreshOutgoingMessageStatus(data.id, activeConversation, activePartner).catch(error => console.warn("Could not refresh sent message status:", error));
     await loadConversations();
     const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
     if (pushError) console.warn("Push notification could not be sent:", pushError.message);
