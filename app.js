@@ -4785,6 +4785,24 @@ function setGroupInviteUrl(token){
 }
 async function loadGroupInviteLink(conversationId,isAdmin){
   if(!groupInviteRow||!groupInviteUrl)return;
+  if(!isAdmin){
+    const {data:settings,error}=await supabase.from("group_settings")
+      .select("add_members_by").eq("conversation_id",conversationId).maybeSingle();
+    if(error){
+      groupInviteRow.hidden=true;
+      groupInviteUrl.value="";
+      groupInviteTokenCache.delete(conversationId);
+      console.warn("تعذر التحقق من صلاحية رابط الدعوة:",error.message);
+      return;
+    }
+    if((settings?.add_members_by||"admins")!=="everyone"){
+      groupInviteRow.hidden=true;
+      groupInviteUrl.value="";
+      groupInviteTokenCache.delete(conversationId);
+      if(groupInviteStatus)groupInviteStatus.textContent="";
+      return;
+    }
+  }
   groupInviteRow.hidden=false;
   groupInviteResetButton.hidden=!isAdmin;
   if(groupInviteRetryButton)groupInviteRetryButton.hidden=true;
@@ -4801,9 +4819,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
     request=(async()=>{
       let timeoutId=null;
       try{
-        // The RPC checks group membership and creates the token atomically.
-        // Avoid a direct table read here: its RLS policy adds no value and can
-        // leave the invite screen waiting before the authorized RPC is reached.
+        // The RPC enforces the group's add-members permission before returning a token.
         const rpc=supabase.rpc("get_or_create_group_invite",{p_conversation_id:conversationId});
         const timeout=new Promise((_,reject)=>{
           timeoutId=window.setTimeout(()=>reject(new Error("انتهت مهلة تحميل رابط الدعوة.")),12000);
@@ -5339,8 +5355,11 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
   groupSettingsSaving = true;
   updateGroupSettingsSaveButton();
   try {
+    const conversationId = activeConversation.id;
+    let previousAddMembersBy = "admins";
+    try { previousAddMembersBy = JSON.parse(groupSettingsSnapshot || "{}").add_members_by || "admins"; } catch {}
     const payload = {
-      conversation_id: activeConversation.id,
+      conversation_id: conversationId,
       send_messages_by: groupSettingsSendSelect.value,
       add_members_by: groupSettingsAddSelect.value,
       require_admin_approval: groupSettingsApprovalCheckbox.checked,
@@ -5348,6 +5367,13 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
     };
     const { error } = await supabase.from("group_settings").upsert(payload, { onConflict: "conversation_id" });
     if (error) throw error;
+    if (previousAddMembersBy !== payload.add_members_by && payload.add_members_by === "admins") {
+      groupInviteTokenCache.delete(conversationId);
+      if (activeConversation?.id === conversationId) {
+        const permissions = await getCurrentGroupPermissions();
+        if (activeConversation?.id === conversationId) await loadGroupInviteLink(conversationId, permissions.isAdmin);
+      }
+    }
     groupSettingsSnapshot = getGroupSettingsSnapshot();
     updateGroupSettingsSaveButton();
     announce("تم حفظ إعدادات المجموعة.");
