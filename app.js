@@ -1017,6 +1017,59 @@ const mersalTranslations = {
   "تعذر حذف الرد: ":"Could not delete reply: ",
   "تم حذف الرد.":"Reply deleted.",
 
+  "القنوات":"Channels",
+  "تابع القنوات وانشر تحديثاتك":"Follow channels and publish your updates",
+  "اكتشف القنوات العامة وتابع ما يهمك، أو أنشئ قناتك الخاصة.":"Discover public channels, follow what matters, or create your own channel.",
+  "إنشاء قناة":"Create a channel",
+  "ابحث عن قناة":"Search channels",
+  "اكتب اسم القناة":"Enter a channel name",
+  "إغلاق القنوات":"Close channels",
+  "العودة إلى القنوات":"Back to channels",
+  "تعديل معلومات القناة":"Edit channel details",
+  "حذف القناة":"Delete channel",
+  "متابعة القناة":"Follow channel",
+  "إلغاء متابعة القناة":"Unfollow channel",
+  "إيقاف إشعارات القناة":"Turn off channel notifications",
+  "تشغيل إشعارات القناة":"Turn on channel notifications",
+  "اكتب تحديثًا للقناة":"Write a channel update",
+  "اكتب تحديثك هنا":"Write your update here",
+  "نشر التحديث":"Publish update",
+  "منشورات القناة":"Channel posts",
+  "لا توجد قنوات عامة بعد.":"No public channels yet.",
+  "لا توجد نتائج مطابقة.":"No matching results.",
+  "لا توجد تحديثات في هذه القناة بعد.":"No updates in this channel yet.",
+  "اكتب اسمًا للقناة.":"Enter a channel name.",
+  "اسم القناة":"Channel name",
+  "وصف القناة (اختياري)":"Channel description (optional)",
+  "اكتب وصفًا للقناة":"Enter a channel description",
+  "تم إنشاء القناة.":"Channel created.",
+  "تعذر إنشاء القناة: ":"Could not create channel: ",
+  "تعذر تحميل القنوات: ":"Could not load channels: ",
+  "تعذر تحميل منشورات القناة: ":"Could not load channel posts: ",
+  "تمت متابعة القناة.":"Channel followed.",
+  "تم إلغاء متابعة القناة.":"Channel unfollowed.",
+  "تعذر تحديث متابعة القناة: ":"Could not update channel follow: ",
+  "تم تحديث إشعارات القناة.":"Channel notification settings updated.",
+  "تعذر تحديث إشعارات القناة: ":"Could not update channel notifications: ",
+  "تم نشر التحديث.":"Update published.",
+  "تعذر نشر التحديث: ":"Could not publish update: ",
+  "تم تحديث القناة.":"Channel updated.",
+  "تعذر تحديث القناة: ":"Could not update channel: ",
+  "هل تريد حذف هذه القناة وكل منشوراتها؟":"Delete this channel and all its posts?",
+  "تم حذف القناة.":"Channel deleted.",
+  "تعذر حذف القناة: ":"Could not delete channel: ",
+  "تعديل المنشور":"Edit post",
+  "حذف المنشور":"Delete post",
+  "هل تريد حذف هذا المنشور؟":"Delete this post?",
+  "تم تحديث المنشور.":"Post updated.",
+  "تم حذف المنشور.":"Post deleted.",
+  "تعذر تعديل المنشور: ":"Could not edit post: ",
+  "تعذر حذف المنشور: ":"Could not delete post: ",
+  "قناة تتابعها":"Following",
+  "قناتي":"My channel",
+  "صاحب القناة":"Channel owner",
+  "تم التعديل":"Edited",
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
@@ -1400,6 +1453,342 @@ function openToolsTab() {
   setActiveBottomTab("tools");
   document.querySelector("#tools-title")?.focus();
 }
+
+const openChannelsButton = $("#open-channels");
+const channelsPanel = $("#channels-panel");
+const closeChannelsPanelButton = $("#close-channels-panel");
+const channelsListView = $("#channels-list-view");
+const channelDetailView = $("#channel-detail-view");
+const channelsList = $("#channels-list");
+const channelsSearch = $("#channels-search");
+const createChannelButton = $("#create-channel-button");
+const channelBackButton = $("#channel-back-button");
+const channelDetailName = $("#channel-detail-name");
+const channelDetailDescription = $("#channel-detail-description");
+const channelOwnerActions = $("#channel-owner-actions");
+const channelFollowActions = $("#channel-follow-actions");
+const channelFollowButton = $("#channel-follow-button");
+const channelNotificationsButton = $("#channel-notifications-button");
+const editChannelButton = $("#edit-channel-button");
+const deleteChannelButton = $("#delete-channel-button");
+const channelPostComposer = $("#channel-post-composer");
+const channelPostInput = $("#channel-post-input");
+const publishChannelPostButton = $("#publish-channel-post");
+const channelPostsList = $("#channel-posts-list");
+let activeChannel = null;
+let activeChannelFollow = null;
+let channelDirectoryCache = [];
+let channelsReturnFocus = null;
+function closeChannelsPanel() {
+  if (!channelsPanel || channelsPanel.hidden) return;
+  channelsPanel.hidden = true;
+  document.body.classList.remove("channels-open");
+  activeChannel = null;
+  activeChannelFollow = null;
+  channelsReturnFocus?.focus?.();
+}
+async function loadChannels() {
+  if (!currentUser || !channelsList) return;
+  const english = document.documentElement.lang === "en";
+  channelsList.replaceChildren();
+  const [channelsResult, followsResult] = await Promise.all([
+    supabase.from("channels").select("id,owner_id,name,description,created_at,updated_at").eq("is_public", true).order("updated_at", { ascending: false }),
+    supabase.from("channel_followers").select("channel_id,notifications_enabled").eq("follower_id", currentUser.id)
+  ]);
+  if (channelsResult.error || followsResult.error) throw channelsResult.error || followsResult.error;
+  const follows = new Map((followsResult.data || []).map(row => [row.channel_id, row]));
+  channelDirectoryCache = (channelsResult.data || []).map(channel => ({ ...channel, follow: follows.get(channel.id) || null }));
+  renderChannelDirectory();
+}
+function renderChannelDirectory() {
+  const english = document.documentElement.lang === "en";
+  const term = (channelsSearch?.value || "").trim().toLocaleLowerCase();
+  channelsList.replaceChildren();
+  const rows = channelDirectoryCache.filter(channel =>
+    (channel.name + " " + (channel.description || "")).toLocaleLowerCase().includes(term)
+  );
+  if (!rows.length) {
+    channelsList.append(safeText("li", "empty-item", term
+      ? (english ? "No matching results." : "لا توجد نتائج مطابقة.")
+      : (english ? "No public channels yet." : "لا توجد قنوات عامة بعد.")));
+    return;
+  }
+  for (const channel of rows) {
+    const item = document.createElement("li");
+    item.className = "channel-directory-item";
+    const open = safeText("button", "channel-directory-open", channel.name);
+    open.type = "button";
+    open.setAttribute("aria-label", channel.name + (channel.owner_id === currentUser.id
+      ? (english ? ", your channel" : "، قناتك")
+      : channel.follow ? (english ? ", following" : "، تتابعها") : ""));
+    const description = safeText("p", "channel-directory-description", channel.description || (english ? "No description" : "لا يوجد وصف"));
+    const status = safeText("span", "channel-directory-status",
+      channel.owner_id === currentUser.id
+        ? (english ? "Your channel" : "قناتي")
+        : channel.follow ? (english ? "Following" : "تتابعها") : (english ? "Public channel" : "قناة عامة"));
+    open.append(description, status);
+    open.addEventListener("click", () => { void openChannelDetails(channel, open); });
+    item.append(open);
+    channelsList.append(item);
+  }
+}
+async function openChannelDetails(channel, returnFocus = null) {
+  const english = document.documentElement.lang === "en";
+  activeChannel = channel;
+  activeChannelFollow = channel.follow || null;
+  channelsReturnFocus = returnFocus || channelsReturnFocus;
+  channelsListView.hidden = true;
+  channelDetailView.hidden = false;
+  channelDetailName.textContent = channel.name;
+  channelDetailDescription.textContent = channel.description || "";
+  const own = channel.owner_id === currentUser.id;
+  channelOwnerActions.hidden = !own;
+  channelFollowActions.hidden = own;
+  channelPostComposer.hidden = !own;
+  channelFollowButton.textContent = activeChannelFollow
+    ? (english ? "Unfollow channel" : "إلغاء متابعة القناة")
+    : (english ? "Follow channel" : "متابعة القناة");
+  channelNotificationsButton.hidden = !activeChannelFollow;
+  channelNotificationsButton.setAttribute("aria-pressed", String(Boolean(activeChannelFollow?.notifications_enabled)));
+  channelNotificationsButton.textContent = activeChannelFollow?.notifications_enabled
+    ? (english ? "Turn off channel notifications" : "إيقاف إشعارات القناة")
+    : (english ? "Turn on channel notifications" : "تشغيل إشعارات القناة");
+  channelPostInput.value = "";
+  publishChannelPostButton.disabled = true;
+  await loadChannelPosts(channel.id);
+  channelDetailName.focus();
+}
+async function loadChannelPosts(channelId) {
+  const english = document.documentElement.lang === "en";
+  channelPostsList.replaceChildren();
+  const { data: posts, error } = await supabase.from("channel_posts")
+    .select("id,channel_id,author_id,body,created_at,edited_at,is_deleted")
+    .eq("channel_id", channelId).eq("is_deleted", false).order("created_at", { ascending: false });
+  if (error) throw error;
+  if (activeChannel?.id !== channelId) return;
+  if (!posts?.length) {
+    channelPostsList.append(safeText("li", "empty-item", english ? "No updates in this channel yet." : "لا توجد تحديثات في هذه القناة بعد."));
+    return;
+  }
+  for (const post of posts) {
+    const item = document.createElement("li");
+    item.className = "channel-post-item";
+    item.append(
+      safeText("p", "channel-post-body", post.body),
+      safeText("time", "channel-post-time", new Intl.DateTimeFormat(english ? "en" : "ar-JO", { dateStyle: "medium", timeStyle: "short" }).format(new Date(post.created_at)))
+    );
+    if (post.edited_at) item.append(safeText("span", "channel-post-edited", english ? "Edited" : "تم التعديل"));
+    if (post.author_id === currentUser.id && activeChannel.owner_id === currentUser.id) {
+      const actions = document.createElement("div");
+      actions.className = "channel-post-actions";
+      const edit = safeText("button", "quiet-button", english ? "Edit post" : "تعديل المنشور");
+      edit.type = "button";
+      edit.addEventListener("click", async () => {
+        const next = window.prompt(english ? "Edit post" : "تعديل المنشور", post.body);
+        if (next === null) return;
+        const body = next.trim();
+        if (!body || body.length > 5000) {
+          announce(english ? "Enter a post between 1 and 5000 characters." : "يجب أن يتراوح المنشور بين حرف واحد و5000 حرف.", "error");
+          return;
+        }
+        edit.disabled = true;
+        const result = await supabase.from("channel_posts").update({ body, edited_at: new Date().toISOString() }).eq("id", post.id).eq("author_id", currentUser.id);
+        if (result.error) {
+          edit.disabled = false;
+          announce((english ? "Could not edit post: " : "تعذر تعديل المنشور: ") + result.error.message, "error");
+          return;
+        }
+        await loadChannelPosts(channelId);
+        announce(english ? "Post updated." : "تم تحديث المنشور.", "success");
+      });
+      const remove = safeText("button", "danger-button", english ? "Delete post" : "حذف المنشور");
+      remove.type = "button";
+      remove.addEventListener("click", async () => {
+        if (!window.confirm(english ? "Delete this post?" : "هل تريد حذف هذا المنشور؟")) return;
+        remove.disabled = true;
+        const result = await supabase.from("channel_posts").delete().eq("id", post.id).eq("author_id", currentUser.id);
+        if (result.error) {
+          remove.disabled = false;
+          announce((english ? "Could not delete post: " : "تعذر حذف المنشور: ") + result.error.message, "error");
+          return;
+        }
+        await loadChannelPosts(channelId);
+        announce(english ? "Post deleted." : "تم حذف المنشور.", "success");
+      });
+      actions.append(edit, remove);
+      item.append(actions);
+    }
+    channelPostsList.append(item);
+  }
+}
+openChannelsButton?.addEventListener("click", async () => {
+  if (!currentUser) return;
+  channelsReturnFocus = openChannelsButton;
+  channelsPanel.hidden = false;
+  document.body.classList.add("channels-open");
+  channelsListView.hidden = false;
+  channelDetailView.hidden = true;
+  channelsSearch.value = "";
+  $("#channels-title").focus();
+  try { await loadChannels(); }
+  catch (error) { announce((document.documentElement.lang === "en" ? "Could not load channels: " : "تعذر تحميل القنوات: ") + (error.message || ""), "error"); }
+});
+closeChannelsPanelButton?.addEventListener("click", closeChannelsPanel);
+channelBackButton?.addEventListener("click", () => {
+  channelDetailView.hidden = true;
+  channelsListView.hidden = false;
+  void loadChannels().catch(error => announce((document.documentElement.lang === "en" ? "Could not load channels: " : "تعذر تحميل القنوات: ") + error.message, "error"));
+  channelsSearch.focus();
+});
+channelsSearch?.addEventListener("input", renderChannelDirectory);
+channelsPanel?.addEventListener("keydown", event => {
+  if (event.key === "Escape") { event.preventDefault(); closeChannelsPanel(); }
+});
+createChannelButton?.addEventListener("click", async () => {
+  const english = document.documentElement.lang === "en";
+  const name = window.prompt(english ? "Channel name" : "اسم القناة");
+  if (name === null) return;
+  const cleanName = name.trim();
+  if (!cleanName || cleanName.length > 80) {
+    announce(english ? "Enter a channel name between 1 and 80 characters." : "اكتب اسم قناة من حرف واحد إلى 80 حرفًا.", "error");
+    return;
+  }
+  const description = window.prompt(english ? "Channel description (optional)" : "وصف القناة (اختياري)") || "";
+  if (description.length > 500) {
+    announce(english ? "The channel description must be 500 characters or less." : "يجب ألا يتجاوز وصف القناة 500 حرف.", "error");
+    return;
+  }
+  createChannelButton.disabled = true;
+  try {
+    const { data, error } = await supabase.from("channels")
+      .insert({ owner_id: currentUser.id, name: cleanName, description: description.trim(), is_public: true })
+      .select("id,owner_id,name,description,created_at,updated_at").single();
+    if (error) throw error;
+    announce(english ? "Channel created." : "تم إنشاء القناة.", "success");
+    await loadChannels();
+    const channel = { ...data, follow: null };
+    await openChannelDetails(channel, createChannelButton);
+  } catch (error) {
+    announce((english ? "Could not create channel: " : "تعذر إنشاء القناة: ") + (error.message || ""), "error");
+  } finally { createChannelButton.disabled = false; }
+});
+channelFollowButton?.addEventListener("click", async () => {
+  if (!activeChannel) return;
+  const english = document.documentElement.lang === "en";
+  channelFollowButton.disabled = true;
+  try {
+    if (activeChannelFollow) {
+      const result = await supabase.from("channel_followers").delete()
+        .eq("channel_id", activeChannel.id).eq("follower_id", currentUser.id);
+      if (result.error) throw result.error;
+      activeChannelFollow = null;
+      announce(english ? "Channel unfollowed." : "تم إلغاء متابعة القناة.", "success");
+    } else {
+      const result = await supabase.from("channel_followers")
+        .insert({ channel_id: activeChannel.id, follower_id: currentUser.id, notifications_enabled: true });
+      if (result.error) throw result.error;
+      activeChannelFollow = { channel_id: activeChannel.id, notifications_enabled: true };
+      announce(english ? "Channel followed." : "تمت متابعة القناة.", "success");
+    }
+    activeChannel.follow = activeChannelFollow;
+    channelFollowButton.textContent = activeChannelFollow
+      ? (english ? "Unfollow channel" : "إلغاء متابعة القناة")
+      : (english ? "Follow channel" : "متابعة القناة");
+    channelNotificationsButton.hidden = !activeChannelFollow;
+    channelNotificationsButton.textContent = english ? "Turn off channel notifications" : "إيقاف إشعارات القناة";
+    await loadChannels();
+  } catch (error) {
+    announce((english ? "Could not update channel follow: " : "تعذر تحديث متابعة القناة: ") + (error.message || ""), "error");
+  } finally { channelFollowButton.disabled = false; }
+});
+channelNotificationsButton?.addEventListener("click", async () => {
+  if (!activeChannel || !activeChannelFollow) return;
+  const english = document.documentElement.lang === "en";
+  const next = !activeChannelFollow.notifications_enabled;
+  channelNotificationsButton.disabled = true;
+  const result = await supabase.from("channel_followers").update({ notifications_enabled: next })
+    .eq("channel_id", activeChannel.id).eq("follower_id", currentUser.id);
+  if (result.error) {
+    announce((english ? "Could not update channel notifications: " : "تعذر تحديث إشعارات القناة: ") + result.error.message, "error");
+  } else {
+    activeChannelFollow.notifications_enabled = next;
+    channelNotificationsButton.textContent = next
+      ? (english ? "Turn off channel notifications" : "إيقاف إشعارات القناة")
+      : (english ? "Turn on channel notifications" : "تشغيل إشعارات القناة");
+    channelNotificationsButton.setAttribute("aria-pressed", String(next));
+    announce(english ? "Channel notification settings updated." : "تم تحديث إشعارات القناة.", "success");
+  }
+  channelNotificationsButton.disabled = false;
+});
+editChannelButton?.addEventListener("click", async () => {
+  if (!activeChannel || activeChannel.owner_id !== currentUser.id) return;
+  const english = document.documentElement.lang === "en";
+  const name = window.prompt(english ? "Channel name" : "اسم القناة", activeChannel.name);
+  if (name === null) return;
+  const cleanName = name.trim();
+  if (!cleanName || cleanName.length > 80) {
+    announce(english ? "Enter a channel name between 1 and 80 characters." : "اكتب اسم قناة من حرف واحد إلى 80 حرفًا.", "error");
+    return;
+  }
+  const description = window.prompt(english ? "Channel description (optional)" : "وصف القناة (اختياري)", activeChannel.description || "");
+  if (description === null) return;
+  if (description.length > 500) {
+    announce(english ? "The channel description must be 500 characters or less." : "يجب ألا يتجاوز وصف القناة 500 حرف.", "error");
+    return;
+  }
+  const result = await supabase.from("channels").update({ name: cleanName, description: description.trim(), updated_at: new Date().toISOString() })
+    .eq("id", activeChannel.id).eq("owner_id", currentUser.id);
+  if (result.error) {
+    announce((english ? "Could not update channel: " : "تعذر تحديث القناة: ") + result.error.message, "error");
+    return;
+  }
+  activeChannel.name = cleanName;
+  activeChannel.description = description.trim();
+  channelDetailName.textContent = cleanName;
+  channelDetailDescription.textContent = description.trim();
+  await loadChannels();
+  announce(english ? "Channel updated." : "تم تحديث القناة.", "success");
+});
+deleteChannelButton?.addEventListener("click", async () => {
+  if (!activeChannel || activeChannel.owner_id !== currentUser.id) return;
+  const english = document.documentElement.lang === "en";
+  if (!window.confirm(english ? "Delete this channel and all its posts?" : "هل تريد حذف هذه القناة وكل منشوراتها؟")) return;
+  deleteChannelButton.disabled = true;
+  const result = await supabase.from("channels").delete().eq("id", activeChannel.id).eq("owner_id", currentUser.id);
+  if (result.error) {
+    deleteChannelButton.disabled = false;
+    announce((english ? "Could not delete channel: " : "تعذر حذف القناة: ") + result.error.message, "error");
+    return;
+  }
+  activeChannel = null;
+  channelDetailView.hidden = true;
+  channelsListView.hidden = false;
+  await loadChannels();
+  announce(english ? "Channel deleted." : "تم حذف القناة.", "success");
+  channelsSearch.focus();
+});
+channelPostInput?.addEventListener("input", () => {
+  publishChannelPostButton.disabled = !channelPostInput.value.trim() || channelPostInput.value.trim().length > 5000;
+});
+publishChannelPostButton?.addEventListener("click", async () => {
+  if (!activeChannel || activeChannel.owner_id !== currentUser.id) return;
+  const english = document.documentElement.lang === "en";
+  const body = channelPostInput.value.trim();
+  if (!body || body.length > 5000) return;
+  publishChannelPostButton.disabled = true;
+  const result = await supabase.from("channel_posts").insert({
+    channel_id: activeChannel.id, author_id: currentUser.id, body
+  });
+  if (result.error) {
+    publishChannelPostButton.disabled = false;
+    announce((english ? "Could not publish update: " : "تعذر نشر التحديث: ") + result.error.message, "error");
+    return;
+  }
+  channelPostInput.value = "";
+  await loadChannelPosts(activeChannel.id);
+  announce(english ? "Update published." : "تم نشر التحديث.", "success");
+});
+
 function openStatusTab() {
   mersalTools.closeTool(false);
   mersalChannels.close();
