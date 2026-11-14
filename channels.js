@@ -66,6 +66,10 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     setText(editCancelButton, "إلغاء", "Cancel");
     setAttr(editNameInput, "aria-label", "اسم القناة", "Channel name");
     setAttr(editDescriptionInput, "aria-label", "وصف القناة", "Channel description");
+    setText($("#channel-edit-form label[for='channel-edit-name']"), "اسم القناة", "Channel name");
+    setText($("#channel-edit-form label[for='channel-edit-description']"), "وصف القناة", "Channel description");
+    if (editNameInput) editNameInput.placeholder = t("اسم القناة", "Channel name");
+    if (editDescriptionInput) editDescriptionInput.placeholder = t("وصف مختصر للقناة", "A short channel description");
     setAttr(panel, "aria-label", "القنوات", "Channels");
     setAttr(closeButton, "aria-label", "إغلاق القنوات", "Close channels");
     setAttr(nameInput, "aria-label", "اسم القناة", "Channel name");
