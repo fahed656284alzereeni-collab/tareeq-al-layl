@@ -538,6 +538,7 @@
               <button id="video-call-button" type="button" class="quiet-button">مكالمة مرئية</button>
               <button id="refresh-chat" type="button" class="quiet-button">تحديث الرسائل</button>
               <button id="scheduled-messages-button" type="button" class="quiet-button" aria-controls="scheduled-messages-panel">الرسائل المجدولة</button>
+              <button id="starred-messages-button" type="button" class="quiet-button" aria-controls="starred-messages-panel">الرسائل المميزة بنجمة</button>
             </div>
           </div>
           <section id="conversation-info" class="conversation-info" hidden>
@@ -628,6 +629,12 @@
               <input id="message-schedule-time" type="datetime-local" required>
               <p id="message-schedule-help" class="settings-help" role="status" aria-live="polite">اختر التاريخ والوقت، وسيتم إرسال الرسالة تلقائيًا حتى لو أغلقت مرسال.</p>
               <button id="confirm-message-schedule" type="button" class="primary-button">جدولة الرسالة</button>
+            </div>
+          </section>
+          <section id="starred-messages-panel" class="starred-messages-panel" role="dialog" aria-modal="true" aria-label="الرسائل المميزة بنجمة" hidden>
+            <div class="starred-messages-card">
+              <button id="close-starred-messages" type="button" class="quiet-button">إغلاق</button>
+              <ul id="starred-messages-list" class="starred-messages-list" aria-label="قائمة الرسائل المميزة بنجمة" aria-live="polite"></ul>
             </div>
           </section>
           <section id="scheduled-messages-panel" class="scheduled-messages-panel" role="dialog" aria-modal="true" aria-label="الرسائل المجدولة" hidden>
