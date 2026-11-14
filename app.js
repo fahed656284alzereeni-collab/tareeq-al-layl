@@ -1,4 +1,4 @@
-import { initMersalTools } from "./tools.js?v=20261114-speed-v1";
+import { initMersalTools } from "./tools.js?v=20261114-clean-tools-v1";
 import { initMersalChannels } from "./channels.js?v=20261114-channel-inline-edit-v1";
 import { initMersalCommunities } from "./communities.js?v=20261114-communities-v5";
 
