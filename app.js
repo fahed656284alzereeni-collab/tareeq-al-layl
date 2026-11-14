@@ -1400,6 +1400,7 @@ let groupMemberOptionsReturnFocus = null;
 const groupLeaveButton = $("#group-leave");
 const groupDeleteEveryoneButton = $("#group-delete-everyone");
 const voiceCallButton = $("#voice-call-button");
+const videoCallButton = $("#video-call-button");
 const voiceCallPanel = $("#voice-call-panel");
 const voiceCallStatus = $("#voice-call-status");
 const voiceCallParticipants = $("#voice-call-participants");
@@ -5545,6 +5546,7 @@ async function finishVoiceCall() {
   else if (voiceCallButton?.isConnected && !chatView.hidden) voiceCallButton.focus();
 }
 voiceCallButton.addEventListener("click", () => { void startVoiceCall(activeConversation, voiceCallButton); });
+videoCallButton?.addEventListener("click", () => { void startVoiceCall(activeConversation, videoCallButton, "video"); });
 $("#group-info-call-button")?.addEventListener("click", () => { if (!voiceCallButton.disabled) voiceCallButton.click(); });
 voiceCallAcceptButton.addEventListener("click", () => { void acceptVoiceCall(); });
 voiceCallRejectButton.addEventListener("click", () => { void rejectVoiceCall(); });
