@@ -14,6 +14,7 @@ main{width:min(100%,560px);padding:clamp(28px,7vw,48px);border:1px solid #334155
 .brand{font-size:clamp(30px,7vw,42px);font-weight:750;letter-spacing:.02em;margin:0 0 28px}
 h1{font-size:clamp(22px,5vw,30px);line-height:1.5;margin:0 0 14px}
 p{font-size:clamp(16px,3.8vw,19px);line-height:1.9;color:#d5deeb;margin:0}
+.signature{margin-top:22px;font-weight:650;color:#f8fafc}
 .mark{width:52px;height:4px;border-radius:4px;background:#91a9ce;margin:0 auto 26px}
 </style>
 </head>
@@ -23,9 +24,10 @@ p{font-size:clamp(16px,3.8vw,19px);line-height:1.9;color:#d5deeb;margin:0}
 <div class="mark" aria-hidden="true"></div>
 <h1 id="maintenance-title">تم إيقاف الموقع مؤقتًا لغرض الصيانة والتحديث</h1>
 <p id="maintenance-description">نعمل على إجراء بعض التحسينات. يرجى المحاولة مرة أخرى لاحقًا.</p>
+<p class="signature" id="maintenance-signature">نشكر تفهمكم، فريق مرسال</p>
 </main>
 <script>
-(()=>{let en=false;try{en=localStorage.getItem("mersal-language")==="en"}catch{}if(en){document.documentElement.lang="en";document.documentElement.dir="ltr";document.title="Mersal — Temporary Maintenance";document.getElementById("maintenance-title").textContent="The website is temporarily unavailable for maintenance and updates.";document.getElementById("maintenance-description").textContent="We are making some improvements. Please try again later."}})();
+(()=>{let en=false;try{en=localStorage.getItem("mersal-language")==="en"}catch{}if(en){document.documentElement.lang="en";document.documentElement.dir="ltr";document.title="Mersal — Temporary Maintenance";document.getElementById("maintenance-title").textContent="The website is temporarily unavailable for maintenance and updates.";document.getElementById("maintenance-description").textContent="We are making some improvements. Please try again later.";document.getElementById("maintenance-signature").textContent="Thank you for your understanding, Mersal Team"}})();
 </script>
 </body>
 </html>
