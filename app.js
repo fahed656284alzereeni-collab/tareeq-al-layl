@@ -857,6 +857,8 @@ const mersalTranslations = {
   "تم رفض طلب الانضمام.": "The join request was rejected.",
   "تعذر تحديث طلب الانضمام.": "Could not update the join request.",
   "الموافقة على الانضمام": "Approve group join",
+  "الموافقة على الانضمام: ": "Approve group join: ",
+  "رفض طلب الانضمام: ": "Reject join request: ",
   "رفض طلب الانضمام": "Reject group join",
   "جارٍ تحميل الدعوة…": "Loading invitation…",
   "جارٍ تحميل طلبات الانضمام…": "Loading join requests…",
