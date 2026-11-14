@@ -5002,6 +5002,11 @@ async function loadMessages() {
       if(deliveries.error)console.warn("تعذر تسجيل تسليم الرسائل:",deliveries.error.message);
     }
     if (!isCurrent()) return;
+    if ((privacySettings.read_receipts_enabled || conversation.is_group) && incomingIds.length) {
+      const receipts=await supabase.from("message_reads").upsert(incomingIds.map(message_id=>({message_id,user_id:currentUser.id})),{onConflict:"message_id,user_id",ignoreDuplicates:true});
+      if(receipts.error)console.warn("تعذر تسجيل قراءة الرسائل:",receipts.error.message);
+    }
+    if (!isCurrent()) return;
     const ownIds=visibleMessages.filter(message => message.sender_id === currentUser.id).map(message => message.id);
     if(!ownIds.length)return;
     let deliveryQuery=supabase.from("message_deliveries").select("message_id,user_id").in("message_id",ownIds);
@@ -5016,11 +5021,6 @@ async function loadMessages() {
       if(node)setOutgoingMessageStatus(node,deliveredCounts.get(message.id)||0,0,conversation.is_group);
     }
     if (!(privacySettings.read_receipts_enabled || conversation.is_group)) return;
-    if(incomingIds.length){
-      const receipts=await supabase.from("message_reads").upsert(incomingIds.map(message_id=>({message_id,user_id:currentUser.id})),{onConflict:"message_id,user_id",ignoreDuplicates:true});
-      if(receipts.error)console.warn("تعذر تسجيل قراءة الرسائل:",receipts.error.message);
-    }
-    if (!isCurrent()) return;
     let readQuery=supabase.from("message_reads").select("message_id,user_id").in("message_id",ownIds);
     if(!conversation.is_group&&partner)readQuery=readQuery.eq("user_id",partner.id);
     const readRows=await readQuery;
