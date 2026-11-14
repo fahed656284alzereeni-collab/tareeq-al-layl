@@ -1721,6 +1721,13 @@ function keepDialogFocusInside(dialog, event) {
     event.preventDefault(); first.focus();
   }
 }
+document.addEventListener("keydown", event => {
+  if (event.key !== "Tab") return;
+  const dialogs = [...document.querySelectorAll('[role="dialog"][aria-modal="true"]')]
+    .filter(dialog => !dialog.hidden && dialog.getClientRects().length);
+  const activeDialog = dialogs[dialogs.length - 1];
+  if (activeDialog) keepDialogFocusInside(activeDialog, event);
+}, true);
 function closeAttachmentViewer() {
   attachmentViewer.hidden = true;
   attachmentViewerContent.replaceChildren();
