@@ -596,3 +596,54 @@ button:disabled { opacity: .48; cursor: not-allowed; }
 .community-group-choice input { width:20px; height:20px; min-height:20px; accent-color:var(--mx-brand); }
 .community-group-choice-label { color:var(--mx-text); overflow-wrap:anywhere; }
 :root[data-theme="dark"] .community-groups-section,:root[data-theme="dark"] .community-groups-editor { background:var(--mx-panel-soft); }
+
+/* Calls tab: use the same edge-to-edge full-screen navigation model as chats. */
+body.calls-open {
+  overflow: hidden;
+  width: 100%;
+  height: 100vh;
+  height: 100dvh;
+}
+body.calls-open .topbar,
+body.calls-open #bottom-navigation {
+  display: none !important;
+}
+body.calls-open #main-content {
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+body.calls-open .calls-view:not([hidden]) {
+  position: fixed;
+  inset: 0;
+  z-index: 2147482000;
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
+  padding: max(14px, env(safe-area-inset-top)) 0 max(14px, env(safe-area-inset-bottom));
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--mx-bg);
+  color: var(--mx-text);
+}
+body.calls-open .calls-page {
+  width: min(100%, 1040px);
+  min-height: 100%;
+  margin-inline: auto;
+  padding: clamp(16px, 3vw, 32px);
+}
+body.calls-open .calls-back-button {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  margin-block-end: 12px;
+}
