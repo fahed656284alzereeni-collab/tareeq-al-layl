@@ -1795,7 +1795,7 @@ html[dir="ltr"] #general-settings-view { text-align: left; }
 .blocked-user-row button{min-width:130px}
 #save-status-exclusions{width:100%;margin-top:14px}
 #status-exclusions-area{margin-top:12px}
-.message-read-state{display:block;font-size:.78rem;color:#9fc8ff;margin-top:3px}
+.message-read-state,.message-delivery-state{display:inline-flex;align-items:center;gap:5px;font-size:.78rem;line-height:1.5;margin-top:3px}.message-status-ticks{font-size:1rem;font-weight:800;letter-spacing:-.22em;direction:ltr;white-space:nowrap;color:#d1daea}.message-read-state .message-status-ticks{color:#65b7ff}.message-status-text{display:inline-block}
 :root[data-theme="light"] #privacy-settings-view{background:#f7f9fc}
 :root[data-theme="light"] #privacy-settings-view label:not(.privacy-toggle):not(.privacy-person-choice){color:#20334d}
 :root[data-theme="light"] #privacy-settings-view select{background:#fff;color:#20334d;border-color:#bdcde1}
