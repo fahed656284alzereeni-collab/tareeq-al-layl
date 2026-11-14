@@ -3905,7 +3905,7 @@ function updateGroupSettingsSaveButton() {
 async function openGroupSettings() {
   if (!activeConversation?.is_group || !currentUser || !groupSettingsPanel) return;
   groupSettingsReturnFocus = document.activeElement;
-  if (groupSettingsPermissionsSection) groupSettingsPermissionsSection.hidden = true;
+  if (groupSettingsPermissionsSection) { groupSettingsPermissionsSection.hidden = true; groupSettingsPermissionsSection.setAttribute("aria-hidden", "true"); groupSettingsPermissionsSection.setAttribute("inert", ""); }
   document.body.classList.add("group-settings-open");
   groupSettingsPanel.hidden = false;
   groupSettingsPanel.setAttribute("aria-hidden", "false");
@@ -3925,7 +3925,7 @@ async function openGroupSettings() {
     groupSettingsSendSelect.value = data?.send_messages_by || "everyone";
     groupSettingsAddSelect.value = data?.add_members_by || "admins";
     const canManage = Boolean(permissions.isAdmin);
-    if (groupSettingsPermissionsSection) groupSettingsPermissionsSection.hidden = !canManage;
+    if (groupSettingsPermissionsSection) { groupSettingsPermissionsSection.hidden = !canManage; groupSettingsPermissionsSection.setAttribute("aria-hidden", String(!canManage)); if (canManage) groupSettingsPermissionsSection.removeAttribute("inert"); else groupSettingsPermissionsSection.setAttribute("inert", ""); }
     groupSettingsSendSelect.disabled = !canManage;
     groupSettingsAddSelect.disabled = !canManage;
     groupSettingsSnapshot = getGroupSettingsSnapshot();
