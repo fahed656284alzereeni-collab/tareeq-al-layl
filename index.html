@@ -521,7 +521,7 @@
           </div>
           <section id="conversation-info" class="conversation-info" hidden>
             <button id="close-conversation-info" type="button" class="quiet-button">إغلاق المعلومات</button>
-            <div class="conversation-info-list conversation-info-common-list">
+            <div id="conversation-info-name-card" class="conversation-info-list conversation-info-common-list">
               <div role="group" aria-label="الاسم"><span id="conversation-info-name-label" class="conversation-info-label">الاسم</span><span class="conversation-info-value" id="conversation-info-name">—</span></div>
             </div>
             <div id="group-conversation-info-list" class="conversation-info-list group-info-layout" hidden>
@@ -557,6 +557,11 @@
                 <span class="conversation-info-label">تاريخ إنشاء المجموعة</span>
                 <span class="conversation-info-value" id="conversation-info-created">—</span>
               </div>
+              <div class="group-info-card group-info-settings-actions">
+                <span class="conversation-info-label">إدارة المجموعة</span>
+                <button id="group-settings-open" type="button" class="quiet-button" hidden>إعدادات المجموعة</button>
+                <button id="group-more-options-open" type="button" class="quiet-button" aria-controls="group-more-options-panel" hidden>المزيد من الخيارات</button>
+              </div>
               <div class="group-info-membership-actions">
                 <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
                 <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
@@ -578,8 +583,7 @@
               <button id="conversation-info-mute" type="button" class="quiet-button">كتم إشعارات المحادثة</button>
               <button id="conversation-info-clear" type="button" class="danger-button">مسح المحادثة من جهازي</button>
               <button id="block-person-button" type="button" class="danger-button" hidden>حظر الشخص</button>
-              <button id="group-settings-open" type="button" class="quiet-button" hidden>إعدادات المجموعة</button>
-              <button id="group-more-options-open" type="button" class="quiet-button" aria-controls="group-more-options-panel" hidden>المزيد من الخيارات</button>
+
             </div>
 
             <div class="conversation-membership-actions">
