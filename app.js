@@ -5356,8 +5356,6 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
   updateGroupSettingsSaveButton();
   try {
     const conversationId = activeConversation.id;
-    let previousAddMembersBy = "admins";
-    try { previousAddMembersBy = JSON.parse(groupSettingsSnapshot || "{}").add_members_by || "admins"; } catch {}
     const payload = {
       conversation_id: conversationId,
       send_messages_by: groupSettingsSendSelect.value,
