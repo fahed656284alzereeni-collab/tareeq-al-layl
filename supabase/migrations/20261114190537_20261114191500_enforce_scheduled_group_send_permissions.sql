@@ -1,10 +1,9 @@
--- Keep scheduled delivery authorization aligned with scheduling-time authorization.
--- The group creator (conversations.user_one) may send even when not present in conversation_members.
+
 create or replace function private.process_due_scheduled_messages()
 returns integer
 language plpgsql
 security definer
-set search_path = ''
+set search_path to ''
 as $function$
 declare
   item record;
@@ -31,8 +30,28 @@ begin
             and (
               c.user_one = item.sender_id
               or exists (
-                select 1 from public.conversation_members cm
-                where cm.conversation_id = c.id and cm.user_id = item.sender_id
+                select 1
+                from public.conversation_members cm
+                where cm.conversation_id = c.id
+                  and cm.user_id = item.sender_id
+              )
+            )
+            and (
+              coalesce(
+                (
+                  select gs.send_messages_by
+                  from public.group_settings gs
+                  where gs.conversation_id = c.id
+                ),
+                'everyone'
+              ) <> 'admins'
+              or c.user_one = item.sender_id
+              or exists (
+                select 1
+                from public.conversation_members cm
+                where cm.conversation_id = c.id
+                  and cm.user_id = item.sender_id
+                  and cm.role = 'admin'
               )
             )
           )
@@ -41,7 +60,8 @@ begin
             not c.is_group
             and (c.user_one = item.sender_id or c.user_two = item.sender_id)
             and not exists (
-              select 1 from public.user_blocks ub
+              select 1
+              from public.user_blocks ub
               where (
                 (ub.blocker_id = item.sender_id and ub.blocked_id =
                   case when c.user_one = item.sender_id then c.user_two else c.user_one end)

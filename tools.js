@@ -5,7 +5,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   const detail = $("#tool-detail-view");
   const title = $("#tool-detail-title");
   const back = $("#tool-back-button");
-  const panels = ["calculator", "notes", "qr", "video-downloader"].map((name) => $("#" + name + "-tool"));
+  const panels = ["calculator", "notes", "qr"].map((name) => $("#" + name + "-tool"));
   let activeTool = null;
   let returnFocus = null;
 
@@ -21,21 +21,19 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       [".tool-launch-button[data-tool='calculator']", "الآلة الحاسبة", "Calculator"],
       [".tool-launch-button[data-tool='notes']", "المفكرة السريعة", "Quick notes"],
       [".tool-launch-button[data-tool='qr']", "إنشاء رموز QR", "QR code generator"],
-      [".tool-launch-button[data-tool='video-downloader']", "تحميل الصوت والفيديو", "Audio & video downloader"],
     ];
     for (const [selector, arTitle, enTitle] of cards) {
       const titleNode = $(selector)?.querySelector(".tool-card-title");
       if (titleNode) titleNode.textContent = en ? enTitle : arTitle;
     }
     text("#tool-back-button", "العودة إلى الأدوات", "Back to tools");
-    text("#tool-detail-title", ({calculator:"الآلة الحاسبة",notes:"المفكرة السريعة",qr:"إنشاء رموز QR","video-downloader":"تحميل الصوت والفيديو"}[activeTool] || "الأداة"),
-      ({calculator:"Calculator",notes:"Quick notes",qr:"QR code generator","video-downloader":"Audio & video downloader"}[activeTool] || "Tool"));
+    text("#tool-detail-title", ({calculator:"الآلة الحاسبة",notes:"المفكرة السريعة",qr:"إنشاء رموز QR"}[activeTool] || "الأداة"),
+      ({calculator:"Calculator",notes:"Quick notes",qr:"QR code generator"}[activeTool] || "Tool"));
     const labels = [
       ["label[for='bill-total-input']","قيمة الفاتورة","Bill amount"],["label[for='bill-people-input']","عدد الأشخاص","Number of people"],
       ["label[for='bill-tip-input']","نسبة الإكرامية (%)","Tip percentage (%)"],["label[for='note-title-input']","عنوان الملاحظة","Note title"],
       ["label[for='note-body-input']","نص الملاحظة","Note text"],["label[for='notes-search-input']","البحث في الملاحظات","Search notes"],
       ["label[for='qr-content-input']","النص أو الرابط أو رقم الهاتف","Text, link, or phone number"],
-      ["label[for='video-url-input']","رابط التنزيل المباشر للصوت أو الفيديو","Direct audio or video download URL"],
     ];
     for (const [selector, ar, enText] of labels) text(selector, ar, enText);
     const buttons = [
@@ -44,8 +42,6 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       ["#note-save-button","حفظ الملاحظة","Save note"],["#note-delete-button","حذف الملاحظة","Delete note"],
       ["#qr-generate-button","إنشاء رمز QR","Generate QR code"],["#qr-download-button","تنزيل رمز QR","Download QR code"],
       ["#qr-copy-button","نسخ المحتوى","Copy content"],
-      ["#video-analyze-button","تحليل الرابط","Check link"],
-      ["#video-download-button","تحميل الملف","Download file"]
     ];
     for (const [selector, ar, enText] of buttons) text(selector, ar, enText);
     text("#bill-split-title","تقسيم الفاتورة","Split a bill");
@@ -57,17 +53,12 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       ["#bill-total-input","",""],["#note-title-input","اكتب عنوانًا للملاحظة","Enter a note title"],
       ["#note-body-input","اكتب ملاحظتك هنا","Write your note here"],["#notes-search-input","ابحث في ملاحظاتك","Search your notes"],
       ["#qr-content-input","اكتب المحتوى الذي تريد تحويله إلى رمز QR","Enter the content you want to turn into a QR code"],
-      ["#video-url-input","https://example.com/file.mp3 أو video.mp4","https://example.com/file.mp3 or video.mp4"]
     ];
     for (const [selector, ar, enText] of placeholders) { const node=$(selector); if(node && (ar || enText)) node.placeholder=en?enText:ar; }
     attr("#tools-home-view","aria-label","الأدوات","Tools");
     attr("#calculator-tool","aria-label","الآلة الحاسبة","Calculator");
     attr("#notes-tool","aria-label","المفكرة السريعة","Quick notes");
     attr("#qr-tool","aria-label","إنشاء رموز QR","QR code generator");
-    attr("#video-downloader-tool","aria-label","تحميل الصوت والفيديو","Audio & video downloader");
-    text("#video-downloader-help","ألصق رابط ملف صوت أو فيديو مباشرًا، بما في ذلك رابط تنزيل رسمي توفره المنصة. لا تتجاوز الأداة قيود التنزيل أو المحتوى الخاص.","Paste a direct audio or video file link, including an official download link provided by the platform. Mersal does not bypass download restrictions or private content.");
-    attr("#video-downloader-player","aria-label","معاينة الفيديو","Video preview");
-    attr("#audio-downloader-player","aria-label","معاينة الملف الصوتي","Audio preview");
     
     const help = $("#qr-canvas"); if (help) help.setAttribute("aria-label", en ? "Generated QR code" : "رمز QR الذي تم إنشاؤه");
     
@@ -87,7 +78,6 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       calculator: "الآلة الحاسبة",
       notes: "المفكرة السريعة",
       qr: "إنشاء رموز QR",
-      "video-downloader": "تحميل الصوت والفيديو"
     };
     if (!labels[name]) return;
     activeTool = name;
@@ -464,116 +454,6 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   });
 
 
-  // Download only direct media URLs that the source makes available without bypassing platform controls.
-  const videoUrlInput = $("#video-url-input");
-  const videoAnalyzeButton = $("#video-analyze-button");
-  const videoDownloadButton = $("#video-download-button");
-  const videoPlayer = $("#video-downloader-player");
-  const audioPlayer = $("#audio-downloader-player");
-  const videoPreview = $("#video-downloader-preview");
-  const videoStatus = $("#video-downloader-status");
-  let checkedMediaUrl = "";
-  let checkedMediaType = "";
-  let checkedMediaFilename = "";
-  function videoMessage(ar, en) { videoStatus.textContent = toolEnglish() ? en : ar; }
-  function resetVideoPreview() {
-    checkedMediaUrl = "";
-    checkedMediaType = "";
-    checkedMediaFilename = "";
-    videoDownloadButton.disabled = true;
-    videoPreview.hidden = true;
-    for (const player of [videoPlayer, audioPlayer]) {
-      player.pause();
-      player.removeAttribute("src");
-      player.load();
-      player.hidden = true;
-    }
-  }
-  function mediaTypeFromMime(mime) {
-    const type = (mime || "").split(";")[0].trim().toLowerCase();
-    if (type.startsWith("audio/") || ["application/ogg","application/x-flac"].includes(type)) return "audio";
-    if (type.startsWith("video/")) return "video";
-    return "";
-  }
-  function filenameFromHeaders(headers, fallback) {
-    const disposition = headers.get("content-disposition") || "";
-    const utf8 = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-    const plain = disposition.match(/filename="?([^";]+)"?/i);
-    let encodedName = utf8?.[1] || "";
-    let name = "";
-    if (encodedName) {
-      try { name = decodeURIComponent(encodedName); } catch { name = encodedName; }
-    }
-    name = name || plain?.[1] || fallback || "mersal-media";
-    return name.split(/[\\/]/).pop().replace(/[\u0000-\u001f]/g, "").slice(0, 180) || "mersal-media";
-  }
-  videoUrlInput.addEventListener("input", () => { resetVideoPreview(); videoStatus.textContent = ""; });
-  videoAnalyzeButton.addEventListener("click", async () => {
-    let parsed;
-    try { parsed = new URL(videoUrlInput.value.trim()); }
-    catch { videoMessage("أدخل رابطًا صحيحًا يبدأ بـ https:// أو http://.", "Enter a valid URL starting with https:// or http://."); return; }
-    if (!["https:", "http:"].includes(parsed.protocol)) { videoMessage("نوع الرابط غير مدعوم.", "This URL type is not supported."); return; }
-    resetVideoPreview();
-    videoAnalyzeButton.disabled = true;
-    videoMessage("جارٍ التحقق من رابط التنزيل…", "Checking the download link…");
-    try {
-      const extension = (parsed.pathname.match(/\.([a-z0-9]+)$/i) || [,""])[1].toLowerCase();
-      const videoExtensions = ["mp4","webm","ogg","ogv","mov","m4v"];
-      const audioExtensions = ["mp3","m4a","wav","ogg","oga","opus","aac","flac"];
-      let mediaType = videoExtensions.includes(extension) ? "video" : audioExtensions.includes(extension) ? "audio" : "";
-      let responseHeaders = null;
-      if (!mediaType) {
-        const probe = await fetch(parsed.href, { method: "HEAD", mode: "cors", redirect: "follow" });
-        if (!probe.ok) throw new Error("HTTP " + probe.status);
-        responseHeaders = probe.headers;
-        mediaType = mediaTypeFromMime(probe.headers.get("content-type"));
-      }
-      if (!mediaType) {
-        videoMessage("هذا رابط صفحة وليس رابط ملف قابلًا للتنزيل مباشرة. إذا كانت المنصة تعرض خيار تنزيل رسميًا، استخدمه أو انسخ رابط ملف الوسائط المباشر الذي توفره. لن نتجاوز قيود المنصة أو المحتوى الخاص.", "This is a post page, not a directly downloadable media file. If the platform provides an official download option, use it or copy the direct media-file link it provides. Mersal will not bypass platform restrictions or private content.");
-        return;
-      }
-      checkedMediaUrl = parsed.href;
-      checkedMediaType = mediaType;
-      checkedMediaFilename = filenameFromHeaders(responseHeaders || new Headers(), parsed.pathname.split("/").pop());
-      const player = mediaType === "audio" ? audioPlayer : videoPlayer;
-      player.hidden = false;
-      player.src = checkedMediaUrl;
-      videoPreview.hidden = false;
-      videoDownloadButton.disabled = false;
-      videoMessage(mediaType === "audio" ? "تم التحقق من رابط الملف الصوتي وتجهيز المعاينة." : "تم التحقق من رابط الفيديو وتجهيز المعاينة.",
-        mediaType === "audio" ? "Audio file link verified and preview is ready." : "Video link verified and preview is ready.");
-    } catch (error) {
-      console.warn("Media link check failed:", error);
-      videoMessage("تعذر التحقق من الرابط. قد لا يسمح المصدر بالوصول المباشر أو قد يمنع المتصفح مشاركة الرابط (CORS). استخدم رابط تنزيل مباشرًا رسميًا من المصدر.", "Could not verify this link. The source may not allow direct access or may block browser cross-origin access (CORS). Use an official direct download link from the source.");
-    } finally {
-      videoAnalyzeButton.disabled = false;
-    }
-  });
-  videoDownloadButton.addEventListener("click", async () => {
-    if (!checkedMediaUrl) return;
-    videoDownloadButton.disabled = true;
-    videoMessage("جارٍ تجهيز الملف للتنزيل…", "Preparing the file for download…");
-    try {
-      const response = await fetch(checkedMediaUrl, { mode: "cors", redirect: "follow" });
-      if (!response.ok) throw new Error("HTTP " + response.status);
-      const actualType = mediaTypeFromMime(response.headers.get("content-type"));
-      if (actualType && actualType !== checkedMediaType) throw new Error("Unexpected media type");
-      const blob = await response.blob();
-      if (!blob.size || (blob.type && !mediaTypeFromMime(blob.type) && blob.type !== "application/octet-stream")) throw new Error("Unexpected media content");
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = objectUrl;
-      link.download = filenameFromHeaders(response.headers, checkedMediaFilename || (checkedMediaType === "audio" ? "mersal-audio" : "mersal-video"));
-      document.body.append(link);
-      link.click();
-      link.remove();
-      setTimeout(() => URL.revokeObjectURL(objectUrl), 60000);
-      videoMessage("بدأ تنزيل الملف.", "File download started.");
-    } catch (error) {
-      console.warn("Media download failed:", error);
-      videoMessage("تعذر تنزيل الملف مباشرة. قد يمنع المصدر التنزيل أو مشاركة الملفات عبر المتصفح (CORS). جرّب رابط تنزيل رسميًا آخر.", "Could not download this file directly. The source may block downloads or cross-origin access (CORS). Try another official download link.");
-    } finally { videoDownloadButton.disabled = false; }
-  });
   localizeTools();
 
   return { closeTool, openTool };

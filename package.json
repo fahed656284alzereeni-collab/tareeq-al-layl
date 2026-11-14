@@ -2,6 +2,11 @@
   "name": "mersal-v2",
   "version": "2.0.0",
   "private": true,
-  "description": "واجهة مرسال الجديدة — تطبيق ويب ثابت على Cloudflare Pages",
-  "type": "module"
+  "description": "واجهة مرسال الجديدة — تطبيق ويب ثابت مستضاف على Vercel",
+  "type": "module",
+  "scripts": {
+    "check": "node --check app.js && node --check tools.js && node --check channels.js && node --check communities.js && node scripts/check-static.mjs",
+    "test": "npm run check",
+    "build": "npm run check"
+  }
 }

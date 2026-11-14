@@ -1,4 +1,6 @@
-import { initMersalTools } from "./tools.js?v=20261114-speed-v1";
+import { initMersalTools } from "./tools.js?v=20261114-clean-tools-v1";
+import { initMersalChannels } from "./channels.js?v=20261114-a11y-v2";
+import { initMersalCommunities } from "./communities.js?v=20261114-a11y-v2";
 
 // Load Supabase Auth through two independent ESM CDNs. A failed static import
 // prevents this entire module from running, leaving the HTML startup timer visible.
@@ -924,6 +926,132 @@ const mersalTranslations = {
   "لا توجد نتائج مطابقة.": "No matching results.",
   "تعذر تحميل قائمة المكالمات.": "Could not load the calls list.",
   "لا يمكن الاتصال بهذا الشخص بسبب الحظر.": "You cannot call this person because of blocking.",
+  "تفاعلات الرسالة":"Message reactions",
+  "إضافة تفاعل":"Add a reaction",
+  "إزالة التفاعل":"Remove reaction",
+  "تمييز بنجمة":"Star message",
+  "إزالة النجمة":"Remove star",
+  "تثبيت الرسالة":"Pin message",
+  "إلغاء تثبيت الرسالة":"Unpin message",
+  "إعادة توجيه":"Forward",
+  "إعادة توجيه الرسالة":"Forward message",
+  "اختر محادثة لإعادة التوجيه":"Choose a conversation to forward to",
+  "إغلاق نافذة إعادة التوجيه":"Close forward dialog",
+  "تمت إعادة توجيه الرسالة":"Message forwarded",
+  "تعذر إعادة توجيه الرسالة":"Could not forward the message",
+  "لا يمكن إعادة توجيه استطلاع أو مرفق بهذه الطريقة حاليًا.":"Polls and attachments cannot be forwarded this way yet.",
+  "لا توجد محادثات أخرى لإعادة التوجيه إليها.":"There are no other conversations to forward to.",
+  "الرسالة المميزة بنجمة":"Starred message",
+  "رسالة مثبتة":"Pinned message",
+  "تعذر تحميل تفاعلات الرسالة.":"Could not load message reactions.",
+  "تعذر حفظ التفاعل.":"Could not save the reaction.",
+  "تعذر تحديث النجمة.":"Could not update the star.",
+  "تعذر تثبيت الرسالة.":"Could not pin the message.",
+  "تعذر إلغاء تثبيت الرسالة.":"Could not unpin the message.",
+  "تمت إضافة النجمة.":"Message starred.",
+  "تمت إزالة النجمة.":"Star removed.",
+  "تم تثبيت الرسالة.":"Message pinned.",
+  "تم إلغاء تثبيت الرسالة.":"Message unpinned.",
+
+  "تعديل الرسالة":"Edit message",
+  "تم التعديل":"Edited",
+  "لا يمكن تعديل استطلاع أو مرفق.":"Polls and attachments cannot be edited.",
+  "يمكن تعديل الرسالة خلال 15 دقيقة من إرسالها فقط.":"Messages can only be edited within 15 minutes of sending.",
+  "لم يتم حفظ تعديل الرسالة.":"The message edit was not saved.",
+  "تم تعديل الرسالة.":"Message edited.",
+
+  "تفاعلات الحالة والردود":"Status reactions and replies",
+  "تفاعلات الحالة":"Status reactions",
+  "الرد على الحالة":"Reply to status",
+  "اكتب ردك على الحالة":"Write a reply to this status",
+  "إرسال الرد":"Send reply",
+  "ردود الحالة":"Status replies",
+  "لا توجد ردود بعد.":"No replies yet.",
+  "تعذر تحميل تفاعلات الحالة.":"Could not load status reactions.",
+  "تعذر إرسال الرد.":"Could not send the reply.",
+  "تم إرسال ردك على الحالة.":"Your status reply was sent.",
+  "تعذر تحديث التفاعل.":"Could not update the reaction.",
+  "إضافة تفاعل":"Add reaction",
+
+  "الرسائل المميزة بنجمة":"Starred messages",
+  "قائمة الرسائل المميزة بنجمة":"Starred messages list",
+  "لا توجد رسائل مميزة بنجمة.":"No starred messages.",
+  "تعذر تحميل الرسائل المميزة بنجمة.":"Could not load starred messages.",
+  "إزالة النجمة":"Remove star",
+  "افتح المحادثة":"Open conversation",
+  "الرسالة غير متاحة":"Message unavailable",
+
+  "قائمة رسائل جماعية جديدة":"New broadcast list",
+  "قوائم الرسائل الجماعية":"Broadcast lists",
+  "استكشاف القنوات":"Explore channels",
+  "استكشاف المجتمعات":"Explore communities",
+  "عرض الصور والفيديوهات لمرة واحدة":"Send photos and videos for one-time viewing",
+  "يمكن فتح الوسائط مرة واحدة داخل مرسال، لكن لا يمكن منع تصوير الشاشة أو تسجيلها.":"Media can be opened once inside Mersal, but screenshots or screen recording cannot be prevented.",
+  "عرض لمرة واحدة":"View once",
+  "تم فتح هذه الوسائط. لا يمكن فتحها مجددًا.":"This media has already been opened and cannot be viewed again.",
+  "وسائط مرسلة للعرض مرة واحدة.":"Media sent for one-time viewing.",
+  "تم فتح الوسائط مرة واحدة.":"This media has been opened.",
+  "تعذر التحقق من حالة العرض مرة واحدة.":"Could not check view-once status.",
+  "هذا الخيار متاح للصور والفيديوهات فقط.":"View once is available for photos and videos only.",
+
+  "قوائم الرسائل الجماعية":"Broadcast lists",
+  "إنشاء قائمة رسائل جماعية":"Create broadcast list",
+  "اسم قائمة الرسائل الجماعية":"Broadcast list name",
+  "ابحث عن مستلمين":"Search recipients",
+  "لم يتم اختيار مستلمين":"No recipients selected",
+  "حفظ قائمة الرسائل الجماعية":"Save broadcast list",
+  "قائمة رسائل جماعية":"Broadcast list",
+  "مستلم":"recipient",
+  "مستلمون":"recipients",
+  "لا توجد قوائم رسائل جماعية بعد.":"No broadcast lists yet.",
+  "اختر مستلمًا واحدًا على الأقل.":"Choose at least one recipient.",
+  "اكتب اسمًا لقائمة الرسائل الجماعية.":"Enter a name for the broadcast list.",
+  "تم حفظ قائمة الرسائل الجماعية.":"Broadcast list saved.",
+  "تعذر حفظ قائمة الرسائل الجماعية.":"Could not save the broadcast list.",
+  "إرسال رسالة إلى القائمة":"Send a message to this list",
+  "حذف قائمة الرسائل الجماعية":"Delete broadcast list",
+  "هل تريد حذف قائمة الرسائل الجماعية؟":"Delete this broadcast list?",
+  "اكتب الرسالة التي تريد إرسالها إلى القائمة":"Write the message to send to this list",
+  "تم إرسال الرسالة إلى":"Message sent to",
+  "مستلمين.":"recipients.",
+  "تعذر الإرسال إلى بعض المستلمين:":"Could not send to some recipients:",
+  "إلغاء":"Cancel",
+
+  "اكتب اسم القائمة":"Enter a list name",
+  "اختيار مستلمي قائمة الرسائل الجماعية":"Choose broadcast list recipients",
+  "قائمة الرسائل الجماعية لا تحتوي على مستلمين.":"This broadcast list has no recipients.",
+  "تعذر تحميل مستلمي قوائم الرسائل الجماعية.":"Could not load broadcast recipients.",
+  "تعذر تحميل قوائم الرسائل الجماعية.":"Could not load broadcast lists.",
+  "لا يوجد أشخاص بهذا الاسم.":"No people found.",
+  "تم اختيار مستلم":"recipient selected",
+  "تم اختيار مستلمين":"recipients selected",
+
+  "حذف الرد":"Delete reply",
+  "تعذر حذف الرد: ":"Could not delete reply: ",
+  "تم حذف الرد.":"Reply deleted.",
+
+
+
+  "إرسال ملصق":"Send a sticker",
+  "اختيار ملصق":"Choose a sticker",
+  "إغلاق الملصقات":"Close stickers",
+  "الملصقات":"Stickers",
+  "اختر ملصقًا لإرساله في المحادثة.":"Choose a sticker to send in the chat.",
+  "ملصقات جاهزة":"Sticker pack",
+  "ملصق":"Sticker",
+  "ملصق ضحك":"Laughing sticker",
+  "ملصق حب":"Love sticker",
+  "ملصق فرح":"Happy sticker",
+  "ملصق تصفيق":"Clapping sticker",
+  "ملصق تفكير":"Thinking sticker",
+  "ملصق دهشة":"Surprised sticker",
+  "ملصق حزن":"Sad sticker",
+  "ملصق احتفال":"Celebration sticker",
+  "ملصق شكر":"Thank-you sticker",
+  "ملصق موافقة":"Okay sticker",
+  "ملصق نار":"Fire sticker",
+  "ملصق نجمة":"Star sticker",
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
@@ -1027,6 +1155,8 @@ const settingsTabButton = $("#settings-tab");
 const statusTabButton = $("#status-tab");
 const toolsTabButton = $("#tools-tab");
 const callsTabButton = $("#calls-tab");
+const channelsTabButton = $("#channels-tab");
+const communitiesTabButton = $("#communities-tab");
 const toolsView = $("#tools-view");
 const statusView = $("#status-view");
 const callsView = $("#calls-view");
@@ -1203,6 +1333,17 @@ const newGroupDescriptionInput=$("#new-group-description"),newGroupPhotoInput=$(
 let selectedGroupCreationPhoto=null,newGroupPhotoPreviewUrl=null;
 const groupPeopleSearch=$("#group-people-search"),groupPeopleList=$("#group-people-list"),createGroupButton=$("#create-group-button");
 const newPrivateChatButton=$("#new-private-chat"),newGroupChatButton=$("#new-group-chat");
+const newBroadcastListButton=$("#new-broadcast-list");
+const openChannelsButton=$("#open-channels-button");
+const openCommunitiesButton=$("#open-communities-button");
+const broadcastPanel=$("#broadcast-panel"),closeBroadcastPanelButton=$("#close-broadcast-panel");
+const broadcastListsView=$("#broadcast-lists-view"),broadcastCreateView=$("#broadcast-create-view");
+const broadcastLists=$("#broadcast-lists"),createBroadcastListButton=$("#create-broadcast-list");
+const broadcastListNameInput=$("#broadcast-list-name"),broadcastPeopleSearch=$("#broadcast-people-search");
+const broadcastPeopleList=$("#broadcast-people-list"),broadcastSelectedCount=$("#broadcast-selected-count");
+const saveBroadcastListButton=$("#save-broadcast-list"),cancelBroadcastCreateButton=$("#cancel-broadcast-create");
+let selectedBroadcastRecipients=new Set();
+
 let selectedGroupMembers=new Set(),newChatReturnFocus=null;
 const peopleSearch = $("#people-search");
 const peopleList = $("#people-list");
@@ -1230,22 +1371,48 @@ function updateBottomTabAccessiblePositions(language = localStorage.getItem("mer
   });
 }
 function setActiveBottomTab(tab) {
-  if (!homeTabButton || !settingsTabButton || !statusTabButton || !toolsTabButton || !callsTabButton) return;
-  homeTabButton.setAttribute("aria-selected", String(tab === "home"));
-  statusTabButton.setAttribute("aria-selected", String(tab === "statuses"));
-  toolsTabButton.setAttribute("aria-selected", String(tab === "tools"));
-  callsTabButton.setAttribute("aria-selected", String(tab === "calls"));
-  settingsTabButton.setAttribute("aria-selected", String(tab === "settings"));
+  if (!homeTabButton || !settingsTabButton || !statusTabButton || !toolsTabButton || !callsTabButton || !channelsTabButton || !communitiesTabButton) return;
+  const selected = { home: homeTabButton, statuses: statusTabButton, calls: callsTabButton, channels: channelsTabButton, communities: communitiesTabButton, tools: toolsTabButton, settings: settingsTabButton };
+  for (const [key, button] of Object.entries(selected)) {
+    const active = key === tab;
+    button.setAttribute("aria-selected", String(active));
+    button.tabIndex = active ? 0 : -1;
+  }
   updateBottomTabAccessiblePositions();
 }
-function returnToHomeTab() {
-  mersalTools.closeTool(false);
-  if (settingsPanel && !settingsPanel.hidden) {
-    settingsPanel.hidden = true;
+bottomNavigation?.addEventListener("keydown", event => {
+  const tabs = [...bottomNavigation.querySelectorAll('[role="tab"]:not([hidden])')];
+  const current = tabs.indexOf(document.activeElement);
+  if (current < 0 || !["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+  event.preventDefault();
+  const rtl = getComputedStyle(bottomNavigation).direction === "rtl";
+  let next = current;
+  if (event.key === "Home") next = 0;
+  else if (event.key === "End") next = tabs.length - 1;
+  else {
+    const forward = (event.key === "ArrowRight") !== rtl;
+    next = (current + (forward ? 1 : -1) + tabs.length) % tabs.length;
+  }
+  tabs[next]?.focus();
+  tabs[next]?.click();
+});
+function closeHelpSupportForNavigation() {
   if (helpSupportPanel) helpSupportPanel.hidden = true;
   document.body.classList.remove("help-support-open");
   if (supportRealtimeChannel) supabase.removeChannel(supportRealtimeChannel);
   supportRealtimeChannel = null;
+}
+function closeNewChatForNavigation() {
+  if (newChatPanel && !newChatPanel.hidden) closeNewChat();
+}
+function returnToHomeTab() {
+  mersalTools.closeTool(false);
+  mersalChannels.close();
+  mersalCommunities.close();
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
+  if (settingsPanel && !settingsPanel.hidden) {
+    settingsPanel.hidden = true;
     document.body.classList.remove("settings-open");
   }
   statusView.hidden = true;
@@ -1256,13 +1423,46 @@ function returnToHomeTab() {
   document.body.classList.remove("calls-open");
   setActiveBottomTab("home");
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
+  homeTabButton.focus();
+}
+function openChannelsTab() {
+  if (!currentUser) return;
+  mersalTools.closeTool(false);
+  mersalCommunities.close();
+  if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
+  if (toolsView) toolsView.hidden = true;
+  if (callsView) callsView.hidden = true;
+  statusView.hidden = true;
+  document.body.classList.remove("tools-open", "calls-open", "status-open");
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
+  if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
+  setActiveBottomTab("channels");
+  mersalChannels.open(channelsTabButton);
+}
+function openCommunitiesTab() {
+  if (!currentUser) return;
+  mersalTools.closeTool(false);
+  mersalChannels.close();
+  if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
+  if (toolsView) toolsView.hidden = true;
+  if (callsView) callsView.hidden = true;
+  statusView.hidden = true;
+  document.body.classList.remove("tools-open", "calls-open", "status-open");
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
+  if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
+  setActiveBottomTab("communities");
+  mersalCommunities.open(communitiesTabButton);
 }
 function openCallsTab() {
   mersalTools.closeTool(false);
+  mersalChannels.close();
+  mersalCommunities.close();
   if (!currentUser) return;
   if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
-  if (helpSupportPanel) helpSupportPanel.hidden = true;
-  document.body.classList.remove("help-support-open");
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
   statusView.hidden = true;
   document.body.classList.remove("status-open");
   if (toolsView) toolsView.hidden = true;
@@ -1277,6 +1477,8 @@ function openCallsTab() {
 }
 function openToolsTab() {
   mersalTools.closeTool(false);
+  mersalChannels.close();
+  mersalCommunities.close();
   if (!currentUser) return;
   if (callsView) callsView.hidden = true;
   document.body.classList.remove("calls-open");
@@ -1284,8 +1486,8 @@ function openToolsTab() {
     settingsPanel.hidden = true;
     document.body.classList.remove("settings-open");
   }
-  if (helpSupportPanel) helpSupportPanel.hidden = true;
-  document.body.classList.remove("help-support-open");
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
   statusView.hidden = true;
   document.body.classList.remove("status-open");
   if (document.body.classList.contains("chat-fullscreen") && backToChatsButton) backToChatsButton.click();
@@ -1294,13 +1496,18 @@ function openToolsTab() {
   setActiveBottomTab("tools");
   document.querySelector("#tools-title")?.focus();
 }
+
 function openStatusTab() {
   mersalTools.closeTool(false);
+  mersalChannels.close();
+  mersalCommunities.close();
   if (!currentUser) return;
   if (settingsPanel && !settingsPanel.hidden) {
     settingsPanel.hidden = true;
     document.body.classList.remove("settings-open");
   }
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
   if (toolsView) toolsView.hidden = true;
   document.body.classList.remove("tools-open");
   if (callsView) callsView.hidden = true;
@@ -1442,7 +1649,64 @@ const closeAttachmentChooserButton = $("#close-attachment-chooser");
 const imageFileInput = $("#image-file-input");
 const videoFileInput = $("#video-file-input");
 const documentFileInput = $("#document-file-input");
+const viewOnceAttachmentInput = $("#view-once-attachment");
 const createPollFromAttachmentsButton = $("#create-poll-from-attachments");
+const openStickerPickerButton = $("#open-sticker-picker");
+const stickerPickerPanel = $("#sticker-picker-panel");
+const closeStickerPickerButton = $("#close-sticker-picker");
+const stickerGrid = $("#sticker-grid");
+function renderStickerPicker() {
+  if (!stickerGrid) return;
+  const english = document.documentElement.lang === "en";
+  stickerGrid.replaceChildren();
+  for (const sticker of MERSAL_STICKERS) {
+    const button = safeText("button", "sticker-choice", sticker.emoji);
+    button.type = "button";
+    button.setAttribute("aria-label", (english ? "Send " : "إرسال ملصق ") + (english ? sticker.english + " sticker" : sticker.name));
+    button.addEventListener("click", () => {
+      if (!activeConversation || isPrivateConversationBlocked()) {
+        announce(english ? "You cannot send a sticker in this chat." : "لا يمكنك إرسال ملصق في هذه المحادثة.", "error");
+        return;
+      }
+      messageInput.value = "MERSAL_STICKER:" + sticker.emoji;
+      stickerPickerPanel.hidden = true;
+      attachmentChooser.hidden = true;
+      messageForm.requestSubmit();
+    });
+    stickerGrid.append(button);
+  }
+}
+function openStickerPicker() {
+  if (!activeConversation || isPrivateConversationBlocked()) return;
+  attachmentChooser.hidden = true;
+  stickerPickerPanel.hidden = false;
+  renderStickerPicker();
+  $("#sticker-picker-title").focus();
+}
+function closeStickerPicker() {
+  stickerPickerPanel.hidden = true;
+  if (attachmentChooser && !attachmentChooser.hidden) closeAttachmentChooserButton.focus();
+  else attachButton?.focus();
+}
+openStickerPickerButton?.addEventListener("click", openStickerPicker);
+closeStickerPickerButton?.addEventListener("click", closeStickerPicker);
+stickerPickerPanel?.addEventListener("click", event => {
+  if (event.target === stickerPickerPanel) closeStickerPicker();
+});
+stickerPickerPanel?.addEventListener("keydown", event => {
+  if (event.key === "Escape") { event.preventDefault(); closeStickerPicker(); return; }
+  if (event.key !== "Tab") return;
+  const focusable = [...stickerPickerPanel.querySelectorAll('button:not([disabled]),input:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(element => !element.hidden && element.getClientRects().length);
+  if (!focusable.length) { event.preventDefault(); $("#sticker-picker-title").focus(); return; }
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+});
+const stickerLanguageObserver = new MutationObserver(records => {
+  if (records.some(record => record.attributeName === "lang") && !stickerPickerPanel.hidden) renderStickerPicker();
+});
+stickerLanguageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
 const pollComposerPanel = $("#poll-composer-panel");
 const pollComposerForm = $("#poll-composer-form");
 const pollComposerQuestion = $("#poll-question-input");
@@ -1464,6 +1728,69 @@ attachmentViewerContent.className = "attachment-viewer-content";
 attachmentViewer.append(attachmentViewerClose, attachmentViewerContent);
 document.body.append(attachmentViewer);
 let attachmentViewerReturnFocus = null;
+function trapDialogTabKey(event, dialog) {
+  if (event.key !== "Tab") return;
+  const focusable = [...dialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(element => !element.hidden && element.getAttribute("aria-hidden") !== "true" && element.getClientRects().length);
+  if (!focusable.length) {
+    event.preventDefault();
+    dialog.focus();
+    return;
+  }
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+function keepDialogFocusInside(dialog, event) {
+  if (event.key !== "Tab") return;
+  const focusable = [...dialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(element => !element.hidden && element.getAttribute("aria-hidden") !== "true" && element.getClientRects().length);
+  if (!focusable.length) {
+    event.preventDefault();
+    if (!dialog.hasAttribute("tabindex")) dialog.setAttribute("tabindex", "-1");
+    dialog.focus();
+    return;
+  }
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+    event.preventDefault(); last.focus();
+  } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+    event.preventDefault(); first.focus();
+  }
+}
+function getTopModalDialog() {
+  const dialogs = [...document.querySelectorAll('[role="dialog"][aria-modal="true"]')]
+    .filter(dialog => !dialog.hidden && dialog.getClientRects().length);
+  if (!dialogs.length) return null;
+  const stackingOrder = dialog => {
+    let order = 0;
+    for (let element = dialog; element && element !== document.documentElement; element = element.parentElement) {
+      const value = Number.parseInt(getComputedStyle(element).zIndex, 10);
+      if (Number.isFinite(value)) order = Math.max(order, value);
+    }
+    return order;
+  };
+  return dialogs.reduce((top, dialog) =>
+    stackingOrder(dialog) >= stackingOrder(top) ? dialog : top
+  );
+}
+document.addEventListener("keydown", event => {
+  if (event.key !== "Tab") return;
+  const activeDialog = getTopModalDialog();
+  if (activeDialog) keepDialogFocusInside(activeDialog, event);
+}, true);
+document.addEventListener("focusin", event => {
+  const activeDialog = getTopModalDialog();
+  if (!activeDialog || activeDialog.contains(event.target)) return;
+  const focusable = [...activeDialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(element => !element.hidden && element.getAttribute("aria-hidden") !== "true" && element.getClientRects().length);
+  (focusable[0] || activeDialog).focus();
+}, true);
 function closeAttachmentViewer() {
   attachmentViewer.hidden = true;
   attachmentViewerContent.replaceChildren();
@@ -1590,7 +1917,10 @@ function openAttachmentViewer(url, type, name, trigger) {
   attachmentViewerClose.focus();
 }
 attachmentViewerClose.addEventListener("click", closeAttachmentViewer);
-attachmentViewer.addEventListener("keydown", event => { if (event.key === "Escape") closeAttachmentViewer(); });
+attachmentViewer.addEventListener("keydown", event => {
+  if (event.key === "Escape") { event.preventDefault(); closeAttachmentViewer(); return; }
+  trapDialogTabKey(event, attachmentViewer);
+});
 attachmentViewer.addEventListener("click", event => { if (event.target === attachmentViewer) closeAttachmentViewer(); });
 
 const replyingTo = $("#replying-to");
@@ -2768,7 +3098,11 @@ async function renderBlockedUsers() {
 
 function openSettings() {
   mersalTools.closeTool(false);
+  mersalChannels.close();
+  mersalCommunities.close();
   if (!currentUser) return;
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
   statusView.hidden = true;
   document.body.classList.remove("status-open");
   if (toolsView) toolsView.hidden = true;
@@ -2795,7 +3129,7 @@ function openSettings() {
 }
 async function loadOwnProfile() {
   const [{data,error},visibleProfile] = await Promise.all([
-    supabase.from("profiles").select("display_name,avatar_url").eq("id",currentUser.id).maybeSingle(),
+    supabase.from("profiles").select("display_name").eq("id",currentUser.id).maybeSingle(),
     supabase.rpc("get_visible_profiles",{p_user_ids:[currentUser.id]})
   ]);
   if(error)throw error;
@@ -2821,6 +3155,20 @@ try {
   // Optional tools must never prevent the core messaging and authentication app from starting.
   console.error("Mersal tools initialization failed; continuing core startup:", toolsInitializationError);
 }
+let mersalChannels = { open() {}, close() {} };
+try {
+  mersalChannels = initMersalChannels({ supabase, getCurrentUser: () => currentUser, announce, safeText });
+} catch (channelsInitializationError) {
+  console.error("Mersal channels initialization failed; continuing core startup:", channelsInitializationError);
+}
+openChannelsButton?.addEventListener("click", openChannelsTab);
+let mersalCommunities = { open() {}, close() {} };
+try {
+  mersalCommunities = initMersalCommunities({ supabase, getCurrentUser: () => currentUser, announce, safeText });
+} catch (communitiesInitializationError) {
+  console.error("Mersal communities initialization failed; continuing core startup:", communitiesInitializationError);
+}
+openCommunitiesButton?.addEventListener("click", openCommunitiesTab);
 settingsLanguageSelect.addEventListener("change", () => {
   applyMersalLanguage(settingsLanguageSelect.value);
   updateChatPartnerPresence();
@@ -2828,6 +3176,8 @@ settingsLanguageSelect.addEventListener("change", () => {
   announce(settingsLanguageSelect.value==="en"?"تم تغيير اللغة إلى الإنجليزية.":"تم تغيير اللغة إلى العربية.");
 });
 settingsTabButton.addEventListener("click", openSettings);
+channelsTabButton.addEventListener("click", openChannelsTab);
+communitiesTabButton.addEventListener("click", openCommunitiesTab);
 statusTabButton.addEventListener("click", openStatusTab);
 toolsTabButton.addEventListener("click", openToolsTab);
 callsTabButton.addEventListener("click", openCallsTab);
@@ -3283,12 +3633,228 @@ function renderGroupPeople(){
    item.append(label);groupPeopleList.append(item);
  }
 }
-function openNewChat(){newChatReturnFocus=newChatButton;newChatPanel.hidden=false;privateChatView.hidden=true;groupChatView.hidden=true;newPrivateChatButton.hidden=false;newGroupChatButton.hidden=false;closeNewChatButton.focus();}
+
+function updateBroadcastSelectedCount() {
+  const english = document.documentElement.lang === "en";
+  const count = selectedBroadcastRecipients.size;
+  broadcastSelectedCount.textContent = english
+    ? (count ? count + (count === 1 ? " recipient selected" : " recipients selected") : "No recipients selected")
+    : (count ? "تم اختيار " + count + " مستلم" : "لم يتم اختيار مستلمين");
+}
+function renderBroadcastPeople() {
+  const english = document.documentElement.lang === "en";
+  const term = broadcastPeopleSearch.value.trim().toLocaleLowerCase();
+  broadcastPeopleList.replaceChildren();
+  const filtered = people.filter(person => displayName(person).toLocaleLowerCase().includes(term));
+  if (!filtered.length) {
+    broadcastPeopleList.append(safeText("li", "empty-item", english ? "No people found." : "لا يوجد أشخاص بهذا الاسم."));
+    return;
+  }
+  for (const person of filtered) {
+    const item = document.createElement("li");
+    const label = document.createElement("label");
+    label.className = "broadcast-person-choice";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = selectedBroadcastRecipients.has(person.id);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) selectedBroadcastRecipients.add(person.id);
+      else selectedBroadcastRecipients.delete(person.id);
+      updateBroadcastSelectedCount();
+    });
+    label.append(checkbox);
+    appendProfileAvatar(label, person);
+    label.append(document.createTextNode(displayName(person)));
+    item.append(label);
+    broadcastPeopleList.append(item);
+  }
+}
+async function loadBroadcastLists() {
+  const english = document.documentElement.lang === "en";
+  broadcastLists.replaceChildren();
+  const { data: lists, error } = await supabase.from("broadcast_lists")
+    .select("id,name,created_at").eq("owner_id", currentUser.id).order("created_at", { ascending: false });
+  if (error) {
+    broadcastLists.append(safeText("li", "empty-item", english ? "Could not load broadcast lists." : "تعذر تحميل قوائم الرسائل الجماعية."));
+    return;
+  }
+  if (!lists?.length) {
+    broadcastLists.append(safeText("li", "empty-item", english ? "No broadcast lists yet." : "لا توجد قوائم بث بعد."));
+    return;
+  }
+  const { data: members, error: membersError } = await supabase.from("broadcast_list_members")
+    .select("broadcast_list_id,recipient_id").in("broadcast_list_id", lists.map(list => list.id));
+  if (membersError) {
+    broadcastLists.append(safeText("li", "empty-item", english ? "Could not load broadcast recipients." : "تعذر تحميل مستلمي قوائم الرسائل الجماعية."));
+    return;
+  }
+  const counts = new Map();
+  for (const member of members || []) counts.set(member.broadcast_list_id, (counts.get(member.broadcast_list_id) || 0) + 1);
+  for (const list of lists) {
+    const item = document.createElement("li");
+    item.className = "broadcast-list-item";
+    const send = safeText("button", "broadcast-list-send", list.name + " — " + (counts.get(list.id) || 0) + (english ? " recipients" : " مستلمين"));
+    send.type = "button";
+    send.addEventListener("click", () => { void sendBroadcastList(list); });
+    const remove = safeText("button", "quiet-button", english ? "Delete list" : "حذف قائمة الرسائل الجماعية");
+    remove.type = "button";
+    remove.setAttribute("aria-label", (english ? "Delete broadcast list " : "حذف قائمة الرسائل الجماعية ") + list.name);
+    remove.addEventListener("click", async () => {
+      if (!window.confirm(english ? "Delete this broadcast list?" : "هل تريد حذف قائمة الرسائل الجماعية؟")) return;
+      remove.disabled = true;
+      const result = await supabase.from("broadcast_lists").delete().eq("id", list.id).eq("owner_id", currentUser.id);
+      if (result.error) {
+        remove.disabled = false;
+        announce((english ? "Could not delete the list: " : "تعذر حذف القائمة: ") + result.error.message, "error");
+        return;
+      }
+      item.remove();
+      if (!broadcastLists.children.length) broadcastLists.append(safeText("li", "empty-item", english ? "No broadcast lists yet." : "لا توجد قوائم بث بعد."));
+      announce(english ? "Broadcast list deleted." : "تم حذف قائمة الرسائل الجماعية.");
+    });
+    item.append(send, remove);
+    broadcastLists.append(item);
+  }
+}
+async function getOrCreateBroadcastConversation(recipientId) {
+  const [one, two] = [currentUser.id, recipientId].sort();
+  const existing = await supabase.from("conversations").select("id")
+    .eq("user_one", one).eq("user_two", two).maybeSingle();
+  if (existing.error) throw existing.error;
+  if (existing.data) return existing.data.id;
+  const created = await supabase.from("conversations").insert({ user_one: one, user_two: two })
+    .select("id").single();
+  if (!created.error) return created.data.id;
+  if (created.error.code !== "23505") throw created.error;
+  const retry = await supabase.from("conversations").select("id")
+    .eq("user_one", one).eq("user_two", two).single();
+  if (retry.error) throw retry.error;
+  return retry.data.id;
+}
+async function sendBroadcastList(list) {
+  const english = document.documentElement.lang === "en";
+  const { data: members, error } = await supabase.from("broadcast_list_members")
+    .select("recipient_id").eq("broadcast_list_id", list.id);
+  if (error) {
+    announce((english ? "Could not load recipients: " : "تعذر تحميل المستلمين: ") + error.message, "error");
+    return;
+  }
+  if (!members?.length) {
+    announce(english ? "This broadcast list has no recipients." : "قائمة الرسائل الجماعية لا تحتوي على مستلمين.", "error");
+    return;
+  }
+  const body = window.prompt(english ? "Write the message to send to this list" : "اكتب الرسالة التي تريد إرسالها إلى القائمة");
+  if (body === null) return;
+  const messageBody = body.trim();
+  if (!messageBody || messageBody.length > 5000) {
+    announce(english ? "Enter a message between 1 and 5000 characters." : "اكتب رسالة من حرف واحد إلى 5000 حرف.", "error");
+    return;
+  }
+  let sent = 0;
+  const failed = [];
+  for (const member of members) {
+    try {
+      const conversationId = await getOrCreateBroadcastConversation(member.recipient_id);
+      const result = await supabase.from("messages").insert({
+        conversation_id: conversationId, sender_id: currentUser.id, body: messageBody
+      }).select("id").single();
+      if (result.error) throw result.error;
+      sent++;
+      const push = await supabase.functions.invoke("send-push", { body: { message_id: result.data.id } });
+      if (push.error) console.warn("Broadcast push failed:", push.error.message);
+    } catch (sendError) {
+      failed.push(sendError.message || member.recipient_id);
+    }
+  }
+  void loadConversations().catch(error => console.warn("Broadcast conversation refresh failed:", error));
+  if (failed.length) {
+    announce((english ? "Message sent to " : "تم إرسال الرسالة إلى ") + sent + (english ? " recipients. Could not send to some recipients: " : " مستلمين. تعذر الإرسال إلى بعض المستلمين: ") + failed.length, "error");
+  } else {
+    announce((english ? "Message sent to " : "تم إرسال الرسالة إلى ") + sent + (english ? " recipients." : " مستلمين."), "success");
+  }
+}
+let broadcastReturnFocus = null;
+function openBroadcastPanel(returnElement = newChatButton) {
+  if (!newChatPanel.hidden) closeNewChat();
+  broadcastReturnFocus = returnElement || newChatButton;
+  broadcastPanel.hidden = false;
+  broadcastListsView.hidden = false;
+  broadcastCreateView.hidden = true;
+  void loadBroadcastLists();
+  closeBroadcastPanelButton.focus();
+}
+newBroadcastListButton.addEventListener("click", () => openBroadcastPanel(newChatButton));
+$("#open-broadcast-settings")?.addEventListener("click", () => openBroadcastPanel($("#open-broadcast-settings")));
+closeBroadcastPanelButton.addEventListener("click", () => {
+  broadcastPanel.hidden = true;
+  (broadcastReturnFocus?.isConnected ? broadcastReturnFocus : newChatButton).focus();
+});
+broadcastPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    broadcastPanel.hidden = true;
+    (broadcastReturnFocus?.isConnected ? broadcastReturnFocus : newChatButton).focus();
+  }
+});
+createBroadcastListButton.addEventListener("click", async () => {
+  selectedBroadcastRecipients.clear();
+  broadcastListNameInput.value = "";
+  broadcastPeopleSearch.value = "";
+  if (!people.length) await loadPeople();
+  renderBroadcastPeople();
+  updateBroadcastSelectedCount();
+  broadcastListsView.hidden = true;
+  broadcastCreateView.hidden = false;
+  broadcastListNameInput.focus();
+});
+broadcastPeopleSearch.addEventListener("input", renderBroadcastPeople);
+cancelBroadcastCreateButton.addEventListener("click", () => {
+  broadcastCreateView.hidden = true;
+  broadcastListsView.hidden = false;
+  createBroadcastListButton.focus();
+});
+saveBroadcastListButton.addEventListener("click", async () => {
+  const english = document.documentElement.lang === "en";
+  const name = broadcastListNameInput.value.trim();
+  const recipients = [...selectedBroadcastRecipients];
+  if (!name) {
+    announce(english ? "Enter a name for the broadcast list." : "اكتب اسمًا لقائمة الرسائل الجماعية.", "error");
+    broadcastListNameInput.focus();
+    return;
+  }
+  if (!recipients.length) {
+    announce(english ? "Choose at least one recipient." : "اختر مستلمًا واحدًا على الأقل.", "error");
+    return;
+  }
+  saveBroadcastListButton.disabled = true;
+  try {
+    const created = await supabase.from("broadcast_lists").insert({ owner_id: currentUser.id, name })
+      .select("id").single();
+    if (created.error) throw created.error;
+    const members = await supabase.from("broadcast_list_members").insert(
+      recipients.map(recipient_id => ({ broadcast_list_id: created.data.id, recipient_id }))
+    );
+    if (members.error) {
+      await supabase.from("broadcast_lists").delete().eq("id", created.data.id).eq("owner_id", currentUser.id);
+      throw members.error;
+    }
+    announce(english ? "Broadcast list saved." : "تم حفظ قائمة الرسائل الجماعية.", "success");
+    broadcastCreateView.hidden = true;
+    broadcastListsView.hidden = false;
+    await loadBroadcastLists();
+    createBroadcastListButton.focus();
+  } catch (error) {
+    announce((english ? "Could not save the broadcast list: " : "تعذر حفظ قائمة الرسائل الجماعية: ") + (error.message || ""), "error");
+  } finally {
+    saveBroadcastListButton.disabled = false;
+  }
+});
+function openNewChat(){newChatReturnFocus=newChatButton;newChatPanel.hidden=false;privateChatView.hidden=true;groupChatView.hidden=true;newPrivateChatButton.hidden=false;newGroupChatButton.hidden=false;newBroadcastListButton.hidden=false;if(openChannelsButton)openChannelsButton.hidden=false;if(openCommunitiesButton)openCommunitiesButton.hidden=false;closeNewChatButton.focus();}
 function closeNewChat(){newChatPanel.hidden=true;if(newChatReturnFocus?.isConnected)newChatReturnFocus.focus();}
 newChatButton.addEventListener("click",openNewChat);closeNewChatButton.addEventListener("click",closeNewChat);
 newChatPanel.addEventListener("keydown",e=>{if(e.key==="Escape")closeNewChat();});
-newPrivateChatButton.addEventListener("click",()=>{privateChatView.hidden=false;groupChatView.hidden=true;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;peopleSearch.value="";renderPeople();peopleSearch.focus();});
-newGroupChatButton.addEventListener("click",()=>{selectedGroupMembers.clear();groupNameInput.value="";newGroupDescriptionInput.value="";groupPeopleSearch.value="";selectedGroupCreationPhoto=null;newGroupPhotoInput.value="";if(newGroupPhotoPreviewUrl){URL.revokeObjectURL(newGroupPhotoPreviewUrl);newGroupPhotoPreviewUrl=null;}newGroupPhotoPreview.removeAttribute("src");newGroupPhotoPreview.hidden=true;newGroupPhotoRemoveButton.hidden=true;privateChatView.hidden=true;groupChatView.hidden=false;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;renderGroupPeople();groupNameInput.focus();});
+newPrivateChatButton.addEventListener("click",()=>{privateChatView.hidden=false;groupChatView.hidden=true;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;if(openChannelsButton)openChannelsButton.hidden=true;if(openCommunitiesButton)openCommunitiesButton.hidden=true;peopleSearch.value="";renderPeople();peopleSearch.focus();});
+newGroupChatButton.addEventListener("click",()=>{selectedGroupMembers.clear();if(openChannelsButton)openChannelsButton.hidden=true;if(openCommunitiesButton)openCommunitiesButton.hidden=true;groupNameInput.value="";newGroupDescriptionInput.value="";groupPeopleSearch.value="";selectedGroupCreationPhoto=null;newGroupPhotoInput.value="";if(newGroupPhotoPreviewUrl){URL.revokeObjectURL(newGroupPhotoPreviewUrl);newGroupPhotoPreviewUrl=null;}newGroupPhotoPreview.removeAttribute("src");newGroupPhotoPreview.hidden=true;newGroupPhotoRemoveButton.hidden=true;privateChatView.hidden=true;groupChatView.hidden=false;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;renderGroupPeople();groupNameInput.focus();});
 peopleSearch.addEventListener("input",renderPeople);groupPeopleSearch.addEventListener("input",renderGroupPeople);
 newGroupPhotoChooseButton.addEventListener("click",()=>newGroupPhotoInput.click());
 newGroupPhotoInput.addEventListener("change",()=>{
@@ -3463,6 +4029,147 @@ $("#publish-status-button").addEventListener("click", async () => {
     announce("تعذر نشر الحالة: " + (error.message || "حاول مرة أخرى."), "error");
   } finally { button.disabled = false; }
 });
+async function renderStatusInteractions(row, own) {
+  const host = $("#status-viewer-interactions");
+  if (!host || !row?.id || !currentUser || activeViewedStatus?.id !== row.id) return;
+  const english = document.documentElement.lang === "en";
+  host.replaceChildren();
+  const reactionsHeading = safeText("p", "status-interaction-heading", english ? "Status reactions" : "تفاعلات الحالة");
+  host.append(reactionsHeading);
+  if (!own) {
+    const reactionsResult = await supabase.from("status_reactions")
+      .select("user_id,emoji").eq("status_id", row.id);
+    if (activeViewedStatus?.id !== row.id) return;
+    if (reactionsResult.error) {
+      host.append(safeText("p", "empty-item", english ? "Could not load status reactions." : "تعذر تحميل تفاعلات الحالة."));
+      return;
+    }
+    const currentReaction = (reactionsResult.data || []).find(item => item.user_id === currentUser.id);
+    const counts = new Map();
+    for (const item of reactionsResult.data || []) counts.set(item.emoji, (counts.get(item.emoji) || 0) + 1);
+    const reactionGroup = document.createElement("div");
+    reactionGroup.className = "status-reaction-buttons";
+    reactionGroup.setAttribute("role", "group");
+    reactionGroup.setAttribute("aria-label", english ? "Status reactions" : "تفاعلات الحالة");
+    for (const emoji of ["👍", "❤️", "😂", "😮", "😢", "🙏"]) {
+      const count = counts.get(emoji) || 0;
+      const button = safeText("button", "status-reaction-button", emoji + (count ? " " + count : ""));
+      button.type = "button";
+      button.dataset.emoji = emoji;
+      button.setAttribute("aria-pressed", String(currentReaction?.emoji === emoji));
+      button.setAttribute("aria-label", (english ? "React with " : "التفاعل بـ ") + emoji + (count ? (english ? ", " + count + " reactions" : "، " + count + " تفاعلات") : ""));
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          let result;
+          if (currentReaction?.emoji === emoji) {
+            result = await supabase.from("status_reactions").delete()
+              .eq("status_id", row.id).eq("user_id", currentUser.id);
+          } else if (currentReaction) {
+            result = await supabase.from("status_reactions").update({ emoji })
+              .eq("status_id", row.id).eq("user_id", currentUser.id);
+          } else {
+            result = await supabase.from("status_reactions").insert({
+              status_id: row.id, user_id: currentUser.id, emoji
+            });
+          }
+          if (result.error) throw result.error;
+          await renderStatusInteractions(row, false);
+          host.querySelector('button[data-emoji="' + emoji + '"]')?.focus();
+        } catch (error) {
+          announce((english ? "Could not update the reaction: " : "تعذر تحديث التفاعل: ") + (error.message || ""), "error");
+          button.disabled = false;
+        }
+      });
+      reactionGroup.append(button);
+    }
+    host.append(reactionGroup);
+  }
+  const repliesHeading = safeText("p", "status-interaction-heading", english ? "Status replies" : "ردود الحالة");
+  const repliesList = document.createElement("ul");
+  repliesList.className = "status-replies-list";
+  repliesList.setAttribute("aria-label", english ? "Status replies" : "ردود الحالة");
+  const repliesResult = await supabase.from("status_replies")
+    .select("id,sender_id,body,created_at")
+    .eq("status_id", row.id)
+    .order("created_at", { ascending: true });
+  if (activeViewedStatus?.id !== row.id) return;
+  if (repliesResult.error) {
+    repliesList.append(safeText("li", "empty-item", english ? "Could not load replies." : "تعذر تحميل الردود."));
+  } else if (!repliesResult.data?.length) {
+    repliesList.append(safeText("li", "empty-item", english ? "No replies yet." : "لا توجد ردود بعد."));
+  } else {
+    const ids = [...new Set(repliesResult.data.map(reply => reply.sender_id))];
+    const profilesResult = await supabase.from("profiles").select("id,display_name").in("id", ids);
+    if (activeViewedStatus?.id !== row.id) return;
+    const names = new Map((profilesResult.data || []).map(profile => [profile.id, profile.display_name]));
+    for (const reply of repliesResult.data) {
+      const name = reply.sender_id === currentUser.id
+        ? (english ? "You" : "أنت")
+        : (names.get(reply.sender_id) || (english ? "Mersal user" : "مستخدم مرسال"));
+      const item = document.createElement("li");
+      item.className = "status-reply-item";
+      item.append(
+        safeText("span", "status-reply-author", name),
+        safeText("p", "status-reply-body", reply.body),
+        safeText("time", "status-reply-time", new Intl.DateTimeFormat(english ? "en" : "ar-JO", { dateStyle: "short", timeStyle: "short" }).format(new Date(reply.created_at)))
+      );
+      if (own || reply.sender_id === currentUser.id) {
+        const remove = safeText("button", "quiet-button status-reply-delete", english ? "Delete reply" : "حذف الرد");
+        remove.type = "button";
+        remove.setAttribute("aria-label", (english ? "Delete reply from " : "حذف رد ") + name);
+        remove.addEventListener("click", async () => {
+          remove.disabled = true;
+          const deleted = await supabase.from("status_replies").delete().eq("id", reply.id).select("id").maybeSingle();
+          if (deleted.error || !deleted.data) {
+            remove.disabled = false;
+            announce((english ? "Could not delete reply: " : "تعذر حذف الرد: ") + (deleted.error?.message || ""), "error");
+            return;
+          }
+          item.remove();
+          if (!repliesList.children.length) repliesList.append(safeText("li", "empty-item", english ? "No replies yet." : "لا توجد ردود بعد."));
+          announce(english ? "Reply deleted." : "تم حذف الرد.", "success");
+        });
+        item.append(remove);
+      }
+      repliesList.append(item);
+    }
+  }
+  host.append(repliesHeading, repliesList);
+  if (!own) {
+    const form = document.createElement("form");
+    form.className = "status-reply-form";
+    const label = safeText("label", "", english ? "Reply to status" : "الرد على الحالة");
+    const input = document.createElement("textarea");
+    input.rows = 2;
+    input.maxLength = 500;
+    input.required = true;
+    input.placeholder = english ? "Write a reply to this status" : "اكتب ردك على الحالة";
+    input.setAttribute("aria-label", label.textContent);
+    const send = safeText("button", "primary-button", english ? "Send reply" : "إرسال الرد");
+    send.type = "submit";
+    label.append(input);
+    form.append(label, send);
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const body = input.value.trim();
+      if (!body || body.length > 500) return;
+      send.disabled = true;
+      const result = await supabase.from("status_replies").insert({
+        status_id: row.id, sender_id: currentUser.id, body
+      });
+      if (result.error) {
+        announce((english ? "Could not send the reply: " : "تعذر إرسال الرد: ") + result.error.message, "error");
+        send.disabled = false;
+        return;
+      }
+      announce(english ? "Your status reply was sent." : "تم إرسال ردك على الحالة.", "success");
+      await renderStatusInteractions(row, false);
+      host.querySelector(".status-reply-form textarea")?.focus();
+    });
+    host.append(form);
+  }
+}
 async function openStatusViewer(row, name, trigger) {
   if (new Date(row.expires_at).getTime() <= Date.now()) {
     await loadStatuses();
@@ -3473,6 +4180,7 @@ async function openStatusViewer(row, name, trigger) {
   $("#status-viewer-content").replaceChildren(); $("#status-viewer-views").replaceChildren();
   $("#status-viewer-caption").textContent = row.content || "";
   $("#status-viewer-meta").textContent = name + "، " + statusTimeLabel(row.created_at);
+  void renderStatusInteractions(row, row.user_id === currentUser.id).catch(error => console.warn("Status interactions could not be loaded:", error));
   const own = row.user_id === currentUser.id;
   $("#delete-status-button").hidden = !own;
   if (!own && privacySettings.read_receipts_enabled) {
@@ -3517,7 +4225,7 @@ async function openStatusViewer(row, name, trigger) {
   statusViewerPanel.hidden = false; $("#close-status-viewer").focus();
 }
 function closeStatusViewer() {
-  statusViewerPanel.hidden = true; $("#status-viewer-content").replaceChildren();
+  statusViewerPanel.hidden = true; activeViewedStatus = null; $("#status-viewer-content").replaceChildren(); $("#status-viewer-interactions").replaceChildren();
   if (statusViewerReturnFocus?.isConnected) statusViewerReturnFocus.focus();
 }
 $("#close-status-viewer").addEventListener("click", closeStatusViewer);
@@ -3954,6 +4662,28 @@ async function selectConversation(conversation, person) {
       event: "UPDATE", schema: "public", table: "messages",
       filter: "conversation_id=eq." + conversation.id
     }, () => { if(isCurrentSelection()) void loadMessages(); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, payload => {
+      if (!isCurrentSelection()) return;
+      const messageId = payload.new?.message_id || payload.old?.message_id;
+      const item = messageId ? messagesList.querySelector('[data-message-id="' + messageId + '"]') : null;
+      if (item) {
+        const message = { id: messageId };
+        void refreshMessageInteractions(message, item);
+      }
+    })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_view_once_views" }, payload => {
+      if (!isCurrentSelection()) return;
+      const item = payload.new?.message_id
+        ? messagesList.querySelector('[data-message-id="' + payload.new.message_id + '"]')
+        : null;
+      if (item) void loadMessages();
+    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "message_pins" }, payload => {
+      if (!isCurrentSelection()) return;
+      const messageId = payload.new?.message_id || payload.old?.message_id;
+      const item = messageId ? messagesList.querySelector('[data-message-id="' + messageId + '"]') : null;
+      if (item) void refreshMessageInteractions({ id: messageId }, item);
+    })
     .on("postgres_changes", { event: "*", schema: "public", table: "group_poll_votes" }, payload => {
       if (!isCurrentSelection()) return;
       const pollId = payload.new?.poll_id || payload.old?.poll_id;
@@ -4055,6 +4785,24 @@ function setGroupInviteUrl(token){
 }
 async function loadGroupInviteLink(conversationId,isAdmin){
   if(!groupInviteRow||!groupInviteUrl)return;
+  if(!isAdmin){
+    const {data:settings,error}=await supabase.from("group_settings")
+      .select("add_members_by").eq("conversation_id",conversationId).maybeSingle();
+    if(error){
+      groupInviteRow.hidden=true;
+      groupInviteUrl.value="";
+      groupInviteTokenCache.delete(conversationId);
+      console.warn("تعذر التحقق من صلاحية رابط الدعوة:",error.message);
+      return;
+    }
+    if((settings?.add_members_by||"admins")!=="everyone"){
+      groupInviteRow.hidden=true;
+      groupInviteUrl.value="";
+      groupInviteTokenCache.delete(conversationId);
+      if(groupInviteStatus)groupInviteStatus.textContent="";
+      return;
+    }
+  }
   groupInviteRow.hidden=false;
   groupInviteResetButton.hidden=!isAdmin;
   if(groupInviteRetryButton)groupInviteRetryButton.hidden=true;
@@ -4071,9 +4819,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
     request=(async()=>{
       let timeoutId=null;
       try{
-        // The RPC checks group membership and creates the token atomically.
-        // Avoid a direct table read here: its RLS policy adds no value and can
-        // leave the invite screen waiting before the authorized RPC is reached.
+        // The RPC enforces the group's add-members permission before returning a token.
         const rpc=supabase.rpc("get_or_create_group_invite",{p_conversation_id:conversationId});
         const timeout=new Promise((_,reject)=>{
           timeoutId=window.setTimeout(()=>reject(new Error("انتهت مهلة تحميل رابط الدعوة.")),12000);
@@ -4609,8 +5355,9 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
   groupSettingsSaving = true;
   updateGroupSettingsSaveButton();
   try {
+    const conversationId = activeConversation.id;
     const payload = {
-      conversation_id: activeConversation.id,
+      conversation_id: conversationId,
       send_messages_by: groupSettingsSendSelect.value,
       add_members_by: groupSettingsAddSelect.value,
       require_admin_approval: groupSettingsApprovalCheckbox.checked,
@@ -4618,6 +5365,11 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
     };
     const { error } = await supabase.from("group_settings").upsert(payload, { onConflict: "conversation_id" });
     if (error) throw error;
+    groupInviteTokenCache.delete(conversationId);
+    if (activeConversation?.id === conversationId) {
+      const permissions = await getCurrentGroupPermissions();
+      if (activeConversation?.id === conversationId) await loadGroupInviteLink(conversationId, permissions.isAdmin);
+    }
     groupSettingsSnapshot = getGroupSettingsSnapshot();
     updateGroupSettingsSaveButton();
     announce("تم حفظ إعدادات المجموعة.");
@@ -5589,7 +6341,7 @@ function closeMessageOptions(menu, toggle) {
   menu.removeAttribute("aria-modal");
   if (menu._home && menu.parentElement !== menu._home) menu._home.append(menu);
   toggle.setAttribute("aria-expanded", "false");
-  toggle.focus();
+  if (toggle.isConnected) toggle.focus();
 }
 async function deleteMessageForMe(message, item, menu, toggle) {
   if (!currentUser || !activeConversation) return;
@@ -5640,10 +6392,39 @@ function parsePollMessageBody(body) {
   if (!match) return null;
   return { pollId: match[1], preview: raw.slice(0, match.index).trim() };
 }
+const MERSAL_STICKERS = [
+  { emoji: "😂", name: "ضحك", english: "Laughing" },
+  { emoji: "❤️", name: "حب", english: "Love" },
+  { emoji: "🥰", name: "فرح", english: "Happy" },
+  { emoji: "👏", name: "تصفيق", english: "Clapping" },
+  { emoji: "🤔", name: "تفكير", english: "Thinking" },
+  { emoji: "😮", name: "دهشة", english: "Surprised" },
+  { emoji: "😢", name: "حزن", english: "Sad" },
+  { emoji: "🎉", name: "احتفال", english: "Celebration" },
+  { emoji: "🙏", name: "شكر", english: "Thank you" },
+  { emoji: "👌", name: "موافقة", english: "Okay" },
+  { emoji: "🔥", name: "نار", english: "Fire" },
+  { emoji: "⭐", name: "نجمة", english: "Star" },
+  { emoji: "😍", name: "إعجاب", english: "Admiration" },
+  { emoji: "🤣", name: "ضحك شديد", english: "ROFL" },
+  { emoji: "🤗", name: "عناق", english: "Hug" },
+  { emoji: "💪", name: "قوة", english: "Strong" },
+  { emoji: "🥳", name: "عيد", english: "Party" },
+  { emoji: "😎", name: "رائع", english: "Cool" },
+  { emoji: "🌹", name: "وردة", english: "Rose" },
+  { emoji: "💯", name: "مئة", english: "One hundred" }
+];
+function parseStickerMessageBody(body) {
+  const match = String(body || "").match(/^MERSAL_STICKER:([\s\S]+)$/);
+  if (!match) return null;
+  return MERSAL_STICKERS.find(sticker => sticker.emoji === match[1]) || null;
+}
 function getMessagePreviewText(body) {
   const raw = normalizeMessageLineBreaks(body);
   const pollMessage = parsePollMessageBody(raw);
   if (pollMessage) return pollMessage.preview || "استطلاع رأي";
+  const sticker = parseStickerMessageBody(raw);
+  if (sticker) return (document.documentElement.lang === "en" ? "Sticker: " : "ملصق: ") + (document.documentElement.lang === "en" ? sticker.english : sticker.name);
   const attachmentMarker = "MERSAL_ATTACHMENT:";
   const attachmentIndex = raw.indexOf(attachmentMarker);
   if (attachmentIndex >= 0) {
@@ -5800,6 +6581,269 @@ async function refreshOutgoingMessageStatus(messageId, conversation = activeConv
   }
 }
 
+async function refreshMessageInteractions(message, item) {
+  if (!message?.id || !item?.isConnected || !currentUser || !activeConversation) return;
+  const conversationId = activeConversation.id;
+  const [reactionsResult, starResult, pinResult] = await Promise.all([
+    supabase.from("message_reactions").select("emoji,user_id").eq("message_id", message.id),
+    supabase.from("starred_messages").select("message_id").eq("message_id", message.id).eq("user_id", currentUser.id).maybeSingle(),
+    supabase.from("message_pins").select("message_id").eq("message_id", message.id).eq("conversation_id", conversationId).maybeSingle()
+  ]);
+  if (!item.isConnected || activeConversation?.id !== conversationId) return;
+  if (reactionsResult.error || starResult.error || pinResult.error) {
+    console.warn("Message interaction refresh failed:", reactionsResult.error || starResult.error || pinResult.error);
+    return;
+  }
+  const reactionHost = item.querySelector(".message-reactions");
+  if (reactionHost) {
+    const counts = new Map();
+    const own = new Set();
+    for (const row of reactionsResult.data || []) {
+      const current = counts.get(row.emoji) || { count: 0, mine: false };
+      current.count++;
+      if (row.user_id === currentUser.id) current.mine = true;
+      counts.set(row.emoji, current);
+      if (row.user_id === currentUser.id) own.add(row.emoji);
+    }
+    const common = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
+    const emojis = [...new Set([...common.filter(emoji => counts.has(emoji)), ...counts.keys()])];
+    reactionHost.replaceChildren();
+    for (const emoji of emojis) {
+      const info = counts.get(emoji) || { count: 0, mine: false };
+      const button = safeText("button", "message-reaction-button", emoji + (info.count > 1 ? " " + info.count : ""));
+      button.type = "button";
+      button.dataset.emoji = emoji;
+      const english = document.documentElement.lang === "en";
+      button.setAttribute("aria-label", emoji + (info.count ? " " + info.count : "") + (info.mine ? (english ? ", remove your reaction" : "، إزالة تفاعلك") : (english ? ", add your reaction" : "، إضافة تفاعلك")));
+      button.setAttribute("aria-pressed", String(info.mine));
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          const result = info.mine
+            ? await supabase.from("message_reactions").delete().eq("message_id", message.id).eq("user_id", currentUser.id).eq("emoji", emoji)
+            : await supabase.from("message_reactions").insert({ message_id: message.id, user_id: currentUser.id, emoji });
+          if (result.error) throw result.error;
+          await refreshMessageInteractions(message, item);
+        } catch (error) {
+          announce("تعذر حفظ التفاعل: " + (error.message || ""), "error");
+          button.disabled = false;
+        }
+      });
+      reactionHost.append(button);
+    }
+  }
+  item.classList.toggle("message-starred-by-me", Boolean(starResult.data));
+  item.classList.toggle("message-pinned", Boolean(pinResult.data));
+  const english = document.documentElement.lang === "en";
+  const starControl = item.querySelector(".message-star-button");
+  if (starControl) {
+    starControl.textContent = starResult.data ? (english ? "Remove star" : "إزالة النجمة") : (english ? "Star message" : "تمييز بنجمة");
+    starControl.setAttribute("aria-label", starControl.textContent);
+  }
+  const pinControl = item.querySelector(".message-pin-button");
+  if (pinControl) {
+    pinControl.textContent = pinResult.data ? (english ? "Unpin message" : "إلغاء تثبيت الرسالة") : (english ? "Pin message" : "تثبيت الرسالة");
+    pinControl.setAttribute("aria-label", pinControl.textContent);
+  }
+  const indicators = item.querySelector(".message-state-indicators");
+  if (indicators) {
+    indicators.replaceChildren();
+    if (starResult.data) indicators.append(safeText("span", "message-state-indicator starred-indicator", english ? "★ Starred message" : "★ رسالة مميزة بنجمة"));
+    if (pinResult.data) indicators.append(safeText("span", "message-state-indicator pinned-indicator", english ? "📌 Pinned message" : "📌 رسالة مثبتة"));
+    indicators.hidden = !indicators.childNodes.length;
+  }
+}
+async function editMessage(message, item, menu, toggle) {
+  const english = document.documentElement.lang === "en";
+  if (message.sender_id !== currentUser?.id) return;
+  if (parsePollMessageBody(message.body || "") || parseStickerMessageBody(message.body || "") || String(message.body || "").includes("MERSAL_ATTACHMENT:")) {
+    announce(english ? "Polls and attachments cannot be edited." : "لا يمكن تعديل استطلاع أو مرفق.", "error");
+    closeMessageOptions(menu, toggle);
+    return;
+  }
+  const sentAt = new Date(message.created_at).getTime();
+  if (!Number.isFinite(sentAt) || Date.now() - sentAt > 15 * 60 * 1000) {
+    announce(english ? "Messages can only be edited within 15 minutes of sending." : "يمكن تعديل الرسالة خلال 15 دقيقة من إرسالها فقط.", "error");
+    closeMessageOptions(menu, toggle);
+    return;
+  }
+  const edited = window.prompt(english ? "Edit message" : "تعديل الرسالة", message.body || "");
+  if (edited === null) { closeMessageOptions(menu, toggle); return; }
+  const nextBody = edited.trim();
+  if (!nextBody || nextBody.length > 5000) {
+    announce(english ? "Enter a message between 1 and 5000 characters." : "اكتب رسالة من حرف واحد إلى 5000 حرف.", "error");
+    return;
+  }
+  const result = await supabase.from("messages")
+    .update({ body: nextBody, edited_at: new Date().toISOString() })
+    .eq("id", message.id)
+    .eq("sender_id", currentUser.id)
+    .select("id")
+    .maybeSingle();
+  if (result.error || !result.data) {
+    announce((english ? "The message edit was not saved: " : "لم يتم حفظ تعديل الرسالة: ") + (result.error?.message || ""), "error");
+    return;
+  }
+  closeMessageOptions(menu, toggle);
+  await loadMessages();
+  announce(english ? "Message edited." : "تم تعديل الرسالة.", "success");
+}
+async function toggleMessageStar(message, item, menu, toggle) {
+  const existing = await supabase.from("starred_messages").select("message_id")
+    .eq("message_id", message.id).eq("user_id", currentUser.id).maybeSingle();
+  if (existing.error) { announce("تعذر تحديث النجمة: " + existing.error.message, "error"); return; }
+  const result = existing.data
+    ? await supabase.from("starred_messages").delete().eq("message_id", message.id).eq("user_id", currentUser.id)
+    : await supabase.from("starred_messages").insert({ message_id: message.id, user_id: currentUser.id });
+  if (result.error) { announce("تعذر تحديث النجمة: " + result.error.message, "error"); return; }
+  await refreshMessageInteractions(message, item);
+  closeMessageOptions(menu, toggle);
+  announce(existing.data ? "تمت إزالة النجمة." : "تمت إضافة النجمة.", "success");
+}
+async function toggleMessagePin(message, item, menu, toggle) {
+  const conversationId = activeConversation?.id;
+  if (!conversationId) return;
+  const existing = await supabase.from("message_pins").select("message_id")
+    .eq("message_id", message.id).eq("conversation_id", conversationId).maybeSingle();
+  if (existing.error) { announce("تعذر تثبيت الرسالة: " + existing.error.message, "error"); return; }
+  const result = existing.data
+    ? await supabase.from("message_pins").delete().eq("message_id", message.id).eq("conversation_id", conversationId).select("message_id").maybeSingle()
+    : await supabase.from("message_pins").insert({ message_id: message.id, conversation_id: conversationId, pinned_by: currentUser.id });
+  if (result.error || (existing.data && !result.data)) {
+    announce((existing.data ? "تعذر إلغاء تثبيت الرسالة: " : "تعذر تثبيت الرسالة: ") + (result.error?.message || "يمكن لمن ثبّت الرسالة أو مشرف المجموعة إلغاء تثبيتها فقط."), "error");
+    return;
+  }
+  await refreshMessageInteractions(message, item);
+  closeMessageOptions(menu, toggle);
+  announce(existing.data ? "تم إلغاء تثبيت الرسالة." : "تم تثبيت الرسالة.", "success");
+}
+function openForwardMessageDialog(message, menu, toggle) {
+  const rawBody = String(message?.body || "");
+  if (parsePollMessageBody(rawBody) || rawBody.includes("MERSAL_ATTACHMENT:")) {
+    announce("لا يمكن إعادة توجيه استطلاع أو مرفق بهذه الطريقة حاليًا.", "error");
+    closeMessageOptions(menu, toggle);
+    return;
+  }
+  const destinations = (conversations || []).filter(conversation => conversation.id !== activeConversation?.id);
+  const english = document.documentElement.lang === "en";
+  const overlay = document.createElement("div");
+  overlay.className = "message-forward-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", english ? "Forward message" : "إعادة توجيه الرسالة");
+  const card = document.createElement("div");
+  card.className = "message-forward-card";
+  const title = safeText("p", "message-forward-title", english ? "Choose a conversation to forward to" : "اختر محادثة لإعادة التوجيه إليها");
+  const close = safeText("button", "quiet-button", english ? "Close" : "إغلاق");
+  close.type = "button";
+  close.addEventListener("click", () => { overlay.remove(); toggle.focus(); });
+  card.append(title, close);
+  if (!destinations.length) {
+    card.append(safeText("p", "message-forward-empty", english ? "There are no other conversations to forward to." : "لا توجد محادثات أخرى لإعادة التوجيه إليها."));
+  }
+  for (const conversation of destinations) {
+    const partnerId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
+    const person = conversation.is_group
+      ? null
+      : (callsProfileCache.get(partnerId) || null);
+    const label = conversation.is_group
+      ? (conversation.group_name || (english ? "Group" : "مجموعة"))
+      : (person?.display_name || (english ? "Private conversation" : "محادثة فردية"));
+    const button = safeText("button", "message-forward-destination", label);
+    button.type = "button";
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        const prefix = english ? "Forwarded message:\n" : "رسالة مُعاد توجيهها:\n";
+        const { data, error } = await supabase.from("messages").insert({
+          conversation_id: conversation.id,
+          sender_id: currentUser.id,
+          body: prefix + getMessagePreviewText(rawBody)
+        }).select("id").single();
+        if (error) throw error;
+        overlay.remove();
+        closeMessageOptions(menu, toggle);
+        void loadConversations().catch(error => console.warn("Forwarded conversation refresh:", error));
+        if (data?.id) {
+          const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
+          if (pushError) console.warn("Forward push notification failed:", pushError.message);
+        }
+        announce(english ? "Message forwarded." : "تمت إعادة توجيه الرسالة.", "success");
+      } catch (error) {
+        button.disabled = false;
+        announce((english ? "Could not forward the message: " : "تعذر إعادة توجيه الرسالة: ") + (error.message || ""), "error");
+      }
+    });
+    card.append(button);
+  }
+  overlay.append(card);
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) { overlay.remove(); toggle.focus(); }
+  });
+  overlay.addEventListener("keydown", event => {
+    if (event.key === "Escape") { event.preventDefault(); overlay.remove(); toggle.focus(); return; }
+    trapDialogTabKey(event, overlay);
+  });
+  closeMessageOptions(menu, toggle);
+  document.body.append(overlay);
+  close.focus();
+}
+async function renderViewOnceAttachment(message, attachment, host, fileName) {
+  const english = document.documentElement.lang === "en";
+  const label = (ar, en) => english ? en : ar;
+  if (message._viewOnceViewsError) {
+    host.append(safeText("p", "attachment-unavailable", label("تعذر التحقق من حالة العرض مرة واحدة.", "Could not check view-once status.")));
+    return;
+  }
+  let views = message._viewOnceViews;
+  if (!Array.isArray(views)) {
+    const result = await supabase.from("message_view_once_views")
+      .select("viewer_id,viewed_at").eq("message_id", message.id);
+    if (result.error) {
+      host.append(safeText("p", "attachment-unavailable", label("تعذر التحقق من حالة العرض مرة واحدة.", "Could not check view-once status.")));
+      return;
+    }
+    views = result.data || [];
+  }
+  if (message.sender_id === currentUser.id) {
+    host.append(safeText("p", "view-once-status", views.length
+      ? label("تم فتح الوسائط مرة واحدة.", "This media has been opened.")
+      : label("وسائط مرسلة للعرض مرة واحدة.", "Media sent for one-time viewing.")));
+    return;
+  }
+  const alreadyViewed = views.some(row => row.viewer_id === currentUser.id);
+  if (alreadyViewed) {
+    host.append(safeText("p", "view-once-status", label("تم فتح هذه الوسائط. لا يمكن فتحها مجددًا.", "This media has already been opened and cannot be viewed again.")));
+    return;
+  }
+  const button = safeText("button", "attachment-open-button view-once-open-button", label("عرض لمرة واحدة", "View once"));
+  button.type = "button";
+  button.setAttribute("aria-label", label("عرض ", "View ") + fileName + label(" لمرة واحدة داخل مرسال", " once inside Mersal"));
+  button.addEventListener("click", async () => {
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+      const signed = await supabase.storage.from("mersal-attachments").createSignedUrl(attachment.path, 300);
+      if (signed.error || !signed.data?.signedUrl) throw signed.error || new Error(label("تعذر تجهيز الوسائط.", "Could not prepare the media."));
+      const marked = await supabase.from("message_view_once_views")
+        .insert({ message_id: message.id, viewer_id: currentUser.id });
+      if (marked.error) {
+        if (marked.error.code === "23505") {
+          button.replaceWith(safeText("p", "view-once-status", label("تم فتح هذه الوسائط. لا يمكن فتحها مجددًا.", "This media has already been opened and cannot be viewed again.")));
+          return;
+        }
+        throw marked.error;
+      }
+      button.textContent = label("تم فتح الوسائط مرة واحدة.", "This media has been opened.");
+      button.setAttribute("aria-label", button.textContent);
+      openAttachmentViewer(signed.data.signedUrl, attachment.type || "", fileName, button);
+    } catch (error) {
+      button.disabled = false;
+      announce(label("تعذر فتح الوسائط: ", "Could not open media: ") + (error.message || ""), "error");
+    }
+  });
+  host.append(button);
+}
 function appendMessage(message) {
   if (!message || document.querySelector('[data-message-id="' + message.id + '"]')) return;
   messagesList.querySelectorAll(".empty-item").forEach(node => node.remove());
@@ -5814,6 +6858,7 @@ function appendMessage(message) {
     return;
   }
   const pollMessage = parsePollMessageBody(message.body);
+  const stickerMessage = parseStickerMessageBody(message.body);
   let pollHost = null;
   const attachmentPrefix = "MERSAL_ATTACHMENT:";
   const attachmentIndex = (message.body || "").indexOf(attachmentPrefix);
@@ -5821,7 +6866,14 @@ function appendMessage(message) {
   if (attachmentIndex >= 0) {
     try { attachment = JSON.parse(message.body.slice(attachmentIndex + attachmentPrefix.length)); } catch { attachment = null; }
   }
-  if (pollMessage) {
+  if (stickerMessage) {
+    item.classList.add("message-sticker-message");
+    const english = document.documentElement.lang === "en";
+    const sticker = safeText("span", "message-sticker", stickerMessage.emoji);
+    sticker.setAttribute("role", "img");
+    sticker.setAttribute("aria-label", (english ? "Sticker: " : "ملصق: ") + (english ? stickerMessage.english : stickerMessage.name));
+    item.append(sticker);
+  } else if (pollMessage) {
     pollHost = document.createElement("div");
     pollHost.className = "message-poll";
     pollHost.dataset.pollId = pollMessage.pollId;
@@ -5833,29 +6885,33 @@ function appendMessage(message) {
     const fileName = attachment.name || "ملف مرفق";
     const fileInfo = safeText("p", "attachment-file-name", "📎 " + fileName);fileInfo.setAttribute("data-no-translate","");
     attachmentView.append(fileInfo);
-    void supabase.storage.from("mersal-attachments").createSignedUrl(attachment.path, 3600).then(({ data, error }) => {
-      if (error || !data?.signedUrl) {
-        attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق."));
-        return;
-      }
-      const previewButton = safeText("button", "attachment-open-button",
-        attachment.type?.startsWith("image/") ? "عرض الصورة داخل مرسال" :
-        attachment.type?.startsWith("video/") ? "تشغيل الفيديو داخل مرسال" :
-        attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "تشغيل الصوت داخل مرسال" :
-        "عرض الملف داخل مرسال");
-      previewButton.type = "button";
-      previewButton.setAttribute("aria-label", (attachment.type?.startsWith("image/") ? "عرض الصورة " : attachment.type?.startsWith("video/") ? "تشغيل الفيديو " : attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "تشغيل الصوت " : "عرض الملف ") + fileName + " داخل المحادثة");
-      previewButton.addEventListener("click", () => openAttachmentViewer(data.signedUrl, attachment.type || "", fileName, previewButton));
-      if (attachment.type?.startsWith("image/")) {
-        const preview = document.createElement("img");
-        preview.src = data.signedUrl; preview.alt = "صورة مرفقة: " + fileName;
-        preview.loading = "lazy"; preview.className = "attachment-image";
-        previewButton.prepend(preview);
-      } else {
-        previewButton.prepend(safeText("span", "attachment-preview-icon", attachment.type?.startsWith("video/") ? "▶" : attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "♫" : "📄"));
-      }
-      attachmentView.insertBefore(previewButton, fileInfo);
-    }).catch(() => attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق.")));
+    if (message.view_once) {
+      void renderViewOnceAttachment(message, attachment, attachmentView, fileName);
+    } else {
+      void supabase.storage.from("mersal-attachments").createSignedUrl(attachment.path, 3600).then(({ data, error }) => {
+        if (error || !data?.signedUrl) {
+          attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق."));
+          return;
+        }
+        const previewButton = safeText("button", "attachment-open-button",
+          attachment.type?.startsWith("image/") ? "عرض الصورة داخل مرسال" :
+          attachment.type?.startsWith("video/") ? "تشغيل الفيديو داخل مرسال" :
+          attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "تشغيل الصوت داخل مرسال" :
+          "عرض الملف داخل مرسال");
+        previewButton.type = "button";
+        previewButton.setAttribute("aria-label", (attachment.type?.startsWith("image/") ? "عرض الصورة " : attachment.type?.startsWith("video/") ? "تشغيل الفيديو " : attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "تشغيل الصوت " : "عرض الملف ") + fileName + " داخل المحادثة");
+        previewButton.addEventListener("click", () => openAttachmentViewer(data.signedUrl, attachment.type || "", fileName, previewButton));
+        if (attachment.type?.startsWith("image/")) {
+          const preview = document.createElement("img");
+          preview.src = data.signedUrl; preview.alt = "صورة مرفقة: " + fileName;
+          preview.loading = "lazy"; preview.className = "attachment-image";
+          previewButton.prepend(preview);
+        } else {
+          previewButton.prepend(safeText("span", "attachment-preview-icon", attachment.type?.startsWith("video/") ? "▶" : attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "♫" : "📄"));
+        }
+        attachmentView.insertBefore(previewButton, fileInfo);
+      }).catch(() => attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق.")));
+    }
     item.append(attachmentView);
   } else {
     const messageBodyNode=safeText("p", "message-body", getMessagePreviewText(message.body));messageBodyNode.setAttribute("data-no-translate","");item.append(messageBodyNode);
@@ -5870,6 +6926,7 @@ function appendMessage(message) {
   timeElement.dateTime = sentAt.toISOString();
   timeElement.setAttribute("aria-label", "تاريخ ووقت الإرسال: " + time);
   messageFooter.append(timeElement);
+  if (message.edited_at) messageFooter.append(safeText("span", "message-edited-label", "تم التعديل"));
   if (message.sender_id === currentUser.id) {
     setTimeout(() => setOutgoingMessageStatus(item, message._deliveredCount || 0, message._readCount || (message._readByPartner ? 1 : 0), Boolean(activeConversation?.is_group)), 0);
   }
@@ -5888,6 +6945,10 @@ function appendMessage(message) {
   const closeButton = safeText("button", "message-option-button message-options-close", "إغلاق الخيارات");
   closeButton.type = "button";
   closeButton.addEventListener("click", () => closeMessageOptions(menu, toggle));
+  menu.addEventListener("keydown", event => {
+    if (event.key === "Escape") { event.preventDefault(); closeMessageOptions(menu, toggle); return; }
+    trapDialogTabKey(event, menu);
+  });
   toggle.addEventListener("click", () => {
     menu.hidden = false;
     menu.classList.add("is-open");
@@ -5930,10 +6991,69 @@ function appendMessage(message) {
   deleteEveryoneButton.disabled = message.sender_id !== currentUser.id;
   deleteEveryoneButton.setAttribute("aria-label", message.sender_id === currentUser.id ? "حذف هذه الرسالة لدى الجميع" : "حذف لدى الجميع، متاح لرسائلك أنت فقط");
   deleteEveryoneButton.addEventListener("click", () => { void deleteMessageForEveryone(message, item, menu, toggle); });
-  menu.append(closeButton, copyButton, replyButton, deleteMineButton, deleteEveryoneButton);
+  let editButton = null;
+  if (message.sender_id === currentUser.id) {
+    editButton = safeText("button", "message-option-button", "تعديل الرسالة");
+    editButton.type = "button";
+    editButton.addEventListener("click", () => { void editMessage(message, item, menu, toggle); });
+  }
+  const starButton = safeText("button", "message-option-button message-star-button", "تمييز بنجمة");
+  starButton.type = "button";
+  starButton.addEventListener("click", () => { void toggleMessageStar(message, item, menu, toggle); });
+  const pinButton = safeText("button", "message-option-button message-pin-button", "تثبيت الرسالة");
+  pinButton.type = "button";
+  pinButton.addEventListener("click", () => { void toggleMessagePin(message, item, menu, toggle); });
+  const reactionPicker = document.createElement("div");
+  reactionPicker.className = "message-reaction-picker";
+  reactionPicker.setAttribute("role", "group");
+  reactionPicker.setAttribute("aria-label", document.documentElement.lang === "en" ? "Choose a message reaction" : "اختيار تفاعل للرسالة");
+  reactionPicker.hidden = true;
+  for (const emoji of ["👍", "❤️", "😂", "😮", "😢", "🙏"]) {
+    const reactionChoice = safeText("button", "message-reaction-choice", emoji);
+    reactionChoice.type = "button";
+    reactionChoice.setAttribute("aria-label", (document.documentElement.lang === "en" ? "React with " : "التفاعل بـ ") + emoji);
+    reactionChoice.addEventListener("click", async () => {
+      reactionChoice.disabled = true;
+      try {
+        const existing = await supabase.from("message_reactions").select("emoji")
+          .eq("message_id", message.id).eq("user_id", currentUser.id).eq("emoji", emoji).maybeSingle();
+        if (existing.error) throw existing.error;
+        const result = existing.data
+          ? await supabase.from("message_reactions").delete().eq("message_id", message.id).eq("user_id", currentUser.id).eq("emoji", emoji)
+          : await supabase.from("message_reactions").insert({ message_id: message.id, user_id: currentUser.id, emoji });
+        if (result.error) throw result.error;
+        reactionPicker.hidden = true;
+        await refreshMessageInteractions(message, item);
+        item.querySelector('.message-reaction-button[data-emoji="' + emoji + '"]')?.focus();
+      } catch (error) {
+        announce((document.documentElement.lang === "en" ? "Could not save reaction: " : "تعذر حفظ التفاعل: ") + (error.message || ""), "error");
+        reactionChoice.disabled = false;
+      }
+    });
+    reactionPicker.append(reactionChoice);
+  }
+  const reactionPickerButton = safeText("button", "message-option-button", document.documentElement.lang === "en" ? "Add reaction" : "إضافة تفاعل");
+  reactionPickerButton.type = "button";
+  reactionPickerButton.addEventListener("click", () => {
+    closeMessageOptions(menu, toggle);
+    reactionPicker.hidden = !reactionPicker.hidden;
+    if (!reactionPicker.hidden) reactionPicker.querySelector("button")?.focus();
+  });
+  const forwardButton = safeText("button", "message-option-button", "إعادة توجيه");
+  forwardButton.type = "button";
+  forwardButton.addEventListener("click", () => openForwardMessageDialog(message, menu, toggle));
   actions.append(toggle, menu);
   messageFooter.append(actions);
-  item.append(messageFooter);
+  const stateIndicators = document.createElement("div");
+  stateIndicators.className = "message-state-indicators";
+  stateIndicators.hidden = true;
+  menu.append(closeButton, copyButton, replyButton, reactionPickerButton, forwardButton);
+  const reactionHost = document.createElement("div");
+  reactionHost.className = "message-reactions";
+  reactionHost.setAttribute("role", "group");
+  reactionHost.setAttribute("aria-label", document.documentElement.lang === "en" ? "Message reactions" : "تفاعلات الرسالة");
+  item.append(stateIndicators, reactionHost, reactionPicker, messageFooter);
+  void refreshMessageInteractions(message, item);
   messagesList.append(item);
   if (pollHost) void renderConversationPoll(pollMessage.pollId, pollHost, message.id);
   messagesList.scrollTop = messagesList.scrollHeight;
@@ -5950,7 +7070,7 @@ async function loadMessages() {
   // Keep the first chat render lightweight on mobile: fetch only the newest
   // 50 messages, then restore chronological order for the conversation view.
   const { data: newestFirst, error } = await supabase.from("messages")
-    .select("id,conversation_id,sender_id,body,created_at,is_deleted")
+    .select("id,conversation_id,sender_id,body,created_at,edited_at,is_deleted,view_once")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -5974,6 +7094,23 @@ async function loadMessages() {
   }
   const hiddenIds = new Set(hiddenRows.map(row => row.message_id));
   const visibleMessages = (data || []).filter(message => !hiddenIds.has(message.id));
+  const viewOnceMessages = visibleMessages.filter(message => message.view_once);
+  if (viewOnceMessages.length) {
+    const viewOnceResult = await supabase.from("message_view_once_views")
+      .select("message_id,viewer_id,viewed_at")
+      .in("message_id", viewOnceMessages.map(message => message.id));
+    if (!isCurrent()) return;
+    if (viewOnceResult.error) {
+      viewOnceMessages.forEach(message => { message._viewOnceViewsError = true; });
+    } else {
+      const groupedViews = new Map();
+      for (const view of viewOnceResult.data || []) {
+        if (!groupedViews.has(view.message_id)) groupedViews.set(view.message_id, []);
+        groupedViews.get(view.message_id).push(view);
+      }
+      viewOnceMessages.forEach(message => { message._viewOnceViews = groupedViews.get(message.id) || []; });
+    }
+  }
   if (!isCurrent()) return;
   if (!visibleMessages.length) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
   for (const message of visibleMessages) appendMessage(message);
@@ -6101,14 +7238,120 @@ confirmMessageScheduleButton.addEventListener("click", async () => {
     confirmMessageScheduleButton.disabled = isPrivateConversationBlocked();
   }
 });
+const starredMessagesButton = $("#starred-messages-button");
+const starredMessagesPanel = $("#starred-messages-panel");
+const starredMessagesList = $("#starred-messages-list");
+const closeStarredMessagesButton = $("#close-starred-messages");
+async function loadStarredMessages() {
+  if (!currentUser || !starredMessagesList) return;
+  starredMessagesList.replaceChildren();
+  const english = document.documentElement.lang === "en";
+  const { data: stars, error: starsError } = await supabase.from("starred_messages")
+    .select("message_id,created_at").eq("user_id", currentUser.id).order("created_at", { ascending: false });
+  if (starsError) {
+    starredMessagesList.append(safeText("li", "empty-item", english ? "Could not load starred messages." : "تعذر تحميل الرسائل المميزة بنجمة."));
+    return;
+  }
+  if (!stars?.length) {
+    starredMessagesList.append(safeText("li", "empty-item", english ? "No starred messages." : "لا توجد رسائل مميزة بنجمة."));
+    return;
+  }
+  const ids = stars.map(star => star.message_id);
+  const [{ data: messages, error: messagesError }, { data: hidden, error: hiddenError }] = await Promise.all([
+    supabase.from("messages").select("id,conversation_id,sender_id,body,created_at,is_deleted").in("id", ids),
+    supabase.from("message_hidden_for").select("message_id").eq("user_id", currentUser.id).in("message_id", ids)
+  ]);
+  if (messagesError || hiddenError) {
+    starredMessagesList.append(safeText("li", "empty-item", english ? "Could not load starred messages." : "تعذر تحميل الرسائل المميزة بنجمة."));
+    return;
+  }
+  const hiddenIds = new Set((hidden || []).map(row => row.message_id));
+  const messageMap = new Map((messages || []).map(message => [message.id, message]));
+  const ordered = ids.map(id => messageMap.get(id)).filter(message => message && !hiddenIds.has(message.id));
+  if (!ordered.length) {
+    starredMessagesList.append(safeText("li", "empty-item", english ? "No starred messages." : "لا توجد رسائل مميزة بنجمة."));
+    return;
+  }
+  for (const message of ordered) {
+    const conversation = conversations.find(item => item.id === message.conversation_id);
+    const item = document.createElement("li");
+    item.className = "starred-message-item";
+    const conversationName = conversation
+      ? (conversation.is_group
+        ? (conversation.group_name || (english ? "Group" : "مجموعة"))
+        : (callsProfileCache.get(conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one)?.display_name || (english ? "Private chat" : "محادثة فردية")))
+      : (english ? "Conversation" : "محادثة");
+    const preview = message.is_deleted
+      ? (english ? "This message was deleted" : "تم حذف هذه الرسالة")
+      : getMessagePreviewText(message.body || "");
+    const open = safeText("button", "starred-message-open", conversationName + " — " + preview);
+    open.type = "button";
+    open.setAttribute("aria-label", (english ? "Open conversation: " : "افتح المحادثة: ") + conversationName + ". " + preview);
+    open.addEventListener("click", async () => {
+      if (!conversation) {
+        announce(english ? "The conversation is unavailable." : "المحادثة غير متاحة.", "error");
+        return;
+      }
+      const partnerId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
+      const person = conversation.is_group
+        ? { id: partnerId, display_name: conversation.group_name || (english ? "Group" : "مجموعة") }
+        : (callsProfileCache.get(partnerId) || people.find(person => person.id === partnerId) || { id: partnerId, display_name: english ? "Mersal user" : "مستخدم مرسال" });
+      starredMessagesPanel.hidden = true;
+      await selectConversation(conversation, person);
+      const target = messagesList.querySelector('[data-message-id="' + message.id + '"]');
+      if (target) {
+        target.setAttribute("tabindex", "-1");
+        target.scrollIntoView({ block: "center" });
+        target.focus();
+      } else {
+        announce(english ? "This message is older than the messages currently loaded. It remains starred." : "هذه الرسالة أقدم من الرسائل المحمّلة حاليًا، وما زالت مميزة بنجمة.");
+      }
+    });
+    const remove = safeText("button", "quiet-button", english ? "Remove star" : "إزالة النجمة");
+    remove.type = "button";
+    remove.setAttribute("aria-label", (english ? "Remove star from message in " : "إزالة النجمة عن رسالة في ") + conversationName);
+    remove.addEventListener("click", async () => {
+      remove.disabled = true;
+      const result = await supabase.from("starred_messages").delete().eq("user_id", currentUser.id).eq("message_id", message.id);
+      if (result.error) {
+        remove.disabled = false;
+        announce((english ? "Could not remove star: " : "تعذر إزالة النجمة: ") + result.error.message, "error");
+        return;
+      }
+      const nextFocus = item.nextElementSibling?.querySelector("button") || item.previousElementSibling?.querySelector("button") || closeStarredMessagesButton;
+      item.remove();
+      if (!starredMessagesList.children.length) starredMessagesList.append(safeText("li", "empty-item", english ? "No starred messages." : "لا توجد رسائل مميزة بنجمة."));
+      nextFocus.focus();
+      announce(english ? "Star removed." : "تمت إزالة النجمة.", "success");
+    });
+    item.append(open, remove);
+    starredMessagesList.append(item);
+  }
+}
+starredMessagesButton.addEventListener("click", async () => {
+  starredMessagesPanel.hidden = false;
+  await loadStarredMessages();
+  closeStarredMessagesButton.focus();
+});
+closeStarredMessagesButton.addEventListener("click", () => {
+  starredMessagesPanel.hidden = true;
+  starredMessagesButton.focus();
+});
+starredMessagesPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    starredMessagesPanel.hidden = true;
+    starredMessagesButton.focus();
+  }
+});
 async function loadScheduledMessages() {
   if (!activeConversation || !currentUser) return;
   scheduledMessagesList.replaceChildren();
   const { data, error } = await supabase.from("scheduled_messages")
-    .select("id,body,scheduled_at,status")
+    .select("id,body,scheduled_at,status,failure_reason")
     .eq("conversation_id", activeConversation.id)
     .eq("sender_id", currentUser.id)
-    .eq("status", "pending")
+    .in("status", ["pending", "failed"])
     .order("scheduled_at", { ascending: true });
   if (error) {
     scheduledMessagesList.append(safeText("li", "empty-item", "تعذر تحميل الرسائل المجدولة: " + error.message));
@@ -6123,26 +7366,36 @@ async function loadScheduledMessages() {
     item.className = "scheduled-message-item";
     const body = safeText("p", "scheduled-message-body", normalizeMessageLineBreaks(scheduled.body));
     const time = safeText("p", "scheduled-message-time", "موعد الإرسال: " + new Intl.DateTimeFormat("ar-JO", { dateStyle: "long", timeStyle: "short" }).format(new Date(scheduled.scheduled_at)));
-    const cancel = safeText("button", "danger-button", "إلغاء الجدولة");
-    cancel.type = "button";
-    cancel.addEventListener("click", async () => {
-      cancel.disabled = true;
-      const { data: updated, error: updateError } = await supabase.from("scheduled_messages")
-        .update({ status: "cancelled" })
-        .eq("id", scheduled.id)
-        .eq("sender_id", currentUser.id)
-        .eq("status", "pending")
-        .select("id")
-        .maybeSingle();
-      if (updateError || !updated) {
-        cancel.disabled = false;
-        announce("تعذر إلغاء جدولة الرسالة: " + (updateError?.message || "ربما حان موعد إرسالها."), "error");
-        return;
-      }
-      announce("تم إلغاء جدولة الرسالة.", "success");
-      await loadScheduledMessages();
-    });
-    item.append(body, time, cancel);
+    const failed = scheduled.status === "failed";
+    const status = safeText("p", "scheduled-message-time", failed
+      ? "لم تُرسل الرسالة: " + (scheduled.failure_reason || "تعذر الإرسال.")
+      : "حالة الرسالة: بانتظار الإرسال.");
+    status.setAttribute("role", "status");
+    if (failed) {
+      item.classList.add("scheduled-message-failed");
+      item.append(body, time, status);
+    } else {
+      const cancel = safeText("button", "danger-button", "إلغاء الجدولة");
+      cancel.type = "button";
+      cancel.addEventListener("click", async () => {
+        cancel.disabled = true;
+        const { data: updated, error: updateError } = await supabase.from("scheduled_messages")
+          .update({ status: "cancelled" })
+          .eq("id", scheduled.id)
+          .eq("sender_id", currentUser.id)
+          .eq("status", "pending")
+          .select("id")
+          .maybeSingle();
+        if (updateError || !updated) {
+          cancel.disabled = false;
+          announce("تعذر إلغاء جدولة الرسالة: " + (updateError?.message || "ربما حان موعد إرسالها."), "error");
+          return;
+        }
+        announce("تم إلغاء جدولة الرسالة.", "success");
+        await loadScheduledMessages();
+      });
+      item.append(body, time, status, cancel);
+    }
     scheduledMessagesList.append(item);
   }
 }
@@ -6257,7 +7510,9 @@ pollComposerPanel.addEventListener("keydown", event => {
   if (event.key === "Escape") {
     event.preventDefault();
     closePollComposer();
+    return;
   }
+  trapDialogTabKey(event, pollComposerPanel);
 });
 pollComposerAddOption.addEventListener("click", () => {
   if (pollComposerOptionCount >= 10) return;
@@ -6360,6 +7615,12 @@ async function uploadAttachments(fileList, options = {}) {
   if(isPrivateConversationBlocked()){announce("لا يمكنك إرسال مرفقات في هذه المحادثة بسبب الحظر.","error");return;}
   closeAttachmentChooser();
   for (const file of files) {
+    const useViewOnce = Boolean(options.viewOnce);
+    const isPhotoOrVideo = file.type?.startsWith("image/") || file.type?.startsWith("video/");
+    if (useViewOnce && !isPhotoOrVideo) {
+      announce("هذا الخيار متاح للصور والفيديوهات فقط.", "error");
+      continue;
+    }
     if (file.size > 50 * 1024 * 1024) {
       announce("حجم الملف " + file.name + " أكبر من 50 ميغابايت.", "error");
       continue;
@@ -6381,8 +7642,8 @@ async function uploadAttachments(fileList, options = {}) {
       const attachment = { path: uploaded.path, name: file.name, type: file.type || "application/octet-stream", size: file.size, ...(options.voiceMessage ? { kind: "voice" } : {}) };
       const body = (options.voiceMessage ? "رسالة صوتية" : "📎 " + file.name) + "\nMERSAL_ATTACHMENT:" + JSON.stringify(attachment);
       const { data, error } = await supabase.from("messages").insert({
-        conversation_id: activeConversation.id, sender_id: currentUser.id, body
-      }).select("id,conversation_id,sender_id,body,created_at").single();
+        conversation_id: activeConversation.id, sender_id: currentUser.id, body, view_once: useViewOnce
+      }).select("id,conversation_id,sender_id,body,created_at,view_once").single();
       if (error) {
         await supabase.storage.from("mersal-attachments").remove([uploaded.path]);
         throw error;
@@ -6403,7 +7664,9 @@ async function uploadAttachments(fileList, options = {}) {
 }
 for (const input of [imageFileInput, videoFileInput, documentFileInput]) {
   input.addEventListener("change", () => {
-    void uploadAttachments(input.files);
+    const viewOnce = Boolean(viewOnceAttachmentInput?.checked);
+    if (viewOnceAttachmentInput) viewOnceAttachmentInput.checked = false;
+    void uploadAttachments(input.files, { viewOnce });
     input.value = "";
   });
 }
@@ -6424,28 +7687,39 @@ messageForm.addEventListener("submit", async (event) => {
     announce("اكتب رسالتك قبل الإرسال.");
     return;
   }
-  if (!activeConversation || !currentUser) return;
-  if(isPrivateConversationBlocked()){announce("لا يمكنك إرسال رسائل في هذه المحادثة بسبب الحظر.","error");return;}
-  const body = replyingToMessage ? "ردًا على: " + replyingToMessage.body + "\n\n" + typedBody : typedBody;
+  const conversation = activeConversation;
+  const sender = currentUser;
+  const partner = activePartner;
+  if (!conversation || !sender) return;
+  if (isPrivateConversationBlocked()) { announce("لا يمكنك إرسال رسائل في هذه المحادثة بسبب الحظر.", "error"); return; }
+  const isStickerMessage = typedBody.startsWith("MERSAL_STICKER:");
+  const replySnapshot = replyingToMessage;
+  const body = replySnapshot && !isStickerMessage ? "ردًا على: " + replySnapshot.body + "\n\n" + typedBody : typedBody;
   sendButton.disabled = true;
-  const { data, error } = await supabase.from("messages").insert({
-    conversation_id: activeConversation.id, sender_id: currentUser.id, body
-  }).select("id,conversation_id,sender_id,body,created_at").single();
-  if (error) {
-    announce("تعذر إرسال الرسالة: " + error.message, "error");
-  } else {
-    messageInput.value = "";
-    replyingToMessage = null;
-    replyingTo.hidden = true;
-    appendMessage(data);
-    void refreshOutgoingMessageStatus(data.id, activeConversation, activePartner).catch(error => console.warn("Could not refresh sent message status:", error));
+  try {
+    const { data, error } = await supabase.from("messages").insert({
+      conversation_id: conversation.id, sender_id: sender.id, body
+    }).select("id,conversation_id,sender_id,body,created_at").single();
+    if (error) throw error;
+    if (activeConversation?.id === conversation.id && currentUser?.id === sender.id) {
+      if (messageInput.value.trim() === typedBody) messageInput.value = "";
+      if (replyingToMessage?.id === replySnapshot?.id) {
+        replyingToMessage = null;
+        replyingTo.hidden = true;
+      }
+      appendMessage(data);
+    }
+    void refreshOutgoingMessageStatus(data.id, conversation, partner).catch(error => console.warn("Could not refresh sent message status:", error));
     await loadConversations();
     const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
     if (pushError) console.warn("Push notification could not be sent:", pushError.message);
     announce("تم الإرسال.", "success");
+  } catch (error) {
+    announce("تعذر إرسال الرسالة: " + (error?.message || "حدث خطأ غير متوقع."), "error");
+  } finally {
+    sendButton.disabled = false;
+    if (activeConversation?.id === conversation.id && !chatView.hidden) messageInput.focus();
   }
-  sendButton.disabled = false;
-  messageInput.focus();
 });
 
 // Do not block application startup on getSession(). Supabase emits INITIAL_SESSION
