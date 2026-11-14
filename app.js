@@ -60,6 +60,7 @@ const mersalTranslations = {
   "فيديو مشارك في المكالمة":"Call participant video",
   "المكالمة المرئية متصلة.":"Video call connected.",
   "المكالمات المرئية تحتاج إذن الكاميرا.":"Video calls require camera permission.",
+  "المكالمات المرئية تحتاج متصفحًا آمنًا يدعم الميكروفون والكاميرا.":"Video calls require a secure browser with microphone and camera support.",
   "تعذر تجهيز سجل المكالمات: ":"Could not load call history: ",
   "الأدوات":"Tools",
   "أدوات عملية تساعدك أثناء استخدام مرسال.":"Practical tools to use while chatting on Mersal.",
@@ -5213,6 +5214,7 @@ async function startVoiceCall(conversation = activeConversation, launchButton = 
   if (launchButton) launchButton.disabled = true;
   voiceCallReturnFocus = launchButton;
   let callLogId = null;
+  let pendingLocalStream = null;
   try {
     await ensureCallChannel(conversation.id);
     if (!conversation.is_group) {
@@ -5230,6 +5232,7 @@ async function startVoiceCall(conversation = activeConversation, launchButton = 
       audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
       video: callType === "video" ? { facingMode:"user", width:{ideal:1280}, height:{ideal:720} } : false
     });
+    pendingLocalStream=stream;
     const {data:callLog,error:callLogError}=await supabase.from("call_logs").insert({
       conversation_id:conversation.id, initiated_by:currentUser.id, call_type:callType, status:"ringing"
     }).select("id").single();
@@ -5257,6 +5260,7 @@ async function startVoiceCall(conversation = activeConversation, launchButton = 
   } catch (error) {
     if (activeCall) { activeCall.finalStatus="failed"; await endVoiceCall(true); }
     else {
+      if(pendingLocalStream)for(const track of pendingLocalStream.getTracks())track.stop();
       if(callLogId)void updateCallLogStatus(callLogId,"failed");
       await finishVoiceCall();
     }
@@ -5289,7 +5293,7 @@ function createVoicePeer(peerId) {
       if(!video){
         video=document.createElement("video");
         video.className="voice-call-remote-video";
-        video.autoplay=true;video.playsInline=true;
+        video.autoplay=true;video.playsInline=true;video.muted=true;
         video.dataset.peerId=peerId;
         video.setAttribute("aria-label","فيديو مشارك في المكالمة");
         voiceCallRemoteVideos.append(video);
