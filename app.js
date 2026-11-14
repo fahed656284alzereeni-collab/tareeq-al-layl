@@ -1209,7 +1209,7 @@ const conversationInfoCreatedRow = $("#group-conversation-created-row");
 const conversationInfoJoined = $("#conversation-info-joined");
 const conversationInfoCount = $("#conversation-info-count");
 const conversationInfoNameLabel = $("#conversation-info-name-label");
-const conversationInfoNameRow = $("#conversation-info-name-row");
+const conversationInfoNameRow = $("#conversation-info-name-card");
 const conversationInfoStatusRow = $("#conversation-info-status-row");
 const conversationInfoExportButton = $("#conversation-info-export");
 const conversationInfoMuteButton = $("#conversation-info-mute");
@@ -3863,22 +3863,25 @@ if(groupInviteRetryButton)groupInviteRetryButton.addEventListener("click",async(
   }
 });
 if(groupInviteResetButton)groupInviteResetButton.addEventListener("click",async()=>{
-  if(!activeConversation?.is_group||!groupInviteUrl||groupInviteResetButton.disabled)return;
-  const permissions=await getCurrentGroupPermissions();
-  if(!permissions.isAdmin)return;
-  if(!window.confirm("سيصبح رابط الدعوة الحالي غير صالح. هل تريد إنشاء رابط جديد؟"))return;
+  const conversationId=activeConversation?.id;
+  if(!activeConversation?.is_group||!conversationId||!groupInviteUrl||groupInviteResetButton.disabled)return;
   groupInviteResetButton.disabled=true;
   try{
-    const {data,error}=await supabase.rpc("reset_group_invite",{p_conversation_id:activeConversation.id});
+    const permissions=await getCurrentGroupPermissions();
+    if(!permissions.isAdmin||activeConversation?.id!==conversationId)return;
+    if(!window.confirm("سيصبح رابط الدعوة الحالي غير صالح. هل تريد إنشاء رابط جديد؟"))return;
+    const {data,error}=await supabase.rpc("reset_group_invite",{p_conversation_id:conversationId});
     if(error)throw error;
     const token=typeof data==="string"?data:Array.isArray(data)?(data[0]?.token||data[0]?.get_or_create_group_invite||data[0]||null):(data?.token||data?.get_or_create_group_invite||null);
-    if(!token)throw new Error("لم يتم تجديد رابط الدعوة.");
-    groupInviteTokenCache.set(activeConversation.id,token);
+    if(typeof token!=="string"||!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token))throw new Error("لم يتم تجديد رابط الدعوة.");
+    groupInviteTokenCache.set(conversationId,token);
+    if(activeConversation?.id!==conversationId)return;
     setGroupInviteUrl(token);
     groupInviteStatus.textContent="تم إنشاء رابط دعوة جديد، وأُلغي الرابط السابق.";
     announce("تم تجديد رابط الدعوة.");
-  }catch(error){announce("تعذر تجديد رابط الدعوة: "+(error.message||"حاول مرة أخرى."),"error");}
-  finally{groupInviteResetButton.disabled=false;}
+  }catch(error){
+    if(activeConversation?.id===conversationId)announce("تعذر تجديد رابط الدعوة: "+(error.message||"حاول مرة أخرى."),"error");
+  }finally{groupInviteResetButton.disabled=false;}
 });
 async function processPendingGroupInvite(){
   if(pendingGroupInviteInProgress||!currentUser)return;
@@ -3909,7 +3912,6 @@ async function updateConversationInfo() {
   const conversationId = conversation.id;
   const loadSequence = ++conversationInfoLoadSequence;
   const isCurrent = () => activeConversation?.id === conversationId && loadSequence === conversationInfoLoadSequence;
-  const isConversationCurrent = () => activeConversation?.id === conversationId;
   const isGroup = Boolean(conversation.is_group);
 
   // Clear context-specific values immediately so the previous conversation cannot
