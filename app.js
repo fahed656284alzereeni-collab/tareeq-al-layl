@@ -1725,11 +1725,17 @@ function getTopModalDialog() {
   const dialogs = [...document.querySelectorAll('[role="dialog"][aria-modal="true"]')]
     .filter(dialog => !dialog.hidden && dialog.getClientRects().length);
   if (!dialogs.length) return null;
-  return dialogs.reduce((top, dialog) => {
-    const topZ = Number.parseInt(getComputedStyle(top).zIndex, 10) || 0;
-    const dialogZ = Number.parseInt(getComputedStyle(dialog).zIndex, 10) || 0;
-    return dialogZ >= topZ ? dialog : top;
-  });
+  const stackingOrder = dialog => {
+    let order = 0;
+    for (let element = dialog; element && element !== document.documentElement; element = element.parentElement) {
+      const value = Number.parseInt(getComputedStyle(element).zIndex, 10);
+      if (Number.isFinite(value)) order = Math.max(order, value);
+    }
+    return order;
+  };
+  return dialogs.reduce((top, dialog) =>
+    stackingOrder(dialog) >= stackingOrder(top) ? dialog : top
+  );
 }
 document.addEventListener("keydown", event => {
   if (event.key !== "Tab") return;
