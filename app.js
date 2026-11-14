@@ -828,7 +828,7 @@ const mersalTranslations = {
   "تم الانضمام إلى المجموعة عبر رابط الدعوة.": "You joined the group using the invite link.",
   "تعذر الانضمام إلى المجموعة. قد يكون الرابط غير صالح أو تم إلغاؤه.": "Could not join the group. The link may be invalid or revoked.",
   "تعذر نسخ الرابط. يمكنك تحديده ونسخه يدويًا.": "Could not copy the link. You can select and copy it manually.",
-  "تعذر إنشاء رابط الدعوة.": "Could not create the invite link."
+  "تعذر إنشاء رابط الدعوة.": "Could not create the invite link.",
 
   "إغلاق إعدادات المجموعة": "Close group settings",
   "الصلاحيات": "Permissions",
