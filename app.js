@@ -3129,7 +3129,7 @@ function openSettings() {
 }
 async function loadOwnProfile() {
   const [{data,error},visibleProfile] = await Promise.all([
-    supabase.from("profiles").select("display_name,avatar_url").eq("id",currentUser.id).maybeSingle(),
+    supabase.from("profiles").select("display_name").eq("id",currentUser.id).maybeSingle(),
     supabase.rpc("get_visible_profiles",{p_user_ids:[currentUser.id]})
   ]);
   if(error)throw error;
