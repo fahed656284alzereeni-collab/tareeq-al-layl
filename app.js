@@ -4059,7 +4059,7 @@ groupDescriptionSaveButton.addEventListener("click",async()=>{
     const {data,error}=await supabase.from("conversations").update({group_description:description||null}).eq("id",activeConversation.id).eq("user_one",currentUser.id).select("id").maybeSingle();
     if(error||!data)throw error||new Error("لا تملك صلاحية تعديل وصف المجموعة.");
     activeConversation.group_description=description||null;groupDescriptionSavedValue=description;
-    await loadConversations();await updateConversationInfo();showGroupMoreOptionsMenu();announce("تم حفظ وصف المجموعة.");
+    await loadConversations();await updateConversationInfo();showGroupMoreOptionsMenu();groupEditDescriptionOpenButton.focus();announce("تم حفظ وصف المجموعة.");
   }catch(error){announce("تعذر حفظ وصف المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{groupDescriptionSaveInProgress=false;updateGroupDescriptionSaveButton();}
 });
@@ -4198,7 +4198,7 @@ groupRenameSaveButton.addEventListener("click",async()=>{
   if (name === String(activeConversation.group_name || "").trim() || groupRenameSaveInProgress) return;
   groupRenameSaveInProgress = true;
   updateGroupRenameSaveButton();
-  try{const {data,error}=await supabase.from("conversations").update({group_name:name}).eq("id",activeConversation.id).eq("user_one",currentUser.id).select("id").maybeSingle();if(error||!data)throw error||new Error("لا تملك صلاحية تغيير الاسم.");activeConversation.group_name=name;chatPartnerName.textContent=name;updateGroupHeaderAccessibleLabel();await loadConversations();await updateConversationInfo();showGroupMoreOptionsMenu();announce("تم تغيير اسم المجموعة.");}
+  try{const {data,error}=await supabase.from("conversations").update({group_name:name}).eq("id",activeConversation.id).eq("user_one",currentUser.id).select("id").maybeSingle();if(error||!data)throw error||new Error("لا تملك صلاحية تغيير الاسم.");activeConversation.group_name=name;chatPartnerName.textContent=name;updateGroupHeaderAccessibleLabel();await loadConversations();await updateConversationInfo();showGroupMoreOptionsMenu();groupEditNameOpenButton.focus();announce("تم تغيير اسم المجموعة.");}
   catch(error){announce("تعذر تغيير اسم المجموعة: "+(error.message||"حاول مرة أخرى."),"error");}
   finally{groupRenameSaveInProgress=false;updateGroupRenameSaveButton();}
 });
