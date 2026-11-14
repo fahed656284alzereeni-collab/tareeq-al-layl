@@ -3101,6 +3101,8 @@ function openSettings() {
   mersalChannels.close();
   mersalCommunities.close();
   if (!currentUser) return;
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
   statusView.hidden = true;
   document.body.classList.remove("status-open");
   if (toolsView) toolsView.hidden = true;
