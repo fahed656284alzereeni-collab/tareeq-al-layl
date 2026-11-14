@@ -62,6 +62,8 @@ assert.doesNotMatch(experienceCss, /body\.calls-open \.topbar,\s*body\.calls-ope
   "The calls full-screen rule must not hide the primary tab bar");
 
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
+assert.doesNotMatch(app, /from\(["']profiles["']\)\s*\.select\(["'][^"']*(?:avatar_url|about|last_seen_at|created_at)/,
+  "Private profile fields must be read through visibility-checked RPCs");
 assert.equal((app.match(/closeHelpSupportForNavigation\(\);/g) || []).length, 7,
   "Every primary tab must close the Help & Support overlay and stop its realtime subscription");
 assert.equal((app.match(/closeNewChatForNavigation\(\);/g) || []).length, 7,
