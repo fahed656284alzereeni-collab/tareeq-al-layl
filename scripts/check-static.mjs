@@ -47,6 +47,12 @@ for (const dialog of modalDialogs.filter(dialog => /\baria-modal=["']true["']/.t
     "Every modal dialog must have an accessible name");
 }
 
+const baseCss = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
+assert.doesNotMatch(baseCss, /body\\.calls-open #bottom-navigation\\s*\\{\\s*display\\s*:\\s*none/i,
+  "The primary tab bar must not be hidden while the calls tab is active");
+assert.match(baseCss, /grid-template-columns\\s*:\\s*repeat\\(7\\s*,/,
+  "The base navigation layout must allocate space for all seven tabs");
+
 const experienceCss = readFileSync(new URL("../mersal-experience-v2.css", import.meta.url), "utf8");
 assert.match(experienceCss, /#bottom-navigation\s*\{[^}]*z-index:\s*220/s,
   "The primary tab bar must stay above full-screen tab panels");
