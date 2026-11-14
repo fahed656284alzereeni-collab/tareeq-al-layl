@@ -65,12 +65,12 @@ with check (
         )
         or (
           c.is_group
-          and private.is_group_member(c.id)
+          and (private.is_group_owner(c.id) or private.is_group_member(c.id))
           and (
             coalesce(
               (select gs.send_messages_by from public.group_settings gs where gs.conversation_id = c.id),
               'everyone'
-            ) = 'everyone'
+            ) <> 'admins'
             or private.is_group_admin(c.id)
           )
         )
