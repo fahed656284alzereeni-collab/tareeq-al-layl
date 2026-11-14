@@ -31,6 +31,13 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
   const postForm = $("#community-post-form");
   const postInput = $("#community-post-input");
   const postsList = $("#community-posts");
+  const communityGroupsSection = $("#community-groups-section");
+  const communityGroupsManage = $("#community-groups-manage");
+  const communityGroupsList = $("#community-groups-list");
+  const communityGroupsEditor = $("#community-groups-editor");
+  const communityGroupsAvailable = $("#community-groups-available");
+  const communityGroupsSave = $("#community-groups-save");
+  const communityGroupsCancel = $("#community-groups-cancel");
   const status = $("#communities-status");
 
   let communities = [];
@@ -39,6 +46,8 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
   let returnFocus = null;
   let busy = false;
   let realtimeChannel = null;
+  let linkedCommunityGroups = [];
+  let availableCommunityGroups = [];
 
   const en = () => document.documentElement.lang === "en";
   const t = (ar, english) => en() ? english : ar;
@@ -57,6 +66,16 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     setText($("#community-post-form label"), "إعلان جديد", "New announcement");
     setText($("#community-post-submit"), "نشر الإعلان", "Publish announcement");
     setText(deleteButton, "حذف المجتمع", "Delete community");
+    setText($("#community-groups-title"), "مجموعات المجتمع", "Community groups");
+    setText(communityGroupsManage, "إدارة المجموعات", "Manage groups");
+    setText($("#community-groups-editor-title"), "إدارة مجموعات المجتمع", "Manage community groups");
+    setText($("#community-groups-editor-help"), "اختر المجموعات التي تريد ربطها بهذا المجتمع. يجب أن تكون مشرفًا في المجموعة.", "Choose groups to link to this community. You must be a group admin.");
+    setText(communityGroupsSave, "حفظ المجموعات", "Save groups");
+    setText(communityGroupsCancel, "إلغاء", "Cancel");
+    setAttr(communityGroupsSection, "aria-label", "مجموعات المجتمع", "Community groups");
+    setAttr(communityGroupsList, "aria-label", "مجموعات المجتمع", "Community groups");
+    setAttr(communityGroupsAvailable, "aria-label", "المجموعات المتاحة", "Available groups");
+
     setText(editOpenButton, "تعديل معلومات المجتمع", "Edit community details");
     setText($("#community-edit-form label[for='community-edit-name']"), "اسم المجتمع", "Community name");
     setText($("#community-edit-form label[for='community-edit-description']"), "وصف المجتمع", "Community description");
@@ -199,6 +218,175 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     else openButton?.focus();
   }
 
+  function renderCommunityGroups() {
+    communityGroupsList.replaceChildren();
+    if (!linkedCommunityGroups.length) {
+      communityGroupsList.append(safeText("li", "empty-item", t("لا توجد مجموعات مرتبطة بهذا المجتمع بعد.", "No groups are linked to this community yet.")));
+      return;
+    }
+    for (const group of linkedCommunityGroups) {
+      const item = document.createElement("li");
+      item.className = "community-group-item";
+      const name = safeText("p", "community-group-name", group.group_name);
+      name.setAttribute("data-no-translate", "");
+      const copy = safeText("button", "quiet-button", t("نسخ رابط دعوة المجموعة", "Copy group invite link"));
+      copy.type = "button";
+      copy.setAttribute("aria-label", t("نسخ رابط دعوة مجموعة ", "Copy invite link for group ") + group.group_name);
+      copy.addEventListener("click", async () => {
+        const url = new URL("/", window.location.origin);
+        url.searchParams.set("group_invite", group.invite_token);
+        try {
+          if (!navigator.clipboard?.writeText) throw new Error("Clipboard unavailable");
+          await navigator.clipboard.writeText(url.href);
+          announce(t("تم نسخ رابط دعوة المجموعة.", "Group invite link copied."));
+        } catch {
+          window.prompt(t("انسخ رابط دعوة المجموعة:", "Copy the group invite link:"), url.href);
+        }
+      });
+      item.append(name, copy);
+      if (activeCommunity?.owner_id === getCurrentUser()?.id) {
+        const remove = safeText("button", "danger-button", t("إزالة المجموعة", "Remove group"));
+        remove.type = "button";
+        remove.setAttribute("aria-label", t("إزالة مجموعة ", "Remove group ") + group.group_name);
+        remove.addEventListener("click", async () => {
+          if (!window.confirm(t("إزالة هذه المجموعة من المجتمع؟", "Remove this group from the community?"))) return;
+          remove.disabled = true;
+          const result = await supabase.from("community_groups").delete()
+            .eq("community_id", activeCommunity.id).eq("conversation_id", group.conversation_id);
+          if (result.error) {
+            remove.disabled = false;
+            announce(t("تعذر إزالة المجموعة: ", "Could not remove group: ") + result.error.message, "error");
+            return;
+          }
+          await loadCommunityGroups();
+          announce(t("تمت إزالة المجموعة.", "Group removed."));
+        });
+        item.append(remove);
+      }
+      communityGroupsList.append(item);
+    }
+  }
+
+  async function loadCommunityGroups() {
+    if (!activeCommunity || !(isMember || activeCommunity.owner_id === getCurrentUser()?.id)) {
+      communityGroupsSection.hidden = true;
+      linkedCommunityGroups = [];
+      communityGroupsList.replaceChildren();
+      return;
+    }
+    communityGroupsSection.hidden = false;
+    const result = await supabase.from("community_groups")
+      .select("id,community_id,conversation_id,group_name,invite_token,created_at")
+      .eq("community_id", activeCommunity.id).order("created_at", { ascending: true });
+    if (result.error) {
+      communityGroupsList.replaceChildren(safeText("li", "empty-item", t("تعذر تحميل مجموعات المجتمع.", "Could not load community groups.")));
+      announce(t("تعذر تحميل مجموعات المجتمع: ", "Could not load community groups: ") + result.error.message, "error");
+      return;
+    }
+    linkedCommunityGroups = result.data || [];
+    renderCommunityGroups();
+  }
+
+  async function loadAvailableCommunityGroups() {
+    const user = getCurrentUser();
+    const memberships = await supabase.from("conversation_members")
+      .select("conversation_id").eq("user_id", user.id).eq("role", "admin");
+    if (memberships.error) throw memberships.error;
+    const ids = [...new Set((memberships.data || []).map(row => row.conversation_id))];
+    if (!ids.length) { availableCommunityGroups = []; return; }
+    const groups = await supabase.from("conversations").select("id,group_name")
+      .eq("is_group", true).in("id", ids).order("group_name", { ascending: true });
+    if (groups.error) throw groups.error;
+    availableCommunityGroups = groups.data || [];
+  }
+
+  function renderAvailableCommunityGroups() {
+    communityGroupsAvailable.replaceChildren();
+    if (!availableCommunityGroups.length) {
+      communityGroupsAvailable.append(safeText("li", "empty-item", t("لا توجد مجموعات أنت مشرف فيها.", "You are not an admin of any groups.")));
+      communityGroupsSave.disabled = true;
+      return;
+    }
+    const currentIds = new Set(linkedCommunityGroups.map(group => group.conversation_id));
+    for (const group of availableCommunityGroups) {
+      const item = document.createElement("li");
+      item.className = "community-group-choice";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.name = "community-group-choice";
+      input.value = group.id;
+      input.id = "community-group-choice-" + group.id;
+      input.checked = currentIds.has(group.id);
+      const label = safeText("label", "community-group-choice-label", group.group_name || t("مجموعة دون اسم", "Unnamed group"));
+      label.htmlFor = input.id;
+      label.setAttribute("data-no-translate", "");
+      item.append(input, label);
+      communityGroupsAvailable.append(item);
+      input.addEventListener("change", updateCommunityGroupSaveState);
+    }
+    updateCommunityGroupSaveState();
+  }
+
+  function updateCommunityGroupSaveState() {
+    const current = new Set(linkedCommunityGroups.map(group => group.conversation_id));
+    const selected = new Set([...communityGroupsAvailable.querySelectorAll('input[name="community-group-choice"]:checked')].map(input => input.value));
+    const changed = current.size !== selected.size || [...current].some(id => !selected.has(id));
+    communityGroupsSave.disabled = !changed || busy;
+  }
+
+  async function saveCommunityGroups() {
+    if (!activeCommunity || activeCommunity.owner_id !== getCurrentUser()?.id || busy) return;
+    const selected = new Set([...communityGroupsAvailable.querySelectorAll('input[name="community-group-choice"]:checked')].map(input => input.value));
+    const current = new Map(linkedCommunityGroups.map(group => [group.conversation_id, group]));
+    const toRemove = [...current.keys()].filter(id => !selected.has(id));
+    const toAdd = availableCommunityGroups.filter(group => selected.has(group.id) && !current.has(group.id));
+    busy = true;
+    communityGroupsSave.disabled = true;
+    communityGroupsCancel.disabled = true;
+    try {
+      if (toRemove.length) {
+        const removed = await supabase.from("community_groups").delete()
+          .eq("community_id", activeCommunity.id).in("conversation_id", toRemove);
+        if (removed.error) throw removed.error;
+      }
+      const failures = [];
+      for (const group of toAdd) {
+        try {
+          const { data, error } = await supabase.rpc("get_or_create_group_invite", { p_conversation_id: group.id });
+          if (error) throw error;
+          const token = typeof data === "string" ? data
+            : Array.isArray(data) ? (data[0]?.token || data[0]?.get_or_create_group_invite || data[0] || null)
+            : (data?.token || data?.get_or_create_group_invite || null);
+          if (typeof token !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)) {
+            throw new Error(t("تعذر إنشاء رابط دعوة صالح.", "Could not create a valid group invite link."));
+          }
+          const inserted = await supabase.from("community_groups").insert({
+            community_id: activeCommunity.id,
+            conversation_id: group.id,
+            added_by: getCurrentUser().id,
+            group_name: group.group_name || t("مجموعة", "Group"),
+            invite_token: token
+          });
+          if (inserted.error) throw inserted.error;
+        } catch (error) {
+          failures.push((group.group_name || group.id) + ": " + (error.message || ""));
+        }
+      }
+      await loadCommunityGroups();
+      communityGroupsEditor.hidden = true;
+      communityGroupsManage.focus();
+      if (failures.length) announce(t("تم حفظ بعض المجموعات، وتعذر ربط: ", "Some groups were saved, but these could not be linked: ") + failures.join("؛ "), "error");
+      else announce(t("تم تحديث مجموعات المجتمع.", "Community groups updated."));
+    } catch (error) {
+      announce(t("تعذر حفظ مجموعات المجتمع: ", "Could not save community groups: ") + (error.message || ""), "error");
+      await loadCommunityGroups();
+    } finally {
+      busy = false;
+      communityGroupsCancel.disabled = false;
+      updateCommunityGroupSaveState();
+    }
+  }
+
   async function openCommunity(community) {
     const user = getCurrentUser();
     activeCommunity = community;
@@ -222,7 +410,11 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     editOpenButton.hidden = !own;
     communityEditForm.hidden = true;
     postForm.hidden = !own;
+    communityGroupsManage.hidden = !own;
+    communityGroupsEditor.hidden = true;
+    communityGroupsSection.hidden = !(own || isMember);
     localize();
+    await loadCommunityGroups();
     await renderPosts(community.id);
     void startRealtime(community.id);
     detailBack.focus();
@@ -437,6 +629,9 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
       return;
     }
     isMember = !isMember;
+    communityGroupsSection.hidden = !(isMember || activeCommunity.owner_id === getCurrentUser()?.id);
+    if (isMember) await loadCommunityGroups();
+    else { linkedCommunityGroups = []; communityGroupsList.replaceChildren(); }
     const index = communities.findIndex(row => row.id === activeCommunity.id);
     if (index >= 0) communities[index].member = isMember;
     localize();
@@ -488,6 +683,29 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     announce(t("تم حذف المجتمع.", "Community deleted."));
     createButton.focus();
   });
+
+  communityGroupsManage.addEventListener("click", async () => {
+    if (!activeCommunity || activeCommunity.owner_id !== getCurrentUser()?.id || busy) return;
+    communityGroupsManage.disabled = true;
+    try {
+      await loadAvailableCommunityGroups();
+      renderAvailableCommunityGroups();
+      communityGroupsEditor.hidden = false;
+      communityGroupsManage.hidden = true;
+      communityGroupsAvailable.querySelector("input")?.focus();
+      if (!communityGroupsAvailable.querySelector("input")) communityGroupsSave.focus();
+    } catch (error) {
+      announce(t("تعذر تحميل مجموعاتك: ", "Could not load your groups: ") + (error.message || ""), "error");
+    } finally {
+      communityGroupsManage.disabled = false;
+    }
+  });
+  communityGroupsCancel.addEventListener("click", () => {
+    communityGroupsEditor.hidden = true;
+    communityGroupsManage.hidden = false;
+    communityGroupsManage.focus();
+  });
+  communityGroupsSave.addEventListener("click", () => { void saveCommunityGroups(); });
 
   detailBack.addEventListener("click", () => {
     showHome();
