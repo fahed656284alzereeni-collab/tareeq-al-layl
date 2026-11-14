@@ -8,7 +8,7 @@ const duplicateIds = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== i
 assert.deepEqual(duplicateIds, [], "index.html contains duplicate IDs");
 
 const tabs = [...html.matchAll(/<button\b(?=[^>]*\brole=["']tab["'])[^>]*>/g)].map(match => match[0]);
-assert.equal(tabs.length, 5, "The bottom navigation must expose exactly five tabs");
+assert.equal(tabs.length, 7, "The bottom navigation must expose exactly seven tabs");
 for (const tab of tabs) {
   const control = tab.match(/\baria-controls=["']([^"']+)["']/)?.[1];
   assert.ok(control, "Every bottom navigation tab must identify its controlled panel");
