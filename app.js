@@ -1369,11 +1369,12 @@ function updateBottomTabAccessiblePositions(language = localStorage.getItem("mer
 }
 function setActiveBottomTab(tab) {
   if (!homeTabButton || !settingsTabButton || !statusTabButton || !toolsTabButton || !callsTabButton) return;
-  homeTabButton.setAttribute("aria-selected", String(tab === "home"));
-  statusTabButton.setAttribute("aria-selected", String(tab === "statuses"));
-  toolsTabButton.setAttribute("aria-selected", String(tab === "tools"));
-  callsTabButton.setAttribute("aria-selected", String(tab === "calls"));
-  settingsTabButton.setAttribute("aria-selected", String(tab === "settings"));
+  const selected = { home: homeTabButton, statuses: statusTabButton, calls: callsTabButton, tools: toolsTabButton, settings: settingsTabButton };
+  for (const [key, button] of Object.entries(selected)) {
+    const active = key === tab;
+    button.setAttribute("aria-selected", String(active));
+    button.tabIndex = active ? 0 : -1;
+  }
   updateBottomTabAccessiblePositions();
 }
 function returnToHomeTab() {
@@ -1669,6 +1670,24 @@ attachmentViewerContent.className = "attachment-viewer-content";
 attachmentViewer.append(attachmentViewerClose, attachmentViewerContent);
 document.body.append(attachmentViewer);
 let attachmentViewerReturnFocus = null;
+function trapDialogTabKey(event, dialog) {
+  if (event.key !== "Tab") return;
+  const focusable = [...dialog.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+    .filter(element => !element.hidden && element.getAttribute("aria-hidden") !== "true" && element.getClientRects().length);
+  if (!focusable.length) {
+    event.preventDefault();
+    dialog.focus();
+    return;
+  }
+  const first = focusable[0], last = focusable[focusable.length - 1];
+  if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+    event.preventDefault();
+    first.focus();
+  }
+}
 function closeAttachmentViewer() {
   attachmentViewer.hidden = true;
   attachmentViewerContent.replaceChildren();
@@ -1795,7 +1814,10 @@ function openAttachmentViewer(url, type, name, trigger) {
   attachmentViewerClose.focus();
 }
 attachmentViewerClose.addEventListener("click", closeAttachmentViewer);
-attachmentViewer.addEventListener("keydown", event => { if (event.key === "Escape") closeAttachmentViewer(); });
+attachmentViewer.addEventListener("keydown", event => {
+  if (event.key === "Escape") { event.preventDefault(); closeAttachmentViewer(); return; }
+  trapDialogTabKey(event, attachmentViewer);
+});
 attachmentViewer.addEventListener("click", event => { if (event.target === attachmentViewer) closeAttachmentViewer(); });
 
 const replyingTo = $("#replying-to");
@@ -6193,7 +6215,7 @@ function closeMessageOptions(menu, toggle) {
   menu.removeAttribute("aria-modal");
   if (menu._home && menu.parentElement !== menu._home) menu._home.append(menu);
   toggle.setAttribute("aria-expanded", "false");
-  toggle.focus();
+  if (toggle.isConnected) toggle.focus();
 }
 async function deleteMessageForMe(message, item, menu, toggle) {
   if (!currentUser || !activeConversation) return;
@@ -6633,7 +6655,8 @@ function openForwardMessageDialog(message, menu, toggle) {
     if (event.target === overlay) { overlay.remove(); toggle.focus(); }
   });
   overlay.addEventListener("keydown", event => {
-    if (event.key === "Escape") { event.preventDefault(); overlay.remove(); toggle.focus(); }
+    if (event.key === "Escape") { event.preventDefault(); overlay.remove(); toggle.focus(); return; }
+    trapDialogTabKey(event, overlay);
   });
   closeMessageOptions(menu, toggle);
   document.body.append(overlay);
@@ -6801,6 +6824,10 @@ function appendMessage(message) {
     menu.classList.add("is-open");
     menu.setAttribute("role", "dialog");
     menu.setAttribute("aria-modal", "true");
+    menu.addEventListener("keydown", event => {
+      if (event.key === "Escape") { event.preventDefault(); closeMessageOptions(menu, toggle); return; }
+      trapDialogTabKey(event, menu);
+    });
     toggle.setAttribute("aria-expanded", "true");
     document.body.append(menu);
     closeButton.focus();
@@ -7522,33 +7549,39 @@ messageForm.addEventListener("submit", async (event) => {
     announce("اكتب رسالتك قبل الإرسال.");
     return;
   }
-  if (!activeConversation || !currentUser) return;
-  if(isPrivateConversationBlocked()){announce("لا يمكنك إرسال رسائل في هذه المحادثة بسبب الحظر.","error");return;}
+  const conversation = activeConversation;
+  const sender = currentUser;
+  const partner = activePartner;
+  if (!conversation || !sender) return;
+  if (isPrivateConversationBlocked()) { announce("لا يمكنك إرسال رسائل في هذه المحادثة بسبب الحظر.", "error"); return; }
   const isStickerMessage = typedBody.startsWith("MERSAL_STICKER:");
-  const body = replyingToMessage && !isStickerMessage ? "ردًا على: " + replyingToMessage.body + "\n\n" + typedBody : typedBody;
-  if (isStickerMessage && replyingToMessage) {
-    replyingToMessage = null;
-    replyingTo.hidden = true;
-  }
+  const replySnapshot = replyingToMessage;
+  const body = replySnapshot && !isStickerMessage ? "ردًا على: " + replySnapshot.body + "\n\n" + typedBody : typedBody;
   sendButton.disabled = true;
-  const { data, error } = await supabase.from("messages").insert({
-    conversation_id: activeConversation.id, sender_id: currentUser.id, body
-  }).select("id,conversation_id,sender_id,body,created_at").single();
-  if (error) {
-    announce("تعذر إرسال الرسالة: " + error.message, "error");
-  } else {
-    messageInput.value = "";
-    replyingToMessage = null;
-    replyingTo.hidden = true;
-    appendMessage(data);
-    void refreshOutgoingMessageStatus(data.id, activeConversation, activePartner).catch(error => console.warn("Could not refresh sent message status:", error));
+  try {
+    const { data, error } = await supabase.from("messages").insert({
+      conversation_id: conversation.id, sender_id: sender.id, body
+    }).select("id,conversation_id,sender_id,body,created_at").single();
+    if (error) throw error;
+    if (activeConversation?.id === conversation.id && currentUser?.id === sender.id) {
+      if (messageInput.value.trim() === typedBody) messageInput.value = "";
+      if (replyingToMessage?.id === replySnapshot?.id) {
+        replyingToMessage = null;
+        replyingTo.hidden = true;
+      }
+      appendMessage(data);
+    }
+    void refreshOutgoingMessageStatus(data.id, conversation, partner).catch(error => console.warn("Could not refresh sent message status:", error));
     await loadConversations();
     const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
     if (pushError) console.warn("Push notification could not be sent:", pushError.message);
     announce("تم الإرسال.", "success");
+  } catch (error) {
+    announce("تعذر إرسال الرسالة: " + (error?.message || "حدث خطأ غير متوقع."), "error");
+  } finally {
+    sendButton.disabled = false;
+    if (activeConversation?.id === conversation.id && !chatView.hidden) messageInput.focus();
   }
-  sendButton.disabled = false;
-  messageInput.focus();
 });
 
 // Do not block application startup on getSession(). Supabase emits INITIAL_SESSION
