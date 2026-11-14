@@ -1057,6 +1057,7 @@ let storedProfilePhotoExclusions = new Set();
 let selectedAboutExclusions = new Set();
 let storedAboutExclusions = new Set();
 let presenceDetails = new Map();
+let presenceDataLoaded = false;
 let presenceRefreshTimer = null;
 const accountSettingsView = $("#account-settings-view");
 const accountLogoutButton = $("#account-logout-button");
@@ -1805,6 +1806,8 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   conversationInfoPanel.hidden = true;
   document.body.classList.remove("conversation-info-fullscreen");
   currentUser = null;
+  presenceDataLoaded = false;
+  presenceDetails = new Map();
   activeConversation = null;
   activePartner = null;
   authPanel.hidden = false;
@@ -1856,6 +1859,7 @@ async function handleSession(session, authEvent = "UNKNOWN") {
       profile_photo_visibility:"everyone", about_visibility:"everyone" };
     privacySettingsLoaded = false;
     presenceDetails.clear();
+    presenceDataLoaded = false;
     onlineUserIds.clear();
   }
   currentUser = session.user;
@@ -1932,8 +1936,14 @@ function updateChatPartnerPresence() {
     updateGroupHeaderAccessibleLabel();
     return;
   }
+  const reciprocalHidden = privacySettingsLoaded && privacySettings.last_seen_visibility === "nobody";
+  if (!presenceDataLoaded && !reciprocalHidden) {
+    chatPartnerPresence.textContent = "";
+    chatPartnerPresence.classList.remove("is-online", "is-offline");
+    chatPartnerAccessible.setAttribute("aria-label", chatPartnerName.textContent);
+    return;
+  }
   const details = presenceDetails.get(activePartner.id);
-  const reciprocalHidden=privacySettingsLoaded&&privacySettings.last_seen_visibility==="nobody";
   const online = reciprocalHidden ? false : Boolean(details?.is_online);
   const visibleLastSeen = reciprocalHidden ? null : details?.last_seen_at || null;
   chatPartnerPresence.textContent = online ? "متصل الآن" : visibleLastSeen ? formatLastSeen(visibleLastSeen) : "حالة الظهور مخفية";
@@ -1945,32 +1955,21 @@ function updateChatPartnerPresence() {
 function updateGroupHeaderAccessibleLabel() {
   if (!activeConversation?.is_group || !chatPartnerAccessible) return;
   const name = chatPartnerName.textContent || activeConversation.group_name || "مجموعة";
+  const english = localStorage.getItem("mersal-language") === "en";
   const countLabel = activeGroupMemberCount === null
-    ? "جارٍ تحميل عدد الأعضاء"
-    : "عدد الأعضاء " + new Intl.NumberFormat("ar-JO").format(activeGroupMemberCount);
-  chatPartnerAccessible.setAttribute("aria-label", name + "، " + countLabel);
-}
-async function refreshGroupHeaderMemberCount(conversationId = activeConversation?.id) {
-  if (!conversationId || !currentUser || !activeConversation?.is_group || activeConversation.id !== conversationId) return;
-  const { count, error } = await supabase.from("conversation_members")
-    .select("user_id", { count: "exact", head: true })
-    .eq("conversation_id", conversationId);
-  if (error) {
-    console.warn("تعذر تحميل عدد أعضاء المجموعة:", error.message);
-    activeGroupMemberCount = null;
-    updateGroupHeaderAccessibleLabel();
-    return;
-  }
-  if (!activeConversation?.is_group || activeConversation.id !== conversationId) return;
-  activeGroupMemberCount = count || 0;
-  updateGroupHeaderAccessibleLabel();
+    ? ""
+    : (english ? "Members " : "عدد الأعضاء ") + new Intl.NumberFormat(english ? "en-US" : "ar-JO").format(activeGroupMemberCount);
+  chatPartnerAccessible.setAttribute("aria-label", countLabel ? name + (english ? ", " : "، ") + countLabel : name);
 }
 
 async function refreshVisiblePresence() {
   if (!currentUser) return;
   if(privacySettingsLoaded&&privacySettings.last_seen_visibility==="nobody"){
-    presenceDetails=new Map(); onlineUserIds=new Set(); activePartnerLastSeenAt=null;
-    if(activePartner)updateChatPartnerPresence();
+    presenceDetails = new Map();
+    presenceDataLoaded = true;
+    onlineUserIds = new Set();
+    activePartnerLastSeenAt = null;
+    if (activePartner) updateChatPartnerPresence();
     if(activeConversation&&!activeConversation.is_group)setConversationInfoValue(conversationInfoStatus,"حالة الظهور مخفية");
     conversationList.querySelectorAll(".conversation-presence").forEach(node=>node.remove());
     renderPeople(); return;
@@ -1978,6 +1977,7 @@ async function refreshVisiblePresence() {
   const { data, error } = await supabase.rpc("get_visible_presence");
   if (error) throw error;
   presenceDetails = new Map((data || []).map(row => [row.user_id, row]));
+  presenceDataLoaded = true;
   onlineUserIds = new Set((data || []).filter(row => row.is_online).map(row => row.user_id));
   if (activePartner) {
     activePartnerLastSeenAt = presenceDetails.get(activePartner.id)?.last_seen_at || null;
@@ -3501,7 +3501,8 @@ async function selectConversation(conversation, person) {
   activePartner = person;
   activeGroupMemberCount = null;
   chatPartnerName.textContent = displayName(person);
-  chatPartnerAccessible.setAttribute("aria-label", `${chatPartnerName.textContent}، جاري تحديث حالة الظهور`);
+  chatPartnerAccessible.setAttribute("aria-label", chatPartnerName.textContent);
+  updateChatPartnerPresence();
   chatEmpty.hidden = true;
   chatView.hidden = false;
   workspace.classList.add("chat-open");
@@ -3531,13 +3532,6 @@ async function selectConversation(conversation, person) {
   void supabase.from("conversation_hidden_for").delete()
     .eq("conversation_id",conversation.id).eq("user_id",currentUser.id)
     .then(({error})=>{if(error)console.warn("Could not unhide conversation:",error.message);});
-  void refreshVisiblePresence().then(()=>{
-    if(!isCurrentSelection())return;
-    activePartnerLastSeenAt = presenceDetails.get(person?.id)?.last_seen_at || null;
-    updateChatPartnerPresence();
-  }).catch(error=>console.warn("تعذر تحديث حالة الظهور:",error.message));
-  if (conversation.is_group) void refreshGroupHeaderMemberCount(conversation.id);
-
   // Render messages and retire the previous realtime channel in the background.
   // Neither operation may delay opening the selected conversation on mobile.
   void loadMessages().catch(error => {
@@ -3834,7 +3828,7 @@ async function loadGroupManagement(expectedConversationId = activeConversation?.
     displayMembers.unshift({user_id:ownerId,role:"owner"});
   }
   activeGroupMemberIds=new Set(displayMembers.map(member=>member.user_id));
-  if (activeConversation?.id) {
+  if (activeConversation?.id === expectedConversationId) {
     activeGroupMemberCount = displayMembers.length;
     updateGroupHeaderAccessibleLabel();
   }
