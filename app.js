@@ -834,6 +834,32 @@ const mersalTranslations = {
   "تعذر نسخ الرابط. يمكنك تحديده ونسخه يدويًا.": "Could not copy the link. You can select and copy it manually.",
   "تعذر إنشاء رابط الدعوة.": "Could not create the invite link.",
 
+  "معاينة دعوة المجموعة": "Group invitation preview",
+  "انضمام إلى المجموعة": "Join group",
+  "إلغاء": "Cancel",
+  "إغلاق": "Close",
+  "عدد الأعضاء: ": "Members: ",
+  "هذه المجموعة تتطلب موافقة المشرف قبل الانضمام.": "An admin must approve your request before you can join this group.",
+  "تم إرسال طلب الانضمام. بانتظار موافقة المشرف.": "Your join request was sent. Waiting for an admin's approval.",
+  "طلبك قيد انتظار موافقة المشرف.": "Your request is waiting for an admin's approval.",
+  "تعذر تحميل دعوة المجموعة. قد يكون الرابط غير صالح أو تم إلغاؤه.": "Could not load the group invitation. The link may be invalid or revoked.",
+  "تعذر إرسال طلب الانضمام. حاول مرة أخرى.": "Could not send the join request. Please try again.",
+  "تم الانضمام إلى المجموعة.": "You joined the group.",
+  "موافقة المشرف على طلبات الانضمام": "Admin approval for join requests",
+  "لن ينضم أي شخص عبر الرابط حتى يوافق أحد المشرفين على طلبه.": "People who use the invite link cannot join until an admin approves their request.",
+  "طلبات الانضمام": "Join requests",
+  "تحديث الطلبات": "Refresh requests",
+  "لا توجد طلبات انضمام معلقة.": "There are no pending join requests.",
+  "تعذر تحميل طلبات الانضمام.": "Could not load join requests.",
+  "موافقة": "Approve",
+  "رفض": "Reject",
+  "تمت الموافقة على طلب الانضمام.": "The join request was approved.",
+  "تم رفض طلب الانضمام.": "The join request was rejected.",
+  "تعذر تحديث طلب الانضمام.": "Could not update the join request.",
+  "الموافقة على الانضمام": "Approve group join",
+  "رفض طلب الانضمام": "Reject group join",
+  "جارٍ تحميل الدعوة…": "Loading invitation…",
+  "مستخدم مرسال": "Mersal user",
   "إغلاق إعدادات المجموعة": "Close group settings",
   "الصلاحيات": "Permissions",
   "من يستطيع إرسال الرسائل؟": "Who can send messages?",
@@ -1246,6 +1272,21 @@ const groupSettingsAddSelect = $("#group-settings-add");
 const groupSettingsSaveButton = $("#group-settings-save");
 const groupSettingsPermissionsSection = $("#group-settings-permissions");
 const groupSettingsInfoSection = $("#group-settings-info");
+const groupSettingsApprovalCheckbox = $("#group-settings-approval");
+const groupJoinRequestsSection = $("#group-join-requests-section");
+const groupJoinRequestsList = $("#group-join-requests-list");
+const groupJoinRequestsStatus = $("#group-join-requests-status");
+const groupJoinRequestsRefreshButton = $("#group-join-requests-refresh");
+const groupInvitePreviewPanel = $("#group-invite-preview-panel");
+const groupInvitePreviewCancelButton = $("#group-invite-preview-cancel");
+const groupInvitePreviewJoinButton = $("#group-invite-preview-join");
+const groupInvitePreviewAvatar = $("#group-invite-preview-avatar");
+const groupInvitePreviewName = $("#group-invite-preview-name");
+const groupInvitePreviewDescription = $("#group-invite-preview-description");
+const groupInvitePreviewCount = $("#group-invite-preview-count");
+const groupInvitePreviewStatus = $("#group-invite-preview-status");
+let pendingGroupInviteToken = null;
+let pendingGroupInvitePreview = null;
 let groupSettingsSnapshot = null;
 let groupSettingsSaving = false;
 let groupSettingsReturnFocus = null;
@@ -3035,7 +3076,7 @@ loginButton.addEventListener("click", async () => {
   const authWindow = window.open("about:blank", "mersal-google-auth");
   if (authWindow) authWindow.name = "mersal-google-auth";
   try {
-    const redirectTo = new URL("/", window.location.origin).toString();
+    const redirectTo = new URL(window.location.href).toString();
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
@@ -3883,27 +3924,133 @@ if(groupInviteResetButton)groupInviteResetButton.addEventListener("click",async(
     if(activeConversation?.id===conversationId)announce("تعذر تجديد رابط الدعوة: "+(error.message||"حاول مرة أخرى."),"error");
   }finally{groupInviteResetButton.disabled=false;}
 });
+function clearGroupInviteQuery() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete("group_invite");
+  history.replaceState({}, document.title, url.pathname + url.search + url.hash);
+}
+function closeGroupInvitePreview(clearQuery = true) {
+  if (!groupInvitePreviewPanel) return;
+  groupInvitePreviewPanel.hidden = true;
+  groupInvitePreviewPanel.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("group-invite-preview-open");
+  if (clearQuery) clearGroupInviteQuery();
+  pendingGroupInviteToken = null;
+  pendingGroupInvitePreview = null;
+}
+async function openJoinedGroupConversation(conversationId) {
+  await loadConversations();
+  const conversation = conversations.find(item => item.id === conversationId && item.is_group);
+  if (!conversation) throw new Error("Group membership is confirmed but the group could not be loaded.");
+  const partnerId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
+  const person = { id: partnerId, display_name: conversation.group_name || "مجموعة" };
+  await selectConversation(conversation, person);
+  chatPartnerName.textContent = conversation.group_name || "مجموعة";
+  chatPartnerPresence.textContent = "مجموعة";
+  chatPartnerAccessible.setAttribute("aria-label", chatPartnerName.textContent + ", مجموعة");
+}
+async function showGroupInvitePreview(token, preview) {
+  pendingGroupInviteToken = token;
+  pendingGroupInvitePreview = preview;
+  groupInvitePreviewName.textContent = preview.group_name || "مجموعة";
+  groupInvitePreviewDescription.textContent = preview.group_description || "";
+  groupInvitePreviewDescription.hidden = !preview.group_description;
+  const count = Number(preview.member_count || 0);
+  groupInvitePreviewCount.textContent = "عدد الأعضاء: " + new Intl.NumberFormat(document.documentElement.lang === "en" ? "en-US" : "ar-JO").format(count);
+  groupInvitePreviewAvatar.replaceChildren();
+  if (preview.group_photo_path) {
+    const avatar = document.createElement("span");
+    avatar.className = "group-avatar group-invite-preview-photo";
+    avatar.setAttribute("aria-hidden", "true");
+    const image = document.createElement("img");
+    image.alt = "";
+    image.loading = "eager";
+    image.referrerPolicy = "no-referrer";
+    avatar.append(image);
+    groupInvitePreviewAvatar.append(avatar);
+    void resolveGroupPhotoUrl(preview.group_photo_path).then(url => {
+      if (url && image.isConnected) image.src = url;
+      else if (!url && avatar.isConnected) avatar.remove();
+    });
+  }
+  const isPending = preview.request_status === "pending";
+  groupInvitePreviewStatus.textContent = isPending
+    ? "طلبك قيد انتظار موافقة المشرف."
+    : preview.require_admin_approval
+      ? "هذه المجموعة تتطلب موافقة المشرف قبل الانضمام."
+      : "";
+  groupInvitePreviewJoinButton.hidden = isPending;
+  groupInvitePreviewJoinButton.disabled = false;
+  groupInvitePreviewCancelButton.textContent = isPending ? "إغلاق" : "إلغاء";
+  groupInvitePreviewPanel.hidden = false;
+  groupInvitePreviewPanel.setAttribute("aria-hidden", "false");
+  document.body.classList.add("group-invite-preview-open");
+  (isPending ? groupInvitePreviewCancelButton : groupInvitePreviewJoinButton).focus();
+}
 async function processPendingGroupInvite(){
-  if(pendingGroupInviteInProgress||!currentUser)return;
+  if(pendingGroupInviteInProgress||!currentUser||!groupInvitePreviewPanel?.hidden===false)return;
   const params=new URLSearchParams(window.location.search);
   const token=params.get("group_invite");
   if(!token)return;
+  if(!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(token)){
+    clearGroupInviteQuery();
+    announce("تعذر تحميل دعوة المجموعة. قد يكون الرابط غير صالح أو تم إلغاؤه.","error");
+    return;
+  }
   pendingGroupInviteInProgress=true;
   try{
-    const {data,error}=await supabase.rpc("join_group_by_invite",{p_token:token});
+    const {data,error}=await supabase.rpc("get_group_invite_preview",{p_token:token});
     if(error)throw error;
-    params.delete("group_invite");
-    const query=params.toString();
-    history.replaceState({},document.title,window.location.pathname+(query?"?"+query:"")+window.location.hash);
-    await loadConversations();
-    announce("تم الانضمام إلى المجموعة عبر رابط الدعوة.");
+    const preview=Array.isArray(data)?data[0]:data;
+    if(!preview?.conversation_id)throw new Error("Invalid group invitation.");
+    if(preview.is_member){
+      clearGroupInviteQuery();
+      await openJoinedGroupConversation(preview.conversation_id);
+      return;
+    }
+    await showGroupInvitePreview(token,preview);
   }catch(error){
-    params.delete("group_invite");
-    const query=params.toString();
-    history.replaceState({},document.title,window.location.pathname+(query?"?"+query:"")+window.location.hash);
-    announce("تعذر الانضمام إلى المجموعة. قد يكون الرابط غير صالح أو تم إلغاؤه.","error");
+    clearGroupInviteQuery();
+    announce("تعذر تحميل دعوة المجموعة. قد يكون الرابط غير صالح أو تم إلغاؤه."+(error?.message?" "+error.message:""),"error");
   }finally{pendingGroupInviteInProgress=false;}
 }
+if(groupInvitePreviewCancelButton)groupInvitePreviewCancelButton.addEventListener("click",()=>closeGroupInvitePreview(true));
+if(groupInvitePreviewJoinButton)groupInvitePreviewJoinButton.addEventListener("click",async()=>{
+  const token=pendingGroupInviteToken;
+  if(!token||groupInvitePreviewJoinButton.disabled)return;
+  groupInvitePreviewJoinButton.disabled=true;
+  groupInvitePreviewStatus.textContent="جارٍ تحميل الدعوة…";
+  try{
+    const {data,error}=await supabase.rpc("request_group_join_by_invite",{p_token:token});
+    if(error)throw error;
+    const result=Array.isArray(data)?data[0]:data;
+    if(result?.status==="joined"){
+      const conversationId=result.conversation_id||pendingGroupInvitePreview?.conversation_id;
+      closeGroupInvitePreview(true);
+      announce("تم الانضمام إلى المجموعة.");
+      await openJoinedGroupConversation(conversationId);
+      return;
+    }
+    if(result?.status==="pending"){
+      clearGroupInviteQuery();
+      groupInvitePreviewStatus.textContent="تم إرسال طلب الانضمام. بانتظار موافقة المشرف.";
+      groupInvitePreviewJoinButton.hidden=true;
+      groupInvitePreviewCancelButton.textContent="إغلاق";
+      groupInvitePreviewCancelButton.focus();
+      announce("تم إرسال طلب الانضمام. بانتظار موافقة المشرف.");
+      return;
+    }
+    throw new Error("Unexpected group invitation response.");
+  }catch(error){
+    groupInvitePreviewStatus.textContent="تعذر إرسال طلب الانضمام. حاول مرة أخرى.";
+    announce("تعذر إرسال طلب الانضمام. حاول مرة أخرى."+(error?.message?" "+error.message:""),"error");
+  }finally{
+    groupInvitePreviewJoinButton.disabled=false;
+  }
+});
+if(groupInvitePreviewPanel)groupInvitePreviewPanel.addEventListener("keydown",event=>{
+  if(event.key==="Escape")closeGroupInvitePreview(true);
+});
 
 async function updateConversationInfo() {
   if (!activeConversation || (!activePartner && !activeConversation.is_group)) return;
@@ -4090,14 +4237,15 @@ async function updateConversationInfo() {
 function getGroupSettingsSnapshot() {
   return JSON.stringify({
     send_messages_by: groupSettingsSendSelect?.value || "everyone",
-    add_members_by: groupSettingsAddSelect?.value || "admins"
+    add_members_by: groupSettingsAddSelect?.value || "admins",
+    require_admin_approval: Boolean(groupSettingsApprovalCheckbox?.checked)
   });
 }
 function updateGroupSettingsSaveButton() {
   if (!groupSettingsSaveButton) return;
   groupSettingsSaveButton.disabled = groupSettingsSaving || !groupSettingsSnapshot ||
     getGroupSettingsSnapshot() === groupSettingsSnapshot ||
-    groupSettingsSendSelect.disabled;
+    groupSettingsSendSelect.disabled || groupSettingsApprovalCheckbox.disabled;
 }
 async function openGroupSettings() {
   if (!activeConversation?.is_group || !currentUser || !groupSettingsPanel) return;
@@ -4114,6 +4262,7 @@ async function openGroupSettings() {
   groupSettingsPanel.scrollTop = 0;
   groupSettingsSendSelect.disabled = true;
   groupSettingsAddSelect.disabled = true;
+  groupSettingsApprovalCheckbox.disabled = true;
   groupSettingsSaveButton.disabled = true;
   try {
     const permissions = await getCurrentGroupPermissions();
@@ -4123,7 +4272,7 @@ async function openGroupSettings() {
     }
     const canManage = Boolean(permissions.isAdmin);
     const { data, error } = await supabase.from("group_settings")
-      .select("send_messages_by,add_members_by")
+      .select("send_messages_by,add_members_by,require_admin_approval")
       .eq("conversation_id", conversationId)
       .maybeSingle();
     if (error) throw error;
@@ -4133,10 +4282,14 @@ async function openGroupSettings() {
     }
     groupSettingsSendSelect.value = data?.send_messages_by || "everyone";
     groupSettingsAddSelect.value = data?.add_members_by || "admins";
+    groupSettingsApprovalCheckbox.checked = Boolean(data?.require_admin_approval);
     groupSettingsSendSelect.disabled = !canManage;
     groupSettingsAddSelect.disabled = !canManage;
+    groupSettingsApprovalCheckbox.disabled = !canManage;
+    groupJoinRequestsSection.hidden = !canManage;
     groupSettingsSnapshot = getGroupSettingsSnapshot();
     updateGroupSettingsSaveButton();
+    if (canManage) void loadGroupJoinRequests(conversationId);
     groupSettingsCloseButton.focus();
   } catch (error) {
     announce("تعذر تحميل إعدادات المجموعة." + (error?.message ? " " + error.message : ""), "error");
@@ -4201,7 +4354,7 @@ if (groupSettingsCloseButton) groupSettingsCloseButton.addEventListener("click",
 if (groupSettingsPanel) groupSettingsPanel.addEventListener("keydown", event => {
   if (event.key === "Escape") closeGroupSettings();
 });
-[groupSettingsSendSelect, groupSettingsAddSelect].forEach(control => {
+[groupSettingsSendSelect, groupSettingsAddSelect, groupSettingsApprovalCheckbox].forEach(control => {
   control?.addEventListener("change", updateGroupSettingsSaveButton);
 });
 if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", async () => {
@@ -4213,6 +4366,7 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
       conversation_id: activeConversation.id,
       send_messages_by: groupSettingsSendSelect.value,
       add_members_by: groupSettingsAddSelect.value,
+      require_admin_approval: groupSettingsApprovalCheckbox.checked,
       updated_by: currentUser.id
     };
     const { error } = await supabase.from("group_settings").upsert(payload, { onConflict: "conversation_id" });
@@ -4227,6 +4381,76 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
     updateGroupSettingsSaveButton();
   }
 });
+
+if (groupJoinRequestsRefreshButton) groupJoinRequestsRefreshButton.addEventListener("click", () => {
+  if (activeConversation?.is_group) void loadGroupJoinRequests(activeConversation.id);
+});
+
+async function loadGroupJoinRequests(conversationId) {
+  if (!groupJoinRequestsList || !groupJoinRequestsSection || !currentUser) return;
+  if (activeConversation?.id !== conversationId) return;
+  groupJoinRequestsList.replaceChildren();
+  groupJoinRequestsStatus.textContent = "جارٍ تحميل الدعوة…";
+  groupJoinRequestsRefreshButton.disabled = true;
+  try {
+    const { data, error } = await supabase.rpc("list_group_join_requests", { p_conversation_id: conversationId });
+    if (error) throw error;
+    if (activeConversation?.id !== conversationId) return;
+    const requests = Array.isArray(data) ? data : [];
+    groupJoinRequestsList.replaceChildren();
+    if (!requests.length) {
+      groupJoinRequestsStatus.textContent = "لا توجد طلبات انضمام معلقة.";
+      return;
+    }
+    groupJoinRequestsStatus.textContent = "";
+    for (const request of requests) {
+      const item = document.createElement("li");
+      item.className = "group-join-request-item";
+      const identity = document.createElement("div");
+      identity.className = "group-join-request-identity";
+      const name = safeText("span", "group-join-request-name", request.display_name || "مستخدم مرسال");
+      name.setAttribute("data-no-translate", "");
+      identity.append(name);
+      const date = safeText("span", "group-join-request-date", request.requested_at ? new Date(request.requested_at).toLocaleString(document.documentElement.lang === "en" ? "en-US" : "ar-JO", { dateStyle: "medium", timeStyle: "short" }) : "");
+      identity.append(date);
+      item.append(identity);
+      const actions = document.createElement("div");
+      actions.className = "group-join-request-actions";
+      for (const [approve, label] of [[true, "موافقة"], [false, "رفض"]]) {
+        const button = safeText("button", approve ? "quiet-button group-join-approve" : "quiet-button group-join-reject", label);
+        button.type = "button";
+        button.setAttribute("aria-label", (approve ? "الموافقة على الانضمام" : "رفض طلب الانضمام") + ": " + (request.display_name || "مستخدم مرسال"));
+        button.addEventListener("click", async () => {
+          if (button.disabled || activeConversation?.id !== conversationId) return;
+          actions.querySelectorAll("button").forEach(control => control.disabled = true);
+          try {
+            const { error: reviewError } = await supabase.rpc("review_group_join_request", { p_request_id: request.request_id, p_approve: approve });
+            if (reviewError) throw reviewError;
+            announce(approve ? "تمت الموافقة على طلب الانضمام." : "تم رفض طلب الانضمام.");
+            await loadGroupJoinRequests(conversationId);
+            if (approve && activeConversation?.id === conversationId) {
+              await loadGroupManagement(conversationId);
+              await refreshGroupHeaderMemberCount(conversationId);
+            }
+          } catch (error) {
+            announce("تعذر تحديث طلب الانضمام." + (error?.message ? " " + error.message : ""), "error");
+            actions.querySelectorAll("button").forEach(control => control.disabled = false);
+          }
+        });
+        actions.append(button);
+      }
+      item.append(actions);
+      groupJoinRequestsList.append(item);
+    }
+  } catch (error) {
+    if (activeConversation?.id === conversationId) {
+      groupJoinRequestsStatus.textContent = "تعذر تحميل طلبات الانضمام.";
+      announce("تعذر تحميل طلبات الانضمام." + (error?.message ? " " + error.message : ""), "error");
+    }
+  } finally {
+    groupJoinRequestsRefreshButton.disabled = false;
+  }
+}
 
 async function getCurrentGroupPermissions(){
   if(!activeConversation?.is_group||!currentUser)return {isOwner:false,isAdmin:false};
