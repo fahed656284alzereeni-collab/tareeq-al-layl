@@ -310,3 +310,18 @@ button:disabled { opacity: .48; cursor: not-allowed; }
 .message-starred-by-me .message-state-indicator.starred-indicator { background: #fff4cc; color: #775500; }
 .message-pinned .message-state-indicator.pinned-indicator { background: var(--mx-brand-soft); color: var(--mx-brand-strong); }
 :root[data-theme="dark"] .message-starred-by-me .message-state-indicator.starred-indicator { background: #493b19; color: #ffe39a; }
+
+.status-viewer-interactions { display:grid; gap:12px; width:100%; margin:14px 0; padding:14px; border:1px solid var(--mx-line); border-radius:16px; background:var(--mx-panel-soft); color:var(--mx-text); }
+.status-interaction-heading { margin:0; color:var(--mx-text); font-weight:750; }
+.status-reaction-buttons { display:flex; flex-wrap:wrap; gap:8px; }
+.status-reaction-button { min-width:42px; min-height:42px; padding:7px 10px; border:1px solid var(--mx-line); border-radius:999px; background:var(--mx-panel); color:var(--mx-text); font-size:1rem; }
+.status-reaction-button[aria-pressed="true"] { border-color:var(--mx-brand); background:var(--mx-brand-soft); box-shadow:inset 0 0 0 1px var(--mx-brand); }
+.status-replies-list { display:grid; gap:8px; max-height:220px; overflow:auto; margin:0; padding:0; list-style:none; }
+.status-reply-item { display:grid; gap:4px; padding:10px 12px; border:1px solid var(--mx-line); border-radius:12px; background:var(--mx-panel); }
+.status-reply-author { color:var(--mx-text); font-weight:700; }
+.status-reply-body { margin:0; overflow-wrap:anywhere; white-space:pre-wrap; }
+.status-reply-time { color:var(--mx-muted); font-size:.75rem; }
+.status-reply-form { display:grid; gap:8px; }
+.status-reply-form label { display:grid; gap:6px; color:var(--mx-text); font-weight:650; }
+.status-reply-form textarea { width:100%; min-height:72px; padding:10px 12px; border:1px solid var(--mx-line); border-radius:12px; background:var(--mx-panel); color:var(--mx-text); font:inherit; resize:vertical; }
+.status-viewer-interactions button:focus-visible,.status-reply-form textarea:focus-visible { outline:3px solid var(--mx-brand); outline-offset:3px; }
