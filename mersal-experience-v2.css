@@ -604,8 +604,7 @@ body.calls-open {
   height: 100vh;
   height: 100dvh;
 }
-body.calls-open .topbar,
-body.calls-open #bottom-navigation {
+body.calls-open .topbar {
   display: none !important;
 }
 body.calls-open #main-content {
@@ -649,7 +648,7 @@ body.calls-open .calls-back-button {
 }
 
 
-/* Persistent primary-tab navigation: keep all five tabs available above full-screen panels. */
+/* Persistent primary-tab navigation: keep all seven tabs available above full-screen panels. */
 :root {
   --mersal-tabbar-height: calc(68px + env(safe-area-inset-bottom));
 }
