@@ -456,6 +456,15 @@
             <div id="group-conversation-info-list" class="conversation-info-list" hidden>
               <div id="group-info-photo-row" role="group" aria-label="صورة المجموعة" hidden><span class="conversation-info-label">صورة المجموعة</span><img id="group-info-photo" class="group-info-photo" alt="" hidden></div>
               <div id="group-info-description-row" role="group" aria-label="وصف المجموعة" hidden><span class="conversation-info-label">وصف المجموعة</span><span class="conversation-info-value" id="group-info-description">—</span></div>
+              <div id="group-invite-row" role="group" aria-label="الدعوة عبر الرابط" hidden>
+                <span class="conversation-info-label">الدعوة عبر الرابط</span>
+                <div class="conversation-info-value group-invite-actions">
+                  <input id="group-invite-url" type="text" readonly aria-label="رابط دعوة المجموعة">
+                  <button id="group-invite-copy" type="button" class="quiet-button">نسخ رابط الدعوة</button>
+                  <button id="group-invite-reset" type="button" class="quiet-button" hidden>إعادة تعيين رابط الدعوة</button>
+                  <p id="group-invite-status" role="status" aria-live="polite"></p>
+                </div>
+              </div>
               <div id="group-conversation-created-row" role="group" aria-label="تاريخ إنشاء المجموعة" hidden><span class="conversation-info-label">تاريخ إنشاء المجموعة</span><span class="conversation-info-value" id="conversation-info-created">—</span></div>
             </div>
             <div id="individual-conversation-info-list" class="conversation-info-list" hidden>
