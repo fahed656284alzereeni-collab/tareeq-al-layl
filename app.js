@@ -3933,7 +3933,7 @@ async function openGroupSettings() {
       return;
     }
     const canManage = Boolean(permissions.isAdmin);
-    const canEditInfo = Boolean(permissions.isOwner);
+    const canEditInfo = Boolean(permissions.isAdmin);
     if (groupSettingsPermissionsSection) {
       groupSettingsPermissionsSection.hidden = !canManage;
       groupSettingsPermissionsSection.setAttribute("aria-hidden", String(!canManage));
