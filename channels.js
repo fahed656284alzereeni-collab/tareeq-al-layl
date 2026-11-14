@@ -254,24 +254,58 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
         actions.className = "channel-post-actions";
         const edit = safeText("button", "quiet-button", t("تعديل", "Edit"));
         edit.type = "button";
-        edit.addEventListener("click", async () => {
-          const value = window.prompt(t("تعديل تحديث القناة", "Edit channel update"), post.body);
-          if (value === null) return;
-          const bodyValue = value.trim();
-          if (!bodyValue || bodyValue.length > 5000) {
-            announce(t("يجب أن يكون التحديث من حرف واحد إلى 5000 حرف.", "The update must contain 1 to 5000 characters."), "error");
-            return;
-          }
-          edit.disabled = true;
-          const update = await supabase.from("channel_posts").update({ body: bodyValue, edited_at: new Date().toISOString() })
-            .eq("id", post.id).eq("channel_id", channelId);
-          if (update.error) {
-            edit.disabled = false;
-            announce(t("تعذر تعديل التحديث: ", "Could not edit update: ") + update.error.message, "error");
-            return;
-          }
-          await renderPosts(channelId);
-          announce(t("تم تعديل التحديث.", "Update edited."));
+        edit.addEventListener("click", () => {
+          if (item.querySelector(".channel-post-edit-form")) return;
+          const editor = document.createElement("form");
+          editor.className = "channel-post-edit-form";
+          const label = document.createElement("label");
+          label.textContent = t("تعديل تحديث القناة", "Edit channel update");
+          const textarea = document.createElement("textarea");
+          textarea.id = "channel-post-edit-" + post.id;
+          textarea.rows = 4;
+          textarea.maxLength = 5000;
+          textarea.required = true;
+          textarea.value = post.body;
+          textarea.setAttribute("aria-label", t("نص تحديث القناة", "Channel update text"));
+          label.htmlFor = textarea.id;
+          const controls = document.createElement("div");
+          controls.className = "channel-post-actions";
+          const save = safeText("button", "primary-button", t("حفظ", "Save"));
+          save.type = "submit";
+          const cancel = safeText("button", "quiet-button", t("إلغاء", "Cancel"));
+          cancel.type = "button";
+          controls.append(save, cancel);
+          editor.append(label, textarea, controls);
+          item.insertBefore(editor, actions);
+          body.hidden = true;
+          actions.hidden = true;
+          textarea.focus();
+          cancel.addEventListener("click", () => {
+            editor.remove();
+            body.hidden = false;
+            actions.hidden = false;
+            edit.focus();
+          });
+          editor.addEventListener("submit", async event => {
+            event.preventDefault();
+            const bodyValue = textarea.value.trim();
+            if (!bodyValue || bodyValue.length > 5000) {
+              announce(t("يجب أن يكون التحديث من حرف واحد إلى 5000 حرف.", "The update must contain 1 to 5000 characters."), "error");
+              textarea.focus();
+              return;
+            }
+            save.disabled = true;
+            const update = await supabase.from("channel_posts")
+              .update({ body: bodyValue, edited_at: new Date().toISOString() })
+              .eq("id", post.id).eq("channel_id", channelId).select("id").maybeSingle();
+            if (update.error || !update.data) {
+              save.disabled = false;
+              announce(t("تعذر تعديل التحديث: ", "Could not edit update: ") + (update.error?.message || t("لم يتم حفظ التعديل.", "The update was not saved.")), "error");
+              return;
+            }
+            await renderPosts(channelId);
+            announce(t("تم تعديل التحديث.", "Update edited."));
+          });
         });
         const remove = safeText("button", "danger-button", t("حذف", "Delete"));
         remove.type = "button";
