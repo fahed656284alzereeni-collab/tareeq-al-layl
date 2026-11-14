@@ -427,14 +427,17 @@
         <div class="calls-page">
           <div class="calls-intro">
             <p id="calls-title" class="calls-page-title" tabindex="-1">المكالمات</p>
-            <p class="calls-description">ابدأ مكالمة صوتية مع شخص أو مجموعة من محادثاتك.</p>
+            <p class="calls-description">ابدأ مكالمة صوتية أو مرئية مع شخص أو مجموعة من محادثاتك.</p>
           </div>
           <div class="calls-toolbar">
             <label class="visually-hidden" for="calls-search">ابحث عن شخص أو مجموعة</label>
             <input id="calls-search" type="search" placeholder="ابحث عن شخص أو مجموعة" autocomplete="off">
             <button id="refresh-calls" type="button" class="quiet-button">تحديث القائمة</button>
           </div>
+          <p class="calls-section-title">بدء مكالمة</p>
           <ul id="calls-list" class="calls-list" aria-label="المحادثات المتاحة للاتصال" aria-live="polite"></ul>
+          <p class="calls-section-title">سجل المكالمات</p>
+          <ul id="calls-history-list" class="calls-list calls-history-list" aria-label="سجل المكالمات" aria-live="polite"></ul>
         </div>
       </section>
       <div id="tools-view" class="tools-view" hidden>
@@ -703,12 +706,17 @@
   <section id="voice-call-panel" class="voice-call-panel" role="dialog" aria-modal="true" aria-label="المكالمة الصوتية" hidden>
     <div class="voice-call-card">
       <p id="voice-call-status" role="status" aria-live="polite">جارٍ تجهيز المكالمة…</p>
+      <div id="voice-call-video-grid" class="voice-call-video-grid" hidden>
+        <video id="voice-call-local-video" class="voice-call-local-video" autoplay playsinline muted aria-label="معاينة الكاميرا"></video>
+        <div id="voice-call-remote-videos" class="voice-call-remote-videos" aria-label="فيديو المشاركين"></div>
+      </div>
       <button id="voice-call-enable-audio" type="button" class="primary-button" hidden>تشغيل صوت المكالمة</button>
       <ul id="voice-call-participants" class="voice-call-participants"></ul>
       <div id="voice-call-audio" class="voice-call-audio" aria-hidden="true"></div>
       <button id="voice-call-accept" type="button" class="primary-button" hidden>الرد على المكالمة</button>
       <button id="voice-call-reject" type="button" class="danger-button" hidden>رفض المكالمة</button>
       <button id="voice-call-mute" type="button" class="quiet-button" hidden>كتم الميكروفون</button>
+      <button id="voice-call-camera" type="button" class="quiet-button" hidden aria-pressed="true">إيقاف الكاميرا</button>
       <button id="voice-call-end" type="button" class="danger-button" hidden>إنهاء المكالمة</button>
     </div>
   </section>
