@@ -19,7 +19,6 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
   const detailName = $("#channel-detail-name");
   const detailDescription = $("#channel-detail-description");
   const followButton = $("#channel-follow-toggle");
-  const notificationButton = $("#channel-notifications-toggle");
   const deleteChannelButton = $("#channel-delete-button");
   const editOpenButton = $("#channel-edit-open");
   const editForm = $("#channel-edit-form");
@@ -84,9 +83,6 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
       followButton.textContent = activeFollow ? t("إلغاء المتابعة", "Unfollow") : t("متابعة القناة", "Follow channel");
       followButton.setAttribute("aria-pressed", String(Boolean(activeFollow)));
       followButton.setAttribute("aria-label", followButton.textContent);
-      notificationButton.hidden = !activeFollow;
-      notificationButton.textContent = activeFollow?.notifications_enabled ? t("إيقاف إشعارات القناة", "Mute channel notifications") : t("تشغيل إشعارات القناة", "Enable channel notifications");
-      notificationButton.setAttribute("aria-pressed", String(Boolean(activeFollow?.notifications_enabled)));
     }
   }
 
@@ -112,7 +108,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     const [channelsResult, followsResult] = await Promise.all([
       supabase.from("channels").select("id,owner_id,name,description,created_at,updated_at")
         .eq("is_public", true).order("updated_at", { ascending: false }).limit(100),
-      supabase.from("channel_followers").select("channel_id,notifications_enabled")
+      supabase.from("channel_followers").select("channel_id")
         .eq("follower_id", user.id)
     ]);
     if (channelsResult.error) throw channelsResult.error;
@@ -214,7 +210,6 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     detailDescription.setAttribute("data-no-translate", "");
     const own = channel.owner_id === user.id;
     followButton.hidden = own;
-    notificationButton.hidden = own || !activeFollow;
     postForm.hidden = !own;
     deleteChannelButton.hidden = !own;
     editOpenButton.hidden = !own;
@@ -349,30 +344,12 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
       announce(t("تعذر تحديث المتابعة: ", "Could not update following: ") + result.error.message, "error");
       return;
     }
-    activeFollow = activeFollow ? null : { notifications_enabled: true };
+    activeFollow = activeFollow ? null : { channel_id: activeChannel.id };
     const index = rows.findIndex(row => row.id === activeChannel.id);
     if (index >= 0) rows[index].followed = activeFollow;
     localize();
     renderList();
     announce(activeFollow ? t("أصبحت تتابع القناة.", "You are now following this channel.") : t("ألغيت متابعة القناة.", "You unfollowed this channel."));
-  });
-
-  notificationButton.addEventListener("click", async () => {
-    if (!activeChannel || !activeFollow || busy) return;
-    busy = true;
-    notificationButton.disabled = true;
-    const next = !activeFollow.notifications_enabled;
-    const result = await supabase.from("channel_followers").update({ notifications_enabled: next })
-      .eq("channel_id", activeChannel.id).eq("follower_id", getCurrentUser().id);
-    notificationButton.disabled = false;
-    busy = false;
-    if (result.error) {
-      announce(t("تعذر تحديث الإشعارات: ", "Could not update notifications: ") + result.error.message, "error");
-      return;
-    }
-    activeFollow.notifications_enabled = next;
-    localize();
-    announce(next ? t("تم تشغيل إشعارات القناة.", "Channel notifications enabled.") : t("تم إيقاف إشعارات القناة.", "Channel notifications muted."));
   });
 
   postForm.addEventListener("submit", async event => {
