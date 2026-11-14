@@ -35,11 +35,7 @@ alter table public.community_posts enable row level security;
 
 drop policy if exists communities_select_public_or_owner on public.communities;
 create policy communities_select_public_or_owner on public.communities
-for select to authenticated using (
-  is_public or owner_id = (select auth.uid())
-  or exists (select 1 from public.community_members m
-    where m.community_id = communities.id and m.user_id = (select auth.uid()))
-);
+for select to authenticated using (is_public or owner_id = (select auth.uid()));
 drop policy if exists communities_insert_owner on public.communities;
 create policy communities_insert_owner on public.communities
 for insert to authenticated with check (owner_id = (select auth.uid()));
