@@ -22,6 +22,12 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
   const detailDescription = $("#community-detail-description");
   const joinButton = $("#community-join-toggle");
   const deleteButton = $("#community-delete-button");
+  const editOpenButton = $("#community-edit-open");
+  const communityEditForm = $("#community-edit-form");
+  const communityEditName = $("#community-edit-name");
+  const communityEditDescription = $("#community-edit-description");
+  const communityEditSave = $("#community-edit-save");
+  const communityEditCancel = $("#community-edit-cancel");
   const postForm = $("#community-post-form");
   const postInput = $("#community-post-input");
   const postsList = $("#community-posts");
@@ -51,6 +57,25 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     setText($("#community-post-form label"), "إعلان جديد", "New announcement");
     setText($("#community-post-submit"), "نشر الإعلان", "Publish announcement");
     setText(deleteButton, "حذف المجتمع", "Delete community");
+    setText(editOpenButton, "تعديل معلومات المجتمع", "Edit community details");
+    setText($("#community-edit-form label[for='community-edit-name']"), "اسم المجتمع", "Community name");
+    setText($("#community-edit-form label[for='community-edit-description']"), "وصف المجتمع", "Community description");
+    setText(communityEditSave, "حفظ التعديلات", "Save changes");
+    setText(communityEditCancel, "إلغاء", "Cancel");
+    setAttr(communityEditName, "aria-label", "اسم المجتمع", "Community name");
+    setAttr(communityEditDescription, "aria-label", "وصف المجتمع", "Community description");
+    if (communityEditName) communityEditName.placeholder = t("اسم المجتمع", "Community name");
+    if (communityEditDescription) communityEditDescription.placeholder = t("وصف مختصر للمجتمع", "A short community description");
+    for (const form of document.querySelectorAll(".community-post-edit-form")) {
+      const label = form.querySelector("label");
+      const save = form.querySelector("[data-community-edit-save]");
+      const cancel = form.querySelector("[data-community-edit-cancel]");
+      const textarea = form.querySelector("textarea");
+      if (label) label.textContent = t("تعديل الإعلان", "Edit announcement");
+      if (save) save.textContent = t("حفظ", "Save");
+      if (cancel) cancel.textContent = t("إلغاء", "Cancel");
+      if (textarea) textarea.setAttribute("aria-label", t("نص الإعلان", "Announcement text"));
+    }
     setText($("#community-create-form label[for='community-name-input']"), "اسم المجتمع", "Community name");
     setText($("#community-create-form label[for='community-description-input']"), "وصف المجتمع", "Community description");
     setAttr(panel, "aria-label", "المجتمعات", "Communities");
@@ -194,6 +219,8 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     const own = community.owner_id === user.id;
     joinButton.hidden = own;
     deleteButton.hidden = !own;
+    editOpenButton.hidden = !own;
+    communityEditForm.hidden = true;
     postForm.hidden = !own;
     localize();
     await renderPosts(community.id);
@@ -231,24 +258,57 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
         actions.className = "community-post-actions";
         const edit = safeText("button", "quiet-button", t("تعديل", "Edit"));
         edit.type = "button";
-        edit.addEventListener("click", async () => {
-          const value = window.prompt(t("تعديل إعلان المجتمع", "Edit community announcement"), post.body);
-          if (value === null) return;
-          const bodyValue = value.trim();
-          if (!bodyValue || bodyValue.length > 5000) {
-            announce(t("يجب أن يكون الإعلان من حرف واحد إلى 5000 حرف.", "The announcement must contain 1 to 5000 characters."), "error");
-            return;
-          }
-          edit.disabled = true;
-          const update = await supabase.from("community_posts").update({ body: bodyValue, edited_at: new Date().toISOString() })
-            .eq("id", post.id).eq("community_id", communityId);
-          if (update.error) {
-            edit.disabled = false;
-            announce(t("تعذر تعديل الإعلان: ", "Could not edit announcement: ") + update.error.message, "error");
-            return;
-          }
-          await renderPosts(communityId);
-          announce(t("تم تعديل الإعلان.", "Announcement edited."));
+        edit.addEventListener("click", () => {
+          if (item.querySelector(".community-post-edit-form")) return;
+          const editor = document.createElement("form");
+          editor.className = "community-post-edit-form";
+          const label = document.createElement("label");
+          label.textContent = t("تعديل الإعلان", "Edit announcement");
+          const textarea = document.createElement("textarea");
+          textarea.rows = 4;
+          textarea.maxLength = 5000;
+          textarea.required = true;
+          textarea.value = post.body;
+          textarea.setAttribute("aria-label", t("نص الإعلان", "Announcement text"));
+          const save = safeText("button", "primary-button", t("حفظ", "Save"));
+          save.type = "submit";
+          save.dataset.communityEditSave = "";
+          const cancel = safeText("button", "quiet-button", t("إلغاء", "Cancel"));
+          cancel.type = "button";
+          cancel.dataset.communityEditCancel = "";
+          const controls = document.createElement("div");
+          controls.className = "community-post-actions";
+          controls.append(save, cancel);
+          editor.append(label, textarea, controls);
+          item.insertBefore(editor, actions);
+          body.hidden = true;
+          actions.hidden = true;
+          textarea.focus();
+          cancel.addEventListener("click", () => {
+            editor.remove();
+            body.hidden = false;
+            actions.hidden = false;
+            edit.focus();
+          });
+          editor.addEventListener("submit", async event => {
+            event.preventDefault();
+            const bodyValue = textarea.value.trim();
+            if (!bodyValue || bodyValue.length > 5000) {
+              announce(t("يجب أن يكون الإعلان من حرف واحد إلى 5000 حرف.", "The announcement must contain 1 to 5000 characters."), "error");
+              textarea.focus();
+              return;
+            }
+            save.disabled = true;
+            const update = await supabase.from("community_posts").update({ body: bodyValue, edited_at: new Date().toISOString() })
+              .eq("id", post.id).eq("community_id", communityId);
+            if (update.error) {
+              save.disabled = false;
+              announce(t("تعذر تعديل الإعلان: ", "Could not edit announcement: ") + update.error.message, "error");
+              return;
+            }
+            await renderPosts(communityId);
+            announce(t("تم تعديل الإعلان.", "Announcement edited."));
+          });
         });
         const remove = safeText("button", "danger-button", t("حذف", "Delete"));
         remove.type = "button";
@@ -271,6 +331,51 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
       postsList.append(item);
     }
   }
+
+  editOpenButton.addEventListener("click", () => {
+    if (!activeCommunity || activeCommunity.owner_id !== getCurrentUser()?.id) return;
+    communityEditName.value = activeCommunity.name || "";
+    communityEditDescription.value = activeCommunity.description || "";
+    communityEditForm.hidden = false;
+    communityEditName.focus();
+  });
+
+  communityEditCancel.addEventListener("click", () => {
+    communityEditForm.hidden = true;
+    editOpenButton.focus();
+  });
+
+  communityEditForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!activeCommunity || activeCommunity.owner_id !== getCurrentUser()?.id || busy) return;
+    const name = communityEditName.value.trim();
+    const description = communityEditDescription.value.trim();
+    if (!name || name.length > 80 || description.length > 500) {
+      announce(t("اسم المجتمع مطلوب حتى 80 حرفًا، والوصف حتى 500 حرف.", "A community name is required (up to 80 characters); description is limited to 500."), "error");
+      communityEditName.focus();
+      return;
+    }
+    busy = true;
+    communityEditSave.disabled = true;
+    const result = await supabase.from("communities").update({ name, description, updated_at: new Date().toISOString() })
+      .eq("id", activeCommunity.id).eq("owner_id", getCurrentUser().id)
+      .select("id,owner_id,name,description,created_at,updated_at").single();
+    busy = false;
+    communityEditSave.disabled = false;
+    if (result.error) {
+      announce(t("تعذر تعديل معلومات المجتمع: ", "Could not update community details: ") + result.error.message, "error");
+      return;
+    }
+    activeCommunity = result.data;
+    detailName.textContent = result.data.name;
+    detailDescription.textContent = result.data.description || t("لا يوجد وصف للمجتمع.", "No community description.");
+    const index = communities.findIndex(row => row.id === result.data.id);
+    if (index >= 0) communities[index] = { ...communities[index], ...result.data };
+    communityEditForm.hidden = true;
+    renderList();
+    announce(t("تم تحديث معلومات المجتمع.", "Community details updated."));
+    editOpenButton.focus();
+  });
 
   createButton.addEventListener("click", () => {
     nameInput.value = "";
