@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import assert from "node:assert/strict";
 
 const html = readFileSync(new URL("../index.html", import.meta.url), "utf8");
@@ -6,6 +6,14 @@ const ids = [...html.matchAll(/\bid=["']([^"']+)["']/g)].map(match => match[1]);
 const idSet = new Set(ids);
 const duplicateIds = [...new Set(ids.filter((id, index) => ids.indexOf(id) !== index))];
 assert.deepEqual(duplicateIds, [], "index.html contains duplicate IDs");
+
+const migrationFiles = readdirSync(new URL("../supabase/migrations/", import.meta.url))
+  .filter(file => file.endsWith(".sql"));
+assert.ok(migrationFiles.every(file => /^\\d{14}_[a-z0-9_]+\\.sql$/.test(file)),
+  "Every Supabase migration must use a 14-digit version and a snake_case name");
+const migrationVersions = migrationFiles.map(file => file.slice(0, 14));
+const duplicateMigrationVersions = [...new Set(migrationVersions.filter((version, index) => migrationVersions.indexOf(version) !== index))];
+assert.deepEqual(duplicateMigrationVersions, [], "Supabase migration versions must be unique");
 
 const tabs = [...html.matchAll(/<button\b(?=[^>]*\brole=["']tab["'])[^>]*>/g)].map(match => match[0]);
 assert.equal(tabs.length, 7, "The bottom navigation must expose exactly seven tabs");
@@ -38,6 +46,14 @@ for (const dialog of modalDialogs.filter(dialog => /\baria-modal=["']true["']/.t
   assert.ok(/\baria-label=["'][^"']+["']|\baria-labelledby=["'][^"']+["']/.test(dialog),
     "Every modal dialog must have an accessible name");
 }
+
+const experienceCss = readFileSync(new URL("../mersal-experience-v2.css", import.meta.url), "utf8");
+assert.match(experienceCss, /#bottom-navigation\\s*\\{[^}]*z-index:\\s*220/s,
+  "The primary tab bar must stay above full-screen tab panels");
+assert.match(experienceCss, /body\\.settings-open #bottom-navigation,[\\s\\S]*?display:\\s*flex !important/,
+  "The primary tab bar must remain visible while settings are open");
+assert.doesNotMatch(experienceCss, /body\\.calls-open \\.topbar,\\s*body\\.calls-open #bottom-navigation/,
+  "The calls full-screen rule must not hide the primary tab bar");
 
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
 assert.equal((app.match(/closeHelpSupportForNavigation\(\);/g) || []).length, 6,
