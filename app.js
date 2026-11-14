@@ -810,6 +810,7 @@ const mersalTranslations = {
   "إجراءات العضوية": "Membership actions",
   "صلاحيات المجموعة": "Group permissions",
   "إعدادات المجموعة": "Group settings",
+  "إدارة المجموعة": "Group management",
   "المزيد من الخيارات": "More options",
   "إغلاق المزيد من الخيارات": "Close more options",
   "تعذر تحميل المزيد من خيارات المجموعة: ": "Could not load more group options: ",
@@ -3771,14 +3772,24 @@ async function loadGroupInviteLink(conversationId,isCurrent,isAdmin){
   groupInviteResetButton.hidden=!isAdmin;
   let timeoutId=null;
   try{
-    const request=supabase.rpc("get_or_create_group_invite",{p_conversation_id:conversationId});
+    const request=(async()=>{
+      // Reuse an existing invite when readable; otherwise ask the membership-checked RPC
+      // to create one. This also supports legacy group creators without a member row.
+      const existing=await supabase.from("group_invites").select("token").eq("conversation_id",conversationId).maybeSingle();
+      let token=!existing.error?existing.data?.token:null;
+      if(!token){
+        const result=await supabase.rpc("get_or_create_group_invite",{p_conversation_id:conversationId});
+        if(result.error)throw result.error;
+        const data=result.data;
+        token=typeof data==="string"?data:Array.isArray(data)?(data[0]?.token||data[0]?.get_or_create_group_invite||data[0]||null):(data?.token||data?.get_or_create_group_invite||null);
+      }
+      return token;
+    })();
     const timeout=new Promise((_,reject)=>{
       timeoutId=window.setTimeout(()=>reject(new Error("انتهت مهلة تحميل رابط الدعوة. حاول مرة أخرى.")),12000);
     });
-    const {data,error}=await Promise.race([request,timeout]);
-    if(error)throw error;
+    const token=await Promise.race([request,timeout]);
     if(sequence!==groupInviteLoadSequence||!isCurrent())return;
-    const token=typeof data==="string"?data:data?.token;
     if(!token)throw new Error("لم يتم إنشاء رابط الدعوة.");
     groupInviteUrl.value=new URL("/?group_invite="+encodeURIComponent(token),window.location.origin).toString();
     groupInviteStatus.textContent="";
@@ -3827,7 +3838,7 @@ if(groupInviteResetButton)groupInviteResetButton.addEventListener("click",async(
   try{
     const {data,error}=await supabase.rpc("reset_group_invite",{p_conversation_id:activeConversation.id});
     if(error)throw error;
-    const token=typeof data==="string"?data:data?.token;
+    const token=typeof data==="string"?data:Array.isArray(data)?(data[0]?.token||data[0]?.get_or_create_group_invite||data[0]||null):(data?.token||data?.get_or_create_group_invite||null);
     if(!token)throw new Error("لم يتم تجديد رابط الدعوة.");
     groupInviteUrl.value=new URL("/?group_invite="+encodeURIComponent(token),window.location.origin).toString();
     groupInviteStatus.textContent="تم إنشاء رابط دعوة جديد، وأُلغي الرابط السابق.";
@@ -3864,6 +3875,7 @@ async function updateConversationInfo() {
   const conversationId = conversation.id;
   const loadSequence = ++conversationInfoLoadSequence;
   const isCurrent = () => activeConversation?.id === conversationId && loadSequence === conversationInfoLoadSequence;
+  const isConversationCurrent = () => activeConversation?.id === conversationId;
   const isGroup = Boolean(conversation.is_group);
 
   // Clear context-specific values immediately so the previous conversation cannot
@@ -3933,7 +3945,7 @@ async function updateConversationInfo() {
       }
     }
   }
-  if(isGroup) await loadGroupInviteLink(conversationId,isCurrent,isAdmin);
+  if(isGroup) await loadGroupInviteLink(conversationId,isConversationCurrent,isAdmin);
 
   if (!isGroup) {
     const visibleProfile = await supabase.rpc("get_visible_profiles", { p_user_ids: [partner.id] });
