@@ -1201,11 +1201,14 @@ let groupDescriptionSavedValue=null,groupDescriptionSaveInProgress=false,selecte
 const groupPhotoUrlCache=new Map();
 const groupSettingsOpenButton = $("#group-settings-open");
 const groupSettingsPanel = $("#group-settings-panel");
+// Keep this dialog at the document root so fixed positioning always covers the full viewport.
+if (groupSettingsPanel && groupSettingsPanel.parentElement !== document.body) document.body.append(groupSettingsPanel);
 const groupSettingsCloseButton = $("#group-settings-close");
 const groupSettingsSendSelect = $("#group-settings-send");
 const groupSettingsAddSelect = $("#group-settings-add");
 const groupSettingsSaveButton = $("#group-settings-save");
 const groupSettingsPermissionsSection = $("#group-settings-permissions");
+const groupSettingsInfoSection = $("#group-settings-info");
 let groupSettingsSnapshot = null;
 let groupSettingsSaving = false;
 let groupSettingsReturnFocus = null;
@@ -3911,6 +3914,11 @@ async function openGroupSettings() {
     groupSettingsPermissionsSection.setAttribute("aria-hidden", "true");
     groupSettingsPermissionsSection.setAttribute("inert", "");
   }
+  if (groupSettingsInfoSection) {
+    groupSettingsInfoSection.hidden = true;
+    groupSettingsInfoSection.setAttribute("aria-hidden", "true");
+    groupSettingsInfoSection.setAttribute("inert", "");
+  }
   document.body.classList.add("group-settings-open");
   groupSettingsPanel.hidden = false;
   groupSettingsPanel.setAttribute("aria-hidden", "false");
@@ -3924,11 +3932,18 @@ async function openGroupSettings() {
       return;
     }
     const canManage = Boolean(permissions.isAdmin);
+    const canEditInfo = Boolean(permissions.isOwner);
     if (groupSettingsPermissionsSection) {
       groupSettingsPermissionsSection.hidden = !canManage;
       groupSettingsPermissionsSection.setAttribute("aria-hidden", String(!canManage));
       if (canManage) groupSettingsPermissionsSection.removeAttribute("inert");
       else groupSettingsPermissionsSection.setAttribute("inert", "");
+    }
+    if (groupSettingsInfoSection) {
+      groupSettingsInfoSection.hidden = !canEditInfo;
+      groupSettingsInfoSection.setAttribute("aria-hidden", String(!canEditInfo));
+      if (canEditInfo) groupSettingsInfoSection.removeAttribute("inert");
+      else groupSettingsInfoSection.setAttribute("inert", "");
     }
     if (canManage) {
       const { data, error } = await supabase.from("group_settings")
@@ -3968,6 +3983,9 @@ function closeGroupSettings() {
 }
 if (groupSettingsOpenButton) groupSettingsOpenButton.addEventListener("click", () => void openGroupSettings());
 if (groupSettingsCloseButton) groupSettingsCloseButton.addEventListener("click", closeGroupSettings);
+if (groupSettingsPanel) groupSettingsPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeGroupSettings();
+});
 [groupSettingsSendSelect, groupSettingsAddSelect].forEach(control => {
   control?.addEventListener("change", updateGroupSettingsSaveButton);
 });
@@ -4069,14 +4087,14 @@ function openGroupMemberOptions(userId,name,roleLabel,role,isGroupOwner,permissi
     });
     groupMemberOptionsActions.append(messageButton);
   }
-  if(!isSelf&&!isGroupOwner){
+  if(!isSelf && permissions.isAdmin && !isGroupOwner){
     if(permissions.isOwner){
       const roleButton=safeText("button","quiet-button group-member-action",role==="admin"?"إزالة صفة المشرف":"تعيين مشرف");
       roleButton.type="button";
       roleButton.addEventListener("click",()=>{void manageGroupMember(userId,name,role==="admin"?"demote":"promote");});
       groupMemberOptionsActions.append(roleButton);
     }
-    if(permissions.isOwner||role!=="admin"){
+    if(permissions.isOwner || role!=="admin"){
       const remove=safeText("button","danger-button group-member-remove","إزالة من المجموعة");
       remove.type="button";
       remove.addEventListener("click",()=>{void manageGroupMember(userId,name,"remove");});
