@@ -348,3 +348,5 @@ button:disabled { opacity: .48; cursor: not-allowed; }
 .broadcast-person-choice input { width:20px; height:20px; accent-color:var(--mx-brand); }
 .broadcast-card button:focus-visible,.broadcast-card input:focus-visible { outline:3px solid var(--mx-brand); outline-offset:3px; }
 @media(max-width:520px) { .broadcast-card { width:100%; max-height:95dvh; padding:14px; } .broadcast-list-item { grid-template-columns:1fr; } }
+
+.status-reply-delete { justify-self:start; min-height:34px; padding:5px 10px; font-size:.82rem; }
