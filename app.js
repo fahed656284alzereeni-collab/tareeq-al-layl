@@ -984,6 +984,15 @@ const mersalTranslations = {
   "قائمة بث جديدة":"New broadcast list",
   "استكشاف القنوات":"Explore channels",
   "استكشاف المجتمعات":"Explore communities",
+  "عرض الصور والفيديوهات لمرة واحدة":"Send photos and videos for one-time viewing",
+  "تُتاح الوسائط للمستلم مرة واحدة فقط داخل مرسال.":"Each recipient can open this media only once inside Mersal.",
+  "عرض لمرة واحدة":"View once",
+  "تم فتح هذه الوسائط. لا يمكن فتحها مجددًا.":"This media has already been opened and cannot be viewed again.",
+  "وسائط مرسلة للعرض مرة واحدة.":"Media sent for one-time viewing.",
+  "تم فتح الوسائط مرة واحدة.":"This media has been opened.",
+  "تعذر التحقق من حالة العرض مرة واحدة.":"Could not check view-once status.",
+  "هذا الخيار متاح للصور والفيديوهات فقط.":"View once is available for photos and videos only.",
+
   "قوائم البث":"Broadcast lists",
   "إنشاء قائمة بث":"Create broadcast list",
   "اسم قائمة البث":"Broadcast list name",
@@ -1580,6 +1589,7 @@ const closeAttachmentChooserButton = $("#close-attachment-chooser");
 const imageFileInput = $("#image-file-input");
 const videoFileInput = $("#video-file-input");
 const documentFileInput = $("#document-file-input");
+const viewOnceAttachmentInput = $("#view-once-attachment");
 const createPollFromAttachmentsButton = $("#create-poll-from-attachments");
 const openStickerPickerButton = $("#open-sticker-picker");
 const stickerPickerPanel = $("#sticker-picker-panel");
@@ -4534,6 +4544,13 @@ async function selectConversation(conversation, person) {
         void refreshMessageInteractions(message, item);
       }
     })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "message_view_once_views" }, payload => {
+      if (!isCurrentSelection()) return;
+      const item = payload.new?.message_id
+        ? messagesList.querySelector('[data-message-id="' + payload.new.message_id + '"]')
+        : null;
+      if (item) void loadMessages();
+    })
     .on("postgres_changes", { event: "*", schema: "public", table: "message_pins" }, payload => {
       if (!isCurrentSelection()) return;
       const messageId = payload.new?.message_id || payload.old?.message_id;
@@ -6621,6 +6638,55 @@ function openForwardMessageDialog(message, menu, toggle) {
   document.body.append(overlay);
   close.focus();
 }
+async function renderViewOnceAttachment(message, attachment, host, fileName) {
+  const english = document.documentElement.lang === "en";
+  const label = (ar, en) => english ? en : ar;
+  const result = await supabase.from("message_view_once_views")
+    .select("viewer_id,viewed_at").eq("message_id", message.id);
+  if (result.error) {
+    host.append(safeText("p", "attachment-unavailable", label("تعذر التحقق من حالة العرض مرة واحدة.", "Could not check view-once status.")));
+    return;
+  }
+  const views = result.data || [];
+  if (message.sender_id === currentUser.id) {
+    host.append(safeText("p", "view-once-status", views.length
+      ? label("تم فتح الوسائط مرة واحدة.", "This media has been opened.")
+      : label("وسائط مرسلة للعرض مرة واحدة.", "Media sent for one-time viewing.")));
+    return;
+  }
+  const alreadyViewed = views.some(row => row.viewer_id === currentUser.id);
+  if (alreadyViewed) {
+    host.append(safeText("p", "view-once-status", label("تم فتح هذه الوسائط. لا يمكن فتحها مجددًا.", "This media has already been opened and cannot be viewed again.")));
+    return;
+  }
+  const button = safeText("button", "attachment-open-button view-once-open-button", label("عرض لمرة واحدة", "View once"));
+  button.type = "button";
+  button.setAttribute("aria-label", label("عرض ", "View ") + fileName + label(" لمرة واحدة داخل مرسال", " once inside Mersal"));
+  button.addEventListener("click", async () => {
+    if (button.disabled) return;
+    button.disabled = true;
+    try {
+      const signed = await supabase.storage.from("mersal-attachments").createSignedUrl(attachment.path, 45);
+      if (signed.error || !signed.data?.signedUrl) throw signed.error || new Error(label("تعذر تجهيز الوسائط.", "Could not prepare the media."));
+      const marked = await supabase.from("message_view_once_views")
+        .insert({ message_id: message.id, viewer_id: currentUser.id });
+      if (marked.error) {
+        if (marked.error.code === "23505") {
+          button.replaceWith(safeText("p", "view-once-status", label("تم فتح هذه الوسائط. لا يمكن فتحها مجددًا.", "This media has already been opened and cannot be viewed again.")));
+          return;
+        }
+        throw marked.error;
+      }
+      button.textContent = label("تم فتح الوسائط مرة واحدة.", "This media has been opened.");
+      button.setAttribute("aria-label", button.textContent);
+      openAttachmentViewer(signed.data.signedUrl, attachment.type || "", fileName, button);
+    } catch (error) {
+      button.disabled = false;
+      announce(label("تعذر فتح الوسائط: ", "Could not open media: ") + (error.message || ""), "error");
+    }
+  });
+  host.append(button);
+}
 function appendMessage(message) {
   if (!message || document.querySelector('[data-message-id="' + message.id + '"]')) return;
   messagesList.querySelectorAll(".empty-item").forEach(node => node.remove());
@@ -6662,29 +6728,33 @@ function appendMessage(message) {
     const fileName = attachment.name || "ملف مرفق";
     const fileInfo = safeText("p", "attachment-file-name", "📎 " + fileName);fileInfo.setAttribute("data-no-translate","");
     attachmentView.append(fileInfo);
-    void supabase.storage.from("mersal-attachments").createSignedUrl(attachment.path, 3600).then(({ data, error }) => {
-      if (error || !data?.signedUrl) {
-        attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق."));
-        return;
-      }
-      const previewButton = safeText("button", "attachment-open-button",
-        attachment.type?.startsWith("image/") ? "عرض الصورة داخل مرسال" :
-        attachment.type?.startsWith("video/") ? "تشغيل الفيديو داخل مرسال" :
-        attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "تشغيل الصوت داخل مرسال" :
-        "عرض الملف داخل مرسال");
-      previewButton.type = "button";
-      previewButton.setAttribute("aria-label", (attachment.type?.startsWith("image/") ? "عرض الصورة " : attachment.type?.startsWith("video/") ? "تشغيل الفيديو " : attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "تشغيل الصوت " : "عرض الملف ") + fileName + " داخل المحادثة");
-      previewButton.addEventListener("click", () => openAttachmentViewer(data.signedUrl, attachment.type || "", fileName, previewButton));
-      if (attachment.type?.startsWith("image/")) {
-        const preview = document.createElement("img");
-        preview.src = data.signedUrl; preview.alt = "صورة مرفقة: " + fileName;
-        preview.loading = "lazy"; preview.className = "attachment-image";
-        previewButton.prepend(preview);
-      } else {
-        previewButton.prepend(safeText("span", "attachment-preview-icon", attachment.type?.startsWith("video/") ? "▶" : attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "♫" : "📄"));
-      }
-      attachmentView.insertBefore(previewButton, fileInfo);
-    }).catch(() => attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق.")));
+    if (message.view_once) {
+      void renderViewOnceAttachment(message, attachment, attachmentView, fileName);
+    } else {
+      void supabase.storage.from("mersal-attachments").createSignedUrl(attachment.path, 3600).then(({ data, error }) => {
+        if (error || !data?.signedUrl) {
+          attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق."));
+          return;
+        }
+        const previewButton = safeText("button", "attachment-open-button",
+          attachment.type?.startsWith("image/") ? "عرض الصورة داخل مرسال" :
+          attachment.type?.startsWith("video/") ? "تشغيل الفيديو داخل مرسال" :
+          attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "تشغيل الصوت داخل مرسال" :
+          "عرض الملف داخل مرسال");
+        previewButton.type = "button";
+        previewButton.setAttribute("aria-label", (attachment.type?.startsWith("image/") ? "عرض الصورة " : attachment.type?.startsWith("video/") ? "تشغيل الفيديو " : attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "تشغيل الصوت " : "عرض الملف ") + fileName + " داخل المحادثة");
+        previewButton.addEventListener("click", () => openAttachmentViewer(data.signedUrl, attachment.type || "", fileName, previewButton));
+        if (attachment.type?.startsWith("image/")) {
+          const preview = document.createElement("img");
+          preview.src = data.signedUrl; preview.alt = "صورة مرفقة: " + fileName;
+          preview.loading = "lazy"; preview.className = "attachment-image";
+          previewButton.prepend(preview);
+        } else {
+          previewButton.prepend(safeText("span", "attachment-preview-icon", attachment.type?.startsWith("video/") ? "▶" : attachment.type?.startsWith("audio/") || attachment.kind === "voice" ? "♫" : "📄"));
+        }
+        attachmentView.insertBefore(previewButton, fileInfo);
+      }).catch(() => attachmentView.append(safeText("p", "attachment-unavailable", "تعذر فتح المرفق.")));
+    }
     item.append(attachmentView);
   } else {
     const messageBodyNode=safeText("p", "message-body", getMessagePreviewText(message.body));messageBodyNode.setAttribute("data-no-translate","");item.append(messageBodyNode);
@@ -6839,7 +6909,7 @@ async function loadMessages() {
   // Keep the first chat render lightweight on mobile: fetch only the newest
   // 50 messages, then restore chronological order for the conversation view.
   const { data: newestFirst, error } = await supabase.from("messages")
-    .select("id,conversation_id,sender_id,body,created_at,edited_at,is_deleted")
+    .select("id,conversation_id,sender_id,body,created_at,edited_at,is_deleted,view_once")
     .eq("conversation_id", conversationId)
     .order("created_at", { ascending: false })
     .limit(50);
@@ -7355,6 +7425,12 @@ async function uploadAttachments(fileList, options = {}) {
   if(isPrivateConversationBlocked()){announce("لا يمكنك إرسال مرفقات في هذه المحادثة بسبب الحظر.","error");return;}
   closeAttachmentChooser();
   for (const file of files) {
+    const useViewOnce = Boolean(options.viewOnce);
+    const isPhotoOrVideo = file.type?.startsWith("image/") || file.type?.startsWith("video/");
+    if (useViewOnce && !isPhotoOrVideo) {
+      announce("هذا الخيار متاح للصور والفيديوهات فقط.", "error");
+      continue;
+    }
     if (file.size > 50 * 1024 * 1024) {
       announce("حجم الملف " + file.name + " أكبر من 50 ميغابايت.", "error");
       continue;
@@ -7376,8 +7452,8 @@ async function uploadAttachments(fileList, options = {}) {
       const attachment = { path: uploaded.path, name: file.name, type: file.type || "application/octet-stream", size: file.size, ...(options.voiceMessage ? { kind: "voice" } : {}) };
       const body = (options.voiceMessage ? "رسالة صوتية" : "📎 " + file.name) + "\nMERSAL_ATTACHMENT:" + JSON.stringify(attachment);
       const { data, error } = await supabase.from("messages").insert({
-        conversation_id: activeConversation.id, sender_id: currentUser.id, body
-      }).select("id,conversation_id,sender_id,body,created_at").single();
+        conversation_id: activeConversation.id, sender_id: currentUser.id, body, view_once: useViewOnce
+      }).select("id,conversation_id,sender_id,body,created_at,view_once").single();
       if (error) {
         await supabase.storage.from("mersal-attachments").remove([uploaded.path]);
         throw error;
@@ -7398,7 +7474,9 @@ async function uploadAttachments(fileList, options = {}) {
 }
 for (const input of [imageFileInput, videoFileInput, documentFileInput]) {
   input.addEventListener("change", () => {
-    void uploadAttachments(input.files);
+    const viewOnce = Boolean(viewOnceAttachmentInput?.checked);
+    if (viewOnceAttachmentInput) viewOnceAttachmentInput.checked = false;
+    void uploadAttachments(input.files, { viewOnce });
     input.value = "";
   });
 }
