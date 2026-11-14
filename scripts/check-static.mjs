@@ -25,8 +25,8 @@ for (const tab of tabs) {
   if (panelId === "workspace") {
     // The chats workspace is the main landmark. Labelling this large
     // container with the Chats tab repeats its name in VoiceOver.
-    assert.match(panel, /\\brole=["']main["']/, "The chats workspace must remain the main landmark");
-    assert.doesNotMatch(panel, /\\baria-labelledby=["']home-tab["']/, "The chats workspace must not repeat the Chats tab label");
+    assert.ok(panel.includes('role="main"') || panel.includes("role='main'"), "The chats workspace must remain the main landmark");
+    assert.ok(!panel.includes('aria-labelledby="home-tab"') && !panel.includes("aria-labelledby='home-tab'"), "The chats workspace must not repeat the Chats tab label");
   } else {
     assert.match(panel, /\\brole=["']tabpanel["']/, `Tab target must expose role=tabpanel: ${panelId}`);
     assert.ok(panel.includes(`aria-labelledby="${tabId}"`) || panel.includes(`aria-labelledby='${tabId}'`),
