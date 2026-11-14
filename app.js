@@ -981,6 +981,7 @@ const mersalTranslations = {
   "الرسالة غير متاحة":"Message unavailable",
 
   "قائمة بث جديدة":"New broadcast list",
+  "استكشاف القنوات":"Explore channels",
   "قوائم البث":"Broadcast lists",
   "إنشاء قائمة بث":"Create broadcast list",
   "اسم قائمة البث":"Broadcast list name",
