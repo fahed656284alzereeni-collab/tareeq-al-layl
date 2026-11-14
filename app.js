@@ -981,7 +981,7 @@ const mersalTranslations = {
   "افتح المحادثة":"Open conversation",
   "الرسالة غير متاحة":"Message unavailable",
 
-  "قائمة بث جديدة":"New broadcast list",
+  "قائمة رسائل جماعية جديدة":"New broadcast list",
   "استكشاف القنوات":"Explore channels",
   "استكشاف المجتمعات":"Explore communities",
   "عرض الصور والفيديوهات لمرة واحدة":"Send photos and videos for one-time viewing",
@@ -993,23 +993,23 @@ const mersalTranslations = {
   "تعذر التحقق من حالة العرض مرة واحدة.":"Could not check view-once status.",
   "هذا الخيار متاح للصور والفيديوهات فقط.":"View once is available for photos and videos only.",
 
-  "قوائم البث":"Broadcast lists",
+  "قوائم الرسائل الجماعية":"Broadcast lists",
   "إنشاء قائمة بث":"Create broadcast list",
-  "اسم قائمة البث":"Broadcast list name",
+  "اسم قائمة الرسائل الجماعية":"Broadcast list name",
   "ابحث عن مستلمين":"Search recipients",
   "لم يتم اختيار مستلمين":"No recipients selected",
-  "حفظ قائمة البث":"Save broadcast list",
+  "حفظ قائمة الرسائل الجماعية":"Save broadcast list",
   "قائمة بث":"Broadcast list",
   "مستلم":"recipient",
   "مستلمون":"recipients",
   "لا توجد قوائم بث بعد.":"No broadcast lists yet.",
   "اختر مستلمًا واحدًا على الأقل.":"Choose at least one recipient.",
-  "اكتب اسمًا لقائمة البث.":"Enter a name for the broadcast list.",
-  "تم حفظ قائمة البث.":"Broadcast list saved.",
-  "تعذر حفظ قائمة البث.":"Could not save the broadcast list.",
+  "اكتب اسمًا لقائمة الرسائل الجماعية.":"Enter a name for the broadcast list.",
+  "تم حفظ قائمة الرسائل الجماعية.":"Broadcast list saved.",
+  "تعذر حفظ قائمة الرسائل الجماعية.":"Could not save the broadcast list.",
   "إرسال رسالة إلى القائمة":"Send a message to this list",
-  "حذف قائمة البث":"Delete broadcast list",
-  "هل تريد حذف قائمة البث؟":"Delete this broadcast list?",
+  "حذف قائمة الرسائل الجماعية":"Delete broadcast list",
+  "هل تريد حذف قائمة الرسائل الجماعية؟":"Delete this broadcast list?",
   "اكتب الرسالة التي تريد إرسالها إلى القائمة":"Write the message to send to this list",
   "تم إرسال الرسالة إلى":"Message sent to",
   "مستلمين.":"recipients.",
@@ -1017,10 +1017,10 @@ const mersalTranslations = {
   "إلغاء":"Cancel",
 
   "اكتب اسم القائمة":"Enter a list name",
-  "اختيار مستلمي قائمة البث":"Choose broadcast list recipients",
-  "قائمة البث لا تحتوي على مستلمين.":"This broadcast list has no recipients.",
-  "تعذر تحميل مستلمي قوائم البث.":"Could not load broadcast recipients.",
-  "تعذر تحميل قوائم البث.":"Could not load broadcast lists.",
+  "اختيار مستلمي قائمة الرسائل الجماعية":"Choose broadcast list recipients",
+  "قائمة الرسائل الجماعية لا تحتوي على مستلمين.":"This broadcast list has no recipients.",
+  "تعذر تحميل مستلمي قوائم الرسائل الجماعية.":"Could not load broadcast recipients.",
+  "تعذر تحميل قوائم الرسائل الجماعية.":"Could not load broadcast lists.",
   "لا يوجد أشخاص بهذا الاسم.":"No people found.",
   "تم اختيار مستلم":"recipient selected",
   "تم اختيار مستلمين":"recipients selected",
@@ -1154,6 +1154,8 @@ const settingsTabButton = $("#settings-tab");
 const statusTabButton = $("#status-tab");
 const toolsTabButton = $("#tools-tab");
 const callsTabButton = $("#calls-tab");
+const channelsTabButton = $("#channels-tab");
+const communitiesTabButton = $("#communities-tab");
 const toolsView = $("#tools-view");
 const statusView = $("#status-view");
 const callsView = $("#calls-view");
@@ -1368,8 +1370,8 @@ function updateBottomTabAccessiblePositions(language = localStorage.getItem("mer
   });
 }
 function setActiveBottomTab(tab) {
-  if (!homeTabButton || !settingsTabButton || !statusTabButton || !toolsTabButton || !callsTabButton) return;
-  const selected = { home: homeTabButton, statuses: statusTabButton, calls: callsTabButton, tools: toolsTabButton, settings: settingsTabButton };
+  if (!homeTabButton || !settingsTabButton || !statusTabButton || !toolsTabButton || !callsTabButton || !channelsTabButton || !communitiesTabButton) return;
+  const selected = { home: homeTabButton, statuses: statusTabButton, calls: callsTabButton, channels: channelsTabButton, communities: communitiesTabButton, tools: toolsTabButton, settings: settingsTabButton };
   for (const [key, button] of Object.entries(selected)) {
     const active = key === tab;
     button.setAttribute("aria-selected", String(active));
@@ -1414,6 +1416,38 @@ function returnToHomeTab() {
   setActiveBottomTab("home");
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
   homeTabButton.focus();
+}
+function openChannelsTab() {
+  if (!currentUser) return;
+  mersalTools.closeTool(false);
+  mersalCommunities.close();
+  if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
+  if (toolsView) toolsView.hidden = true;
+  if (callsView) callsView.hidden = true;
+  statusView.hidden = true;
+  document.body.classList.remove("tools-open", "calls-open", "status-open");
+  if (helpSupportPanel) helpSupportPanel.hidden = true;
+  document.body.classList.remove("help-support-open");
+  if (!newChatPanel.hidden) closeNewChat();
+  if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
+  setActiveBottomTab("channels");
+  mersalChannels.open(channelsTabButton);
+}
+function openCommunitiesTab() {
+  if (!currentUser) return;
+  mersalTools.closeTool(false);
+  mersalChannels.close();
+  if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
+  if (toolsView) toolsView.hidden = true;
+  if (callsView) callsView.hidden = true;
+  statusView.hidden = true;
+  document.body.classList.remove("tools-open", "calls-open", "status-open");
+  if (helpSupportPanel) helpSupportPanel.hidden = true;
+  document.body.classList.remove("help-support-open");
+  if (!newChatPanel.hidden) closeNewChat();
+  if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
+  setActiveBottomTab("communities");
+  mersalCommunities.open(communitiesTabButton);
 }
 function openCallsTab() {
   mersalTools.closeTool(false);
@@ -3058,6 +3092,8 @@ function openSettings() {
   mersalTools.closeTool(false);
   mersalChannels.close();
   mersalCommunities.close();
+  mersalChannels.close();
+  mersalCommunities.close();
   if (!currentUser) return;
   statusView.hidden = true;
   document.body.classList.remove("status-open");
@@ -3138,6 +3174,8 @@ settingsLanguageSelect.addEventListener("change", () => {
   announce(settingsLanguageSelect.value==="en"?"تم تغيير اللغة إلى الإنجليزية.":"تم تغيير اللغة إلى العربية.");
 });
 settingsTabButton.addEventListener("click", openSettings);
+channelsTabButton.addEventListener("click", openChannelsTab);
+communitiesTabButton.addEventListener("click", openCommunitiesTab);
 statusTabButton.addEventListener("click", openStatusTab);
 toolsTabButton.addEventListener("click", openToolsTab);
 callsTabButton.addEventListener("click", openCallsTab);
@@ -3635,7 +3673,7 @@ async function loadBroadcastLists() {
   const { data: lists, error } = await supabase.from("broadcast_lists")
     .select("id,name,created_at").eq("owner_id", currentUser.id).order("created_at", { ascending: false });
   if (error) {
-    broadcastLists.append(safeText("li", "empty-item", english ? "Could not load broadcast lists." : "تعذر تحميل قوائم البث."));
+    broadcastLists.append(safeText("li", "empty-item", english ? "Could not load broadcast lists." : "تعذر تحميل قوائم الرسائل الجماعية."));
     return;
   }
   if (!lists?.length) {
@@ -3645,7 +3683,7 @@ async function loadBroadcastLists() {
   const { data: members, error: membersError } = await supabase.from("broadcast_list_members")
     .select("broadcast_list_id,recipient_id").in("broadcast_list_id", lists.map(list => list.id));
   if (membersError) {
-    broadcastLists.append(safeText("li", "empty-item", english ? "Could not load broadcast recipients." : "تعذر تحميل مستلمي قوائم البث."));
+    broadcastLists.append(safeText("li", "empty-item", english ? "Could not load broadcast recipients." : "تعذر تحميل مستلمي قوائم الرسائل الجماعية."));
     return;
   }
   const counts = new Map();
@@ -3656,11 +3694,11 @@ async function loadBroadcastLists() {
     const send = safeText("button", "broadcast-list-send", list.name + " — " + (counts.get(list.id) || 0) + (english ? " recipients" : " مستلمين"));
     send.type = "button";
     send.addEventListener("click", () => { void sendBroadcastList(list); });
-    const remove = safeText("button", "quiet-button", english ? "Delete list" : "حذف قائمة البث");
+    const remove = safeText("button", "quiet-button", english ? "Delete list" : "حذف قائمة الرسائل الجماعية");
     remove.type = "button";
-    remove.setAttribute("aria-label", (english ? "Delete broadcast list " : "حذف قائمة البث ") + list.name);
+    remove.setAttribute("aria-label", (english ? "Delete broadcast list " : "حذف قائمة الرسائل الجماعية ") + list.name);
     remove.addEventListener("click", async () => {
-      if (!window.confirm(english ? "Delete this broadcast list?" : "هل تريد حذف قائمة البث؟")) return;
+      if (!window.confirm(english ? "Delete this broadcast list?" : "هل تريد حذف قائمة الرسائل الجماعية؟")) return;
       remove.disabled = true;
       const result = await supabase.from("broadcast_lists").delete().eq("id", list.id).eq("owner_id", currentUser.id);
       if (result.error) {
@@ -3670,7 +3708,7 @@ async function loadBroadcastLists() {
       }
       item.remove();
       if (!broadcastLists.children.length) broadcastLists.append(safeText("li", "empty-item", english ? "No broadcast lists yet." : "لا توجد قوائم بث بعد."));
-      announce(english ? "Broadcast list deleted." : "تم حذف قائمة البث.");
+      announce(english ? "Broadcast list deleted." : "تم حذف قائمة الرسائل الجماعية.");
     });
     item.append(send, remove);
     broadcastLists.append(item);
@@ -3700,7 +3738,7 @@ async function sendBroadcastList(list) {
     return;
   }
   if (!members?.length) {
-    announce(english ? "This broadcast list has no recipients." : "قائمة البث لا تحتوي على مستلمين.", "error");
+    announce(english ? "This broadcast list has no recipients." : "قائمة الرسائل الجماعية لا تحتوي على مستلمين.", "error");
     return;
   }
   const body = window.prompt(english ? "Write the message to send to this list" : "اكتب الرسالة التي تريد إرسالها إلى القائمة");
@@ -3733,24 +3771,27 @@ async function sendBroadcastList(list) {
     announce((english ? "Message sent to " : "تم إرسال الرسالة إلى ") + sent + (english ? " recipients." : " مستلمين."), "success");
   }
 }
-function openBroadcastPanel() {
-  closeNewChat();
+let broadcastReturnFocus = null;
+function openBroadcastPanel(returnElement = newChatButton) {
+  if (!newChatPanel.hidden) closeNewChat();
+  broadcastReturnFocus = returnElement || newChatButton;
   broadcastPanel.hidden = false;
   broadcastListsView.hidden = false;
   broadcastCreateView.hidden = true;
   void loadBroadcastLists();
   closeBroadcastPanelButton.focus();
 }
-newBroadcastListButton.addEventListener("click", openBroadcastPanel);
+newBroadcastListButton.addEventListener("click", () => openBroadcastPanel(newChatButton));
+$("#open-broadcast-settings")?.addEventListener("click", () => openBroadcastPanel($("#open-broadcast-settings")));
 closeBroadcastPanelButton.addEventListener("click", () => {
   broadcastPanel.hidden = true;
-  newChatButton.focus();
+  (broadcastReturnFocus?.isConnected ? broadcastReturnFocus : newChatButton).focus();
 });
 broadcastPanel.addEventListener("keydown", event => {
   if (event.key === "Escape") {
     event.preventDefault();
     broadcastPanel.hidden = true;
-    newChatButton.focus();
+    (broadcastReturnFocus?.isConnected ? broadcastReturnFocus : newChatButton).focus();
   }
 });
 createBroadcastListButton.addEventListener("click", async () => {
@@ -3775,7 +3816,7 @@ saveBroadcastListButton.addEventListener("click", async () => {
   const name = broadcastListNameInput.value.trim();
   const recipients = [...selectedBroadcastRecipients];
   if (!name) {
-    announce(english ? "Enter a name for the broadcast list." : "اكتب اسمًا لقائمة البث.", "error");
+    announce(english ? "Enter a name for the broadcast list." : "اكتب اسمًا لقائمة الرسائل الجماعية.", "error");
     broadcastListNameInput.focus();
     return;
   }
@@ -3795,13 +3836,13 @@ saveBroadcastListButton.addEventListener("click", async () => {
       await supabase.from("broadcast_lists").delete().eq("id", created.data.id).eq("owner_id", currentUser.id);
       throw members.error;
     }
-    announce(english ? "Broadcast list saved." : "تم حفظ قائمة البث.", "success");
+    announce(english ? "Broadcast list saved." : "تم حفظ قائمة الرسائل الجماعية.", "success");
     broadcastCreateView.hidden = true;
     broadcastListsView.hidden = false;
     await loadBroadcastLists();
     createBroadcastListButton.focus();
   } catch (error) {
-    announce((english ? "Could not save the broadcast list: " : "تعذر حفظ قائمة البث: ") + (error.message || ""), "error");
+    announce((english ? "Could not save the broadcast list: " : "تعذر حفظ قائمة الرسائل الجماعية: ") + (error.message || ""), "error");
   } finally {
     saveBroadcastListButton.disabled = false;
   }
