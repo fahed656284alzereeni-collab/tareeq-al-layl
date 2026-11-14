@@ -3619,7 +3619,6 @@ async function selectConversation(conversation, person) {
       if(conversation.is_group){
         const result=await supabase.from("message_reads").select("user_id").eq("message_id",payload.new.message_id);
         if(!result.error && isCurrentSelection()){
-          const label=messageNode.querySelector(".message-read-state")||safeText("span","message-read-state","");
           setOutgoingMessageStatus(messageNode,Number(messageNode.dataset.deliveredCount||0),(result.data||[]).length,true);
         }
       }else{
