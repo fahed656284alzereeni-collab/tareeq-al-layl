@@ -935,9 +935,12 @@ const account = $("#account");
 const status = $("#status");
 const startupRetryButton = $("#startup-retry");
 function finishStartup() {
+  window.__mersalStartupFinished = true;
   if (window.__mersalStartupTimer) window.clearTimeout(window.__mersalStartupTimer);
   if (window.__mersalAuthWatchdog) window.clearTimeout(window.__mersalAuthWatchdog);
   if (startupRetryButton) startupRetryButton.hidden = true;
+  const diagnostics = $("#startup-diagnostics");
+  if (diagnostics) diagnostics.hidden = true;
 }
 const loginButton = $("#google-login");
 const bottomNavigation = $("#bottom-navigation");
