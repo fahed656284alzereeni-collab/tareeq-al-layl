@@ -2328,3 +2328,12 @@ body.conversation-info-fullscreen .group-invite-actions p {
 }
 #group-more-options-panel[hidden] { display: none !important; }
 #group-more-options-panel .group-settings-content { width: 100%; max-width: 760px; margin: 0 auto; }
+
+
+/* Startup diagnostics are readable and copyable on touch screens and with screen readers. */
+.startup-diagnostics{display:grid;gap:10px;width:min(100% - 28px,760px);margin:16px auto;padding:14px;border:1px solid var(--border);border-radius:14px;background:var(--surface-raised);color:var(--text);box-sizing:border-box}
+.startup-diagnostics[hidden]{display:none!important}
+.startup-diagnostics-title{margin:0;font-weight:800;font-size:1.05rem}
+.startup-diagnostics-help,.startup-diagnostics-feedback{margin:0;line-height:1.7;color:var(--muted)}
+.startup-diagnostics-output{width:100%;min-height:150px;box-sizing:border-box;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}
+.startup-diagnostics button{width:100%;min-height:48px}
