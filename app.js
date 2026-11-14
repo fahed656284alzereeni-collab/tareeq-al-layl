@@ -958,6 +958,19 @@ const mersalTranslations = {
   "لم يتم حفظ تعديل الرسالة.":"The message edit was not saved.",
   "تم تعديل الرسالة.":"Message edited.",
 
+  "تفاعلات الحالة والردود":"Status reactions and replies",
+  "تفاعلات الحالة":"Status reactions",
+  "الرد على الحالة":"Reply to status",
+  "اكتب ردك على الحالة":"Write a reply to this status",
+  "إرسال الرد":"Send reply",
+  "ردود الحالة":"Status replies",
+  "لا توجد ردود بعد.":"No replies yet.",
+  "تعذر تحميل تفاعلات الحالة.":"Could not load status reactions.",
+  "تعذر إرسال الرد.":"Could not send the reply.",
+  "تم إرسال ردك على الحالة.":"Your status reply was sent.",
+  "تعذر تحديث التفاعل.":"Could not update the reaction.",
+  "إضافة تفاعل":"Add reaction",
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
@@ -3497,6 +3510,124 @@ $("#publish-status-button").addEventListener("click", async () => {
     announce("تعذر نشر الحالة: " + (error.message || "حاول مرة أخرى."), "error");
   } finally { button.disabled = false; }
 });
+async function renderStatusInteractions(row, own) {
+  const host = $("#status-viewer-interactions");
+  if (!host || !row?.id || !currentUser) return;
+  const english = document.documentElement.lang === "en";
+  host.replaceChildren();
+  const reactionsHeading = safeText("p", "status-interaction-heading", english ? "Status reactions" : "تفاعلات الحالة");
+  host.append(reactionsHeading);
+  if (!own) {
+    const reactionsResult = await supabase.from("status_reactions")
+      .select("user_id,emoji").eq("status_id", row.id);
+    if (reactionsResult.error) {
+      host.append(safeText("p", "empty-item", english ? "Could not load status reactions." : "تعذر تحميل تفاعلات الحالة."));
+      return;
+    }
+    const currentReaction = (reactionsResult.data || []).find(item => item.user_id === currentUser.id);
+    const counts = new Map();
+    for (const item of reactionsResult.data || []) counts.set(item.emoji, (counts.get(item.emoji) || 0) + 1);
+    const reactionGroup = document.createElement("div");
+    reactionGroup.className = "status-reaction-buttons";
+    reactionGroup.setAttribute("role", "group");
+    reactionGroup.setAttribute("aria-label", english ? "Status reactions" : "تفاعلات الحالة");
+    for (const emoji of ["👍", "❤️", "😂", "😮", "😢", "🙏"]) {
+      const count = counts.get(emoji) || 0;
+      const button = safeText("button", "status-reaction-button", emoji + (count ? " " + count : ""));
+      button.type = "button";
+      button.setAttribute("aria-pressed", String(currentReaction?.emoji === emoji));
+      button.setAttribute("aria-label", (english ? "React with " : "التفاعل بـ ") + emoji + (count ? (english ? ", " + count + " reactions" : "، " + count + " تفاعلات") : ""));
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          let result;
+          if (currentReaction?.emoji === emoji) {
+            result = await supabase.from("status_reactions").delete()
+              .eq("status_id", row.id).eq("user_id", currentUser.id);
+          } else if (currentReaction) {
+            result = await supabase.from("status_reactions").update({ emoji })
+              .eq("status_id", row.id).eq("user_id", currentUser.id);
+          } else {
+            result = await supabase.from("status_reactions").insert({
+              status_id: row.id, user_id: currentUser.id, emoji
+            });
+          }
+          if (result.error) throw result.error;
+          await renderStatusInteractions(row, false);
+        } catch (error) {
+          announce((english ? "Could not update the reaction: " : "تعذر تحديث التفاعل: ") + (error.message || ""), "error");
+          button.disabled = false;
+        }
+      });
+      reactionGroup.append(button);
+    }
+    host.append(reactionGroup);
+  }
+  const repliesHeading = safeText("p", "status-interaction-heading", english ? "Status replies" : "ردود الحالة");
+  const repliesList = document.createElement("ul");
+  repliesList.className = "status-replies-list";
+  repliesList.setAttribute("aria-label", english ? "Status replies" : "ردود الحالة");
+  const repliesResult = await supabase.from("status_replies")
+    .select("id,sender_id,body,created_at")
+    .eq("status_id", row.id)
+    .order("created_at", { ascending: true });
+  if (repliesResult.error) {
+    repliesList.append(safeText("li", "empty-item", english ? "Could not load replies." : "تعذر تحميل الردود."));
+  } else if (!repliesResult.data?.length) {
+    repliesList.append(safeText("li", "empty-item", english ? "No replies yet." : "لا توجد ردود بعد."));
+  } else {
+    const ids = [...new Set(repliesResult.data.map(reply => reply.sender_id))];
+    const profilesResult = await supabase.from("profiles").select("id,display_name").in("id", ids);
+    const names = new Map((profilesResult.data || []).map(profile => [profile.id, profile.display_name]));
+    for (const reply of repliesResult.data) {
+      const name = reply.sender_id === currentUser.id
+        ? (english ? "You" : "أنت")
+        : (names.get(reply.sender_id) || (english ? "Mersal user" : "مستخدم مرسال"));
+      const item = document.createElement("li");
+      item.className = "status-reply-item";
+      item.append(
+        safeText("span", "status-reply-author", name),
+        safeText("p", "status-reply-body", reply.body),
+        safeText("time", "status-reply-time", new Intl.DateTimeFormat(english ? "en" : "ar-JO", { dateStyle: "short", timeStyle: "short" }).format(new Date(reply.created_at)))
+      );
+      repliesList.append(item);
+    }
+  }
+  host.append(repliesHeading, repliesList);
+  if (!own) {
+    const form = document.createElement("form");
+    form.className = "status-reply-form";
+    const label = safeText("label", "", english ? "Reply to status" : "الرد على الحالة");
+    const input = document.createElement("textarea");
+    input.rows = 2;
+    input.maxLength = 500;
+    input.required = true;
+    input.placeholder = english ? "Write a reply to this status" : "اكتب ردك على الحالة";
+    input.setAttribute("aria-label", label.textContent);
+    const send = safeText("button", "primary-button", english ? "Send reply" : "إرسال الرد");
+    send.type = "submit";
+    label.append(input);
+    form.append(label, send);
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const body = input.value.trim();
+      if (!body || body.length > 500) return;
+      send.disabled = true;
+      const result = await supabase.from("status_replies").insert({
+        status_id: row.id, sender_id: currentUser.id, body
+      });
+      if (result.error) {
+        announce((english ? "Could not send the reply: " : "تعذر إرسال الرد: ") + result.error.message, "error");
+        send.disabled = false;
+        return;
+      }
+      announce(english ? "Your status reply was sent." : "تم إرسال ردك على الحالة.", "success");
+      await renderStatusInteractions(row, false);
+      host.querySelector(".status-reply-form textarea")?.focus();
+    });
+    host.append(form);
+  }
+}
 async function openStatusViewer(row, name, trigger) {
   if (new Date(row.expires_at).getTime() <= Date.now()) {
     await loadStatuses();
@@ -3507,6 +3638,7 @@ async function openStatusViewer(row, name, trigger) {
   $("#status-viewer-content").replaceChildren(); $("#status-viewer-views").replaceChildren();
   $("#status-viewer-caption").textContent = row.content || "";
   $("#status-viewer-meta").textContent = name + "، " + statusTimeLabel(row.created_at);
+  await renderStatusInteractions(row, row.user_id === currentUser.id);
   const own = row.user_id === currentUser.id;
   $("#delete-status-button").hidden = !own;
   if (!own && privacySettings.read_receipts_enabled) {
@@ -3551,7 +3683,7 @@ async function openStatusViewer(row, name, trigger) {
   statusViewerPanel.hidden = false; $("#close-status-viewer").focus();
 }
 function closeStatusViewer() {
-  statusViewerPanel.hidden = true; $("#status-viewer-content").replaceChildren();
+  statusViewerPanel.hidden = true; $("#status-viewer-content").replaceChildren(); $("#status-viewer-interactions").replaceChildren();
   if (statusViewerReturnFocus?.isConnected) statusViewerReturnFocus.focus();
 }
 $("#close-status-viewer").addEventListener("click", closeStatusViewer);
