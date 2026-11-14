@@ -971,6 +971,14 @@ const mersalTranslations = {
   "تعذر تحديث التفاعل.":"Could not update the reaction.",
   "إضافة تفاعل":"Add reaction",
 
+  "الرسائل المميزة بنجمة":"Starred messages",
+  "قائمة الرسائل المميزة بنجمة":"Starred messages list",
+  "لا توجد رسائل مميزة بنجمة.":"No starred messages.",
+  "تعذر تحميل الرسائل المميزة بنجمة.":"Could not load starred messages.",
+  "إزالة النجمة":"Remove star",
+  "افتح المحادثة":"Open conversation",
+  "الرسالة غير متاحة":"Message unavailable",
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
@@ -6510,6 +6518,109 @@ confirmMessageScheduleButton.addEventListener("click", async () => {
     messageScheduleHelp.textContent = "تعذرت جدولة الرسالة: " + (error.message || "حاول مرة أخرى.");
   } finally {
     confirmMessageScheduleButton.disabled = isPrivateConversationBlocked();
+  }
+});
+const starredMessagesButton = $("#starred-messages-button");
+const starredMessagesPanel = $("#starred-messages-panel");
+const starredMessagesList = $("#starred-messages-list");
+const closeStarredMessagesButton = $("#close-starred-messages");
+async function loadStarredMessages() {
+  if (!currentUser || !starredMessagesList) return;
+  starredMessagesList.replaceChildren();
+  const english = document.documentElement.lang === "en";
+  const { data: stars, error: starsError } = await supabase.from("starred_messages")
+    .select("message_id,created_at").eq("user_id", currentUser.id).order("created_at", { ascending: false });
+  if (starsError) {
+    starredMessagesList.append(safeText("li", "empty-item", english ? "Could not load starred messages." : "تعذر تحميل الرسائل المميزة بنجمة."));
+    return;
+  }
+  if (!stars?.length) {
+    starredMessagesList.append(safeText("li", "empty-item", english ? "No starred messages." : "لا توجد رسائل مميزة بنجمة."));
+    return;
+  }
+  const ids = stars.map(star => star.message_id);
+  const [{ data: messages, error: messagesError }, { data: hidden, error: hiddenError }] = await Promise.all([
+    supabase.from("messages").select("id,conversation_id,sender_id,body,created_at,is_deleted").in("id", ids),
+    supabase.from("message_hidden_for").select("message_id").eq("user_id", currentUser.id).in("message_id", ids)
+  ]);
+  if (messagesError || hiddenError) {
+    starredMessagesList.append(safeText("li", "empty-item", english ? "Could not load starred messages." : "تعذر تحميل الرسائل المميزة بنجمة."));
+    return;
+  }
+  const hiddenIds = new Set((hidden || []).map(row => row.message_id));
+  const messageMap = new Map((messages || []).map(message => [message.id, message]));
+  const ordered = ids.map(id => messageMap.get(id)).filter(message => message && !hiddenIds.has(message.id));
+  if (!ordered.length) {
+    starredMessagesList.append(safeText("li", "empty-item", english ? "No starred messages." : "لا توجد رسائل مميزة بنجمة."));
+    return;
+  }
+  for (const message of ordered) {
+    const conversation = conversations.find(item => item.id === message.conversation_id);
+    const item = document.createElement("li");
+    item.className = "starred-message-item";
+    const conversationName = conversation
+      ? (conversation.is_group
+        ? (conversation.group_name || (english ? "Group" : "مجموعة"))
+        : (callsProfileCache.get(conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one)?.display_name || (english ? "Private chat" : "محادثة فردية")))
+      : (english ? "Conversation" : "محادثة");
+    const preview = message.is_deleted
+      ? (english ? "This message was deleted" : "تم حذف هذه الرسالة")
+      : getMessagePreviewText(message.body || "");
+    const open = safeText("button", "starred-message-open", conversationName + " — " + preview);
+    open.type = "button";
+    open.setAttribute("aria-label", (english ? "Open conversation: " : "افتح المحادثة: ") + conversationName + ". " + preview);
+    open.addEventListener("click", async () => {
+      if (!conversation) {
+        announce(english ? "The conversation is unavailable." : "المحادثة غير متاحة.", "error");
+        return;
+      }
+      const partnerId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
+      const person = conversation.is_group
+        ? { id: partnerId, display_name: conversation.group_name || (english ? "Group" : "مجموعة") }
+        : (callsProfileCache.get(partnerId) || people.find(person => person.id === partnerId) || { id: partnerId, display_name: english ? "Mersal user" : "مستخدم مرسال" });
+      starredMessagesPanel.hidden = true;
+      await selectConversation(conversation, person);
+      const target = messagesList.querySelector('[data-message-id="' + message.id + '"]');
+      if (target) {
+        target.scrollIntoView({ block: "center" });
+        target.focus?.();
+      } else {
+        announce(english ? "This message is older than the messages currently loaded. It remains starred." : "هذه الرسالة أقدم من الرسائل المحمّلة حاليًا، وما زالت مميزة بنجمة.");
+      }
+    });
+    const remove = safeText("button", "quiet-button", english ? "Remove star" : "إزالة النجمة");
+    remove.type = "button";
+    remove.setAttribute("aria-label", (english ? "Remove star from message in " : "إزالة النجمة عن رسالة في ") + conversationName);
+    remove.addEventListener("click", async () => {
+      remove.disabled = true;
+      const result = await supabase.from("starred_messages").delete().eq("user_id", currentUser.id).eq("message_id", message.id);
+      if (result.error) {
+        remove.disabled = false;
+        announce((english ? "Could not remove star: " : "تعذر إزالة النجمة: ") + result.error.message, "error");
+        return;
+      }
+      item.remove();
+      if (!starredMessagesList.children.length) starredMessagesList.append(safeText("li", "empty-item", english ? "No starred messages." : "لا توجد رسائل مميزة بنجمة."));
+      announce(english ? "Star removed." : "تمت إزالة النجمة.", "success");
+    });
+    item.append(open, remove);
+    starredMessagesList.append(item);
+  }
+}
+starredMessagesButton.addEventListener("click", async () => {
+  starredMessagesPanel.hidden = false;
+  await loadStarredMessages();
+  closeStarredMessagesButton.focus();
+});
+closeStarredMessagesButton.addEventListener("click", () => {
+  starredMessagesPanel.hidden = true;
+  starredMessagesButton.focus();
+});
+starredMessagesPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    starredMessagesPanel.hidden = true;
+    starredMessagesButton.focus();
   }
 });
 async function loadScheduledMessages() {
