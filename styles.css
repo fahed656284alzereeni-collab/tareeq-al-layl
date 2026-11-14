@@ -2542,3 +2542,158 @@ body.conversation-info-fullscreen #conversation-info-name-card #conversation-inf
   body.conversation-info-fullscreen #group-conversation-info-list.group-info-layout { gap: 11px; }
   .group-info-profile, .group-info-card { padding: 14px; border-radius: 14px; }
 }
+
+
+/* WhatsApp-inspired group information: clear profile, participants, invite and management order. */
+body.conversation-info-fullscreen #group-conversation-info-list.group-info-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(100%, 820px);
+  margin-inline: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-info-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 18px 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface-raised);
+  text-align: center;
+}
+.group-info-photo-row:not([hidden]) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(112px, 27vw, 156px);
+  height: clamp(112px, 27vw, 156px);
+  margin: 0 auto;
+}
+.group-info-photo {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+.group-info-photo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  font-size: clamp(2.5rem, 9vw, 4rem);
+  font-weight: 800;
+}
+.group-info-photo-placeholder[hidden] { display: none !important; }
+.group-info-name {
+  max-width: 100%;
+  color: var(--text);
+  font-size: clamp(1.25rem, 4vw, 1.65rem);
+  font-weight: 850;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.group-info-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  width: 100%;
+}
+.group-info-actions button {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  margin: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-info-card {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-raised);
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-members-heading {
+  min-height: 38px;
+  font-size: 1rem;
+}
+body.conversation-info-fullscreen #group-conversation-info-list #group-member-list {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+body.conversation-info-fullscreen #group-conversation-info-list #group-member-list > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-invite-card > .conversation-info-label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 850;
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-invite-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  min-width: 0;
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-invite-actions input,
+body.conversation-info-fullscreen #group-conversation-info-list .group-invite-actions p {
+  grid-column: 1 / -1;
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-invite-actions button {
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-created-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+:root[data-theme="light"] body.conversation-info-fullscreen #group-conversation-info-list .group-info-profile,
+:root[data-theme="light"] body.conversation-info-fullscreen #group-conversation-info-list .group-info-card {
+  background: #fff;
+}
+@media (max-width: 560px) {
+  body.conversation-info-fullscreen #group-conversation-info-list .group-info-profile {
+    padding: 18px 12px 14px;
+  }
+  body.conversation-info-fullscreen #group-conversation-info-list .group-info-actions,
+  body.conversation-info-fullscreen #group-conversation-info-list .group-invite-actions {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  body.conversation-info-fullscreen #group-conversation-info-list .group-invite-actions input,
+  body.conversation-info-fullscreen #group-conversation-info-list .group-invite-actions p {
+    grid-column: auto;
+  }
+  body.conversation-info-fullscreen #group-conversation-info-list .group-created-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
