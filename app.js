@@ -979,6 +979,30 @@ const mersalTranslations = {
   "افتح المحادثة":"Open conversation",
   "الرسالة غير متاحة":"Message unavailable",
 
+  "قائمة بث جديدة":"New broadcast list",
+  "قوائم البث":"Broadcast lists",
+  "إنشاء قائمة بث":"Create broadcast list",
+  "اسم قائمة البث":"Broadcast list name",
+  "ابحث عن مستلمين":"Search recipients",
+  "لم يتم اختيار مستلمين":"No recipients selected",
+  "حفظ قائمة البث":"Save broadcast list",
+  "قائمة بث":"Broadcast list",
+  "مستلم":"recipient",
+  "مستلمون":"recipients",
+  "لا توجد قوائم بث بعد.":"No broadcast lists yet.",
+  "اختر مستلمًا واحدًا على الأقل.":"Choose at least one recipient.",
+  "اكتب اسمًا لقائمة البث.":"Enter a name for the broadcast list.",
+  "تم حفظ قائمة البث.":"Broadcast list saved.",
+  "تعذر حفظ قائمة البث.":"Could not save the broadcast list.",
+  "إرسال رسالة إلى القائمة":"Send a message to this list",
+  "حذف قائمة البث":"Delete broadcast list",
+  "هل تريد حذف قائمة البث؟":"Delete this broadcast list?",
+  "اكتب الرسالة التي تريد إرسالها إلى القائمة":"Write the message to send to this list",
+  "تم إرسال الرسالة إلى":"Message sent to",
+  "مستلمين.":"recipients.",
+  "تعذر الإرسال إلى بعض المستلمين:":"Could not send to some recipients:",
+  "إلغاء":"Cancel",
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
@@ -1258,6 +1282,15 @@ const newGroupDescriptionInput=$("#new-group-description"),newGroupPhotoInput=$(
 let selectedGroupCreationPhoto=null,newGroupPhotoPreviewUrl=null;
 const groupPeopleSearch=$("#group-people-search"),groupPeopleList=$("#group-people-list"),createGroupButton=$("#create-group-button");
 const newPrivateChatButton=$("#new-private-chat"),newGroupChatButton=$("#new-group-chat");
+const newBroadcastListButton=$("#new-broadcast-list");
+const broadcastPanel=$("#broadcast-panel"),closeBroadcastPanelButton=$("#close-broadcast-panel");
+const broadcastListsView=$("#broadcast-lists-view"),broadcastCreateView=$("#broadcast-create-view");
+const broadcastLists=$("#broadcast-lists"),createBroadcastListButton=$("#create-broadcast-list");
+const broadcastListNameInput=$("#broadcast-list-name"),broadcastPeopleSearch=$("#broadcast-people-search");
+const broadcastPeopleList=$("#broadcast-people-list"),broadcastSelectedCount=$("#broadcast-selected-count");
+const saveBroadcastListButton=$("#save-broadcast-list"),cancelBroadcastCreateButton=$("#cancel-broadcast-create");
+let selectedBroadcastRecipients=new Set();
+
 let selectedGroupMembers=new Set(),newChatReturnFocus=null;
 const peopleSearch = $("#people-search");
 const peopleList = $("#people-list");
@@ -3338,12 +3371,224 @@ function renderGroupPeople(){
    item.append(label);groupPeopleList.append(item);
  }
 }
-function openNewChat(){newChatReturnFocus=newChatButton;newChatPanel.hidden=false;privateChatView.hidden=true;groupChatView.hidden=true;newPrivateChatButton.hidden=false;newGroupChatButton.hidden=false;closeNewChatButton.focus();}
+
+function updateBroadcastSelectedCount() {
+  const english = document.documentElement.lang === "en";
+  const count = selectedBroadcastRecipients.size;
+  broadcastSelectedCount.textContent = english
+    ? (count ? count + (count === 1 ? " recipient selected" : " recipients selected") : "No recipients selected")
+    : (count ? "تم اختيار " + count + " مستلم" : "لم يتم اختيار مستلمين");
+}
+function renderBroadcastPeople() {
+  const english = document.documentElement.lang === "en";
+  const term = broadcastPeopleSearch.value.trim().toLocaleLowerCase();
+  broadcastPeopleList.replaceChildren();
+  const filtered = people.filter(person => displayName(person).toLocaleLowerCase().includes(term));
+  if (!filtered.length) {
+    broadcastPeopleList.append(safeText("li", "empty-item", english ? "No people found." : "لا يوجد أشخاص بهذا الاسم."));
+    return;
+  }
+  for (const person of filtered) {
+    const item = document.createElement("li");
+    const label = document.createElement("label");
+    label.className = "broadcast-person-choice";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = selectedBroadcastRecipients.has(person.id);
+    checkbox.addEventListener("change", () => {
+      if (checkbox.checked) selectedBroadcastRecipients.add(person.id);
+      else selectedBroadcastRecipients.delete(person.id);
+      updateBroadcastSelectedCount();
+    });
+    appendProfileAvatar(label, person);
+    label.append(checkbox, document.createTextNode(displayName(person)));
+    item.append(label);
+    broadcastPeopleList.append(item);
+  }
+}
+async function loadBroadcastLists() {
+  const english = document.documentElement.lang === "en";
+  broadcastLists.replaceChildren();
+  const { data: lists, error } = await supabase.from("broadcast_lists")
+    .select("id,name,created_at").eq("owner_id", currentUser.id).order("created_at", { ascending: false });
+  if (error) {
+    broadcastLists.append(safeText("li", "empty-item", english ? "Could not load broadcast lists." : "تعذر تحميل قوائم البث."));
+    return;
+  }
+  if (!lists?.length) {
+    broadcastLists.append(safeText("li", "empty-item", english ? "No broadcast lists yet." : "لا توجد قوائم بث بعد."));
+    return;
+  }
+  const { data: members, error: membersError } = await supabase.from("broadcast_list_members")
+    .select("broadcast_list_id,recipient_id").in("broadcast_list_id", lists.map(list => list.id));
+  if (membersError) {
+    broadcastLists.append(safeText("li", "empty-item", english ? "Could not load broadcast recipients." : "تعذر تحميل مستلمي قوائم البث."));
+    return;
+  }
+  const counts = new Map();
+  for (const member of members || []) counts.set(member.broadcast_list_id, (counts.get(member.broadcast_list_id) || 0) + 1);
+  for (const list of lists) {
+    const item = document.createElement("li");
+    item.className = "broadcast-list-item";
+    const send = safeText("button", "broadcast-list-send", list.name + " — " + (counts.get(list.id) || 0) + (english ? " recipients" : " مستلمين"));
+    send.type = "button";
+    send.addEventListener("click", () => { void sendBroadcastList(list); });
+    const remove = safeText("button", "quiet-button", english ? "Delete list" : "حذف قائمة البث");
+    remove.type = "button";
+    remove.setAttribute("aria-label", (english ? "Delete broadcast list " : "حذف قائمة البث ") + list.name);
+    remove.addEventListener("click", async () => {
+      if (!window.confirm(english ? "Delete this broadcast list?" : "هل تريد حذف قائمة البث؟")) return;
+      remove.disabled = true;
+      const result = await supabase.from("broadcast_lists").delete().eq("id", list.id).eq("owner_id", currentUser.id);
+      if (result.error) {
+        remove.disabled = false;
+        announce((english ? "Could not delete the list: " : "تعذر حذف القائمة: ") + result.error.message, "error");
+        return;
+      }
+      item.remove();
+      if (!broadcastLists.children.length) broadcastLists.append(safeText("li", "empty-item", english ? "No broadcast lists yet." : "لا توجد قوائم بث بعد."));
+      announce(english ? "Broadcast list deleted." : "تم حذف قائمة البث.");
+    });
+    item.append(send, remove);
+    broadcastLists.append(item);
+  }
+}
+async function getOrCreateBroadcastConversation(recipientId) {
+  const [one, two] = [currentUser.id, recipientId].sort();
+  const existing = await supabase.from("conversations").select("id")
+    .eq("user_one", one).eq("user_two", two).maybeSingle();
+  if (existing.error) throw existing.error;
+  if (existing.data) return existing.data.id;
+  const created = await supabase.from("conversations").insert({ user_one: one, user_two: two })
+    .select("id").single();
+  if (!created.error) return created.data.id;
+  if (created.error.code !== "23505") throw created.error;
+  const retry = await supabase.from("conversations").select("id")
+    .eq("user_one", one).eq("user_two", two).single();
+  if (retry.error) throw retry.error;
+  return retry.data.id;
+}
+async function sendBroadcastList(list) {
+  const english = document.documentElement.lang === "en";
+  const { data: members, error } = await supabase.from("broadcast_list_members")
+    .select("recipient_id").eq("broadcast_list_id", list.id);
+  if (error) {
+    announce((english ? "Could not load recipients: " : "تعذر تحميل المستلمين: ") + error.message, "error");
+    return;
+  }
+  if (!members?.length) {
+    announce(english ? "This broadcast list has no recipients." : "قائمة البث لا تحتوي على مستلمين.", "error");
+    return;
+  }
+  const body = window.prompt(english ? "Write the message to send to this list" : "اكتب الرسالة التي تريد إرسالها إلى القائمة");
+  if (body === null) return;
+  const messageBody = body.trim();
+  if (!messageBody || messageBody.length > 5000) {
+    announce(english ? "Enter a message between 1 and 5000 characters." : "اكتب رسالة من حرف واحد إلى 5000 حرف.", "error");
+    return;
+  }
+  let sent = 0;
+  const failed = [];
+  for (const member of members) {
+    try {
+      const conversationId = await getOrCreateBroadcastConversation(member.recipient_id);
+      const result = await supabase.from("messages").insert({
+        conversation_id: conversationId, sender_id: currentUser.id, body: messageBody
+      }).select("id").single();
+      if (result.error) throw result.error;
+      sent++;
+      const push = await supabase.functions.invoke("send-push", { body: { message_id: result.data.id } });
+      if (push.error) console.warn("Broadcast push failed:", push.error.message);
+    } catch (sendError) {
+      failed.push(sendError.message || member.recipient_id);
+    }
+  }
+  void loadConversations().catch(error => console.warn("Broadcast conversation refresh failed:", error));
+  if (failed.length) {
+    announce((english ? "Message sent to " : "تم إرسال الرسالة إلى ") + sent + (english ? " recipients. Could not send to some recipients: " : " مستلمين. تعذر الإرسال إلى بعض المستلمين: ") + failed.length, "error");
+  } else {
+    announce((english ? "Message sent to " : "تم إرسال الرسالة إلى ") + sent + (english ? " recipients." : " مستلمين."), "success");
+  }
+}
+function openBroadcastPanel() {
+  closeNewChat();
+  broadcastPanel.hidden = false;
+  broadcastListsView.hidden = false;
+  broadcastCreateView.hidden = true;
+  void loadBroadcastLists();
+  closeBroadcastPanelButton.focus();
+}
+newBroadcastListButton.addEventListener("click", openBroadcastPanel);
+closeBroadcastPanelButton.addEventListener("click", () => {
+  broadcastPanel.hidden = true;
+  newChatButton.focus();
+});
+broadcastPanel.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    event.preventDefault();
+    broadcastPanel.hidden = true;
+    newChatButton.focus();
+  }
+});
+createBroadcastListButton.addEventListener("click", async () => {
+  selectedBroadcastRecipients.clear();
+  broadcastListNameInput.value = "";
+  broadcastPeopleSearch.value = "";
+  if (!people.length) await loadPeople();
+  renderBroadcastPeople();
+  updateBroadcastSelectedCount();
+  broadcastListsView.hidden = true;
+  broadcastCreateView.hidden = false;
+  broadcastListNameInput.focus();
+});
+broadcastPeopleSearch.addEventListener("input", renderBroadcastPeople);
+cancelBroadcastCreateButton.addEventListener("click", () => {
+  broadcastCreateView.hidden = true;
+  broadcastListsView.hidden = false;
+  createBroadcastListButton.focus();
+});
+saveBroadcastListButton.addEventListener("click", async () => {
+  const english = document.documentElement.lang === "en";
+  const name = broadcastListNameInput.value.trim();
+  const recipients = [...selectedBroadcastRecipients];
+  if (!name) {
+    announce(english ? "Enter a name for the broadcast list." : "اكتب اسمًا لقائمة البث.", "error");
+    broadcastListNameInput.focus();
+    return;
+  }
+  if (!recipients.length) {
+    announce(english ? "Choose at least one recipient." : "اختر مستلمًا واحدًا على الأقل.", "error");
+    return;
+  }
+  saveBroadcastListButton.disabled = true;
+  try {
+    const created = await supabase.from("broadcast_lists").insert({ owner_id: currentUser.id, name })
+      .select("id").single();
+    if (created.error) throw created.error;
+    const members = await supabase.from("broadcast_list_members").insert(
+      recipients.map(recipient_id => ({ broadcast_list_id: created.data.id, recipient_id }))
+    );
+    if (members.error) {
+      await supabase.from("broadcast_lists").delete().eq("id", created.data.id).eq("owner_id", currentUser.id);
+      throw members.error;
+    }
+    announce(english ? "Broadcast list saved." : "تم حفظ قائمة البث.", "success");
+    broadcastCreateView.hidden = true;
+    broadcastListsView.hidden = false;
+    await loadBroadcastLists();
+    createBroadcastListButton.focus();
+  } catch (error) {
+    announce((english ? "Could not save the broadcast list: " : "تعذر حفظ قائمة البث: ") + (error.message || ""), "error");
+  } finally {
+    saveBroadcastListButton.disabled = false;
+  }
+});
+function openNewChat(){newChatReturnFocus=newChatButton;newChatPanel.hidden=false;privateChatView.hidden=true;groupChatView.hidden=true;newPrivateChatButton.hidden=false;newGroupChatButton.hidden=false;newBroadcastListButton.hidden=false;closeNewChatButton.focus();}
 function closeNewChat(){newChatPanel.hidden=true;if(newChatReturnFocus?.isConnected)newChatReturnFocus.focus();}
 newChatButton.addEventListener("click",openNewChat);closeNewChatButton.addEventListener("click",closeNewChat);
 newChatPanel.addEventListener("keydown",e=>{if(e.key==="Escape")closeNewChat();});
-newPrivateChatButton.addEventListener("click",()=>{privateChatView.hidden=false;groupChatView.hidden=true;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;peopleSearch.value="";renderPeople();peopleSearch.focus();});
-newGroupChatButton.addEventListener("click",()=>{selectedGroupMembers.clear();groupNameInput.value="";newGroupDescriptionInput.value="";groupPeopleSearch.value="";selectedGroupCreationPhoto=null;newGroupPhotoInput.value="";if(newGroupPhotoPreviewUrl){URL.revokeObjectURL(newGroupPhotoPreviewUrl);newGroupPhotoPreviewUrl=null;}newGroupPhotoPreview.removeAttribute("src");newGroupPhotoPreview.hidden=true;newGroupPhotoRemoveButton.hidden=true;privateChatView.hidden=true;groupChatView.hidden=false;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;renderGroupPeople();groupNameInput.focus();});
+newPrivateChatButton.addEventListener("click",()=>{privateChatView.hidden=false;groupChatView.hidden=true;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;peopleSearch.value="";renderPeople();peopleSearch.focus();});
+newGroupChatButton.addEventListener("click",()=>{selectedGroupMembers.clear();groupNameInput.value="";newGroupDescriptionInput.value="";groupPeopleSearch.value="";selectedGroupCreationPhoto=null;newGroupPhotoInput.value="";if(newGroupPhotoPreviewUrl){URL.revokeObjectURL(newGroupPhotoPreviewUrl);newGroupPhotoPreviewUrl=null;}newGroupPhotoPreview.removeAttribute("src");newGroupPhotoPreview.hidden=true;newGroupPhotoRemoveButton.hidden=true;privateChatView.hidden=true;groupChatView.hidden=false;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;renderGroupPeople();groupNameInput.focus();});
 peopleSearch.addEventListener("input",renderPeople);groupPeopleSearch.addEventListener("input",renderGroupPeople);
 newGroupPhotoChooseButton.addEventListener("click",()=>newGroupPhotoInput.click());
 newGroupPhotoInput.addEventListener("change",()=>{
