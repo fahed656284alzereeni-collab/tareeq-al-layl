@@ -2778,12 +2778,16 @@ body.conversation-info-fullscreen .conversation-info-list [hidden] {
 /* Calls tab: full-screen, accessible call launcher for existing conversations. */
 .calls-view[hidden] { display:none !important; }
 .calls-view:not([hidden]) {
-  position:fixed; inset:0 0 calc(88px + env(safe-area-inset-bottom)); z-index:100;
+  position:fixed; inset:0; z-index:160;
   box-sizing:border-box; overflow-y:auto; overscroll-behavior:contain; -webkit-overflow-scrolling:touch;
   padding:max(20px,env(safe-area-inset-top)) max(14px,env(safe-area-inset-left)) 24px max(14px,env(safe-area-inset-right));
   background:var(--page,#101827);
 }
 .calls-page { width:min(100%,900px); margin:0 auto; }
+.calls-back-button { min-height:48px; margin:0 0 16px; }
+body.calls-open { overflow:hidden; }
+body.calls-open #bottom-navigation { display:none !important; }
+body.calls-open #main-content { padding-bottom:0 !important; }
 .calls-intro { margin:0 0 18px; }
 .calls-page-title { margin:0 0 8px; font-size:clamp(1.45rem,4vw,2rem); font-weight:800; line-height:1.4; }
 .calls-description { margin:0; color:var(--muted,#b8c4d8); line-height:1.7; }
