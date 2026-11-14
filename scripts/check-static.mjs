@@ -16,6 +16,21 @@ for (const tab of tabs) {
 }
 const selectedTabs = tabs.filter(tab => /\baria-selected=["']true["']/.test(tab));
 assert.equal(selectedTabs.length, 1, "Exactly one bottom navigation tab must be selected initially");
+const panelTags = [...html.matchAll(/<(?:div|section)\b[^>]*>/g)].map(match => match[0]);
+for (const tab of tabs) {
+  const tabId = tab.match(/\bid=["']([^"']+)["']/)?.[1];
+  const panelId = tab.match(/\baria-controls=["']([^"']+)["']/)?.[1];
+  const panel = panelTags.find(tag => new RegExp("\\bid=[\"']" + panelId + "[\"']").test(tag));
+  assert.ok(panel, `Tab panel not found: ${panelId}`);
+  assert.match(panel, /\brole=["']tabpanel["']/, `Tab target must expose role=tabpanel: ${panelId}`);
+  assert.ok(panel.includes(`aria-labelledby="${tabId}"`) || panel.includes(`aria-labelledby='${tabId}'`),
+    `Tab panel must be labelled by its tab: ${panelId}`);
+}
+const modalDialogs = [...html.matchAll(/<(?:div|section|aside|form)\b[^>]*\brole=["']dialog["'][^>]*>/gi)].map(match => match[0]);
+for (const dialog of modalDialogs.filter(dialog => /\baria-modal=["']true["']/.test(dialog))) {
+  assert.ok(/\baria-label=["'][^"']+["']|\baria-labelledby=["'][^"']+["']/.test(dialog),
+    "Every modal dialog must have an accessible name");
+}
 
 for (const file of ["app.js", "tools.js", "channels.js", "communities.js"]) {
   readFileSync(new URL("../" + file, import.meta.url), "utf8");
