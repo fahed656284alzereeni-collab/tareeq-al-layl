@@ -61,6 +61,11 @@ const mersalTranslations = {
   "المكالمة المرئية متصلة.":"Video call connected.",
   "المكالمات المرئية تحتاج إذن الكاميرا.":"Video calls require camera permission.",
   "المكالمات المرئية تحتاج متصفحًا آمنًا يدعم الميكروفون والكاميرا.":"Video calls require a secure browser with microphone and camera support.",
+  "اسمح لمرسال باستخدام الميكروفون.":"Allow Mersal to use the microphone.",
+  "اسمح لمرسال باستخدام الميكروفون والكاميرا.":"Allow Mersal to use the microphone and camera.",
+  "لم يتم العثور على ميكروفون متاح.":"No microphone was found.",
+  "لم يتم العثور على كاميرا أو ميكروفون متاح.":"No camera or microphone was found.",
+  "لا توجد محادثات متاحة للمكالمات.":"No chats are available for calls.",
   "تعذر تجهيز سجل المكالمات: ":"Could not load call history: ",
   "الأدوات":"Tools",
   "أدوات عملية تساعدك أثناء استخدام مرسال.":"Practical tools to use while chatting on Mersal.",
@@ -5205,11 +5210,18 @@ async function getVoiceCallParticipantIds(conversation=activeConversation) {
   if(error)throw error;
   return [...new Set([conversation.user_one,...(data||[]).map(row=>row.user_id)].filter(id=>id&&id!==currentUser.id))];
 }
+function getCallMediaError(error,callType="audio") {
+  if(["NotAllowedError","PermissionDeniedError","SecurityError"].includes(error?.name)) {
+    return callType==="video"?"اسمح لمرسال باستخدام الميكروفون والكاميرا.":"اسمح لمرسال باستخدام الميكروفون.";
+  }
+  if(error?.name==="NotFoundError")return callType==="video"?"لم يتم العثور على كاميرا أو ميكروفون متاح.":"لم يتم العثور على ميكروفون متاح.";
+  return error?.message||"تحقق من إذن الميكروفون.";
+}
 async function startVoiceCall(conversation = activeConversation, launchButton = voiceCallButton, callType = "audio") {
   if (!conversation || !currentUser || activeCall) return;
   callType = callType === "video" ? "video" : "audio";
   if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia || !window.RTCPeerConnection) {
-    announce("المكالمات الصوتية تحتاج متصفحًا آمنًا يدعم الميكروفون.", "error"); return;
+    announce(callType==="video"?"المكالمات المرئية تحتاج متصفحًا آمنًا يدعم الميكروفون والكاميرا.":"المكالمات الصوتية تحتاج متصفحًا آمنًا يدعم الميكروفون.", "error"); return;
   }
   if (launchButton) launchButton.disabled = true;
   voiceCallReturnFocus = launchButton;
@@ -5264,7 +5276,7 @@ async function startVoiceCall(conversation = activeConversation, launchButton = 
       if(callLogId)void updateCallLogStatus(callLogId,"failed");
       await finishVoiceCall();
     }
-    announce("تعذر بدء المكالمة: " + (error.message || "تحقق من إذن الميكروفون."), "error");
+    announce("تعذر بدء المكالمة: " + getCallMediaError(error,callType), "error");
   } finally {
     if (launchButton) launchButton.disabled = false;
   }
@@ -5458,7 +5470,7 @@ async function acceptVoiceCall() {
     }
     for (const peerId of activeCall.readyUsers) await maybeCreateVoiceOffer(peerId);
   } catch (error) {
-    announce("تعذر الرد على المكالمة: " + (error.message || "تحقق من إذن الميكروفون."), "error");
+    announce("تعذر الرد على المكالمة: " + getCallMediaError(error,activeCall?.callType||"audio"), "error");
     await rejectVoiceCall();
   } finally {
     voiceCallAcceptButton.disabled = false;
