@@ -4052,7 +4052,7 @@ async function openGroupSettings() {
       groupSettingsSendSelect.value = data?.send_messages_by || "everyone";
       groupSettingsAddSelect.value = data?.add_members_by || "admins";
     } else {
-      // Members can open group settings for membership actions, but never load or see admin permissions.
+      // Non-admin members cannot load or view group permission values.
       groupSettingsSendSelect.value = "everyone";
       groupSettingsAddSelect.value = "admins";
     }
