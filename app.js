@@ -1221,6 +1221,7 @@ const groupDescriptionInput=$("#group-description-input"),groupDescriptionSaveBu
 const groupPhotoInput=$("#group-photo-input"),groupPhotoPreview=$("#group-photo-preview"),groupPhotoChooseButton=$("#group-photo-choose"),groupPhotoRemoveButton=$("#group-photo-remove"),groupPhotoSaveButton=$("#group-photo-save");
 const groupInfoPhotoRow=$("#group-info-photo-row"),groupInfoPhoto=$("#group-info-photo"),groupInfoDescriptionRow=$("#group-info-description-row"),groupInfoDescription=$("#group-info-description");
 const groupInviteRow=$("#group-invite-row"),groupInviteUrl=$("#group-invite-url"),groupInviteCopyButton=$("#group-invite-copy"),groupInviteResetButton=$("#group-invite-reset"),groupInviteStatus=$("#group-invite-status");
+const groupInviteRetryButton=$("#group-invite-retry"),groupMemberCountLabel=$("#group-member-count");
 let groupInviteLoadSequence=0,pendingGroupInviteInProgress=false;
 let groupDescriptionSavedValue=null,groupDescriptionSaveInProgress=false,selectedGroupPhotoFile=null,groupPhotoSavedPath=null,groupPhotoRemoveRequested=false,groupPhotoSaveInProgress=false,groupPhotoPreviewObjectUrl=null;
 const groupPhotoUrlCache=new Map();
@@ -3766,20 +3767,30 @@ async function loadGroupInviteLink(conversationId,isCurrent,isAdmin){
   groupInviteRow.hidden=false;
   groupInviteUrl.value="";
   groupInviteStatus.textContent="جارٍ تحميل رابط الدعوة…";
+  if(groupInviteRetryButton)groupInviteRetryButton.hidden=true;
   groupInviteResetButton.hidden=!isAdmin;
+  let timeoutId=null;
   try{
-    const {data,error}=await supabase.rpc("get_or_create_group_invite",{p_conversation_id:conversationId});
+    const request=supabase.rpc("get_or_create_group_invite",{p_conversation_id:conversationId});
+    const timeout=new Promise((_,reject)=>{
+      timeoutId=window.setTimeout(()=>reject(new Error("انتهت مهلة تحميل رابط الدعوة. حاول مرة أخرى.")),12000);
+    });
+    const {data,error}=await Promise.race([request,timeout]);
     if(error)throw error;
     if(sequence!==groupInviteLoadSequence||!isCurrent())return;
     const token=typeof data==="string"?data:data?.token;
     if(!token)throw new Error("لم يتم إنشاء رابط الدعوة.");
     groupInviteUrl.value=new URL("/?group_invite="+encodeURIComponent(token),window.location.origin).toString();
     groupInviteStatus.textContent="";
+    if(groupInviteRetryButton)groupInviteRetryButton.hidden=true;
   }catch(error){
     if(sequence!==groupInviteLoadSequence||!isCurrent())return;
-    groupInviteRow.hidden=true;
+    groupInviteUrl.value="";
+    groupInviteStatus.textContent="تعذر تحميل رابط الدعوة. حاول مرة أخرى.";
+    if(groupInviteRetryButton)groupInviteRetryButton.hidden=false;
     console.warn("تعذر تحميل رابط دعوة المجموعة:",error);
-    announce("تعذر تحميل رابط الدعوة: "+(error.message||"حاول مرة أخرى."),"error");
+  }finally{
+    if(timeoutId!==null)window.clearTimeout(timeoutId);
   }
 }
 async function copyGroupInviteLink(){
@@ -3796,6 +3807,17 @@ async function copyGroupInviteLink(){
   }catch(error){announce("تعذر نسخ الرابط. يمكنك تحديده ونسخه يدويًا.","error");}
 }
 if(groupInviteCopyButton)groupInviteCopyButton.addEventListener("click",()=>void copyGroupInviteLink());
+if(groupInviteRetryButton)groupInviteRetryButton.addEventListener("click",async()=>{
+  const conversation=activeConversation;
+  if(!conversation?.is_group||!currentUser)return;
+  groupInviteRetryButton.disabled=true;
+  try{
+    const permissions=await getCurrentGroupPermissions();
+    await loadGroupInviteLink(conversation.id,()=>activeConversation?.id===conversation.id,permissions.isAdmin);
+  }finally{
+    groupInviteRetryButton.disabled=false;
+  }
+});
 if(groupInviteResetButton)groupInviteResetButton.addEventListener("click",async()=>{
   if(!activeConversation?.is_group||!groupInviteUrl||groupInviteResetButton.disabled)return;
   const permissions=await getCurrentGroupPermissions();
@@ -4098,7 +4120,6 @@ async function openGroupMoreOptions(){
       groupSettingsInfoSection.setAttribute("aria-hidden","false");
       groupSettingsInfoSection.removeAttribute("inert");
     }
-    if(groupMemberList)groupMemberList.hidden=false;
     groupMoreOptionsCloseButton?.focus();
   }catch(error){
     closeGroupMoreOptions();
@@ -4180,6 +4201,7 @@ async function loadGroupManagement(expectedConversationId = activeConversation?.
   activeGroupMemberIds=new Set(displayMembers.map(member=>member.user_id));
   if (activeConversation?.id === expectedConversationId) {
     activeGroupMemberCount = displayMembers.length;
+    if(groupMemberCountLabel)groupMemberCountLabel.textContent=new Intl.NumberFormat(localStorage.getItem("mersal-language")==="en"?"en-US":"ar-JO").format(displayMembers.length);
     updateGroupHeaderAccessibleLabel();
   }
   const ids=[...activeGroupMemberIds];let profiles=[];
