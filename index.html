@@ -18,9 +18,9 @@
   <link rel="preconnect" href="https://esm.sh" crossorigin>
   <link rel="preconnect" href="https://nnsleztgbqeuqavkhrpw.supabase.co" crossorigin>
   <link rel="modulepreload" href="https://esm.sh/@supabase/supabase-js@2.119.0" crossorigin>
-  <link rel="stylesheet" href="/styles.css?v=20261114-conversation-info-organized">
+  <link rel="stylesheet" href="/styles.css?v=20261114-group-settings-fullscreen-v3">
   <link rel="stylesheet" href="/inclusive-responsive.css">
-  <script type="module" src="/app.js?v=20261114-message-status-v4"></script>
+  <script type="module" src="/app.js?v=20261114-group-settings-access-v3"></script>
 </head>
 <body>
 <div class="topbar">
@@ -618,14 +618,14 @@
       <button id="poll-create-button" type="submit" class="primary-button">إنشاء الاستطلاع</button>
     </form>
   </section>
- <section id="group-settings-panel" class="group-settings-panel" role="dialog" aria-modal="true" aria-labelledby="group-settings-title" aria-hidden="true" hidden>
+ <section id="group-settings-panel" class="group-settings-panel" role="dialog" aria-modal="true" aria-label="إعدادات المجموعة" aria-hidden="true" hidden>
               <div class="group-settings-header">
                 <button id="group-settings-close" type="button" class="quiet-button">إغلاق إعدادات المجموعة</button>
-                <div id="group-settings-title" class="group-settings-title">إعدادات المجموعة</div>
+                <div id="group-settings-title" class="group-settings-title" role="presentation">إعدادات المجموعة</div>
               </div>
               <div class="group-settings-content">
                 <div id="group-settings-permissions" class="group-settings-section" hidden>
-                  <div class="group-settings-section-title">الصلاحيات</div>
+                  <div class="group-settings-section-title" role="presentation">الصلاحيات</div>
                   
                   <label for="group-settings-send">من يستطيع إرسال الرسائل؟</label>
                   <select id="group-settings-send">
@@ -640,7 +640,7 @@
                   <button id="group-settings-save" type="button" class="quiet-button" disabled>حفظ إعدادات المجموعة</button>
                 </div>
                 <div class="group-settings-section">
-                  <div class="group-settings-section-title">تعديل معلومات المجموعة</div>
+                  <div class="group-settings-section-title" role="presentation">تعديل معلومات المجموعة</div>
                   <p class="settings-help">تغيير اسم المجموعة ووصفها وصورتها متاح لمنشئ المجموعة فقط.</p>
                   <div id="group-admin-tools" class="group-admin-tools group-admin-tools-top" hidden>
                     <div class="group-photo-editor">
@@ -661,13 +661,13 @@
                   </div>
                 </div>
                 <div class="group-settings-section">
-                  <div class="group-settings-section-title">إدارة الأعضاء والمشرفين</div>
+                  <div class="group-settings-section-title" role="presentation">إدارة الأعضاء والمشرفين</div>
                   <p class="settings-help">تظهر إجراءات العضوية والإشراف بحسب صلاحيتك في المجموعة.</p>
                   <button id="group-add-members-button" type="button" class="quiet-button" hidden>إضافة أعضاء</button>
                   <ul id="group-member-list" class="people-list group-member-list" aria-label="أعضاء المجموعة" hidden></ul>
                 </div>
                 <div class="group-settings-section">
-                  <div class="group-settings-section-title">إجراءات العضوية</div>
+                  <div class="group-settings-section-title" role="presentation">إجراءات العضوية</div>
                   <div class="conversation-membership-actions">
                     <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
                     <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
