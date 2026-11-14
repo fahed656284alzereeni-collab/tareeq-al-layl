@@ -119,5 +119,7 @@ for delete to authenticated using (
 );
 
 grant select, insert, update, delete on public.channels to authenticated;
-grant select, insert, update, delete on public.channel_followers to authenticated;
+revoke update on public.channel_followers from authenticated;
+grant update (notifications_enabled) on public.channel_followers to authenticated;
+grant select, insert, delete on public.channel_followers to authenticated;
 grant select, insert, update, delete on public.channel_posts to authenticated;
