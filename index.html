@@ -524,19 +524,43 @@
             <div class="conversation-info-list conversation-info-common-list">
               <div role="group" aria-label="الاسم"><span id="conversation-info-name-label" class="conversation-info-label">الاسم</span><span class="conversation-info-value" id="conversation-info-name">—</span></div>
             </div>
-            <div id="group-conversation-info-list" class="conversation-info-list" hidden>
-              <div id="group-info-photo-row" role="group" aria-label="صورة المجموعة" hidden><span class="conversation-info-label">صورة المجموعة</span><img id="group-info-photo" class="group-info-photo" alt="" hidden></div>
-              <div id="group-info-description-row" role="group" aria-label="وصف المجموعة" hidden><span class="conversation-info-label">وصف المجموعة</span><span class="conversation-info-value" id="group-info-description">—</span></div>
-              <div id="group-invite-row" role="group" aria-label="الدعوة عبر الرابط" hidden>
+            <div id="group-conversation-info-list" class="conversation-info-list group-info-layout" hidden>
+              <div class="group-info-profile">
+                <div id="group-info-photo-row" class="group-info-photo-row" hidden>
+                  <img id="group-info-photo" class="group-info-photo" alt="" hidden>
+                </div>
+                <div id="group-info-description-row" class="group-info-description-row" hidden>
+                  <span class="conversation-info-label">وصف المجموعة</span>
+                  <span class="conversation-info-value" id="group-info-description">—</span>
+                </div>
+              </div>
+              <div id="group-invite-row" class="group-info-card group-invite-card" hidden>
                 <span class="conversation-info-label">الدعوة عبر الرابط</span>
                 <div class="conversation-info-value group-invite-actions">
+                  <label class="visually-hidden" for="group-invite-url">رابط دعوة المجموعة</label>
                   <input id="group-invite-url" type="text" readonly aria-label="رابط دعوة المجموعة">
                   <button id="group-invite-copy" type="button" class="quiet-button">نسخ رابط الدعوة</button>
                   <button id="group-invite-reset" type="button" class="quiet-button" hidden>إعادة تعيين رابط الدعوة</button>
+                  <button id="group-invite-retry" type="button" class="quiet-button" hidden>إعادة المحاولة</button>
                   <p id="group-invite-status" role="status" aria-live="polite"></p>
                 </div>
               </div>
-              <div id="group-conversation-created-row" role="group" aria-label="تاريخ إنشاء المجموعة" hidden><span class="conversation-info-label">تاريخ إنشاء المجموعة</span><span class="conversation-info-value" id="conversation-info-created">—</span></div>
+              <div class="group-info-card group-members-section">
+                <div class="group-members-heading">
+                  <span>أعضاء المجموعة</span>
+                  <span id="group-member-count" aria-label="عدد أعضاء المجموعة">0</span>
+                </div>
+                <button id="group-add-members-button" type="button" class="quiet-button" hidden>إضافة أعضاء</button>
+                <ul id="group-member-list" class="people-list group-member-list" aria-label="أعضاء المجموعة"></ul>
+              </div>
+              <div id="group-conversation-created-row" class="group-info-card group-created-row" hidden>
+                <span class="conversation-info-label">تاريخ إنشاء المجموعة</span>
+                <span class="conversation-info-value" id="conversation-info-created">—</span>
+              </div>
+              <div class="group-info-membership-actions">
+                <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
+                <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
+              </div>
             </div>
             <div id="individual-conversation-info-list" class="conversation-info-list" hidden>
               <div id="conversation-info-photo-row" role="group" aria-label="الصورة الشخصية"><span class="conversation-info-label">الصورة الشخصية</span><img id="conversation-info-photo" class="conversation-info-photo" alt="" hidden></div>
@@ -745,16 +769,7 @@
                     <button id="group-rename-save" type="button" class="quiet-button" disabled>حفظ اسم المجموعة</button>
                   </div>
                 </div>
-                <div class="group-settings-section" id="group-settings-members">
-                  <button id="group-add-members-button" type="button" class="quiet-button" hidden>إضافة أعضاء</button>
-                  <ul id="group-member-list" class="people-list group-member-list" aria-label="أعضاء المجموعة" hidden></ul>
-                </div>
-                <div class="group-settings-section" id="group-settings-membership">
-                  <div class="conversation-membership-actions">
-                    <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
-                    <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
-                  </div>
-                </div>
+
               </div>
             </div>
           </section>
