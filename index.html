@@ -125,8 +125,8 @@
       <button id="google-login" type="button" class="primary-button">تسجيل الدخول باستخدام Google</button>
     </div>
 
-    <div id="settings-panel" class="settings-overlay" role="dialog" aria-modal="true" aria-label="الإعدادات" hidden>
-      <div class="settings-card">
+    <div id="settings-panel" class="settings-overlay" role="tabpanel" aria-labelledby="settings-tab" tabindex="0" hidden>
+      <div class="settings-card" role="dialog" aria-modal="true" aria-label="الإعدادات">
         
         <div id="settings-home" class="settings-menu">
           <section class="settings-section profile-settings-entry">
@@ -417,15 +417,15 @@
       </div>
     </div>
 
-    <div id="workspace" class="workspace" hidden >
-      <section id="status-view" class="status-view" hidden>
+    <div id="workspace" class="workspace" role="tabpanel" aria-labelledby="home-tab" tabindex="0" hidden>
+      <section id="status-view" class="status-view" role="tabpanel" aria-labelledby="status-tab" tabindex="0" hidden>
         <div class="status-page-actions">
           <button id="add-status-button" type="button" class="primary-button">إضافة حالة</button>
           <button id="refresh-statuses-button" type="button" class="quiet-button">تحديث الحالات</button>
         </div>
         <ul id="status-list" class="status-list" aria-label="الحالات" aria-live="polite"></ul>
       </section>
-      <div id="calls-view" class="calls-view" hidden>
+      <div id="calls-view" class="calls-view" role="tabpanel" aria-labelledby="calls-tab" tabindex="0" hidden>
         <div class="calls-page">
           <button id="calls-back-to-chats" type="button" class="quiet-button calls-back-button">العودة للمحادثات</button>
           <div class="calls-intro">
@@ -443,7 +443,7 @@
           <ul id="calls-history-list" class="calls-list calls-history-list" aria-live="polite"></ul>
         </div>
       </div>
-      <div id="tools-view" class="tools-view" hidden>
+      <div id="tools-view" class="tools-view" role="tabpanel" aria-labelledby="tools-tab" tabindex="0" hidden>
         <div class="tools-page">
           <div id="tools-home-view">
             <div class="tools-intro"><p class="tools-eyebrow">مرسال</p><p id="tools-title" class="tools-page-title" tabindex="-1">الأدوات</p><p>أدوات عملية تساعدك أثناء استخدام مرسال.</p></div>
