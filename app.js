@@ -988,6 +988,7 @@ function applyMersalLanguage(language, persist=true) {
   document.documentElement.dir=chosen==="ar"?"rtl":"ltr";
   document.documentElement.dataset.language=chosen;
   mersalTranslateTree();
+  updateBottomTabAccessiblePositions(chosen);
   document.querySelectorAll(".message-poll[data-poll-id]").forEach(host => {
     const focused = document.activeElement?.closest?.(".message-poll") === host;
     const index = focused ? Number(document.activeElement.dataset.optionIndex) : null;
@@ -1212,6 +1213,22 @@ const closeNotificationsButton = $("#close-notifications");
 const notificationsList = $("#notifications-list");
 const notificationCount = $("#notification-count");
 
+function updateBottomTabAccessiblePositions(language = localStorage.getItem("mersal-language") || "ar") {
+  const tabList = document.querySelector("#bottom-navigation");
+  if (!tabList) return;
+  const tabs = [...tabList.querySelectorAll(':scope > [role="tab"]')].filter(tab => !tab.hidden);
+  const total = tabs.length;
+  tabs.forEach((tab, index) => {
+    const label = tab.querySelector(".bottom-nav-label")?.textContent?.trim() || tab.id.replace(/-tab$/, "");
+    const position = index + 1;
+    tab.setAttribute("aria-posinset", String(position));
+    tab.setAttribute("aria-setsize", String(total));
+    tab.setAttribute("aria-label", language === "en"
+      ? `${label}, tab ${position} of ${total}`
+      : `${label}، علامة تبويب ${position} من ${total}`);
+    tab.setAttribute("data-no-translate-aria-label", "");
+  });
+}
 function setActiveBottomTab(tab) {
   if (!homeTabButton || !settingsTabButton || !statusTabButton || !toolsTabButton || !callsTabButton) return;
   homeTabButton.setAttribute("aria-selected", String(tab === "home"));
@@ -1219,6 +1236,7 @@ function setActiveBottomTab(tab) {
   toolsTabButton.setAttribute("aria-selected", String(tab === "tools"));
   callsTabButton.setAttribute("aria-selected", String(tab === "calls"));
   settingsTabButton.setAttribute("aria-selected", String(tab === "settings"));
+  updateBottomTabAccessiblePositions();
 }
 function returnToHomeTab() {
   mersalTools.closeTool(false);
