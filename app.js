@@ -1390,8 +1390,8 @@ bottomNavigation?.addEventListener("keydown", event => {
     const forward = (event.key === "ArrowRight") !== rtl;
     next = (current + (forward ? 1 : -1) + tabs.length) % tabs.length;
   }
-  tabs[next]?.click();
   tabs[next]?.focus();
+  tabs[next]?.click();
 });
 function returnToHomeTab() {
   mersalTools.closeTool(false);
