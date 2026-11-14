@@ -383,6 +383,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
       }
       await loadCommunityGroups();
       communityGroupsEditor.hidden = true;
+      communityGroupsManage.hidden = false;
       communityGroupsManage.focus();
       if (failures.length) announce(t("تم حفظ بعض المجموعات، وتعذر ربط: ", "Some groups were saved, but these could not be linked: ") + failures.join("؛ "), "error");
       else announce(t("تم تحديث مجموعات المجتمع.", "Community groups updated."));
