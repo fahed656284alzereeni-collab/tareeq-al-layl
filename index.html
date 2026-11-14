@@ -712,6 +712,7 @@
         <button id="new-private-chat" type="button" class="primary-button">محادثة جديدة</button>
         <button id="new-group-chat" type="button" class="quiet-button">مجموعة جديدة</button>
         <button id="new-broadcast-list" type="button" class="quiet-button">قائمة بث جديدة</button>
+        <button id="open-channels-button" type="button" class="quiet-button">استكشاف القنوات</button>
         <div id="private-chat-view" hidden><label for="people-search">ابحث عن شخص</label><input id="people-search" type="search" placeholder="اكتب الاسم للبحث" autocomplete="off"><ul id="people-list" class="people-list" aria-label="الأشخاص"></ul></div>
         <div id="group-chat-view" hidden><label for="group-name">اسم المجموعة</label><input id="group-name" type="text" maxlength="60" placeholder="اكتب اسم المجموعة"><label for="new-group-description">وصف المجموعة (اختياري)</label><textarea id="new-group-description" rows="3" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea><p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p><div class="group-photo-editor group-create-photo"><img id="new-group-photo-preview" class="group-photo-preview" alt="معاينة صورة المجموعة المحددة" hidden><input id="new-group-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة للمجموعة عند إنشائها"><button id="new-group-photo-choose" type="button" class="quiet-button">إضافة صورة للمجموعة (اختياري)</button><button id="new-group-photo-remove" type="button" class="quiet-button" hidden>إزالة الصورة المحددة</button><p class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى لصورة المجموعة: 50 ميغابايت.</p></div><label for="group-people-search">ابحث عن أعضاء</label><input id="group-people-search" type="search" placeholder="اكتب اسم الشخص" autocomplete="off"><ul id="group-people-list" class="people-list" aria-label="اختيار أعضاء المجموعة"></ul><button id="create-group-button" type="button" class="primary-button">إنشاء المجموعة</button></div>
       </div>
@@ -733,6 +734,47 @@
           <ul id="broadcast-people-list" class="broadcast-people-list" aria-label="اختيار مستلمي قائمة البث"></ul>
           <button id="save-broadcast-list" type="button" class="primary-button">حفظ قائمة البث</button>
           <button id="cancel-broadcast-create" type="button" class="quiet-button">إلغاء</button>
+        </div>
+      </div>
+    </section>
+    <section id="channels-panel" class="channels-panel" role="dialog" aria-modal="true" aria-label="القنوات" hidden>
+      <div class="channels-card">
+        <button id="channels-close" type="button" class="quiet-button" aria-label="إغلاق القنوات">إغلاق</button>
+        <div id="channels-home-view">
+          <p id="channels-title" class="channels-title" tabindex="-1">القنوات</p>
+          <p id="channels-intro" class="channels-intro">تابع القنوات العامة أو أنشئ قناة لنشر التحديثات.</p>
+          <button id="channel-create-button" type="button" class="primary-button">إنشاء قناة</button>
+          <label for="channels-search">البحث في القنوات</label>
+          <input id="channels-search" type="search" placeholder="ابحث عن قناة" autocomplete="off">
+          <p id="channels-status" class="channels-status" role="status" aria-live="polite"></p>
+          <ul id="channels-list" class="channels-list" aria-label="القنوات العامة"></ul>
+        </div>
+        <div id="channels-create-view" hidden>
+          <p class="channels-title">إنشاء قناة</p>
+          <form id="channel-create-form" class="channel-create-form">
+            <label for="channel-name-input">اسم القناة</label>
+            <input id="channel-name-input" type="text" maxlength="80" required autocomplete="off" placeholder="اسم القناة">
+            <label for="channel-description-input">وصف القناة</label>
+            <textarea id="channel-description-input" rows="3" maxlength="500" placeholder="وصف مختصر للقناة"></textarea>
+            <button id="channel-create-save" type="submit" class="primary-button">حفظ القناة</button>
+          </form>
+          <button id="channel-create-cancel" type="button" class="quiet-button">إلغاء</button>
+        </div>
+        <div id="channel-detail-view" hidden>
+          <button id="channel-detail-back" type="button" class="quiet-button">العودة إلى القنوات</button>
+          <p id="channel-detail-name" class="channels-title" tabindex="-1"></p>
+          <p id="channel-detail-description" class="channels-intro"></p>
+          <div class="channel-follow-actions">
+            <button id="channel-follow-toggle" type="button" class="primary-button">متابعة القناة</button>
+            <button id="channel-notifications-toggle" type="button" class="quiet-button" hidden>إيقاف إشعارات القناة</button>
+            <button id="channel-delete-button" type="button" class="danger-button" hidden>حذف القناة</button>
+          </div>
+          <form id="channel-post-form" class="channel-post-form" hidden>
+            <label for="channel-post-input">تحديث جديد</label>
+            <textarea id="channel-post-input" rows="3" maxlength="5000" placeholder="اكتب تحديثًا لمتابعي القناة"></textarea>
+            <button id="channel-post-submit" type="submit" class="primary-button">نشر التحديث</button>
+          </form>
+          <ul id="channel-posts" class="channel-posts" aria-label="تحديثات القناة" aria-live="polite"></ul>
         </div>
       </div>
     </section>
