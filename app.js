@@ -3120,7 +3120,7 @@ createGroupButton.addEventListener("click",async()=>{
  if(ids.length<1){announce("اختر شخصًا واحدًا على الأقل لإنشاء المجموعة.","error");return;}
  createGroupButton.disabled=true;
  try{
-  const {data:conv,error}=await supabase.from("conversations").insert({user_one:currentUser.id,user_two:ids[0],is_group:true,group_name:name,group_description:description||null}).select("id,user_one,user_two,last_message_at,is_group,group_name,group_description,group_photo_path,group_invite_token,created_at").single();if(error)throw error;
+  const {data:conv,error}=await supabase.from("conversations").insert({user_one:currentUser.id,user_two:ids[0],is_group:true,group_name:name,group_description:description||null,group_invite_token:crypto.randomUUID()}).select("id,user_one,user_two,last_message_at,is_group,group_name,group_description,group_photo_path,group_invite_token,created_at").single();if(error)throw error;
   const rows=[currentUser.id,...ids].map(user_id=>({conversation_id:conv.id,user_id,role:user_id===currentUser.id?"admin":"member"}));
   const {error:memberError}=await supabase.from("conversation_members").insert(rows);
   if(memberError){
