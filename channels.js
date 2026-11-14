@@ -115,7 +115,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     const [channelsResult, followsResult] = await Promise.all([
       supabase.from("channels").select("id,owner_id,name,description,created_at,updated_at")
         .eq("is_public", true).order("updated_at", { ascending: false }).limit(100),
-      supabase.from("channel_followers").select("channel_id")
+      supabase.from("channel_followers").select("channel_id,notifications_enabled")
         .eq("follower_id", user.id)
     ]);
     if (channelsResult.error) throw channelsResult.error;
@@ -201,7 +201,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     const user = getCurrentUser();
     activeChannel = channel;
     const followResult = await supabase.from("channel_followers")
-      .select("channel_id").eq("channel_id", channel.id)
+      .select("channel_id,notifications_enabled").eq("channel_id", channel.id)
       .eq("follower_id", user.id).maybeSingle();
     if (followResult.error) {
       announce(t("تعذر فتح القناة: ", "Could not open channel: ") + followResult.error.message, "error");
