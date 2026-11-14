@@ -358,7 +358,7 @@ button:disabled { opacity: .48; cursor: not-allowed; }
 
 /* Public channels */
 .channels-panel {
-  position:fixed; z-index:2147482700; inset:0; display:grid; place-items:center;
+  position:fixed; z-index:2147482700; inset:0 0 calc(68px + env(safe-area-inset-bottom)) 0; display:grid; place-items:center;
   padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
   background:rgba(5,18,14,.62); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
 }
@@ -436,7 +436,7 @@ button:disabled { opacity: .48; cursor: not-allowed; }
 
 /* Public communities and announcement feed */
 .communities-panel {
-  position:fixed; z-index:2147482800; inset:0; display:grid; place-items:center;
+  position:fixed; z-index:2147482800; inset:0 0 calc(68px + env(safe-area-inset-bottom)) 0; display:grid; place-items:center;
   padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
   background:rgba(5,18,14,.62); backdrop-filter:blur(7px); -webkit-backdrop-filter:blur(7px);
 }
