@@ -1,7 +1,8 @@
-const STATIC_CACHE = "mersal-static-v2";
+const STATIC_CACHE = "mersal-static-v3";
 const STATIC_PATHS = new Set([
   "/app.js",
   "/tools.js",
+  "/channels.js",
   "/styles.css",
   "/inclusive-responsive.css",
   "/icon.svg",
