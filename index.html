@@ -821,8 +821,19 @@
           <p id="community-detail-description" class="communities-intro"></p>
           <div class="community-actions">
             <button id="community-join-toggle" type="button" class="primary-button">الانضمام إلى المجتمع</button>
+            <button id="community-edit-open" type="button" class="quiet-button" hidden>تعديل معلومات المجتمع</button>
             <button id="community-delete-button" type="button" class="danger-button" hidden>حذف المجتمع</button>
           </div>
+          <form id="community-edit-form" class="community-edit-form" hidden>
+            <label for="community-edit-name">اسم المجتمع</label>
+            <input id="community-edit-name" type="text" maxlength="80" required autocomplete="off">
+            <label for="community-edit-description">وصف المجتمع</label>
+            <textarea id="community-edit-description" rows="3" maxlength="500"></textarea>
+            <div class="community-actions">
+              <button id="community-edit-save" type="submit" class="primary-button">حفظ التعديلات</button>
+              <button id="community-edit-cancel" type="button" class="quiet-button">إلغاء</button>
+            </div>
+          </form>
           <form id="community-post-form" class="community-post-form" hidden>
             <label for="community-post-input">إعلان جديد</label>
             <textarea id="community-post-input" rows="3" maxlength="5000" placeholder="اكتب إعلانًا لأعضاء المجتمع"></textarea>
