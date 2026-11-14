@@ -1234,7 +1234,7 @@ const groupSettingsSendSelect = $("#group-settings-send");
 const groupSettingsAddSelect = $("#group-settings-add");
 const groupSettingsSaveButton = $("#group-settings-save");
 const groupSettingsPermissionsSection = $("#group-settings-permissions");
-const groupSettingsInfoSection = null;
+const groupSettingsInfoSection = $("#group-settings-info");
 let groupSettingsSnapshot = null;
 let groupSettingsSaving = false;
 let groupSettingsReturnFocus = null;
@@ -3587,6 +3587,7 @@ async function selectConversation(conversation, person) {
   );
 
   // Open the chat immediately. Cleanup and secondary data must never hold the screen transition.
+  closeGroupMoreOptions();
   activeConversation = conversation;
   activePartner = person;
   activeGroupMemberCount = null;
@@ -4102,6 +4103,11 @@ async function openGroupMoreOptions(){
     const permissions=await getCurrentGroupPermissions();
     if(!activeConversation?.is_group||activeConversation.id!==conversationId){closeGroupMoreOptions();return;}
     if(tools)tools.hidden=!permissions.isOwner;
+    if(groupSettingsInfoSection){
+      groupSettingsInfoSection.hidden=false;
+      groupSettingsInfoSection.setAttribute("aria-hidden","false");
+      groupSettingsInfoSection.removeAttribute("inert");
+    }
     if(groupMemberList)groupMemberList.hidden=false;
     groupMoreOptionsCloseButton?.focus();
   }catch(error){
@@ -4113,6 +4119,11 @@ function closeGroupMoreOptions(){
   if(!groupMoreOptionsPanel)return;
   groupMoreOptionsPanel.hidden=true;
   groupMoreOptionsPanel.setAttribute("aria-hidden","true");
+  if(groupSettingsInfoSection){
+    groupSettingsInfoSection.hidden=true;
+    groupSettingsInfoSection.setAttribute("aria-hidden","true");
+    groupSettingsInfoSection.setAttribute("inert","");
+  }
   document.body.classList.remove("group-settings-open");
   const target=groupMoreOptionsReturnFocus?.isConnected?groupMoreOptionsReturnFocus:groupMoreOptionsOpenButton;
   groupMoreOptionsReturnFocus=null;
@@ -4407,8 +4418,8 @@ async function deleteActiveGroup(deleteForEveryone){
     announce("تعذر حذف المجموعة: "+(error.message||"حاول مرة أخرى."),"error");
   }finally{button.disabled=false;}
 }
-groupLeaveButton.addEventListener("click",()=>{deleteActiveGroup(false);});
-groupDeleteEveryoneButton.addEventListener("click",()=>{deleteActiveGroup(true);});
+groupLeaveButton.addEventListener("click",()=>{closeGroupMoreOptions();deleteActiveGroup(false);});
+groupDeleteEveryoneButton.addEventListener("click",()=>{closeGroupMoreOptions();deleteActiveGroup(true);});
 
 blockPersonButton.addEventListener("click",async()=>{
   if(!activeConversation||activeConversation.is_group||!activePartner||!currentUser||activeBlockState.blockedByThem&&!activeBlockState.blockedByMe)return;
