@@ -2746,7 +2746,6 @@ body.conversation-info-fullscreen #group-conversation-info-list .group-created-r
 .group-invite-preview-card{display:flex;flex-direction:column;align-items:stretch;gap:16px;width:min(100%,520px);margin:auto;padding:clamp(20px,5vw,34px);border:1px solid var(--border);border-radius:22px;background:var(--surface-raised);box-shadow:0 22px 70px #0003;text-align:center}
 .group-invite-preview-card > #group-invite-preview-cancel{align-self:flex-start}
 .group-invite-preview-avatar{display:grid;place-items:center;min-height:96px}
-.group-invite-preview-placeholder{display:grid;place-items:center;width:96px;height:96px;border-radius:25px;background:var(--surface);color:var(--text);font-size:2rem;font-weight:850}
 .group-invite-preview-photo{width:96px;height:96px;margin:auto;border-radius:25px;overflow:hidden}
 .group-invite-preview-photo img{width:100%;height:100%;object-fit:cover}
 .group-invite-preview-name{font-size:1.35rem;font-weight:850;overflow-wrap:anywhere}

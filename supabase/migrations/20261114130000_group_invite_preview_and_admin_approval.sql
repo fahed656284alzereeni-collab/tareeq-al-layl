@@ -14,6 +14,8 @@ create table if not exists public.group_join_requests (
 create index if not exists group_join_requests_pending_idx
   on public.group_join_requests (conversation_id, requested_at desc)
   where status = 'pending';
+create index if not exists group_join_requests_user_id_idx on public.group_join_requests(user_id);
+create index if not exists group_join_requests_reviewed_by_idx on public.group_join_requests(reviewed_by);
 alter table public.group_join_requests enable row level security;
 revoke all on table public.group_join_requests from anon, authenticated;
 
