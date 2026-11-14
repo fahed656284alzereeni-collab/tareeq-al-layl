@@ -193,7 +193,7 @@ const mersalTranslations = {
   "إذا أخفيت آخر ظهورك عن شخص، فلن تتمكن من رؤية آخر ظهوره أو حالة اتصاله.":"If you hide your last seen from someone, you can't see their last seen or online status.",
   "عند إيقافها لن ترسل أو ترى مؤشرات القراءة في المحادثات الفردية. تبقى مؤشرات القراءة في المجموعات مفعّلة.":"When off, you won't send or see read receipts in individual chats. Group read receipts stay on.",
   "حدد الأشخاص الذين لا تريد أن يشاهدوا حالاتك.":"Choose people who should not see your statuses.",
-  "رسالة جديدة":"New message","مقروء":"Read","مقروء من ":"Read by ","حالة الظهور مخفية":"Presence hidden",
+  "رسالة جديدة":"New message","تم الإرسال":"Sent","تم التسليم":"Delivered","تم التسليم إلى ":"Delivered to ","مقروء":"Read","مقروء من ":"Read by ","حالة الظهور مخفية":"Presence hidden",
   " إخفاء نص الرسائل في الإشعارات":" Hide message text in notifications",
   " مؤشرات قراءة الرسائل":" Read receipts","إلغاء الحظر":"Unblock","لا يوجد أشخاص محظورون.":"No blocked users.",
   "الأشخاص المستثنون من مشاهدة الحالات":"People excluded from viewing statuses",
@@ -2340,9 +2340,8 @@ async function savePrivacySettings() {
   renderPeople();
   if (!privacySettings.read_receipts_enabled && !activeConversation?.is_group) {
     messagesList.querySelectorAll(".message-read-state").forEach(node => node.remove());
-  } else if (activeConversation) {
-    await loadMessages();
   }
+  if (activeConversation) await loadMessages();
   if (notifications.length) renderNotifications();
 }
 async function loadPrivacyContacts() {
@@ -3580,8 +3579,12 @@ async function selectConversation(conversation, person) {
         .eq("message_id", payload.new.id).eq("user_id", currentUser.id).maybeSingle();
       if (!hidden && isCurrentSelection()) {
         appendMessage(payload.new);
-        if((privacySettings.read_receipts_enabled||conversation.is_group)&&payload.new.sender_id!==currentUser.id){
-          void supabase.from("message_reads").upsert({message_id:payload.new.id,user_id:currentUser.id},{onConflict:"message_id,user_id",ignoreDuplicates:true});
+        if(payload.new.sender_id!==currentUser.id){
+          void supabase.from("message_deliveries").upsert({message_id:payload.new.id,user_id:currentUser.id},{onConflict:"message_id,user_id",ignoreDuplicates:true})
+            .then(({error})=>{if(error)console.warn("تعذر تسجيل تسليم الرسالة:",error.message);});
+          if(privacySettings.read_receipts_enabled||conversation.is_group){
+            void supabase.from("message_reads").upsert({message_id:payload.new.id,user_id:currentUser.id},{onConflict:"message_id,user_id",ignoreDuplicates:true});
+          }
         }
       }
     })
@@ -3600,6 +3603,15 @@ async function selectConversation(conversation, person) {
         void renderConversationPoll(pollId, host, host.dataset.messageId, Number.isInteger(index) ? index : null);
       }
     })
+    .on("postgres_changes", { event:"INSERT", schema:"public", table:"message_deliveries", ...(conversation.is_group ? {} : { filter:"user_id=eq."+(person?.id||"") }) }, async payload => {
+      if(!isCurrentSelection())return;
+      const messageNode=document.querySelector('[data-message-id="'+payload.new.message_id+'"]');
+      if(!messageNode || !messageNode.classList.contains("mine"))return;
+      const result=await supabase.from("message_deliveries").select("user_id").eq("message_id",payload.new.message_id);
+      if(!result.error && isCurrentSelection()){
+        setOutgoingMessageStatus(messageNode,(result.data||[]).length,0,conversation.is_group);
+      }
+    })
     .on("postgres_changes", { event:"INSERT", schema:"public", table:"message_reads", ...(conversation.is_group ? {} : { filter:"user_id=eq."+(person?.id||"") }) }, async payload => {
       if (!isCurrentSelection() || (!privacySettings.read_receipts_enabled&&!conversation.is_group))return;
       const messageNode=document.querySelector('[data-message-id="'+payload.new.message_id+'"]');
@@ -3608,10 +3620,11 @@ async function selectConversation(conversation, person) {
         const result=await supabase.from("message_reads").select("user_id").eq("message_id",payload.new.message_id);
         if(!result.error && isCurrentSelection()){
           const label=messageNode.querySelector(".message-read-state")||safeText("span","message-read-state","");
-          label.textContent=(result.data||[]).length ? "مقروء من "+result.data.length : "";
-          if(!label.isConnected)messageNode.append(label);
+          setOutgoingMessageStatus(messageNode,Number(messageNode.dataset.deliveredCount||0),(result.data||[]).length,true);
         }
-      }else if(!messageNode.querySelector(".message-read-state"))messageNode.append(safeText("span","message-read-state","مقروء"));
+      }else{
+        setOutgoingMessageStatus(messageNode,Number(messageNode.dataset.deliveredCount||0),1,false);
+      }
     })
     .on("postgres_changes", {
       event:"UPDATE",schema:"public",table:"conversations",filter:"id=eq."+conversation.id
@@ -4772,6 +4785,31 @@ async function castConversationPollVote(pollId, optionIndex, host, messageId) {
   }
 }
 
+function setOutgoingMessageStatus(messageNode, deliveredCount = 0, readCount = 0, isGroup = Boolean(activeConversation?.is_group)) {
+  const footer = messageNode?.querySelector(".message-footer");
+  if (!footer) return;
+  const delivered = Math.max(0, Number(deliveredCount) || 0);
+  const read = Math.max(0, Number(readCount) || 0);
+  messageNode.dataset.deliveredCount = String(delivered);
+  const readNode = footer.querySelector(".message-read-state");
+  const deliveryNode = footer.querySelector(".message-delivery-state");
+  const canShowRead = Boolean(isGroup || privacySettings.read_receipts_enabled);
+  if (canShowRead && read > 0) {
+    deliveryNode?.remove();
+    const label = readNode || safeText("span", "message-read-state", "");
+    label.textContent = isGroup ? "مقروء من " + read : "مقروء";
+    if (!label.isConnected) footer.append(label);
+    return;
+  }
+  if (canShowRead && readNode) return;
+  readNode?.remove();
+  const label = deliveryNode || safeText("span", "message-delivery-state", "");
+  label.textContent = isGroup
+    ? (delivered > 0 ? "تم التسليم إلى " + delivered : "تم الإرسال")
+    : (delivered > 0 ? "تم التسليم" : "تم الإرسال");
+  if (!label.isConnected) footer.append(label);
+}
+
 function appendMessage(message) {
   if (!message || document.querySelector('[data-message-id="' + message.id + '"]')) return;
   messagesList.querySelectorAll(".empty-item").forEach(node => node.remove());
@@ -4842,9 +4880,8 @@ function appendMessage(message) {
   timeElement.dateTime = sentAt.toISOString();
   timeElement.setAttribute("aria-label", "تاريخ ووقت الإرسال: " + time);
   messageFooter.append(timeElement);
-  if (message.sender_id === currentUser.id && (privacySettings.read_receipts_enabled || activeConversation?.is_group)) {
-    if (message._readCount > 0) messageFooter.append(safeText("span", "message-read-state", activeConversation?.is_group ? "مقروء من " + message._readCount : "مقروء"));
-    else if (message._readByPartner) messageFooter.append(safeText("span", "message-read-state", "مقروء"));
+  if (message.sender_id === currentUser.id) {
+    setTimeout(() => setOutgoingMessageStatus(item, message._deliveredCount || 0, message._readCount || (message._readByPartner ? 1 : 0), Boolean(activeConversation?.is_group)), 0);
   }
   const actions = document.createElement("div");
   actions.className = "message-actions";
@@ -4951,34 +4988,45 @@ async function loadMessages() {
   if (!visibleMessages.length) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
   for (const message of visibleMessages) appendMessage(message);
 
-  // Read receipts are secondary; never delay showing the actual conversation for them.
-  if (privacySettings.read_receipts_enabled || conversation.is_group) {
-    void (async () => {
-      const incomingIds=visibleMessages.filter(message => message.sender_id !== currentUser.id && !message.is_deleted).map(message => message.id);
-      if(incomingIds.length){
-        const receipts=await supabase.from("message_reads").upsert(incomingIds.map(message_id=>({message_id,user_id:currentUser.id})),{onConflict:"message_id,user_id",ignoreDuplicates:true});
-        if(receipts.error)console.warn("تعذر تسجيل قراءة الرسائل:",receipts.error.message);
-      }
-      if (!isCurrent()) return;
-      const ownIds=visibleMessages.filter(message => message.sender_id === currentUser.id).map(message => message.id);
-      if(!ownIds.length)return;
-      let readQuery=supabase.from("message_reads").select("message_id,user_id").in("message_id",ownIds);
-      if(!conversation.is_group&&partner)readQuery=readQuery.eq("user_id",partner.id);
-      const readRows=await readQuery;
-      if (!isCurrent() || readRows.error) return;
-      const counts=new Map();
-      for(const row of readRows.data||[])counts.set(row.message_id,(counts.get(row.message_id)||0)+1);
-      for(const message of visibleMessages){
-        if(message.sender_id!==currentUser.id)continue;
-        const count=counts.get(message.id)||0;
-        const node=messagesList.querySelector('[data-message-id="'+message.id+'"]');
-        const footer=node?.querySelector(".message-footer");
-        if(!footer||footer.querySelector(".message-read-state"))continue;
-        if(conversation.is_group&&count>0)footer.append(safeText("span","message-read-state","مقروء من "+count));
-        else if(!conversation.is_group&&count>0)footer.append(safeText("span","message-read-state","مقروء"));
-      }
-    })().catch(error=>console.warn("Read receipt refresh:",error));
-  }
+  // Delivery receipts are independent of read-receipt privacy and never block chat rendering.
+  void (async () => {
+    const incomingIds=visibleMessages.filter(message => message.sender_id !== currentUser.id && !message.is_deleted).map(message => message.id);
+    if(incomingIds.length){
+      const deliveries=await supabase.from("message_deliveries").upsert(incomingIds.map(message_id=>({message_id,user_id:currentUser.id})),{onConflict:"message_id,user_id",ignoreDuplicates:true});
+      if(deliveries.error)console.warn("تعذر تسجيل تسليم الرسائل:",deliveries.error.message);
+    }
+    if (!isCurrent()) return;
+    const ownIds=visibleMessages.filter(message => message.sender_id === currentUser.id).map(message => message.id);
+    if(!ownIds.length)return;
+    let deliveryQuery=supabase.from("message_deliveries").select("message_id,user_id").in("message_id",ownIds);
+    if(!conversation.is_group&&partner)deliveryQuery=deliveryQuery.eq("user_id",partner.id);
+    const deliveryRows=await deliveryQuery;
+    if (!isCurrent() || deliveryRows.error) return;
+    const deliveredCounts=new Map();
+    for(const row of deliveryRows.data||[])deliveredCounts.set(row.message_id,(deliveredCounts.get(row.message_id)||0)+1);
+    for(const message of visibleMessages){
+      if(message.sender_id!==currentUser.id)continue;
+      const node=messagesList.querySelector('[data-message-id="'+message.id+'"]');
+      if(node)setOutgoingMessageStatus(node,deliveredCounts.get(message.id)||0,0,conversation.is_group);
+    }
+    if (!(privacySettings.read_receipts_enabled || conversation.is_group)) return;
+    if(incomingIds.length){
+      const receipts=await supabase.from("message_reads").upsert(incomingIds.map(message_id=>({message_id,user_id:currentUser.id})),{onConflict:"message_id,user_id",ignoreDuplicates:true});
+      if(receipts.error)console.warn("تعذر تسجيل قراءة الرسائل:",receipts.error.message);
+    }
+    if (!isCurrent()) return;
+    let readQuery=supabase.from("message_reads").select("message_id,user_id").in("message_id",ownIds);
+    if(!conversation.is_group&&partner)readQuery=readQuery.eq("user_id",partner.id);
+    const readRows=await readQuery;
+    if (!isCurrent() || readRows.error) return;
+    const readCounts=new Map();
+    for(const row of readRows.data||[])readCounts.set(row.message_id,(readCounts.get(row.message_id)||0)+1);
+    for(const message of visibleMessages){
+      if(message.sender_id!==currentUser.id)continue;
+      const node=messagesList.querySelector('[data-message-id="'+message.id+'"]');
+      if(node)setOutgoingMessageStatus(node,deliveredCounts.get(message.id)||0,readCounts.get(message.id)||0,conversation.is_group);
+    }
+  })().catch(error=>console.warn("Delivery/read receipt refresh:",error));
 }
 cancelReplyButton.addEventListener("click", () => { replyingToMessage = null; replyingTo.hidden = true; messageInput.focus(); });
 $("#refresh-chat").addEventListener("click", () => { void loadMessages(); });
