@@ -32,7 +32,11 @@ for (const dialog of modalDialogs.filter(dialog => /\baria-modal=["']true["']/.t
     "Every modal dialog must have an accessible name");
 }
 
-for (const file of ["app.js", "tools.js", "channels.js", "communities.js"]) {
+const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
+assert.match(app, /function getTopModalDialog\\(/, "A topmost modal selector must be present");
+assert.match(app, /document\\.addEventListener\\("focusin"/, "Modal focus must be restored when it escapes");
+assert.match(app, /keepDialogFocusInside\\(activeDialog, event\\)/, "Tab focus must stay inside the topmost modal");
+for (const file of ["tools.js", "channels.js", "communities.js"]) {
   readFileSync(new URL("../" + file, import.meta.url), "utf8");
 }
 process.stdout.write("Static checks passed: JavaScript syntax, unique HTML IDs, and bottom-tab relationships.\n");
