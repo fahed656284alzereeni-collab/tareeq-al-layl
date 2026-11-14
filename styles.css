@@ -2765,3 +2765,11 @@ body.conversation-info-fullscreen #group-conversation-info-list .group-created-r
 .group-join-request-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .group-join-request-actions button{min-width:0}
 @media(max-width:420px){.group-join-request-actions{grid-template-columns:1fr}}
+
+/* Respect the native hidden state in conversation information. The legacy
+   fullscreen visibility rules above must not reveal the unused group/individual
+   name row, which otherwise duplicates the group title. */
+body.conversation-info-fullscreen .conversation-info-list [hidden] {
+  display: none !important;
+  visibility: hidden !important;
+}
