@@ -2283,3 +2283,35 @@ body.group-settings-open{overflow:hidden!important;overscroll-behavior:none!impo
   transform: none !important;
 }
 #group-settings-panel[hidden] { display: none !important; }
+
+
+/* Group invitation controls are displayed directly in group information. */
+body.conversation-info-fullscreen .group-invite-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
+  min-width: 0;
+}
+body.conversation-info-fullscreen .group-invite-actions input {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-raised);
+  color: var(--text);
+  font: inherit;
+  direction: ltr;
+  text-align: left;
+}
+body.conversation-info-fullscreen .group-invite-actions button {
+  width: 100%;
+  min-height: 48px;
+}
+body.conversation-info-fullscreen .group-invite-actions p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
