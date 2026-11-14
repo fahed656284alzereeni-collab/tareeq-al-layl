@@ -5367,12 +5367,10 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
     };
     const { error } = await supabase.from("group_settings").upsert(payload, { onConflict: "conversation_id" });
     if (error) throw error;
-    if (previousAddMembersBy !== payload.add_members_by && payload.add_members_by === "admins") {
-      groupInviteTokenCache.delete(conversationId);
-      if (activeConversation?.id === conversationId) {
-        const permissions = await getCurrentGroupPermissions();
-        if (activeConversation?.id === conversationId) await loadGroupInviteLink(conversationId, permissions.isAdmin);
-      }
+    groupInviteTokenCache.delete(conversationId);
+    if (activeConversation?.id === conversationId) {
+      const permissions = await getCurrentGroupPermissions();
+      if (activeConversation?.id === conversationId) await loadGroupInviteLink(conversationId, permissions.isAdmin);
     }
     groupSettingsSnapshot = getGroupSettingsSnapshot();
     updateGroupSettingsSaveButton();
