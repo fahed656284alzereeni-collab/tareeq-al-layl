@@ -2337,3 +2337,151 @@ body.conversation-info-fullscreen .group-invite-actions p {
 .startup-diagnostics-help,.startup-diagnostics-feedback{margin:0;line-height:1.7;color:var(--muted)}
 .startup-diagnostics-output{width:100%;min-height:150px;box-sizing:border-box;padding:10px;border:1px solid var(--border);border-radius:10px;background:var(--surface);color:var(--text);font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;direction:ltr;text-align:left;white-space:pre-wrap;overflow-wrap:anywhere}
 .startup-diagnostics button{width:100%;min-height:48px}
+
+
+/* WhatsApp-inspired group information overview: profile, invite, members and actions. */
+body.conversation-info-fullscreen #group-conversation-info-list.group-info-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(100%, 820px);
+  margin: 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+body.conversation-info-fullscreen #conversation-info-name-card {
+  width: min(100%, 820px);
+  margin: 0 auto;
+  padding: 16px 12px 6px;
+  border: 0;
+  background: transparent;
+  text-align: center;
+}
+body.conversation-info-fullscreen #conversation-info-name-card > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+body.conversation-info-fullscreen #conversation-info-name-card .conversation-info-label {
+  font-size: .9rem;
+}
+body.conversation-info-fullscreen #conversation-info-name-card .conversation-info-value {
+  font-size: clamp(1.25rem, 4vw, 1.7rem);
+  font-weight: 850;
+  text-align: center;
+}
+.group-info-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface-raised);
+  text-align: center;
+}
+.group-info-photo-row:not([hidden]) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.group-info-photo {
+  display: block;
+  width: clamp(104px, 24vw, 144px);
+  height: clamp(104px, 24vw, 144px);
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+.group-info-description-row:not([hidden]) {
+  display: grid;
+  gap: 5px;
+  max-width: 680px;
+  line-height: 1.7;
+}
+.group-info-description-row .conversation-info-label { color: var(--muted); font-size: .9rem; }
+.group-info-description-row .conversation-info-value { overflow-wrap: anywhere; }
+.group-info-card {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface-raised);
+}
+.group-invite-card:not([hidden]) { display: block; }
+.group-invite-card > .conversation-info-label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 800;
+}
+.group-invite-actions { display: grid; gap: 10px; min-width: 0; }
+.group-invite-actions input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 48px;
+  padding: 11px 13px;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  direction: ltr;
+  text-align: left;
+}
+.group-invite-actions button { width: 100%; min-height: 48px; }
+.group-invite-actions p { margin: 0; color: var(--muted); line-height: 1.6; overflow-wrap: anywhere; }
+.group-members-section { display: flex; flex-direction: column; gap: 12px; }
+.group-members-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 850;
+}
+#group-member-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  min-height: 30px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.group-members-section > #group-add-members-button { width: 100%; min-height: 48px; }
+.group-members-section .group-member-list { width: 100%; max-width: none; margin: 0; }
+.group-members-section .group-member-list > li {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.group-info-membership-actions {
+  display: grid;
+  grid-template-columns: minmax(0,1fr);
+  gap: 10px;
+}
+.group-info-membership-actions > button { width: 100%; min-height: 50px; }
+.group-created-row:not([hidden]) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+@media (min-width: 700px) {
+  .group-info-membership-actions { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+:root[data-theme="light"] .group-info-profile,
+:root[data-theme="light"] .group-info-card { background: #fff; }
