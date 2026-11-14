@@ -28,7 +28,7 @@ for (const tab of tabs) {
     assert.ok(panel.includes('role="main"') || panel.includes("role='main'"), "The chats workspace must remain the main landmark");
     assert.ok(!panel.includes('aria-labelledby="home-tab"') && !panel.includes("aria-labelledby='home-tab'"), "The chats workspace must not repeat the Chats tab label");
   } else {
-    assert.match(panel, /\\brole=["']tabpanel["']/, `Tab target must expose role=tabpanel: ${panelId}`);
+    assert.ok(panel.includes('role="tabpanel"') || panel.includes("role='tabpanel'"), `Tab target must expose role=tabpanel: ${panelId}`);
     assert.ok(panel.includes(`aria-labelledby="${tabId}"`) || panel.includes(`aria-labelledby='${tabId}'`),
       `Tab panel must be labelled by its tab: ${panelId}`);
   }
