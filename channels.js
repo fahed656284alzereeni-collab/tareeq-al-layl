@@ -51,6 +51,12 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     setText(createButton, "إنشاء قناة", "Create channel");
     setText(closeButton, "إغلاق", "Close");
     setText(cancelCreateButton, "إلغاء", "Cancel");
+    setText($("#channels-create-view .channels-title"), "إنشاء قناة", "Create channel");
+    setText($("#channel-post-form label"), "تحديث جديد", "New update");
+    setText($("#channel-create-form label[for='channel-name-input']"), "اسم القناة", "Channel name");
+    setText($("#channel-create-form label[for='channel-description-input']"), "وصف القناة", "Channel description");
+    setAttr(list, "aria-label", "القنوات العامة", "Public channels");
+    setAttr(postsList, "aria-label", "تحديثات القناة", "Channel updates");
     setText($("#channel-create-save"), "حفظ القناة", "Save channel");
     setText(detailBack, "العودة إلى القنوات", "Back to channels");
     setText($("#channel-post-submit"), "نشر التحديث", "Publish update");
