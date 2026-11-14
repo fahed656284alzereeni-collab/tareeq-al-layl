@@ -545,3 +545,9 @@ button:disabled { opacity: .48; cursor: not-allowed; }
 .community-edit-form input:focus-visible,.community-edit-form textarea:focus-visible,
 .community-post-edit-form textarea:focus-visible { outline:3px solid var(--mx-brand); outline-offset:3px; }
 .community-edit-form button:disabled,.community-post-edit-form button:disabled { opacity:.55; cursor:not-allowed; }
+
+.view-once-option { display:flex; align-items:center; gap:10px; min-height:44px; padding:10px 12px; border:1px solid var(--mx-line); border-radius:12px; background:var(--mx-panel-soft); color:var(--mx-text); }
+.view-once-option input { width:20px; height:20px; min-height:20px; margin:0; accent-color:var(--mx-brand); flex:0 0 auto; }
+.view-once-option span { line-height:1.5; }
+.view-once-status { margin:8px 0; color:var(--mx-muted); font-size:.9rem; }
+.view-once-open-button { min-height:44px; }
