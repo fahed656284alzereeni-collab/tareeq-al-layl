@@ -296,7 +296,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
       .select("conversation_id").eq("user_id", user.id).eq("role", "admin");
     if (memberships.error) throw memberships.error;
     const ids = [...new Set((memberships.data || []).map(row => row.conversation_id))];
-    if (!ids.length) { availableCommunityGroups = []; return; }
+    if (!ids.length) { availableCommunityGroups = linkedCommunityGroups.map(group => ({ id: group.conversation_id, group_name: group.group_name, existingOnly: true })); return; }
     const groups = await supabase.from("conversations").select("id,group_name")
       .eq("is_group", true).in("id", ids).order("group_name", { ascending: true });
     if (groups.error) throw groups.error;
