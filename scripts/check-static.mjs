@@ -22,9 +22,16 @@ for (const tab of tabs) {
   const panelId = tab.match(/\baria-controls=["']([^"']+)["']/)?.[1];
   const panel = panelTags.find(tag => new RegExp("\\bid=[\"']" + panelId + "[\"']").test(tag));
   assert.ok(panel, `Tab panel not found: ${panelId}`);
-  assert.match(panel, /\brole=["']tabpanel["']/, `Tab target must expose role=tabpanel: ${panelId}`);
-  assert.ok(panel.includes(`aria-labelledby="${tabId}"`) || panel.includes(`aria-labelledby='${tabId}'`),
-    `Tab panel must be labelled by its tab: ${panelId}`);
+  if (panelId === "workspace") {
+    // The chats workspace is the main landmark. Labelling this large
+    // container with the Chats tab repeats its name in VoiceOver.
+    assert.match(panel, /\\brole=["']main["']/, "The chats workspace must remain the main landmark");
+    assert.doesNotMatch(panel, /\\baria-labelledby=["']home-tab["']/, "The chats workspace must not repeat the Chats tab label");
+  } else {
+    assert.match(panel, /\\brole=["']tabpanel["']/, `Tab target must expose role=tabpanel: ${panelId}`);
+    assert.ok(panel.includes(`aria-labelledby="${tabId}"`) || panel.includes(`aria-labelledby='${tabId}'`),
+      `Tab panel must be labelled by its tab: ${panelId}`);
+  }
 }
 const modalDialogs = [...html.matchAll(/<(?:div|section|aside|form)\b[^>]*\brole=["']dialog["'][^>]*>/gi)].map(match => match[0]);
 for (const dialog of modalDialogs.filter(dialog => /\baria-modal=["']true["']/.test(dialog))) {
