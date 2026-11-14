@@ -6641,13 +6641,20 @@ function openForwardMessageDialog(message, menu, toggle) {
 async function renderViewOnceAttachment(message, attachment, host, fileName) {
   const english = document.documentElement.lang === "en";
   const label = (ar, en) => english ? en : ar;
-  const result = await supabase.from("message_view_once_views")
-    .select("viewer_id,viewed_at").eq("message_id", message.id);
-  if (result.error) {
+  if (message._viewOnceViewsError) {
     host.append(safeText("p", "attachment-unavailable", label("تعذر التحقق من حالة العرض مرة واحدة.", "Could not check view-once status.")));
     return;
   }
-  const views = result.data || [];
+  let views = message._viewOnceViews;
+  if (!Array.isArray(views)) {
+    const result = await supabase.from("message_view_once_views")
+      .select("viewer_id,viewed_at").eq("message_id", message.id);
+    if (result.error) {
+      host.append(safeText("p", "attachment-unavailable", label("تعذر التحقق من حالة العرض مرة واحدة.", "Could not check view-once status.")));
+      return;
+    }
+    views = result.data || [];
+  }
   if (message.sender_id === currentUser.id) {
     host.append(safeText("p", "view-once-status", views.length
       ? label("تم فتح الوسائط مرة واحدة.", "This media has been opened.")
@@ -6666,7 +6673,7 @@ async function renderViewOnceAttachment(message, attachment, host, fileName) {
     if (button.disabled) return;
     button.disabled = true;
     try {
-      const signed = await supabase.storage.from("mersal-attachments").createSignedUrl(attachment.path, 45);
+      const signed = await supabase.storage.from("mersal-attachments").createSignedUrl(attachment.path, 300);
       if (signed.error || !signed.data?.signedUrl) throw signed.error || new Error(label("تعذر تجهيز الوسائط.", "Could not prepare the media."));
       const marked = await supabase.from("message_view_once_views")
         .insert({ message_id: message.id, viewer_id: currentUser.id });
@@ -6933,6 +6940,23 @@ async function loadMessages() {
   }
   const hiddenIds = new Set(hiddenRows.map(row => row.message_id));
   const visibleMessages = (data || []).filter(message => !hiddenIds.has(message.id));
+  const viewOnceMessages = visibleMessages.filter(message => message.view_once);
+  if (viewOnceMessages.length) {
+    const viewOnceResult = await supabase.from("message_view_once_views")
+      .select("message_id,viewer_id,viewed_at")
+      .in("message_id", viewOnceMessages.map(message => message.id));
+    if (!isCurrent()) return;
+    if (viewOnceResult.error) {
+      viewOnceMessages.forEach(message => { message._viewOnceViewsError = true; });
+    } else {
+      const groupedViews = new Map();
+      for (const view of viewOnceResult.data || []) {
+        if (!groupedViews.has(view.message_id)) groupedViews.set(view.message_id, []);
+        groupedViews.get(view.message_id).push(view);
+      }
+      viewOnceMessages.forEach(message => { message._viewOnceViews = groupedViews.get(message.id) || []; });
+    }
+  }
   if (!isCurrent()) return;
   if (!visibleMessages.length) messagesList.append(safeText("li", "empty-item", "هذه بداية المحادثة. أرسل أول رسالة."));
   for (const message of visibleMessages) appendMessage(message);
