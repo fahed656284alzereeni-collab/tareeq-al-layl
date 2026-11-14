@@ -711,11 +711,32 @@
         <button id="close-new-chat" type="button" class="quiet-button">إغلاق</button>
         <button id="new-private-chat" type="button" class="primary-button">محادثة جديدة</button>
         <button id="new-group-chat" type="button" class="quiet-button">مجموعة جديدة</button>
+        <button id="new-broadcast-list" type="button" class="quiet-button">قائمة بث جديدة</button>
         <div id="private-chat-view" hidden><label for="people-search">ابحث عن شخص</label><input id="people-search" type="search" placeholder="اكتب الاسم للبحث" autocomplete="off"><ul id="people-list" class="people-list" aria-label="الأشخاص"></ul></div>
         <div id="group-chat-view" hidden><label for="group-name">اسم المجموعة</label><input id="group-name" type="text" maxlength="60" placeholder="اكتب اسم المجموعة"><label for="new-group-description">وصف المجموعة (اختياري)</label><textarea id="new-group-description" rows="3" maxlength="500" placeholder="أضف وصفًا يعرّف بالمجموعة"></textarea><p class="settings-help">يمكن أن يصل الوصف إلى 500 حرف.</p><div class="group-photo-editor group-create-photo"><img id="new-group-photo-preview" class="group-photo-preview" alt="معاينة صورة المجموعة المحددة" hidden><input id="new-group-photo-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden aria-label="اختيار صورة للمجموعة عند إنشائها"><button id="new-group-photo-choose" type="button" class="quiet-button">إضافة صورة للمجموعة (اختياري)</button><button id="new-group-photo-remove" type="button" class="quiet-button" hidden>إزالة الصورة المحددة</button><p class="settings-help">الصيغ المدعومة: JPG وPNG وWebP وGIF. الحد الأقصى لصورة المجموعة: 50 ميغابايت.</p></div><label for="group-people-search">ابحث عن أعضاء</label><input id="group-people-search" type="search" placeholder="اكتب اسم الشخص" autocomplete="off"><ul id="group-people-list" class="people-list" aria-label="اختيار أعضاء المجموعة"></ul><button id="create-group-button" type="button" class="primary-button">إنشاء المجموعة</button></div>
       </div>
     </section>
-  <section id="voice-call-panel" class="voice-call-panel" role="dialog" aria-modal="true" aria-label="المكالمة الصوتية" hidden>
+  <section id="broadcast-panel" class="broadcast-panel" role="dialog" aria-modal="true" aria-label="قوائم البث" hidden>
+      <div class="broadcast-card">
+        <button id="close-broadcast-panel" type="button" class="quiet-button">إغلاق</button>
+        <div id="broadcast-lists-view">
+          <p class="broadcast-panel-title">قوائم البث</p>
+          <button id="create-broadcast-list" type="button" class="primary-button">إنشاء قائمة بث</button>
+          <ul id="broadcast-lists" class="broadcast-lists" aria-label="قوائم البث"></ul>
+        </div>
+        <div id="broadcast-create-view" hidden>
+          <label for="broadcast-list-name">اسم قائمة البث</label>
+          <input id="broadcast-list-name" type="text" maxlength="60" placeholder="اكتب اسم القائمة">
+          <label for="broadcast-people-search">ابحث عن مستلمين</label>
+          <input id="broadcast-people-search" type="search" placeholder="اكتب اسم الشخص">
+          <p id="broadcast-selected-count" role="status" aria-live="polite">لم يتم اختيار مستلمين</p>
+          <ul id="broadcast-people-list" class="broadcast-people-list" aria-label="اختيار مستلمي قائمة البث"></ul>
+          <button id="save-broadcast-list" type="button" class="primary-button">حفظ قائمة البث</button>
+          <button id="cancel-broadcast-create" type="button" class="quiet-button">إلغاء</button>
+        </div>
+      </div>
+    </section>
+<section id="voice-call-panel" class="voice-call-panel" role="dialog" aria-modal="true" aria-label="المكالمة الصوتية" hidden>
     <div class="voice-call-card">
       <p id="voice-call-status" role="status" aria-live="polite">جارٍ تجهيز المكالمة…</p>
       <div id="voice-call-video-grid" class="voice-call-video-grid" hidden>
