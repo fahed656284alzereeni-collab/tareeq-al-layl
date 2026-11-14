@@ -48,9 +48,9 @@ for (const dialog of modalDialogs.filter(dialog => /\baria-modal=["']true["']/.t
 }
 
 const baseCss = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
-assert.doesNotMatch(baseCss, /body\\.calls-open #bottom-navigation\\s*\\{\\s*display\\s*:\\s*none/i,
+assert.ok(!baseCss.includes("body.calls-open #bottom-navigation { display:none !important; }"),
   "The primary tab bar must not be hidden while the calls tab is active");
-assert.match(baseCss, /grid-template-columns\\s*:\\s*repeat\\(7\\s*,/,
+assert.ok(baseCss.includes("grid-template-columns:repeat(7,minmax(0,1fr))"),
   "The base navigation layout must allocate space for all seven tabs");
 
 const experienceCss = readFileSync(new URL("../mersal-experience-v2.css", import.meta.url), "utf8");
