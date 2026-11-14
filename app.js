@@ -3152,20 +3152,14 @@ try {
 } catch (channelsInitializationError) {
   console.error("Mersal channels initialization failed; continuing core startup:", channelsInitializationError);
 }
-openChannelsButton?.addEventListener("click", () => {
-  closeNewChat();
-  mersalChannels.open(newChatButton);
-});
+openChannelsButton?.addEventListener("click", openChannelsTab);
 let mersalCommunities = { open() {}, close() {} };
 try {
   mersalCommunities = initMersalCommunities({ supabase, getCurrentUser: () => currentUser, announce, safeText });
 } catch (communitiesInitializationError) {
   console.error("Mersal communities initialization failed; continuing core startup:", communitiesInitializationError);
 }
-openCommunitiesButton?.addEventListener("click", () => {
-  closeNewChat();
-  mersalCommunities.open(newChatButton);
-});
+openCommunitiesButton?.addEventListener("click", openCommunitiesTab);
 settingsLanguageSelect.addEventListener("change", () => {
   applyMersalLanguage(settingsLanguageSelect.value);
   updateChatPartnerPresence();
