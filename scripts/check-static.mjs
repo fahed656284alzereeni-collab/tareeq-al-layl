@@ -20,7 +20,7 @@ const panelTags = [...html.matchAll(/<(?:div|section)\b[^>]*>/g)].map(match => m
 for (const tab of tabs) {
   const tabId = tab.match(/\bid=["']([^"']+)["']/)?.[1];
   const panelId = tab.match(/\baria-controls=["']([^"']+)["']/)?.[1];
-  const panel = panelTags.find(tag => new RegExp("\\bid=[\"']" + panelId + "[\"']").test(tag));
+  const panel = panelTags.find(tag => tag.includes(`id="${panelId}"`) || tag.includes(`id='${panelId}'`));
   assert.ok(panel, `Tab panel not found: ${panelId}`);
   if (panelId === "workspace") {
     // The chats workspace is the main landmark. Labelling this large
