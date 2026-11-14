@@ -924,6 +924,33 @@ const mersalTranslations = {
   "لا توجد نتائج مطابقة.": "No matching results.",
   "تعذر تحميل قائمة المكالمات.": "Could not load the calls list.",
   "لا يمكن الاتصال بهذا الشخص بسبب الحظر.": "You cannot call this person because of blocking.",
+  "تفاعلات الرسالة":"Message reactions",
+  "إضافة تفاعل":"Add a reaction",
+  "إزالة التفاعل":"Remove reaction",
+  "تمييز بنجمة":"Star message",
+  "إزالة النجمة":"Remove star",
+  "تثبيت الرسالة":"Pin message",
+  "إلغاء تثبيت الرسالة":"Unpin message",
+  "إعادة توجيه":"Forward",
+  "إعادة توجيه الرسالة":"Forward message",
+  "اختر محادثة لإعادة التوجيه":"Choose a conversation to forward to",
+  "إغلاق نافذة إعادة التوجيه":"Close forward dialog",
+  "تمت إعادة توجيه الرسالة":"Message forwarded",
+  "تعذر إعادة توجيه الرسالة":"Could not forward the message",
+  "لا يمكن إعادة توجيه استطلاع أو مرفق بهذه الطريقة حاليًا.":"Polls and attachments cannot be forwarded this way yet.",
+  "لا توجد محادثات أخرى لإعادة التوجيه إليها.":"There are no other conversations to forward to.",
+  "الرسالة المميزة بنجمة":"Starred message",
+  "رسالة مثبتة":"Pinned message",
+  "تعذر تحميل تفاعلات الرسالة.":"Could not load message reactions.",
+  "تعذر حفظ التفاعل.":"Could not save the reaction.",
+  "تعذر تحديث النجمة.":"Could not update the star.",
+  "تعذر تثبيت الرسالة.":"Could not pin the message.",
+  "تعذر إلغاء تثبيت الرسالة.":"Could not unpin the message.",
+  "تمت إضافة النجمة.":"Message starred.",
+  "تمت إزالة النجمة.":"Star removed.",
+  "تم تثبيت الرسالة.":"Message pinned.",
+  "تم إلغاء تثبيت الرسالة.":"Message unpinned.",
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
@@ -5800,6 +5827,164 @@ async function refreshOutgoingMessageStatus(messageId, conversation = activeConv
   }
 }
 
+async function refreshMessageInteractions(message, item) {
+  if (!message?.id || !item?.isConnected || !currentUser || !activeConversation) return;
+  const conversationId = activeConversation.id;
+  const [reactionsResult, starResult, pinResult] = await Promise.all([
+    supabase.from("message_reactions").select("emoji,user_id").eq("message_id", message.id),
+    supabase.from("starred_messages").select("message_id").eq("message_id", message.id).eq("user_id", currentUser.id).maybeSingle(),
+    supabase.from("message_pins").select("message_id").eq("message_id", message.id).eq("conversation_id", conversationId).maybeSingle()
+  ]);
+  if (!item.isConnected || activeConversation?.id !== conversationId) return;
+  if (reactionsResult.error || starResult.error || pinResult.error) {
+    console.warn("Message interaction refresh failed:", reactionsResult.error || starResult.error || pinResult.error);
+    return;
+  }
+  const reactionHost = item.querySelector(".message-reactions");
+  if (reactionHost) {
+    const counts = new Map();
+    const own = new Set();
+    for (const row of reactionsResult.data || []) {
+      const current = counts.get(row.emoji) || { count: 0, mine: false };
+      current.count++;
+      if (row.user_id === currentUser.id) current.mine = true;
+      counts.set(row.emoji, current);
+      if (row.user_id === currentUser.id) own.add(row.emoji);
+    }
+    const common = ["👍", "❤️", "😂", "😮", "😢", "🙏"];
+    const emojis = [...new Set([...common.filter(emoji => counts.has(emoji)), ...counts.keys()])];
+    reactionHost.replaceChildren();
+    for (const emoji of emojis) {
+      const info = counts.get(emoji) || { count: 0, mine: false };
+      const button = safeText("button", "message-reaction-button", emoji + (info.count > 1 ? " " + info.count : ""));
+      button.type = "button";
+      button.setAttribute("aria-label", emoji + (info.count ? " " + info.count : "") + (info.mine ? "، إزالة تفاعلك" : "، إضافة تفاعلك"));
+      button.setAttribute("aria-pressed", String(info.mine));
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try {
+          const result = info.mine
+            ? await supabase.from("message_reactions").delete().eq("message_id", message.id).eq("user_id", currentUser.id).eq("emoji", emoji)
+            : await supabase.from("message_reactions").insert({ message_id: message.id, user_id: currentUser.id, emoji });
+          if (result.error) throw result.error;
+          await refreshMessageInteractions(message, item);
+        } catch (error) {
+          announce("تعذر حفظ التفاعل: " + (error.message || ""), "error");
+          button.disabled = false;
+        }
+      });
+      reactionHost.append(button);
+    }
+  }
+  item.classList.toggle("message-starred-by-me", Boolean(starResult.data));
+  item.classList.toggle("message-pinned", Boolean(pinResult.data));
+  const indicators = item.querySelector(".message-state-indicators");
+  if (indicators) {
+    indicators.replaceChildren();
+    if (starResult.data) indicators.append(safeText("span", "message-state-indicator starred-indicator", "★ رسالة مميزة بنجمة"));
+    if (pinResult.data) indicators.append(safeText("span", "message-state-indicator pinned-indicator", "📌 رسالة مثبتة"));
+    indicators.hidden = !indicators.childNodes.length;
+  }
+}
+async function toggleMessageStar(message, item, menu, toggle) {
+  const existing = await supabase.from("starred_messages").select("message_id")
+    .eq("message_id", message.id).eq("user_id", currentUser.id).maybeSingle();
+  if (existing.error) { announce("تعذر تحديث النجمة: " + existing.error.message, "error"); return; }
+  const result = existing.data
+    ? await supabase.from("starred_messages").delete().eq("message_id", message.id).eq("user_id", currentUser.id)
+    : await supabase.from("starred_messages").insert({ message_id: message.id, user_id: currentUser.id });
+  if (result.error) { announce("تعذر تحديث النجمة: " + result.error.message, "error"); return; }
+  await refreshMessageInteractions(message, item);
+  closeMessageOptions(menu, toggle);
+  announce(existing.data ? "تمت إزالة النجمة." : "تمت إضافة النجمة.", "success");
+}
+async function toggleMessagePin(message, item, menu, toggle) {
+  const conversationId = activeConversation?.id;
+  if (!conversationId) return;
+  const existing = await supabase.from("message_pins").select("message_id")
+    .eq("message_id", message.id).eq("conversation_id", conversationId).maybeSingle();
+  if (existing.error) { announce("تعذر تثبيت الرسالة: " + existing.error.message, "error"); return; }
+  const result = existing.data
+    ? await supabase.from("message_pins").delete().eq("message_id", message.id).eq("conversation_id", conversationId)
+    : await supabase.from("message_pins").insert({ message_id: message.id, conversation_id: conversationId, pinned_by: currentUser.id });
+  if (result.error) {
+    announce((existing.data ? "تعذر إلغاء تثبيت الرسالة: " : "تعذر تثبيت الرسالة: ") + result.error.message, "error");
+    return;
+  }
+  await refreshMessageInteractions(message, item);
+  closeMessageOptions(menu, toggle);
+  announce(existing.data ? "تم إلغاء تثبيت الرسالة." : "تم تثبيت الرسالة.", "success");
+}
+function openForwardMessageDialog(message, menu, toggle) {
+  const rawBody = String(message?.body || "");
+  if (parsePollMessageBody(rawBody) || rawBody.includes("MERSAL_ATTACHMENT:")) {
+    announce("لا يمكن إعادة توجيه استطلاع أو مرفق بهذه الطريقة حاليًا.", "error");
+    closeMessageOptions(menu, toggle);
+    return;
+  }
+  const destinations = (conversations || []).filter(conversation => conversation.id !== activeConversation?.id);
+  const english = document.documentElement.lang === "en";
+  const overlay = document.createElement("div");
+  overlay.className = "message-forward-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", english ? "Forward message" : "إعادة توجيه الرسالة");
+  const card = document.createElement("div");
+  card.className = "message-forward-card";
+  const title = safeText("p", "message-forward-title", english ? "Choose a conversation to forward to" : "اختر محادثة لإعادة التوجيه إليها");
+  const close = safeText("button", "quiet-button", english ? "Close" : "إغلاق");
+  close.type = "button";
+  close.addEventListener("click", () => { overlay.remove(); toggle.focus(); });
+  card.append(title, close);
+  if (!destinations.length) {
+    card.append(safeText("p", "message-forward-empty", english ? "There are no other conversations to forward to." : "لا توجد محادثات أخرى لإعادة التوجيه إليها."));
+  }
+  for (const conversation of destinations) {
+    const partnerId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
+    const person = conversation.is_group
+      ? null
+      : (callsProfileCache.get(partnerId) || null);
+    const label = conversation.is_group
+      ? (conversation.group_name || (english ? "Group" : "مجموعة"))
+      : (person?.display_name || (english ? "Private conversation" : "محادثة فردية"));
+    const button = safeText("button", "message-forward-destination", label);
+    button.type = "button";
+    button.addEventListener("click", async () => {
+      button.disabled = true;
+      try {
+        const prefix = english ? "Forwarded message:\n" : "رسالة مُعاد توجيهها:\n";
+        const { data, error } = await supabase.from("messages").insert({
+          conversation_id: conversation.id,
+          sender_id: currentUser.id,
+          body: prefix + getMessagePreviewText(rawBody)
+        }).select("id").single();
+        if (error) throw error;
+        overlay.remove();
+        closeMessageOptions(menu, toggle);
+        void loadConversations().catch(error => console.warn("Forwarded conversation refresh:", error));
+        if (data?.id) {
+          const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
+          if (pushError) console.warn("Forward push notification failed:", pushError.message);
+        }
+        announce(english ? "Message forwarded." : "تمت إعادة توجيه الرسالة.", "success");
+      } catch (error) {
+        button.disabled = false;
+        announce((english ? "Could not forward the message: " : "تعذر إعادة توجيه الرسالة: ") + (error.message || ""), "error");
+      }
+    });
+    card.append(button);
+  }
+  overlay.append(card);
+  overlay.addEventListener("click", event => {
+    if (event.target === overlay) { overlay.remove(); toggle.focus(); }
+  });
+  overlay.addEventListener("keydown", event => {
+    if (event.key === "Escape") { event.preventDefault(); overlay.remove(); toggle.focus(); }
+  });
+  document.body.append(overlay);
+  close.focus();
+  closeMessageOptions(menu, toggle);
+}
 function appendMessage(message) {
   if (!message || document.querySelector('[data-message-id="' + message.id + '"]')) return;
   messagesList.querySelectorAll(".empty-item").forEach(node => node.remove());
@@ -5930,10 +6115,27 @@ function appendMessage(message) {
   deleteEveryoneButton.disabled = message.sender_id !== currentUser.id;
   deleteEveryoneButton.setAttribute("aria-label", message.sender_id === currentUser.id ? "حذف هذه الرسالة لدى الجميع" : "حذف لدى الجميع، متاح لرسائلك أنت فقط");
   deleteEveryoneButton.addEventListener("click", () => { void deleteMessageForEveryone(message, item, menu, toggle); });
-  menu.append(closeButton, copyButton, replyButton, deleteMineButton, deleteEveryoneButton);
+  const starButton = safeText("button", "message-option-button", "تمييز بنجمة");
+  starButton.type = "button";
+  starButton.addEventListener("click", () => { void toggleMessageStar(message, item, menu, toggle); });
+  const pinButton = safeText("button", "message-option-button", "تثبيت الرسالة");
+  pinButton.type = "button";
+  pinButton.addEventListener("click", () => { void toggleMessagePin(message, item, menu, toggle); });
+  const forwardButton = safeText("button", "message-option-button", "إعادة توجيه");
+  forwardButton.type = "button";
+  forwardButton.addEventListener("click", () => openForwardMessageDialog(message, menu, toggle));
+  menu.append(closeButton, copyButton, replyButton, forwardButton, starButton, pinButton, deleteMineButton, deleteEveryoneButton);
   actions.append(toggle, menu);
   messageFooter.append(actions);
-  item.append(messageFooter);
+  const stateIndicators = document.createElement("div");
+  stateIndicators.className = "message-state-indicators";
+  stateIndicators.hidden = true;
+  const reactionHost = document.createElement("div");
+  reactionHost.className = "message-reactions";
+  reactionHost.setAttribute("role", "group");
+  reactionHost.setAttribute("aria-label", "تفاعلات الرسالة");
+  item.append(stateIndicators, reactionHost, messageFooter);
+  void refreshMessageInteractions(message, item);
   messagesList.append(item);
   if (pollHost) void renderConversationPoll(pollMessage.pollId, pollHost, message.id);
   messagesList.scrollTop = messagesList.scrollHeight;
