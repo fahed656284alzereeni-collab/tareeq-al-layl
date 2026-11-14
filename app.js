@@ -803,6 +803,20 @@ const mersalTranslations = {
   "إجمالي الأصوات: ": "Total votes: ",
   " · تصويتك: ": " · Your vote: ",
   " · انتهى الاستطلاع": " · Poll closed",
+  "إعدادات المجموعة": "Group settings",
+  "إغلاق إعدادات المجموعة": "Close group settings",
+  "الصلاحيات": "Permissions",
+  "من يستطيع إرسال الرسائل؟": "Who can send messages?",
+  "جميع الأعضاء": "All members",
+  "المشرفون فقط": "Admins only",
+  "من يستطيع إضافة أعضاء؟": "Who can add members?",
+  "يمكن للأعضاء الاطلاع على الصلاحيات الحالية. يقتصر تغييرها على مشرفي المجموعة.": "Members can view the current permissions. Only group admins can change them.",
+  "حفظ إعدادات المجموعة": "Save group settings",
+  "تم حفظ إعدادات المجموعة.": "Group settings saved.",
+  "تعذر تحميل إعدادات المجموعة.": "Could not load group settings.",
+  "تعذر حفظ إعدادات المجموعة.": "Could not save group settings.",
+  "تغيير اسم المجموعة ووصفها وصورتها متاح للمشرفين فقط.": "Only group admins can change the group name, description, and photo.",
+  "إعدادات المجموعة": "Group settings",
   "مجموعة": "Group",
   "الآلة الحاسبة": "Calculator",
   "المفكرة السريعة": "Quick notes",
@@ -1179,6 +1193,16 @@ const groupPhotoInput=$("#group-photo-input"),groupPhotoPreview=$("#group-photo-
 const groupInfoPhotoRow=$("#group-info-photo-row"),groupInfoPhoto=$("#group-info-photo"),groupInfoDescriptionRow=$("#group-info-description-row"),groupInfoDescription=$("#group-info-description");
 let groupDescriptionSavedValue=null,groupDescriptionSaveInProgress=false,selectedGroupPhotoFile=null,groupPhotoSavedPath=null,groupPhotoRemoveRequested=false,groupPhotoSaveInProgress=false,groupPhotoPreviewObjectUrl=null;
 const groupPhotoUrlCache=new Map();
+const groupSettingsOpenButton = $("#group-settings-open");
+const groupSettingsPanel = $("#group-settings-panel");
+const groupSettingsCloseButton = $("#group-settings-close");
+const groupSettingsSendSelect = $("#group-settings-send");
+const groupSettingsAddSelect = $("#group-settings-add");
+const groupSettingsSaveButton = $("#group-settings-save");
+let groupSettingsSnapshot = null;
+let groupSettingsSaving = false;
+let groupSettingsReturnFocus = null;
+
 const groupAddSearch = $("#group-add-search");
 const groupAddPeople = $("#group-add-people");
 const groupAddSelectedButton = $("#group-add-selected");
@@ -3723,6 +3747,7 @@ async function updateConversationInfo() {
   if (!isCurrent()) return;
 
   groupAddMembersButton.hidden = !isAdmin;
+  if (groupSettingsOpenButton) groupSettingsOpenButton.hidden = !isGroup;
   blockPersonButton.hidden = isGroup;
   conversationDeleteButton.hidden = false;
   conversationInfoNameLabel.textContent = isGroup ? "اسم المجموعة" : "اسم الشخص";
@@ -3846,6 +3871,87 @@ async function updateConversationInfo() {
   conversationInfoMuteButton.textContent = activeConversationMuted ? "تشغيل إشعارات المحادثة" : "كتم إشعارات المحادثة";
   if (isGroup && isCurrent()) await loadGroupManagement(conversationId);
 }
+
+function getGroupSettingsSnapshot() {
+  return JSON.stringify({
+    send_messages_by: groupSettingsSendSelect?.value || "everyone",
+    add_members_by: groupSettingsAddSelect?.value || "admins"
+  });
+}
+function updateGroupSettingsSaveButton() {
+  if (!groupSettingsSaveButton) return;
+  groupSettingsSaveButton.disabled = groupSettingsSaving || !groupSettingsSnapshot ||
+    getGroupSettingsSnapshot() === groupSettingsSnapshot ||
+    groupSettingsSendSelect.disabled;
+}
+async function openGroupSettings() {
+  if (!activeConversation?.is_group || !currentUser || !groupSettingsPanel) return;
+  groupSettingsReturnFocus = document.activeElement;
+  groupSettingsPanel.hidden = false;
+  groupSettingsPanel.setAttribute("aria-hidden", "false");
+  groupSettingsSendSelect.disabled = true;
+  groupSettingsAddSelect.disabled = true;
+  groupSettingsSaveButton.disabled = true;
+  try {
+    const [{ data, error }, permissions] = await Promise.all([
+      supabase.from("group_settings")
+        .select("send_messages_by,add_members_by")
+        .eq("conversation_id", activeConversation.id)
+        .maybeSingle(),
+      getCurrentGroupPermissions()
+    ]);
+    if (error) throw error;
+    if (!activeConversation?.is_group) return;
+    groupSettingsSendSelect.value = data?.send_messages_by || "everyone";
+    groupSettingsAddSelect.value = data?.add_members_by || "admins";
+    const canManage = Boolean(permissions.isAdmin);
+    groupSettingsSendSelect.disabled = !canManage;
+    groupSettingsAddSelect.disabled = !canManage;
+    groupSettingsSnapshot = getGroupSettingsSnapshot();
+    updateGroupSettingsSaveButton();
+    groupSettingsCloseButton.focus();
+  } catch (error) {
+    announce("تعذر تحميل إعدادات المجموعة." + (error?.message ? " " + error.message : ""), "error");
+    closeGroupSettings();
+  }
+}
+function closeGroupSettings() {
+  if (!groupSettingsPanel) return;
+  groupSettingsPanel.hidden = true;
+  groupSettingsPanel.setAttribute("aria-hidden", "true");
+  const target = groupSettingsReturnFocus?.isConnected ? groupSettingsReturnFocus : groupSettingsOpenButton;
+  groupSettingsReturnFocus = null;
+  target?.focus?.();
+}
+if (groupSettingsOpenButton) groupSettingsOpenButton.addEventListener("click", () => void openGroupSettings());
+if (groupSettingsCloseButton) groupSettingsCloseButton.addEventListener("click", closeGroupSettings);
+[groupSettingsSendSelect, groupSettingsAddSelect].forEach(control => {
+  control?.addEventListener("change", updateGroupSettingsSaveButton);
+});
+if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", async () => {
+  if (!activeConversation?.is_group || !currentUser || groupSettingsSaving || groupSettingsSendSelect.disabled) return;
+  groupSettingsSaving = true;
+  updateGroupSettingsSaveButton();
+  try {
+    const payload = {
+      conversation_id: activeConversation.id,
+      send_messages_by: groupSettingsSendSelect.value,
+      add_members_by: groupSettingsAddSelect.value,
+      updated_by: currentUser.id
+    };
+    const { error } = await supabase.from("group_settings").upsert(payload, { onConflict: "conversation_id" });
+    if (error) throw error;
+    groupSettingsSnapshot = getGroupSettingsSnapshot();
+    updateGroupSettingsSaveButton();
+    announce("تم حفظ إعدادات المجموعة.");
+  } catch (error) {
+    announce("تعذر حفظ إعدادات المجموعة." + (error?.message ? " " + error.message : ""), "error");
+  } finally {
+    groupSettingsSaving = false;
+    updateGroupSettingsSaveButton();
+  }
+});
+
 async function getCurrentGroupPermissions(){
   if(!activeConversation?.is_group||!currentUser)return {isOwner:false,isAdmin:false};
   const isOwner=activeConversation.user_one===currentUser.id;
