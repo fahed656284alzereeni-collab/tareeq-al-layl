@@ -4103,7 +4103,7 @@ async function openGroupMoreOptions(){
   }
 }
 function closeGroupMoreOptions(){
-  if(!groupMoreOptionsPanel)return;
+  if(!groupMoreOptionsPanel||groupMoreOptionsPanel.hidden)return;
   groupMoreOptionsPanel.hidden=true;
   groupMoreOptionsPanel.setAttribute("aria-hidden","true");
   if(groupSettingsInfoSection){
