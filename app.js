@@ -1396,16 +1396,23 @@ bottomNavigation?.addEventListener("keydown", event => {
   tabs[next]?.focus();
   tabs[next]?.click();
 });
-function returnToHomeTab() {
-  mersalTools.closeTool(false);
-  mersalChannels.close();
-  mersalCommunities.close();
-  if (settingsPanel && !settingsPanel.hidden) {
-    settingsPanel.hidden = true;
+function closeHelpSupportForNavigation() {
   if (helpSupportPanel) helpSupportPanel.hidden = true;
   document.body.classList.remove("help-support-open");
   if (supportRealtimeChannel) supabase.removeChannel(supportRealtimeChannel);
   supportRealtimeChannel = null;
+}
+function closeNewChatForNavigation() {
+  if (newChatPanel && !newChatPanel.hidden) closeNewChat();
+}
+function returnToHomeTab() {
+  mersalTools.closeTool(false);
+  mersalChannels.close();
+  mersalCommunities.close();
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
+  if (settingsPanel && !settingsPanel.hidden) {
+    settingsPanel.hidden = true;
     document.body.classList.remove("settings-open");
   }
   statusView.hidden = true;
@@ -1427,9 +1434,8 @@ function openChannelsTab() {
   if (callsView) callsView.hidden = true;
   statusView.hidden = true;
   document.body.classList.remove("tools-open", "calls-open", "status-open");
-  if (helpSupportPanel) helpSupportPanel.hidden = true;
-  document.body.classList.remove("help-support-open");
-  if (!newChatPanel.hidden) closeNewChat();
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
   setActiveBottomTab("channels");
   mersalChannels.open(channelsTabButton);
@@ -1443,9 +1449,8 @@ function openCommunitiesTab() {
   if (callsView) callsView.hidden = true;
   statusView.hidden = true;
   document.body.classList.remove("tools-open", "calls-open", "status-open");
-  if (helpSupportPanel) helpSupportPanel.hidden = true;
-  document.body.classList.remove("help-support-open");
-  if (!newChatPanel.hidden) closeNewChat();
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
   setActiveBottomTab("communities");
   mersalCommunities.open(communitiesTabButton);
@@ -1456,8 +1461,8 @@ function openCallsTab() {
   mersalCommunities.close();
   if (!currentUser) return;
   if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
-  if (helpSupportPanel) helpSupportPanel.hidden = true;
-  document.body.classList.remove("help-support-open");
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
   statusView.hidden = true;
   document.body.classList.remove("status-open");
   if (toolsView) toolsView.hidden = true;
@@ -1481,8 +1486,8 @@ function openToolsTab() {
     settingsPanel.hidden = true;
     document.body.classList.remove("settings-open");
   }
-  if (helpSupportPanel) helpSupportPanel.hidden = true;
-  document.body.classList.remove("help-support-open");
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
   statusView.hidden = true;
   document.body.classList.remove("status-open");
   if (document.body.classList.contains("chat-fullscreen") && backToChatsButton) backToChatsButton.click();
@@ -1501,6 +1506,8 @@ function openStatusTab() {
     settingsPanel.hidden = true;
     document.body.classList.remove("settings-open");
   }
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
   if (toolsView) toolsView.hidden = true;
   document.body.classList.remove("tools-open");
   if (callsView) callsView.hidden = true;
