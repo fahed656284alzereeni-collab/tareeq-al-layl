@@ -5920,10 +5920,10 @@ async function toggleMessagePin(message, item, menu, toggle) {
     .eq("message_id", message.id).eq("conversation_id", conversationId).maybeSingle();
   if (existing.error) { announce("تعذر تثبيت الرسالة: " + existing.error.message, "error"); return; }
   const result = existing.data
-    ? await supabase.from("message_pins").delete().eq("message_id", message.id).eq("conversation_id", conversationId)
+    ? await supabase.from("message_pins").delete().eq("message_id", message.id).eq("conversation_id", conversationId).select("message_id").maybeSingle()
     : await supabase.from("message_pins").insert({ message_id: message.id, conversation_id: conversationId, pinned_by: currentUser.id });
-  if (result.error) {
-    announce((existing.data ? "تعذر إلغاء تثبيت الرسالة: " : "تعذر تثبيت الرسالة: ") + result.error.message, "error");
+  if (result.error || (existing.data && !result.data)) {
+    announce((existing.data ? "تعذر إلغاء تثبيت الرسالة: " : "تعذر تثبيت الرسالة: ") + (result.error?.message || "يمكن لمن ثبّت الرسالة أو مشرف المجموعة إلغاء تثبيتها فقط."), "error");
     return;
   }
   await refreshMessageInteractions(message, item);
