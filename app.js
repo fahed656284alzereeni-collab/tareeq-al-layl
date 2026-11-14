@@ -1396,6 +1396,7 @@ function returnToHomeTab() {
   document.body.classList.remove("calls-open");
   setActiveBottomTab("home");
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
+  homeTabButton.focus();
 }
 function openCallsTab() {
   mersalTools.closeTool(false);
