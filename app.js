@@ -6852,15 +6852,15 @@ function appendMessage(message) {
   const closeButton = safeText("button", "message-option-button message-options-close", "إغلاق الخيارات");
   closeButton.type = "button";
   closeButton.addEventListener("click", () => closeMessageOptions(menu, toggle));
+  menu.addEventListener("keydown", event => {
+    if (event.key === "Escape") { event.preventDefault(); closeMessageOptions(menu, toggle); return; }
+    trapDialogTabKey(event, menu);
+  });
   toggle.addEventListener("click", () => {
     menu.hidden = false;
     menu.classList.add("is-open");
     menu.setAttribute("role", "dialog");
     menu.setAttribute("aria-modal", "true");
-    menu.addEventListener("keydown", event => {
-      if (event.key === "Escape") { event.preventDefault(); closeMessageOptions(menu, toggle); return; }
-      trapDialogTabKey(event, menu);
-    });
     toggle.setAttribute("aria-expanded", "true");
     document.body.append(menu);
     closeButton.focus();
@@ -7407,7 +7407,9 @@ pollComposerPanel.addEventListener("keydown", event => {
   if (event.key === "Escape") {
     event.preventDefault();
     closePollComposer();
+    return;
   }
+  trapDialogTabKey(event, pollComposerPanel);
 });
 pollComposerAddOption.addEventListener("click", () => {
   if (pollComposerOptionCount >= 10) return;
