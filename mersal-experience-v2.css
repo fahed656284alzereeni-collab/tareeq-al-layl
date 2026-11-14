@@ -305,3 +305,8 @@ button:disabled { opacity: .48; cursor: not-allowed; }
 .message-forward-destination:hover { background:var(--mx-panel-hover); border-color:#b9d8ca; }
 .message-forward-empty { color:var(--mx-muted); }
 :root[data-theme="dark"] .message-reaction-button { background:var(--mx-panel-soft); color:var(--mx-text); border-color:var(--mx-line); }
+
+.message-edited-label { color: var(--mx-muted); font-size: .72rem; }
+.message-starred-by-me .message-state-indicator.starred-indicator { background: #fff4cc; color: #775500; }
+.message-pinned .message-state-indicator.pinned-indicator { background: var(--mx-brand-soft); color: var(--mx-brand-strong); }
+:root[data-theme="dark"] .message-starred-by-me .message-state-indicator.starred-indicator { background: #493b19; color: #ffe39a; }
