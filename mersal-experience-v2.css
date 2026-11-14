@@ -698,3 +698,23 @@ body.calls-open .calls-view:not([hidden]) {
     --mersal-tabbar-height: calc(64px + env(safe-area-inset-bottom));
   }
 }
+
+
+/* Settings should occupy the full available screen area above the persistent tab bar. */
+#settings-panel {
+  padding: 0;
+  place-items: stretch;
+  overflow: hidden;
+}
+#settings-panel .settings-card {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
+}
