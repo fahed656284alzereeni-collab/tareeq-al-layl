@@ -21,6 +21,12 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
   const followButton = $("#channel-follow-toggle");
   const notificationButton = $("#channel-notifications-toggle");
   const deleteChannelButton = $("#channel-delete-button");
+  const editOpenButton = $("#channel-edit-open");
+  const editForm = $("#channel-edit-form");
+  const editNameInput = $("#channel-edit-name");
+  const editDescriptionInput = $("#channel-edit-description");
+  const editSaveButton = $("#channel-edit-save");
+  const editCancelButton = $("#channel-edit-cancel");
   const postForm = $("#channel-post-form");
   const postInput = $("#channel-post-input");
   const postsList = $("#channel-posts");
@@ -49,6 +55,11 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     setText(detailBack, "العودة إلى القنوات", "Back to channels");
     setText($("#channel-post-submit"), "نشر التحديث", "Publish update");
     setText(deleteChannelButton, "حذف القناة", "Delete channel");
+    setText(editOpenButton, "تعديل معلومات القناة", "Edit channel details");
+    setText($("#channel-edit-save"), "حفظ التعديلات", "Save changes");
+    setText(editCancelButton, "إلغاء", "Cancel");
+    setAttr(editNameInput, "aria-label", "اسم القناة", "Channel name");
+    setAttr(editDescriptionInput, "aria-label", "وصف القناة", "Channel description");
     setAttr(panel, "aria-label", "القنوات", "Channels");
     setAttr(closeButton, "aria-label", "إغلاق القنوات", "Close channels");
     setAttr(nameInput, "aria-label", "اسم القناة", "Channel name");
@@ -196,6 +207,8 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     notificationButton.hidden = own || !activeFollow;
     postForm.hidden = !own;
     deleteChannelButton.hidden = !own;
+    editOpenButton.hidden = !own;
+    editForm.hidden = true;
     localize();
     await renderPosts(channel.id);
     void startPostsRealtime(channel.id);
@@ -375,6 +388,69 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     postInput.value = "";
     await renderPosts(activeChannel.id);
     announce(t("تم نشر التحديث.", "Update published."));
+  });
+
+
+  editOpenButton.addEventListener("click", () => {
+    if (!activeChannel || activeChannel.owner_id !== getCurrentUser()?.id) return;
+    editNameInput.value = activeChannel.name || "";
+    editDescriptionInput.value = activeChannel.description || "";
+    editForm.hidden = false;
+    editOpenButton.hidden = true;
+    editSaveButton.disabled = true;
+    editNameInput.focus();
+  });
+
+  const updateEditSaveState = () => {
+    const changed = editNameInput.value.trim() !== (activeChannel?.name || "") ||
+      editDescriptionInput.value.trim() !== (activeChannel?.description || "");
+    editSaveButton.disabled = !changed || !editNameInput.value.trim() || editNameInput.value.trim().length > 80 ||
+      editDescriptionInput.value.trim().length > 500 || busy;
+  };
+  editNameInput.addEventListener("input", updateEditSaveState);
+  editDescriptionInput.addEventListener("input", updateEditSaveState);
+  editCancelButton.addEventListener("click", () => {
+    editForm.reset();
+    editForm.hidden = true;
+    editOpenButton.hidden = !activeChannel || activeChannel.owner_id !== getCurrentUser()?.id;
+    editOpenButton.focus();
+  });
+  editForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (!activeChannel || activeChannel.owner_id !== getCurrentUser()?.id || busy) return;
+    const name = editNameInput.value.trim();
+    const description = editDescriptionInput.value.trim();
+    if (!name || name.length > 80 || description.length > 500) {
+      announce(t("اسم القناة مطلوب حتى 80 حرفًا، والوصف حتى 500 حرف.", "A channel name is required (up to 80 characters); description is limited to 500."), "error");
+      editNameInput.focus();
+      return;
+    }
+    if (name === activeChannel.name && description === (activeChannel.description || "")) {
+      editSaveButton.disabled = true;
+      return;
+    }
+    busy = true;
+    editSaveButton.disabled = true;
+    const result = await supabase.from("channels")
+      .update({ name, description, updated_at: new Date().toISOString() })
+      .eq("id", activeChannel.id).eq("owner_id", getCurrentUser().id)
+      .select("id,owner_id,name,description,created_at,updated_at").maybeSingle();
+    busy = false;
+    if (result.error || !result.data) {
+      announce(t("تعذر حفظ معلومات القناة: ", "Could not save channel details: ") + (result.error?.message || t("لم يتم تحديث القناة.", "The channel was not updated.")), "error");
+      updateEditSaveState();
+      return;
+    }
+    activeChannel = { ...activeChannel, ...result.data };
+    const index = rows.findIndex(row => row.id === activeChannel.id);
+    if (index >= 0) rows[index] = { ...rows[index], ...result.data };
+    detailName.textContent = result.data.name;
+    detailDescription.textContent = result.data.description || t("لا يوجد وصف للقناة.", "No channel description.");
+    editForm.hidden = true;
+    editOpenButton.hidden = false;
+    renderList();
+    announce(t("تم تحديث معلومات القناة.", "Channel details updated."));
+    editOpenButton.focus();
   });
 
   deleteChannelButton.addEventListener("click", async () => {
