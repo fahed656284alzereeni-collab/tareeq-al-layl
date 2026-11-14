@@ -3981,6 +3981,21 @@ async function selectConversation(conversation, person) {
       event: "UPDATE", schema: "public", table: "messages",
       filter: "conversation_id=eq." + conversation.id
     }, () => { if(isCurrentSelection()) void loadMessages(); })
+    .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, payload => {
+      if (!isCurrentSelection()) return;
+      const messageId = payload.new?.message_id || payload.old?.message_id;
+      const item = messageId ? messagesList.querySelector('[data-message-id="' + messageId + '"]') : null;
+      if (item) {
+        const message = { id: messageId };
+        void refreshMessageInteractions(message, item);
+      }
+    })
+    .on("postgres_changes", { event: "*", schema: "public", table: "message_pins" }, payload => {
+      if (!isCurrentSelection()) return;
+      const messageId = payload.new?.message_id || payload.old?.message_id;
+      const item = messageId ? messagesList.querySelector('[data-message-id="' + messageId + '"]') : null;
+      if (item) void refreshMessageInteractions({ id: messageId }, item);
+    })
     .on("postgres_changes", { event: "*", schema: "public", table: "group_poll_votes" }, payload => {
       if (!isCurrentSelection()) return;
       const pollId = payload.new?.poll_id || payload.old?.poll_id;
@@ -5981,9 +5996,9 @@ function openForwardMessageDialog(message, menu, toggle) {
   overlay.addEventListener("keydown", event => {
     if (event.key === "Escape") { event.preventDefault(); overlay.remove(); toggle.focus(); }
   });
+  closeMessageOptions(menu, toggle);
   document.body.append(overlay);
   close.focus();
-  closeMessageOptions(menu, toggle);
 }
 function appendMessage(message) {
   if (!message || document.querySelector('[data-message-id="' + message.id + '"]')) return;
