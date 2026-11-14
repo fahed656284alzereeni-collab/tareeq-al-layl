@@ -859,6 +859,7 @@ const mersalTranslations = {
   "الموافقة على الانضمام": "Approve group join",
   "رفض طلب الانضمام": "Reject group join",
   "جارٍ تحميل الدعوة…": "Loading invitation…",
+  "جارٍ تحميل طلبات الانضمام…": "Loading join requests…",
   "مستخدم مرسال": "Mersal user",
   "إغلاق إعدادات المجموعة": "Close group settings",
   "الصلاحيات": "Permissions",
@@ -3939,15 +3940,17 @@ function closeGroupInvitePreview(clearQuery = true) {
   pendingGroupInvitePreview = null;
 }
 async function openJoinedGroupConversation(conversationId) {
-  await loadConversations();
-  const conversation = conversations.find(item => item.id === conversationId && item.is_group);
-  if (!conversation) throw new Error("Group membership is confirmed but the group could not be loaded.");
+  const { data: conversation, error } = await supabase.from("conversations")
+    .select("id,user_one,user_two,last_message_at,is_group,group_name,group_description,group_photo_path,created_at")
+    .eq("id", conversationId).eq("is_group", true).single();
+  if (error || !conversation) throw error || new Error("Group could not be loaded.");
   const partnerId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
   const person = { id: partnerId, display_name: conversation.group_name || "مجموعة" };
   await selectConversation(conversation, person);
   chatPartnerName.textContent = conversation.group_name || "مجموعة";
   chatPartnerPresence.textContent = "مجموعة";
   chatPartnerAccessible.setAttribute("aria-label", chatPartnerName.textContent + ", مجموعة");
+  void loadConversations().catch(loadError => console.warn("Could not refresh conversations after opening invite:", loadError));
 }
 async function showGroupInvitePreview(token, preview) {
   pendingGroupInviteToken = token;
@@ -3958,6 +3961,8 @@ async function showGroupInvitePreview(token, preview) {
   const count = Number(preview.member_count || 0);
   groupInvitePreviewCount.textContent = "عدد الأعضاء: " + new Intl.NumberFormat(document.documentElement.lang === "en" ? "en-US" : "ar-JO").format(count);
   groupInvitePreviewAvatar.replaceChildren();
+  const placeholder = safeText("span", "group-invite-preview-placeholder", document.documentElement.lang === "en" ? "M" : "م");
+  groupInvitePreviewAvatar.append(placeholder);
   if (preview.group_photo_path) {
     const avatar = document.createElement("span");
     avatar.className = "group-avatar group-invite-preview-photo";
@@ -3969,11 +3974,15 @@ async function showGroupInvitePreview(token, preview) {
     avatar.append(image);
     groupInvitePreviewAvatar.append(avatar);
     void resolveGroupPhotoUrl(preview.group_photo_path).then(url => {
-      if (url && image.isConnected) image.src = url;
-      else if (!url && avatar.isConnected) avatar.remove();
+      if (url && image.isConnected) {
+        image.src = url;
+        placeholder.hidden = true;
+      } else if (!url && avatar.isConnected) {
+        avatar.remove();
+      }
     });
   }
-  const isPending = preview.request_status === "pending";
+  const isPending = preview.request_status === "pending" && Boolean(preview.require_admin_approval);
   groupInvitePreviewStatus.textContent = isPending
     ? "طلبك قيد انتظار موافقة المشرف."
     : preview.require_admin_approval
@@ -3988,7 +3997,7 @@ async function showGroupInvitePreview(token, preview) {
   (isPending ? groupInvitePreviewCancelButton : groupInvitePreviewJoinButton).focus();
 }
 async function processPendingGroupInvite(){
-  if(pendingGroupInviteInProgress||!currentUser||!groupInvitePreviewPanel?.hidden===false)return;
+  if (pendingGroupInviteInProgress || !currentUser || (groupInvitePreviewPanel && !groupInvitePreviewPanel.hidden)) return;
   const params=new URLSearchParams(window.location.search);
   const token=params.get("group_invite");
   if(!token)return;
@@ -4390,7 +4399,7 @@ async function loadGroupJoinRequests(conversationId) {
   if (!groupJoinRequestsList || !groupJoinRequestsSection || !currentUser) return;
   if (activeConversation?.id !== conversationId) return;
   groupJoinRequestsList.replaceChildren();
-  groupJoinRequestsStatus.textContent = "جارٍ تحميل الدعوة…";
+  groupJoinRequestsStatus.textContent = "جارٍ تحميل طلبات الانضمام…";
   groupJoinRequestsRefreshButton.disabled = true;
   try {
     const { data, error } = await supabase.rpc("list_group_join_requests", { p_conversation_id: conversationId });
