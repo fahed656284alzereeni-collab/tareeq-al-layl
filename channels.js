@@ -186,7 +186,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     panel.hidden = false;
     showHome();
     void loadChannels().catch(error => setStatus("تعذر تحميل القنوات: " + (error.message || ""), "Could not load channels: " + (error.message || ""), true));
-    closeButton.focus();
+    title?.focus();
   }
 
   function close() {
