@@ -119,8 +119,11 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
   const languageObserver = new MutationObserver(records => {
     if (records.some(record => record.attributeName === "lang")) {
       localize();
-      if (!panel.hidden && !detailView.hidden && activeCommunity) void renderPosts(activeCommunity.id);
-      else if (!panel.hidden && !home.hidden) renderList();
+      if (!panel.hidden && !detailView.hidden && activeCommunity) {
+        void renderPosts(activeCommunity.id);
+        renderCommunityGroups();
+        if (!communityGroupsEditor.hidden) renderAvailableCommunityGroups();
+      } else if (!panel.hidden && !home.hidden) renderList();
     }
   });
   languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
@@ -297,7 +300,13 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     const groups = await supabase.from("conversations").select("id,group_name")
       .eq("is_group", true).in("id", ids).order("group_name", { ascending: true });
     if (groups.error) throw groups.error;
-    availableCommunityGroups = groups.data || [];
+    const combined = new Map((groups.data || []).map(group => [group.id, group]));
+    for (const linked of linkedCommunityGroups) {
+      if (!combined.has(linked.conversation_id)) {
+        combined.set(linked.conversation_id, { id: linked.conversation_id, group_name: linked.group_name, existingOnly: true });
+      }
+    }
+    availableCommunityGroups = [...combined.values()].sort((a, b) => String(a.group_name || "").localeCompare(String(b.group_name || "")));
   }
 
   function renderAvailableCommunityGroups() {
