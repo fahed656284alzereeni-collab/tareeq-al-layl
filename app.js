@@ -1012,6 +1012,10 @@ const mersalTranslations = {
   "تم اختيار مستلم":"recipient selected",
   "تم اختيار مستلمين":"recipients selected",
 
+  "حذف الرد":"Delete reply",
+  "تعذر حذف الرد: ":"Could not delete reply: ",
+  "تم حذف الرد.":"Reply deleted.",
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
@@ -3855,6 +3859,24 @@ async function renderStatusInteractions(row, own) {
         safeText("p", "status-reply-body", reply.body),
         safeText("time", "status-reply-time", new Intl.DateTimeFormat(english ? "en" : "ar-JO", { dateStyle: "short", timeStyle: "short" }).format(new Date(reply.created_at)))
       );
+      if (own || reply.sender_id === currentUser.id) {
+        const remove = safeText("button", "quiet-button status-reply-delete", english ? "Delete reply" : "حذف الرد");
+        remove.type = "button";
+        remove.setAttribute("aria-label", (english ? "Delete reply from " : "حذف رد ") + name);
+        remove.addEventListener("click", async () => {
+          remove.disabled = true;
+          const deleted = await supabase.from("status_replies").delete().eq("id", reply.id).select("id").maybeSingle();
+          if (deleted.error || !deleted.data) {
+            remove.disabled = false;
+            announce((english ? "Could not delete reply: " : "تعذر حذف الرد: ") + (deleted.error?.message || ""), "error");
+            return;
+          }
+          item.remove();
+          if (!repliesList.children.length) repliesList.append(safeText("li", "empty-item", english ? "No replies yet." : "لا توجد ردود بعد."));
+          announce(english ? "Reply deleted." : "تم حذف الرد.", "success");
+        });
+        item.append(remove);
+      }
       repliesList.append(item);
     }
   }
