@@ -2697,3 +2697,45 @@ body.conversation-info-fullscreen #group-conversation-info-list .group-created-r
     flex-direction: column;
   }
 }
+
+
+/* Group overview action bar: WhatsApp-like quick actions with responsive touch targets. */
+body.conversation-info-fullscreen #group-conversation-info-list .group-info-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 9px;
+  width: 100%;
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-info-actions > button {
+  min-width: 0;
+  min-height: 54px;
+  padding: 9px 7px;
+  margin: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-info-profile {
+  gap: 16px;
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-invite-card {
+  order: 2;
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-members-section {
+  order: 3;
+}
+body.conversation-info-fullscreen #group-conversation-info-list .group-created-row {
+  order: 4;
+}
+@media (max-width: 620px) {
+  body.conversation-info-fullscreen #group-conversation-info-list .group-info-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 360px) {
+  body.conversation-info-fullscreen #group-conversation-info-list .group-info-actions > button {
+    min-height: 50px;
+    font-size: .92rem;
+  }
+}
