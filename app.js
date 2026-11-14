@@ -1020,6 +1020,26 @@ const mersalTranslations = {
 
 
 
+  "إرسال ملصق":"Send a sticker",
+  "اختيار ملصق":"Choose a sticker",
+  "إغلاق الملصقات":"Close stickers",
+  "الملصقات":"Stickers",
+  "اختر ملصقًا لإرساله في المحادثة.":"Choose a sticker to send in the chat.",
+  "ملصقات جاهزة":"Sticker pack",
+  "ملصق":"Sticker",
+  "ملصق ضحك":"Laughing sticker",
+  "ملصق حب":"Love sticker",
+  "ملصق فرح":"Happy sticker",
+  "ملصق تصفيق":"Clapping sticker",
+  "ملصق تفكير":"Thinking sticker",
+  "ملصق دهشة":"Surprised sticker",
+  "ملصق حزن":"Sad sticker",
+  "ملصق احتفال":"Celebration sticker",
+  "ملصق شكر":"Thank-you sticker",
+  "ملصق موافقة":"Okay sticker",
+  "ملصق نار":"Fire sticker",
+  "ملصق نجمة":"Star sticker",
+
 };
 const mersalOriginalText = new WeakMap();
 const mersalOriginalAttributes = new WeakMap();
@@ -1548,12 +1568,58 @@ const messageScheduleTimeInput = $("#message-schedule-time");
 const messageSchedulePreview = $("#message-schedule-preview");
 const confirmMessageScheduleButton = $("#confirm-message-schedule");
 const messageScheduleHelp = $("#message-schedule-help");
+function renderStickerPicker() {
+  if (!stickerGrid) return;
+  const english = document.documentElement.lang === "en";
+  stickerGrid.replaceChildren();
+  for (const sticker of MERSAL_STICKERS) {
+    const button = safeText("button", "sticker-choice", sticker.emoji);
+    button.type = "button";
+    button.setAttribute("aria-label", (english ? "Send " : "إرسال ملصق ") + (english ? sticker.english + " sticker" : sticker.name));
+    button.addEventListener("click", () => {
+      if (!activeConversation || isPrivateConversationBlocked()) {
+        announce(english ? "You cannot send a sticker in this chat." : "لا يمكنك إرسال ملصق في هذه المحادثة.", "error");
+        return;
+      }
+      messageInput.value = "MERSAL_STICKER:" + sticker.emoji;
+      stickerPickerPanel.hidden = true;
+      attachmentChooser.hidden = true;
+      messageForm.requestSubmit();
+    });
+    stickerGrid.append(button);
+  }
+}
+function openStickerPicker() {
+  if (!activeConversation || isPrivateConversationBlocked()) return;
+  attachmentChooser.hidden = true;
+  stickerPickerPanel.hidden = false;
+  renderStickerPicker();
+  $("#sticker-picker-title").focus();
+}
+function closeStickerPicker() {
+  stickerPickerPanel.hidden = true;
+  if (attachmentChooser && !attachmentChooser.hidden) closeAttachmentChooserButton.focus();
+  else attachButton?.focus();
+}
+openStickerPickerButton?.addEventListener("click", openStickerPicker);
+closeStickerPickerButton?.addEventListener("click", closeStickerPicker);
+stickerPickerPanel?.addEventListener("click", event => {
+  if (event.target === stickerPickerPanel) closeStickerPicker();
+});
+stickerPickerPanel?.addEventListener("keydown", event => {
+  if (event.key === "Escape") { event.preventDefault(); closeStickerPicker(); }
+});
 const attachmentChooser = $("#attachment-chooser");
 const closeAttachmentChooserButton = $("#close-attachment-chooser");
 const imageFileInput = $("#image-file-input");
 const videoFileInput = $("#video-file-input");
 const documentFileInput = $("#document-file-input");
 const createPollFromAttachmentsButton = $("#create-poll-from-attachments");
+const openStickerPickerButton = $("#open-sticker-picker");
+const stickerPickerPanel = $("#sticker-picker-panel");
+const closeStickerPickerButton = $("#close-sticker-picker");
+const stickerGrid = $("#sticker-grid");
+
 const pollComposerPanel = $("#poll-composer-panel");
 const pollComposerForm = $("#poll-composer-form");
 const pollComposerQuestion = $("#poll-question-input");
@@ -6132,10 +6198,39 @@ function parsePollMessageBody(body) {
   if (!match) return null;
   return { pollId: match[1], preview: raw.slice(0, match.index).trim() };
 }
+const MERSAL_STICKERS = [
+  { emoji: "😂", name: "ضحك", english: "Laughing" },
+  { emoji: "❤️", name: "حب", english: "Love" },
+  { emoji: "🥰", name: "فرح", english: "Happy" },
+  { emoji: "👏", name: "تصفيق", english: "Clapping" },
+  { emoji: "🤔", name: "تفكير", english: "Thinking" },
+  { emoji: "😮", name: "دهشة", english: "Surprised" },
+  { emoji: "😢", name: "حزن", english: "Sad" },
+  { emoji: "🎉", name: "احتفال", english: "Celebration" },
+  { emoji: "🙏", name: "شكر", english: "Thank you" },
+  { emoji: "👌", name: "موافقة", english: "Okay" },
+  { emoji: "🔥", name: "نار", english: "Fire" },
+  { emoji: "⭐", name: "نجمة", english: "Star" },
+  { emoji: "😍", name: "إعجاب", english: "Admiration" },
+  { emoji: "🤣", name: "ضحك شديد", english: "ROFL" },
+  { emoji: "🤗", name: "عناق", english: "Hug" },
+  { emoji: "💪", name: "قوة", english: "Strong" },
+  { emoji: "🥳", name: "عيد", english: "Party" },
+  { emoji: "😎", name: "رائع", english: "Cool" },
+  { emoji: "🌹", name: "وردة", english: "Rose" },
+  { emoji: "💯", name: "مئة", english: "One hundred" }
+];
+function parseStickerMessageBody(body) {
+  const match = String(body || "").match(/^MERSAL_STICKER:([\s\S]+)$/);
+  if (!match) return null;
+  return MERSAL_STICKERS.find(sticker => sticker.emoji === match[1]) || null;
+}
 function getMessagePreviewText(body) {
   const raw = normalizeMessageLineBreaks(body);
   const pollMessage = parsePollMessageBody(raw);
   if (pollMessage) return pollMessage.preview || "استطلاع رأي";
+  const sticker = parseStickerMessageBody(raw);
+  if (sticker) return (document.documentElement.lang === "en" ? "Sticker: " : "ملصق: ") + (document.documentElement.lang === "en" ? sticker.english : sticker.name);
   const attachmentMarker = "MERSAL_ATTACHMENT:";
   const attachmentIndex = raw.indexOf(attachmentMarker);
   if (attachmentIndex >= 0) {
@@ -6365,7 +6460,7 @@ async function refreshMessageInteractions(message, item) {
 async function editMessage(message, item, menu, toggle) {
   const english = document.documentElement.lang === "en";
   if (message.sender_id !== currentUser?.id) return;
-  if (parsePollMessageBody(message.body || "") || String(message.body || "").includes("MERSAL_ATTACHMENT:")) {
+  if (parsePollMessageBody(message.body || "") || parseStickerMessageBody(message.body || "") || String(message.body || "").includes("MERSAL_ATTACHMENT:")) {
     announce(english ? "Polls and attachments cannot be edited." : "لا يمكن تعديل استطلاع أو مرفق.", "error");
     closeMessageOptions(menu, toggle);
     return;
@@ -6510,6 +6605,7 @@ function appendMessage(message) {
     return;
   }
   const pollMessage = parsePollMessageBody(message.body);
+  const stickerMessage = parseStickerMessageBody(message.body);
   let pollHost = null;
   const attachmentPrefix = "MERSAL_ATTACHMENT:";
   const attachmentIndex = (message.body || "").indexOf(attachmentPrefix);
@@ -6517,7 +6613,13 @@ function appendMessage(message) {
   if (attachmentIndex >= 0) {
     try { attachment = JSON.parse(message.body.slice(attachmentIndex + attachmentPrefix.length)); } catch { attachment = null; }
   }
-  if (pollMessage) {
+  if (stickerMessage) {
+    const english = document.documentElement.lang === "en";
+    const sticker = safeText("span", "message-sticker", stickerMessage.emoji);
+    sticker.setAttribute("role", "img");
+    sticker.setAttribute("aria-label", (english ? "Sticker: " : "ملصق: ") + (english ? stickerMessage.english : stickerMessage.name));
+    item.append(sticker);
+  } else if (pollMessage) {
     pollHost = document.createElement("div");
     pollHost.className = "message-poll";
     pollHost.dataset.pollId = pollMessage.pollId;
