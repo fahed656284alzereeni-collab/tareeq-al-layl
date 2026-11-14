@@ -765,6 +765,17 @@
           <button id="channel-detail-back" type="button" class="quiet-button">العودة إلى القنوات</button>
           <p id="channel-detail-name" class="channels-title" tabindex="-1"></p>
           <p id="channel-detail-description" class="channels-intro"></p>
+          <button id="channel-edit-open" type="button" class="quiet-button" hidden>تعديل معلومات القناة</button>
+          <form id="channel-edit-form" class="channel-edit-form" hidden>
+            <label for="channel-edit-name">اسم القناة</label>
+            <input id="channel-edit-name" type="text" maxlength="80" required autocomplete="off">
+            <label for="channel-edit-description">وصف القناة</label>
+            <textarea id="channel-edit-description" rows="3" maxlength="500"></textarea>
+            <div class="channel-edit-actions">
+              <button id="channel-edit-save" type="submit" class="primary-button" disabled>حفظ التعديلات</button>
+              <button id="channel-edit-cancel" type="button" class="quiet-button">إلغاء</button>
+            </div>
+          </form>
           <div class="channel-follow-actions">
             <button id="channel-follow-toggle" type="button" class="primary-button">متابعة القناة</button>
             <button id="channel-notifications-toggle" type="button" class="quiet-button" hidden>إيقاف إشعارات القناة</button>
