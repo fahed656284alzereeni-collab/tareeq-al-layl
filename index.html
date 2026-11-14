@@ -748,17 +748,17 @@
                     <option value="admins">المشرفون فقط</option>
                   </select>
                   <label class="group-settings-checkbox-label" for="group-settings-approval">
-                    <input id="group-settings-approval" type="checkbox">
+                    <input id="group-settings-approval" type="checkbox" aria-describedby="group-settings-approval-help">
                     <span>موافقة المشرف على طلبات الانضمام</span>
                   </label>
-                  <p class="settings-help">لن ينضم أي شخص عبر الرابط حتى يوافق أحد المشرفين على طلبه.</p>
+                  <p id="group-settings-approval-help" class="settings-help">لن ينضم أي شخص عبر الرابط حتى يوافق أحد المشرفين على طلبه.</p>
                   <button id="group-settings-save" type="button" class="quiet-button" disabled>حفظ إعدادات المجموعة</button>
                 </div>
                 <div id="group-join-requests-section" class="group-settings-section group-join-requests-section" hidden>
                   <div class="group-settings-section-title" role="none">طلبات الانضمام</div>
                   <button id="group-join-requests-refresh" type="button" class="quiet-button">تحديث الطلبات</button>
                   <p id="group-join-requests-status" role="status" aria-live="polite" aria-atomic="true"></p>
-                  <ul id="group-join-requests-list" class="group-join-requests-list"></ul>
+                  <ul id="group-join-requests-list" class="group-join-requests-list" aria-label="طلبات الانضمام"></ul>
                 </div>
 
             </section>
