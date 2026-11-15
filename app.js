@@ -1,5 +1,5 @@
 import { initMersalTools } from "./tools.js?v=20261114-clean-tools-v1";
-import { initMersalChannels } from "./channels.js?v=20261116-channel-share-v13";
+import { initMersalChannels } from "./channels.js?v=20261116-channel-share-v14";
 import { initMersalCommunities } from "./communities.js?v=20261115-exclusive-social-tabs-v7";
 
 // Load Supabase Auth through two independent ESM CDNs. A failed static import
@@ -5118,7 +5118,78 @@ async function shareGroupInviteLink(){
     if(error?.name!=="AbortError")announce("تعذرت مشاركة رابط الدعوة. يمكنك نسخه بدلًا من ذلك.","error");
   }
 }
-if(groupInviteShareButton)groupInviteShareButton.addEventListener("click",()=>void shareGroupInviteLink());
+function openGroupInviteShareOptions(){
+  if(!activeConversation?.is_group||!groupInviteUrl?.value)return;
+  const english=document.documentElement.lang==="en";
+  const trigger=groupInviteShareButton;
+  const overlay=document.createElement("div");
+  overlay.className="message-forward-overlay";
+  overlay.setAttribute("role","dialog");
+  overlay.setAttribute("aria-modal","true");
+  overlay.setAttribute("aria-label",english?"Share group invite link":"مشاركة رابط دعوة المجموعة");
+  const card=document.createElement("div");
+  card.className="message-forward-card";
+  const title=safeText("p","message-forward-title",english?"Share group invite link":"مشاركة رابط دعوة المجموعة");
+  const close=safeText("button","quiet-button",english?"Close":"إغلاق");
+  close.type="button";
+  const finish=()=>{overlay.remove();if(trigger?.isConnected)trigger.focus();};
+  close.addEventListener("click",finish);
+  card.append(title,close);
+  const addOption=(label,action)=>{
+    const button=safeText("button","message-forward-destination",label);
+    button.type="button";
+    button.addEventListener("click",async()=>{
+      button.disabled=true;
+      try{await action();finish();}
+      catch(error){button.disabled=false;announce((english?"Could not complete: ":"تعذر تنفيذ العملية: ")+(error?.message||""),"error");}
+    });
+    card.append(button);
+  };
+  const inviteUrl=groupInviteUrl.value;
+  addOption(english?"Share link":"مشاركة الرابط",async()=>{
+    if(typeof navigator.share==="function")await navigator.share({title:activeConversation?.group_name||"Mersal",text:english?"Join this group on Mersal":"دعوة للانضمام إلى المجموعة",url:inviteUrl});
+    else await copyGroupInviteLink();
+  });
+  addOption(english?"Copy link":"نسخ الرابط",async()=>{await copyGroupInviteLink();});
+  const destinations=(conversations||[]).filter(item=>item.id!==activeConversation?.id);
+  if(destinations.length){
+    const forwardTitle=safeText("p","message-forward-title",english?"Forward link to a conversation":"إعادة توجيه الرابط إلى محادثة");
+    card.append(forwardTitle);
+    for(const destination of destinations){
+      const partnerId=destination.user_one===currentUser.id?destination.user_two:destination.user_one;
+      const person=destination.is_group?null:(callsProfileCache.get(partnerId)||null);
+      const label=destination.is_group?(destination.group_name||(english?"Group":"مجموعة")):(person?.display_name||(english?"Private conversation":"محادثة فردية"));
+      addOption(label,async()=>{
+        const prefix=english?"Group invitation link:\n":"رابط دعوة المجموعة:\n";
+        const {data,error}=await supabase.from("messages").insert({conversation_id:destination.id,sender_id:currentUser.id,body:prefix+inviteUrl}).select("id").single();
+        if(error)throw error;
+        void loadConversations().catch(error=>console.warn("Invite forwarding refresh:",error));
+        if(data?.id){const {error:pushError}=await supabase.functions.invoke("send-push",{body:{message_id:data.id}});if(pushError)console.warn("Invite forwarding push failed:",pushError.message);}
+        announce(english?"Invitation link forwarded.":"تمت إعادة توجيه رابط الدعوة.","success");
+      });
+    }
+  }else{
+    card.append(safeText("p","message-forward-empty",english?"There are no other conversations to forward to.":"لا توجد محادثات أخرى لإعادة التوجيه إليها."));
+  }
+  if(groupInviteResetButton&&!groupInviteResetButton.hidden){
+    addOption(english?"Reset invite link":"إعادة تعيين رابط الدعوة",async()=>{
+      groupInviteResetButton.click();
+    });
+  }
+  overlay.append(card);
+  overlay.addEventListener("click",event=>{if(event.target===overlay)finish();});
+  overlay.addEventListener("keydown",event=>{
+    if(event.key==="Escape"){event.preventDefault();finish();return;}
+    if(event.key!=="Tab")return;
+    const controls=[...card.querySelectorAll("button:not([disabled])")];
+    const first=controls[0],last=controls[controls.length-1];
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
+    else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
+  });
+  document.body.append(overlay);
+  close.focus();
+}
+if(groupInviteShareButton)groupInviteShareButton.addEventListener("click",openGroupInviteShareOptions);
 if(groupInviteRetryButton)groupInviteRetryButton.addEventListener("click",async()=>{
   const conversation=activeConversation;
   if(!conversation?.is_group||!currentUser)return;
