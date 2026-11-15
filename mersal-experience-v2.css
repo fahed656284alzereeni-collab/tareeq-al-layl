@@ -1106,3 +1106,29 @@ body.tools-open #workspace {
   box-shadow: var(--mx-shadow);
 }
 
+/* Standalone group invite action, separated from call and membership controls. */
+#group-invite-share-card {
+  display: block;
+  width: 100%;
+}
+#group-invite-share-card .group-info-share-button {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  font-weight: 800;
+}
+#group-invite-share-card .group-info-share-button:disabled {
+  opacity: .72;
+  cursor: not-allowed;
+}
+#group-invite-share-help {
+  margin: 9px 0 0;
+  color: var(--mx-muted);
+  line-height: 1.6;
+  text-align: start;
+}
+#group-invite-share-help[hidden] { display: none !important; }
+
