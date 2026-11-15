@@ -1378,6 +1378,9 @@ function setActiveBottomTab(tab) {
     button.setAttribute("aria-selected", String(active));
     button.tabIndex = active ? 0 : -1;
   }
+  // One source of truth for mutually exclusive social-tab visibility.
+  document.body.classList.toggle("channels-open", tab === "channels");
+  document.body.classList.toggle("communities-open", tab === "communities");
   updateBottomTabAccessiblePositions();
 }
 bottomNavigation?.addEventListener("keydown", event => {
@@ -1471,7 +1474,6 @@ function returnToHomeTab() {
   document.body.classList.remove("tools-open");
   if (callsView) callsView.hidden = true;
   document.body.classList.remove("calls-open");
-  document.body.classList.remove("channels-open", "communities-open");
   setActiveBottomTab("home");
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
   homeTabButton.focus();
@@ -1488,8 +1490,6 @@ function openChannelsTab() {
   closeHelpSupportForNavigation();
   closeNewChatForNavigation();
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
-  document.body.classList.remove("communities-open");
-  document.body.classList.add("channels-open");
   setActiveBottomTab("channels");
   mersalChannels.open(channelsTabButton);
 }
@@ -1505,8 +1505,6 @@ function openCommunitiesTab() {
   closeHelpSupportForNavigation();
   closeNewChatForNavigation();
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
-  document.body.classList.remove("channels-open");
-  document.body.classList.add("communities-open");
   setActiveBottomTab("communities");
   mersalCommunities.open(communitiesTabButton);
 }
@@ -1515,7 +1513,6 @@ function openCallsTab() {
   mersalChannels.close();
   mersalCommunities.close();
   if (!currentUser) return;
-  document.body.classList.remove("channels-open", "communities-open");
   if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
   closeHelpSupportForNavigation();
   closeNewChatForNavigation();
@@ -1536,7 +1533,6 @@ function openToolsTab() {
   mersalChannels.close();
   mersalCommunities.close();
   if (!currentUser) return;
-  document.body.classList.remove("channels-open", "communities-open");
   if (callsView) callsView.hidden = true;
   document.body.classList.remove("calls-open");
   if (settingsPanel && !settingsPanel.hidden) {
@@ -1559,7 +1555,6 @@ function openStatusTab() {
   mersalChannels.close();
   mersalCommunities.close();
   if (!currentUser) return;
-  document.body.classList.remove("channels-open", "communities-open");
   if (settingsPanel && !settingsPanel.hidden) {
     settingsPanel.hidden = true;
     document.body.classList.remove("settings-open");
@@ -3254,7 +3249,6 @@ function openSettings() {
   mersalChannels.close();
   mersalCommunities.close();
   if (!currentUser) return;
-  document.body.classList.remove("channels-open", "communities-open");
   closeHelpSupportForNavigation();
   closeNewChatForNavigation();
   statusView.hidden = true;
