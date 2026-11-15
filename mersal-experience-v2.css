@@ -962,3 +962,17 @@ body.communities-open #bottom-navigation {
   margin: 0 0 16px !important;
   transform: none !important;
 }
+
+
+/* Isolate channel/community tabs from the private chats workspace. */
+body.channels-open #workspace,
+body.communities-open #workspace {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+body.channels-open .channels-panel,
+body.communities-open .communities-panel {
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 180 !important;
+}
