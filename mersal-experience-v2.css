@@ -1039,3 +1039,42 @@ body:has(#workspace:not([hidden])) .topbar {
   margin: 0 0 8px !important;
   transform: none !important;
 }
+
+
+/* Dedicated top toolbars: create and search controls stay together above tab content. */
+.channels-home-toolbar,
+.communities-home-toolbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 260 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding: 10px 0 14px !important;
+  margin: 0 0 12px !important;
+  background: var(--mx-bg, var(--ui-bg, #101827)) !important;
+  box-sizing: border-box !important;
+}
+.channels-home-toolbar > #channel-create-button,
+.communities-home-toolbar > #community-create-button {
+  position: static !important;
+  inset: auto !important;
+  order: 0 !important;
+  width: 100% !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+.channels-home-toolbar > label,
+.communities-home-toolbar > label {
+  display: block !important;
+  margin: 2px 0 0 !important;
+}
+.channels-home-toolbar > input,
+.communities-home-toolbar > input {
+  display: block !important;
+  width: 100% !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+}
