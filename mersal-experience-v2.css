@@ -907,8 +907,6 @@ body.tools-open #workspace {
   box-shadow: none !important;
   background: transparent !important;
 }
-body.chat-fullscreen #bottom-navigation,
-body.conversation-info-fullscreen #bottom-navigation { display: none !important; }
 
 
 /* Final mobile layout correction: keep social-tab actions at the viewport top,
