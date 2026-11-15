@@ -1381,7 +1381,7 @@ function setActiveBottomTab(tab) {
   // One source of truth for mutually exclusive social-tab visibility.
   document.body.classList.toggle("channels-open", tab === "channels");
   document.body.classList.toggle("communities-open", tab === "communities");
-  // The workspace remains the single main landmark; it is not labelled by the Chats tab.
+  // Keep tab panels separate without adding redundant landmark announcements to the chat workspace.
   updateBottomTabAccessiblePositions();
 }
 bottomNavigation?.addEventListener("keydown", event => {
@@ -1608,7 +1608,7 @@ const groupRenameSaveButton = $("#group-rename-save");
 const groupDescriptionInput=$("#group-description-input"),groupDescriptionSaveButton=$("#group-description-save");
 const groupPhotoInput=$("#group-photo-input"),groupPhotoPreview=$("#group-photo-preview"),groupPhotoChooseButton=$("#group-photo-choose"),groupPhotoRemoveButton=$("#group-photo-remove"),groupPhotoSaveButton=$("#group-photo-save");
 const groupInfoPhotoRow=$("#group-info-photo-row"),groupInfoPhoto=$("#group-info-photo"),groupInfoPhotoPlaceholder=$("#group-info-photo-placeholder"),groupInfoName=$("#group-info-name"),groupInfoDescriptionRow=$("#group-info-description-row"),groupInfoDescription=$("#group-info-description");
-const groupInviteRow=$("#group-invite-row"),groupInviteUrl=$("#group-invite-url"),groupInviteCopyButton=$("#group-invite-copy"),groupInviteShareButton=$("#group-invite-share"),groupInviteResetButton=$("#group-invite-reset"),groupInviteStatus=$("#group-invite-status");
+const groupInviteRow=$("#group-invite-row"),groupInviteUrl=$("#group-invite-url"),groupInviteCopyButton=$("#group-invite-copy"),groupInviteShareButton=$("#group-invite-share"),groupInviteShareCard=$("#group-invite-share-card"),groupInviteShareHelp=$("#group-invite-share-help"),groupInviteResetButton=$("#group-invite-reset"),groupInviteStatus=$("#group-invite-status");
 const groupInviteRetryButton=$("#group-invite-retry"),groupMemberCountLabel=$("#group-member-count");
 const groupInviteTokenCache=new Map();
 const groupInviteRequests=new Map();
@@ -5022,14 +5022,17 @@ function setGroupInviteUrl(token){
 }
 async function loadGroupInviteLink(conversationId,isAdmin){
   if(!groupInviteRow||!groupInviteUrl)return;
-  if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;groupInviteShareButton.setAttribute("aria-label","مشاركة رابط المجموعة");}
+  if(groupInviteShareCard)groupInviteShareCard.hidden=false;
+  if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
+  if(groupInviteShareHelp){groupInviteShareHelp.hidden=true;groupInviteShareHelp.textContent="";}
 
   if(!isAdmin){
     const {data:settings,error}=await supabase.from("group_settings")
       .select("add_members_by").eq("conversation_id",conversationId).maybeSingle();
     if(error){
       groupInviteRow.hidden=true;
-      if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;groupInviteShareButton.setAttribute("aria-label","مشاركة رابط المجموعة، متاحة للمشرفين فقط");}
+      if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
+      if(groupInviteShareHelp){groupInviteShareHelp.textContent="مشاركة رابط الدعوة متاحة للمشرفين فقط حسب إعدادات المجموعة.";groupInviteShareHelp.hidden=false;}
       groupInviteUrl.value="";
       groupInviteTokenCache.delete(conversationId);
       console.warn("تعذر التحقق من صلاحية رابط الدعوة:",error.message);
@@ -5037,7 +5040,8 @@ async function loadGroupInviteLink(conversationId,isAdmin){
     }
     if((settings?.add_members_by||"admins")!=="everyone"){
       groupInviteRow.hidden=true;
-      if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;groupInviteShareButton.setAttribute("aria-label","مشاركة رابط المجموعة، متاحة للمشرفين فقط");}
+      if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
+      if(groupInviteShareHelp){groupInviteShareHelp.textContent="مشاركة رابط الدعوة متاحة للمشرفين فقط حسب إعدادات المجموعة.";groupInviteShareHelp.hidden=false;}
       groupInviteUrl.value="";
       groupInviteTokenCache.delete(conversationId);
       if(groupInviteStatus)groupInviteStatus.textContent="";
@@ -5045,13 +5049,15 @@ async function loadGroupInviteLink(conversationId,isAdmin){
     }
   }
   groupInviteRow.hidden=false;
-  if(groupInviteShareButton)groupInviteShareButton.hidden=false;
+  if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
+  if(groupInviteShareHelp)groupInviteShareHelp.hidden=true;
   groupInviteResetButton.hidden=!isAdmin;
   if(groupInviteRetryButton)groupInviteRetryButton.hidden=true;
   const showToken=token=>{
     if(activeConversation?.id!==conversationId)return;
     setGroupInviteUrl(token);
     if(groupInviteShareButton)groupInviteShareButton.disabled=false;
+    if(groupInviteShareHelp)groupInviteShareHelp.hidden=true;
     groupInviteStatus.textContent="";
   };
   const cachedToken=groupInviteTokenCache.get(conversationId);
@@ -5087,7 +5093,8 @@ async function loadGroupInviteLink(conversationId,isAdmin){
   }catch(error){
     if(activeConversation?.id!==conversationId)return;
     groupInviteUrl.value="";
-    if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=false;groupInviteShareButton.setAttribute("aria-label","مشاركة رابط المجموعة");}
+    if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
+    if(groupInviteShareHelp){groupInviteShareHelp.textContent="تعذر تحميل رابط الدعوة. استخدم إعادة المحاولة.";groupInviteShareHelp.hidden=false;}
     groupInviteStatus.textContent="تعذر تحميل رابط الدعوة. حاول مرة أخرى.";
     if(groupInviteRetryButton)groupInviteRetryButton.hidden=false;
     console.warn("تعذر تحميل رابط دعوة المجموعة:",error);
