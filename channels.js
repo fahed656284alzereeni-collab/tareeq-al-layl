@@ -2,6 +2,7 @@ const $ = (selector) => document.querySelector(selector);
 
 export function initMersalChannels({ supabase, getCurrentUser, announce, safeText }) {
   const panel = $("#channels-panel");
+  const workspace = $("#workspace");
   const closeButton = $("#channels-close");
   const openButton = $("#open-channels-button");
   const home = $("#channels-home-view");
@@ -188,6 +189,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     if (!getCurrentUser() || !panel) return;
     returnFocus = returnElement || openButton;
     panel.hidden = false;
+    workspace?.setAttribute("aria-hidden", "true");
     document.body.classList.add("channels-open");
     showHome();
     void loadChannels().catch(error => setStatus("تعذر تحميل القنوات: " + (error.message || ""), "Could not load channels: " + (error.message || ""), true));
@@ -197,6 +199,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
   function close({ restoreFocus = true } = {}) {
     listLoadSequence++;
     if (panel) panel.hidden = true;
+    workspace?.removeAttribute("aria-hidden");
     document.body.classList.remove("channels-open");
     showHome();
     rows = [];
