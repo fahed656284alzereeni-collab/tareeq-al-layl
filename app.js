@@ -1,6 +1,6 @@
 import { initMersalTools } from "./tools.js?v=20261114-clean-tools-v1";
-import { initMersalChannels } from "./channels.js?v=20261114-race-guard-v4";
-import { initMersalCommunities } from "./communities.js?v=20261114-race-guard-v4";
+import { initMersalChannels } from "./channels.js?v=20261115-exclusive-social-tabs-v7";
+import { initMersalCommunities } from "./communities.js?v=20261115-exclusive-social-tabs-v7";
 
 // Load Supabase Auth through two independent ESM CDNs. A failed static import
 // prevents this entire module from running, leaving the HTML startup timer visible.
