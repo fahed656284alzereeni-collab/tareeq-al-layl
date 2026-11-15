@@ -3327,7 +3327,7 @@ communitiesTabButton.addEventListener("click", openCommunitiesTab);
 statusTabButton.addEventListener("click", openStatusTab);
 toolsTabButton.addEventListener("click", openToolsTab);
 callsTabButton.addEventListener("click", openCallsTab);
-$("#calls-back-to-chats")?.addEventListener("click", returnToHomeTab);
+
 homeTabButton.addEventListener("click", returnToHomeTab);
 callsSearchInput.addEventListener("input", renderCallsList);
 refreshCallsButton.addEventListener("click", async () => {
