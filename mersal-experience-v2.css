@@ -945,3 +945,10 @@ body.conversation-info-fullscreen #bottom-navigation { display: none !important;
 #communities-panel:not([hidden]) .communities-home-toolbar > label {
   margin: 0 !important;
 }
+
+/* WhatsApp-style channel settings page */
+.channel-settings-view { display:grid; gap:12px; text-align:start; }
+.channel-settings-view > .channels-title { margin:2px 0; }
+.channel-settings-view > button,.channel-settings-view .channel-follow-actions > button { width:100%; min-height:46px; justify-content:flex-start; text-align:start; }
+.channel-settings-view .channel-edit-form { margin:0; }
+#channel-follower-count-row[hidden] { display:none !important; }
