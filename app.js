@@ -32,6 +32,32 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
 });
 
 const $ = (selector) => document.querySelector(selector);
+
+// Keep the group-management label visible while exposing it as plain text,
+// not a heading, to assistive technologies such as VoiceOver.
+function demoteGroupManagementLabel(root = document.body) {
+  if (!root) return;
+  const selector = "h1,h2,h3,h4,h5,h6,[role='heading']";
+  const candidates = [];
+  if (root.matches?.(selector)) candidates.push(root);
+  candidates.push(...root.querySelectorAll?.(selector) || []);
+  for (const element of candidates) {
+    if (element.textContent.trim() !== "إدارة المجموعة") continue;
+    element.setAttribute("role", "none");
+    element.removeAttribute("aria-level");
+  }
+}
+demoteGroupManagementLabel();
+if (document.body) {
+  const groupHeadingObserver = new MutationObserver(records => {
+    for (const record of records) {
+      for (const node of record.addedNodes) {
+        if (node.nodeType === Node.ELEMENT_NODE) demoteGroupManagementLabel(node);
+      }
+    }
+  });
+  groupHeadingObserver.observe(document.body, { childList: true, subtree: true });
+}
 const isMersalAuthPopup = window.name === "mersal-google-auth";
 
 // Mersal interface language. User-generated messages, names, and statuses are never translated.
