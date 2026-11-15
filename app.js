@@ -3316,7 +3316,7 @@ try {
 }
 let mersalChannels = { open() {}, close() {} };
 try {
-  mersalChannels = initMersalChannels({ supabase, getCurrentUser: () => currentUser, announce, safeText });
+  mersalChannels = initMersalChannels({ supabase, getCurrentUser: () => currentUser, getConversations: () => conversations, announce, safeText });
 } catch (channelsInitializationError) {
   console.error("Mersal channels initialization failed; continuing core startup:", channelsInitializationError);
 }
