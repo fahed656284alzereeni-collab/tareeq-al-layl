@@ -1527,7 +1527,7 @@ function openCallsTab() {
   setActiveBottomTab("calls");
   renderCallsList();
   void loadCallHistory().catch(error => announce("تعذر تجهيز سجل المكالمات: " + (error.message || "حاول مرة أخرى."), "error"));
-  document.querySelector("#calls-title")?.focus();
+  callsSearchInput?.focus();
 }
 function openToolsTab() {
   mersalTools.closeTool(false);
@@ -5434,6 +5434,7 @@ async function updateConversationInfo() {
   if (conversationInfoPhotoRow) conversationInfoPhotoRow.hidden = isGroup;
   individualConversationInfoList.hidden = isGroup;
   groupConversationInfoList.hidden = !isGroup;
+   if(groupInviteShareCard)groupInviteShareCard.hidden=!isGroup;
   groupInfoPhotoRow.hidden = !isGroup;
   if(groupInfoPhotoPlaceholder){
     const groupNameForPlaceholder=String(conversation.group_name||"مجموعة").trim();
