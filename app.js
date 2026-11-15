@@ -2540,6 +2540,7 @@ async function handleSession(session, authEvent = "UNKNOWN") {
 
   // Reveal the usable app immediately; load account data and live updates in the background.
   finishStartup();
+  if (new URLSearchParams(window.location.search).has("channel")) openChannelsTab();
   if (status.textContent === "جارٍ تجهيز مرسال…") status.textContent = "";
 
   void syncPushNotificationState();
