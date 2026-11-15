@@ -905,3 +905,39 @@ body.tools-open #workspace {
 }
 body.chat-fullscreen #bottom-navigation,
 body.conversation-info-fullscreen #bottom-navigation { display: none !important; }
+
+
+/* Final mobile layout correction: keep social-tab actions at the viewport top,
+   independent of the panel's scroll container. */
+#channels-panel:not([hidden]) .channels-home-toolbar,
+#communities-panel:not([hidden]) .communities-home-toolbar {
+  position: fixed !important;
+  top: env(safe-area-inset-top) !important;
+  inset-inline: 0 !important;
+  z-index: 210 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 7px !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 10px 16px 12px !important;
+  background: var(--mx-bg, var(--ui-bg, #101827)) !important;
+  border-bottom: 1px solid var(--mx-line) !important;
+  box-sizing: border-box !important;
+}
+#channels-panel:not([hidden]) #channels-home-view,
+#communities-panel:not([hidden]) #communities-home-view {
+  padding-top: 158px !important;
+}
+#channels-panel:not([hidden]) .channels-home-toolbar > #channel-create-button,
+#communities-panel:not([hidden]) .communities-home-toolbar > #community-create-button {
+  order: 0 !important;
+  align-self: flex-start !important;
+  margin: 0 !important;
+  min-height: 46px !important;
+}
+#channels-panel:not([hidden]) .channels-home-toolbar > label,
+#communities-panel:not([hidden]) .communities-home-toolbar > label {
+  margin: 0 !important;
+}
