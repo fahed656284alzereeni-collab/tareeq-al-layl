@@ -21,8 +21,8 @@
   <link rel="stylesheet" href="/styles.css?v=20261114-cache-refresh-v1">
   <link rel="stylesheet" href="/inclusive-responsive.css?v=20261114-cache-refresh-v1">
     <link rel="stylesheet" href="/mersal-redesign.css?v=20261114-cache-refresh-v1">
-    <link rel="stylesheet" href="/mersal-experience-v2.css?v=20261116-conversation-info-v3">
-  <script type="module" src="/app.js?v=20261116-conversation-info-v3"></script>
+    <link rel="stylesheet" href="/mersal-experience-v2.css?v=20261116-accessibility-group-share-v4">
+  <script type="module" src="/app.js?v=20261116-accessibility-group-share-v4"></script>
 </head>
 <body>
 <div class="topbar">
@@ -32,14 +32,14 @@
   </div>
 
   <div id="main-content" tabindex="-1">
-    <p id="status" role="status" aria-live="polite" aria-atomic="true">جارٍ تجهيز مرسال…</p>
+    <p id="status" aria-live="polite" aria-atomic="true">جارٍ تجهيز مرسال…</p>
     <button id="startup-retry" type="button" class="quiet-button" hidden>إعادة المحاولة</button>
     <section id="startup-diagnostics" class="startup-diagnostics" aria-labelledby="startup-diagnostics-title" hidden>
       <p id="startup-diagnostics-title" class="startup-diagnostics-title">تفاصيل الخطأ</p>
       <p id="startup-diagnostics-help" class="startup-diagnostics-help">انسخ التفاصيل وأرسلها للمطور للمساعدة في تحديد سبب المشكلة.</p>
       <textarea id="startup-diagnostics-output" class="startup-diagnostics-output" rows="7" readonly aria-label="تفاصيل الخطأ للنسخ" spellcheck="false"></textarea>
       <button id="startup-copy-diagnostics" type="button" class="quiet-button">نسخ تفاصيل الخطأ</button>
-      <p id="startup-copy-feedback" class="startup-diagnostics-feedback" role="status" aria-live="polite" aria-atomic="true"></p>
+      <p id="startup-copy-feedback" class="startup-diagnostics-feedback" aria-live="polite" aria-atomic="true"></p>
     </section>
     <script>
       (() => {
@@ -246,7 +246,7 @@
             <p class="settings-help">يمكنك تكبير النص لتسهيل القراءة. يُحفظ اختيارك على هذا الجهاز.</p>
             <div class="settings-extra">
               <button id="enable-push-notifications" type="button" class="quiet-button push-notifications-button" aria-pressed="false">تشغيل إشعارات الهاتف</button>
-              <p id="push-notifications-help" class="settings-help" role="status" aria-live="polite">لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.</p>
+              <p id="push-notifications-help" class="settings-help" aria-live="polite">لتصلك الرسائل خارج مرسال، فعّل إشعارات الهاتف.</p>
       
       </div>
           </section>
@@ -423,7 +423,7 @@
       </div>
     </div>
 
-    <div id="workspace" class="workspace" role="main" tabindex="-1" hidden>
+    <div id="workspace" class="workspace" tabindex="-1" hidden>
       <section id="status-view" class="status-view" role="tabpanel" aria-labelledby="status-tab" tabindex="0" hidden>
         <div class="status-page-actions">
           <button id="add-status-button" type="button" class="primary-button">إضافة حالة</button>
@@ -461,7 +461,7 @@
           <div id="tool-detail-view" class="tool-detail-view" hidden>
             <div class="tool-detail-header"><button id="tool-back-button" type="button" class="quiet-button">العودة إلى الأدوات</button><p id="tool-detail-title" class="tool-detail-title" tabindex="-1">الأداة</p></div>
             <div id="calculator-tool" class="tool-panel" hidden>
-              <output id="calculator-display" class="calculator-display" role="status" aria-live="polite" aria-atomic="true" aria-label="النتيجة">0</output>
+              <output id="calculator-display" class="calculator-display" aria-live="polite" aria-atomic="true" aria-label="النتيجة">0</output>
               <div class="calculator-grid">
                 <button type="button" data-calc-key="clear" class="tool-action-button calculator-secondary">مسح</button><button type="button" data-calc-key="backspace" class="tool-action-button calculator-secondary" aria-label="حذف آخر رقم">حذف</button><button type="button" data-calc-key="percent" class="tool-action-button calculator-secondary" aria-label="نسبة مئوية">٪</button><button type="button" data-calc-key="/" class="tool-action-button calculator-operator" aria-label="قسمة">÷</button>
                 <button type="button" data-calc-key="7" class="tool-action-button">7</button><button type="button" data-calc-key="8" class="tool-action-button">8</button><button type="button" data-calc-key="9" class="tool-action-button">9</button><button type="button" data-calc-key="*" class="tool-action-button calculator-operator" aria-label="ضرب">×</button>
@@ -475,7 +475,7 @@
                 <label for="bill-people-input">عدد الأشخاص</label><input id="bill-people-input" type="number" min="1" step="1" value="2" inputmode="numeric">
                 <label for="bill-tip-input">نسبة الإكرامية (%)</label><input id="bill-tip-input" type="number" min="0" max="100" step="0.1" value="0" inputmode="decimal">
                 <button id="bill-split-calculate" type="button" class="primary-button">احسب نصيب كل شخص</button>
-                <output id="bill-split-result" class="bill-split-result" role="status" aria-live="polite" aria-atomic="true">أدخل البيانات لحساب نصيب كل شخص.</output>
+                <output id="bill-split-result" class="bill-split-result" aria-live="polite" aria-atomic="true">أدخل البيانات لحساب نصيب كل شخص.</output>
               </div>
             </div>
             <div id="notes-tool" class="tool-panel" hidden>
@@ -487,7 +487,7 @@
             </div>
             <div id="qr-tool" class="tool-panel" hidden>
               <label for="qr-content-input">النص أو الرابط أو رقم الهاتف</label><textarea id="qr-content-input" rows="4" maxlength="2000" placeholder="اكتب المحتوى الذي تريد تحويله إلى رمز QR"></textarea>
-              <button id="qr-generate-button" type="button" class="primary-button">إنشاء رمز QR</button><p id="qr-status" class="tool-help" role="status" aria-live="polite"></p>
+              <button id="qr-generate-button" type="button" class="primary-button">إنشاء رمز QR</button><p id="qr-status" class="tool-help" aria-live="polite"></p>
               <div id="qr-result" class="qr-result" hidden><canvas id="qr-canvas" role="img" aria-label="رمز QR الذي تم إنشاؤه"></canvas><p id="qr-content-preview" class="qr-content-preview" data-no-translate=""></p><div class="tool-action-row"><button id="qr-download-button" type="button" class="quiet-button" disabled>تنزيل رمز QR</button><button id="qr-copy-button" type="button" class="quiet-button" disabled>نسخ المحتوى</button></div></div>
             </div>
             </div>
@@ -568,7 +568,7 @@
                   
                   <button id="group-invite-reset" type="button" class="quiet-button" hidden>إعادة تعيين رابط الدعوة</button>
                   <button id="group-invite-retry" type="button" class="quiet-button" hidden>إعادة المحاولة</button>
-                  <p id="group-invite-status" role="status" aria-live="polite" aria-atomic="true"></p>
+                  <p id="group-invite-status" aria-live="polite" aria-atomic="true"></p>
                 </div>
               </div>
               <div class="group-info-card group-members-section info-section-card">
@@ -610,7 +610,7 @@
               <button id="conversation-delete-button" type="button" class="danger-button">حذف الدردشة من عندي</button>
             </div>
             <div id="conversation-search-area" class="conversation-search-area" hidden>
-              <p id="conversation-search-status" role="status" aria-live="polite">اكتب كلمة لعرض النتائج.</p>
+              <p id="conversation-search-status" aria-live="polite">اكتب كلمة لعرض النتائج.</p>
               <ul id="conversation-search-results" class="conversation-search-results"></ul>
             </div>
           
@@ -622,7 +622,7 @@
               <p id="message-schedule-preview" class="message-schedule-preview"></p>
               <label for="message-schedule-time">وقت إرسال الرسالة</label>
               <input id="message-schedule-time" type="datetime-local" required>
-              <p id="message-schedule-help" class="settings-help" role="status" aria-live="polite">اختر التاريخ والوقت، وسيتم إرسال الرسالة تلقائيًا حتى لو أغلقت مرسال.</p>
+              <p id="message-schedule-help" class="settings-help" aria-live="polite">اختر التاريخ والوقت، وسيتم إرسال الرسالة تلقائيًا حتى لو أغلقت مرسال.</p>
               <button id="confirm-message-schedule" type="button" class="primary-button">جدولة الرسالة</button>
             </div>
           </section>
@@ -664,7 +664,7 @@
         <textarea id="status-text-input" maxlength="700" rows="5" aria-label="نص الحالة أو وصف الوسائط" placeholder="اكتب حالتك"></textarea>
         <input id="status-image-input" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" hidden aria-hidden="true" tabindex="-1">
         <input id="status-video-input" type="file" accept="video/mp4,video/quicktime,video/webm" hidden aria-hidden="true" tabindex="-1">
-        <p id="status-selected-media" role="status" aria-live="polite"></p>
+        <p id="status-selected-media" aria-live="polite"></p>
         <button id="publish-status-button" type="button" class="primary-button">نشر الحالة</button>
       </div>
     </section>
@@ -704,7 +704,7 @@
           <input id="broadcast-list-name" type="text" maxlength="60" placeholder="اكتب اسم القائمة">
           <label for="broadcast-people-search">ابحث عن مستلمين</label>
           <input id="broadcast-people-search" type="search" placeholder="اكتب اسم الشخص">
-          <p id="broadcast-selected-count" role="status" aria-live="polite">لم يتم اختيار مستلمين</p>
+          <p id="broadcast-selected-count" aria-live="polite">لم يتم اختيار مستلمين</p>
           <ul id="broadcast-people-list" class="broadcast-people-list" aria-label="اختيار مستلمي قائمة الرسائل الجماعية"></ul>
           <button id="save-broadcast-list" type="button" class="primary-button">حفظ قائمة الرسائل الجماعية</button>
           <button id="cancel-broadcast-create" type="button" class="quiet-button">إلغاء</button>
@@ -715,14 +715,14 @@
       <div class="channels-card">
         <button id="channels-close" type="button" class="quiet-button" aria-label="إغلاق القنوات" hidden>إغلاق</button>
         <div id="channels-home-view">
-          <div class="channels-home-toolbar" role="group" aria-label="إنشاء قناة والبحث عن القنوات">
+          <div class="channels-home-toolbar">
             <button id="channel-create-button" type="button" class="primary-button">إنشاء قناة</button>
             <label for="channels-search">البحث في القنوات</label>
             <input id="channels-search" type="search" placeholder="ابحث عن قناة" autocomplete="off">
           </div>
           <p id="channels-title" class="channels-title" tabindex="-1">القنوات</p>
           <p id="channels-intro" class="channels-intro">تابع القنوات العامة أو أنشئ قناة لنشر التحديثات.</p>
-          <p id="channels-status" class="channels-status" role="status" aria-live="polite"></p>
+          <p id="channels-status" class="channels-status" aria-live="polite"></p>
           <ul id="channels-list" class="channels-list" aria-label="القنوات العامة"></ul>
         </div>
         <div id="channels-create-view" hidden>
@@ -779,14 +779,14 @@
       <div class="communities-card">
         <button id="communities-close" type="button" class="quiet-button" aria-label="إغلاق المجتمعات" hidden>إغلاق</button>
         <div id="communities-home-view">
-          <div class="communities-home-toolbar" role="group" aria-label="إنشاء مجتمع والبحث عن المجتمعات">
+          <div class="communities-home-toolbar">
             <button id="community-create-button" type="button" class="primary-button">إنشاء مجتمع</button>
             <label for="communities-search">البحث في المجتمعات</label>
             <input id="communities-search" type="search" placeholder="ابحث عن مجتمع" autocomplete="off">
           </div>
           <p id="communities-title" class="communities-title" tabindex="-1">المجتمعات</p>
           <p id="communities-intro" class="communities-intro">انضم إلى مجتمعات عامة وتابع إعلاناتها، أو أنشئ مجتمعك الخاص.</p>
-          <p id="communities-status" class="communities-status" role="status" aria-live="polite"></p>
+          <p id="communities-status" class="communities-status" aria-live="polite"></p>
           <ul id="communities-list" class="communities-list" aria-label="المجتمعات العامة"></ul>
         </div>
         <div id="communities-create-view" hidden>
@@ -843,31 +843,31 @@
       </div>
     </section>
 <div id="bottom-navigation" class="bottom-navigation" role="tablist" hidden>
-      <button id="home-tab" class="bottom-nav-button" type="button" role="tab" tabindex="0" aria-controls="workspace" aria-label="الدردشات، علامة تبويب 1 من 7" aria-posinset="1" aria-setsize="7" aria-selected="true">
+      <button id="home-tab" class="bottom-nav-button" type="button" role="tab" tabindex="0" aria-controls="workspace" aria-label="الدردشات" aria-selected="true">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1V10Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">الدردشات</span>
       </button>
-      <button id="status-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="status-view" aria-label="الحالات، علامة تبويب 2 من 7" aria-posinset="2" aria-setsize="7" aria-selected="false">
+      <button id="status-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="status-view" aria-label="الحالات" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">الحالات</span>
       </button>
-      <button id="calls-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="calls-view" aria-label="المكالمات، علامة تبويب 3 من 7" aria-posinset="3" aria-setsize="7" aria-selected="false">
+      <button id="calls-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="calls-view" aria-label="المكالمات" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 3.5h3l1.4 4.1-2 1.7a15 15 0 0 0 5.7 5.7l1.7-2 4.1 1.4v3c0 1-.8 1.8-1.8 1.8A15.2 15.2 0 0 1 4.8 5.3c0-1 .8-1.8 1.8-1.8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">المكالمات</span>
       </button>
-      <button id="channels-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="channels-panel" aria-label="القنوات، علامة تبويب 4 من 7" aria-posinset="4" aria-setsize="7" aria-selected="false">
+      <button id="channels-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="channels-panel" aria-label="القنوات" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 5.5h16v13H4zM8 9h8M8 12h8M8 15h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">القنوات</span>
       </button>
-      <button id="communities-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="communities-panel" aria-label="المجتمعات، علامة تبويب 5 من 7" aria-posinset="5" aria-setsize="7" aria-selected="false">
+      <button id="communities-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="communities-panel" aria-label="المجتمعات" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="9" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.7"/><circle cx="17" cy="9" r="2.3" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 19c.3-3.2 2.2-5 5.5-5s5.2 1.8 5.5 5M15 14c2.9-.2 4.7 1.3 5 4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">المجتمعات</span>
       </button>
-      <button id="tools-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="tools-view" aria-label="الأدوات، علامة تبويب 6 من 7" aria-posinset="6" aria-setsize="7" aria-selected="false">
+      <button id="tools-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="tools-view" aria-label="الأدوات" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.5 13.8 9l5.2 2-5.2 2L12 18.5 10.2 13 5 11l5.2-2L12 3.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m19 15 .9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">الأدوات</span>
       </button>
-      <button id="settings-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="settings-panel" aria-label="الإعدادات، علامة تبويب 7 من 7" aria-posinset="7" aria-setsize="7" aria-selected="false">
+      <button id="settings-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="settings-panel" aria-label="الإعدادات" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m19.4 13.5 1.1.9-1.5 2.6-1.4-.5a7.8 7.8 0 0 1-1.5.9l-.2 1.5h-3l-.3-1.5a7.8 7.8 0 0 1-1.5-.9l-1.4.5-1.5-2.6 1.1-.9a7.3 7.3 0 0 1 0-1.8l-1.1-.9 1.5-2.6 1.4.5a7.8 7.8 0 0 1 1.5-.9l.3-1.5h3l.2 1.5a7.8 7.8 0 0 1 1.5.9l1.4-.5 1.5 2.6-1.1.9a7.3 7.3 0 0 1 0 1.8Z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">الإعدادات</span>
       </button>
@@ -875,7 +875,7 @@
     
 <section id="voice-call-panel" class="voice-call-panel" role="dialog" aria-modal="true" aria-label="المكالمة الصوتية" hidden>
     <div class="voice-call-card">
-      <p id="voice-call-status" role="status" aria-live="polite">جارٍ تجهيز المكالمة…</p>
+      <p id="voice-call-status" aria-live="polite">جارٍ تجهيز المكالمة…</p>
       <div id="voice-call-video-grid" class="voice-call-video-grid" hidden>
         <video id="voice-call-local-video" class="voice-call-local-video" autoplay playsinline muted aria-label="معاينة الكاميرا"></video>
         <div id="voice-call-remote-videos" class="voice-call-remote-videos" aria-label="فيديو المشاركين"></div>
@@ -921,7 +921,7 @@
       <button id="close-sticker-picker" type="button" class="quiet-button">إغلاق الملصقات</button>
       <p id="sticker-picker-title" class="sticker-picker-title" tabindex="-1">الملصقات</p>
       <p class="sticker-picker-description">اختر ملصقًا لإرساله في المحادثة.</p>
-      <div id="sticker-grid" class="sticker-grid" role="group" aria-label="ملصقات جاهزة"></div>
+      <div id="sticker-grid" class="sticker-grid"></div>
     </div>
   </section>
   <section id="poll-composer-panel" class="message-schedule-panel poll-composer-panel" role="dialog" aria-modal="true" aria-label="إنشاء استطلاع رأي" hidden>
@@ -967,7 +967,7 @@
                 <div id="group-join-requests-section" class="group-settings-section group-join-requests-section" hidden>
                   <div class="group-settings-section-title" role="none">طلبات الانضمام</div>
                   <button id="group-join-requests-refresh" type="button" class="quiet-button">تحديث الطلبات</button>
-                  <p id="group-join-requests-status" role="status" aria-live="polite" aria-atomic="true"></p>
+                  <p id="group-join-requests-status" aria-live="polite" aria-atomic="true"></p>
                   <ul id="group-join-requests-list" class="group-join-requests-list" aria-label="طلبات الانضمام"></ul>
                 </div>
 
@@ -1027,7 +1027,7 @@
       <div id="group-invite-preview-name" class="group-invite-preview-name" data-no-translate></div>
       <p id="group-invite-preview-description" class="group-invite-preview-description" data-no-translate hidden></p>
       <p id="group-invite-preview-count" class="group-invite-preview-count"></p>
-      <p id="group-invite-preview-status" class="group-invite-preview-status" role="status" aria-live="polite" aria-atomic="true"></p>
+      <p id="group-invite-preview-status" class="group-invite-preview-status" aria-live="polite" aria-atomic="true"></p>
       <button id="group-invite-preview-join" type="button" class="primary-button">انضمام إلى المجموعة</button>
     </div>
   </section>
