@@ -906,3 +906,37 @@ body.tools-open .bottom-navigation {
     height: calc(100dvh - 68px - env(safe-area-inset-bottom)) !important;
   }
 }
+
+
+/* Corrected full-screen layout: channel/community content ends above the persistent tab bar. */
+.channels-panel,
+.communities-panel {
+  inset: 0 0 var(--mersal-tabbar-height) 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: max(14px, env(safe-area-inset-top)) 0 16px !important;
+}
+.channels-card,
+.communities-card {
+  min-height: 100% !important;
+  height: auto !important;
+  padding-top: 12px !important;
+  padding-bottom: 20px !important;
+}
+#bottom-navigation {
+  display: flex !important;
+  visibility: visible !important;
+  z-index: 300 !important;
+}
+body.channels-open #bottom-navigation,
+body.communities-open #bottom-navigation {
+  display: flex !important;
+  visibility: visible !important;
+}
+#channel-create-button,
+#community-create-button {
+  display: block;
+  width: 100%;
+  margin: 0 0 16px;
+}
