@@ -7506,17 +7506,23 @@ const starredMessagesList = $("#starred-messages-list");
 const closeStarredMessagesButton = $("#close-starred-messages");
 let starredMessagesReturnFocus = starredMessagesButton;
 let starredConversationFilter = null;
+let starredMessagesLoadSequence = 0;
 async function loadStarredMessages(conversationId = null) {
   if (!currentUser || !starredMessagesList) return;
+  const sequence = ++starredMessagesLoadSequence;
+  const userId = currentUser.id;
+  const isCurrent = () => sequence === starredMessagesLoadSequence && currentUser?.id === userId && starredConversationFilter === conversationId && !starredMessagesPanel.hidden;
   starredMessagesList.replaceChildren();
   const english = document.documentElement.lang === "en";
   const { data: stars, error: starsError } = await supabase.from("starred_messages")
     .select("message_id,created_at").eq("user_id", currentUser.id).order("created_at", { ascending: false });
   if (starsError) {
+    if (!isCurrent()) return;
     starredMessagesList.append(safeText("li", "empty-item", english ? "Could not load starred messages." : "تعذر تحميل الرسائل المميزة بنجمة."));
     return;
   }
   if (!stars?.length) {
+    if (!isCurrent()) return;
     starredMessagesList.append(safeText("li", "empty-item", english ? "No starred messages." : "لا توجد رسائل مميزة بنجمة."));
     return;
   }
@@ -7525,7 +7531,9 @@ async function loadStarredMessages(conversationId = null) {
     supabase.from("messages").select("id,conversation_id,sender_id,body,created_at,is_deleted").in("id", ids),
     supabase.from("message_hidden_for").select("message_id").eq("user_id", currentUser.id).in("message_id", ids)
   ]);
+  if (!isCurrent()) return;
   if (messagesError || hiddenError) {
+    if (!isCurrent()) return;
     starredMessagesList.append(safeText("li", "empty-item", english ? "Could not load starred messages." : "تعذر تحميل الرسائل المميزة بنجمة."));
     return;
   }
@@ -7533,6 +7541,7 @@ async function loadStarredMessages(conversationId = null) {
   const messageMap = new Map((messages || []).map(message => [message.id, message]));
   const ordered = ids.map(id => messageMap.get(id)).filter(message => message && !hiddenIds.has(message.id) && (!conversationId || message.conversation_id === conversationId));
   if (!ordered.length) {
+    if (!isCurrent()) return;
     starredMessagesList.append(safeText("li", "empty-item", english ? "No starred messages." : "لا توجد رسائل مميزة بنجمة."));
     return;
   }
