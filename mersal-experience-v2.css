@@ -369,6 +369,10 @@ button:disabled { opacity: .48; cursor: not-allowed; }
   border:1px solid var(--mx-line); border-radius:20px; background:var(--mx-panel); color:var(--mx-text); box-shadow:var(--mx-shadow);
 }
 .channels-title { margin:4px 0; color:var(--mx-text); font-size:1.3rem; font-weight:800; overflow-wrap:anywhere; }
+.channel-title-info-button { display:block; width:fit-content; max-width:100%; padding:4px 0; border:0; background:transparent; text-align:start; cursor:pointer; }
+.channel-title-info-button:focus-visible { outline:3px solid var(--mx-brand); outline-offset:4px; border-radius:6px; }
+.channel-info-view { text-align:start; }
+
 .channels-intro,.channels-status { margin:0; color:var(--mx-muted); line-height:1.6; }
 .channels-card label { display:block; margin:8px 0 5px; color:var(--mx-text); font-weight:650; }
 .channels-card input,.channels-card textarea {
