@@ -1381,8 +1381,7 @@ function setActiveBottomTab(tab) {
   // One source of truth for mutually exclusive social-tab visibility.
   document.body.classList.toggle("channels-open", tab === "channels");
   document.body.classList.toggle("communities-open", tab === "communities");
-  // Keep the shared workspace as a neutral container; do not announce it as an extra landmark.
-  document.querySelector("#workspace")?.removeAttribute("role");
+  // The workspace remains the single main landmark; it is not labelled by the Chats tab.
   updateBottomTabAccessiblePositions();
 }
 bottomNavigation?.addEventListener("keydown", event => {
