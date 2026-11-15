@@ -188,17 +188,9 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
   function open(returnElement = openButton) {
     if (!getCurrentUser() || !panel) return;
     returnFocus = returnElement || openButton;
-    // Enforce one visible social tab even if this module is opened outside the main navigator.
-    const communitiesPanel = document.getElementById("communities-panel");
-    if (communitiesPanel) {
-      communitiesPanel.hidden = true;
-      communitiesPanel.setAttribute("aria-hidden", "true");
-    }
-    document.body.classList.remove("communities-open");
+    // The primary navigator owns tab exclusivity and page visibility.
     panel.hidden = false;
     panel.setAttribute("aria-hidden", "false");
-    workspace?.setAttribute("aria-hidden", "true");
-    document.body.classList.add("channels-open");
     showHome();
     void loadChannels().catch(error => setStatus("تعذر تحميل القنوات: " + (error.message || ""), "Could not load channels: " + (error.message || ""), true));
     title?.focus();
@@ -210,8 +202,6 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
       panel.hidden = true;
       panel.setAttribute("aria-hidden", "true");
     }
-    workspace?.removeAttribute("aria-hidden");
-    document.body.classList.remove("channels-open");
     showHome();
     rows = [];
     list.replaceChildren();
