@@ -24,6 +24,7 @@ for (const tab of tabs) {
 }
 const selectedTabs = tabs.filter(tab => /\baria-selected=["']true["']/.test(tab));
 assert.equal(selectedTabs.length, 1, "Exactly one bottom navigation tab must be selected initially");
+assert.doesNotMatch(html, /role=["\']status["\']|role=["\']group["\']|role=["\']main["\']/, "Avoid redundant VoiceOver status, group, and landmark announcements");
 const panelTags = [...html.matchAll(/<(?:div|section)\b[^>]*>/g)].map(match => match[0]);
 for (const tab of tabs) {
   const tabId = tab.match(/\bid=["']([^"']+)["']/)?.[1];
@@ -33,7 +34,7 @@ for (const tab of tabs) {
   if (panelId === "workspace") {
     // The chats workspace is the main landmark. Labelling this large
     // container with the Chats tab repeats its name in VoiceOver.
-    assert.ok(panel.includes('role="main"') || panel.includes("role='main'"), "The chats workspace must remain the main landmark");
+    assert.ok(!panel.includes('role="main"') && !panel.includes("role='main'"), "The chats workspace must not create a VoiceOver landmark announcement");
     assert.ok(!panel.includes('aria-labelledby="home-tab"') && !panel.includes("aria-labelledby='home-tab'"), "The chats workspace must not repeat the Chats tab label");
   } else {
     assert.ok(panel.includes('role="tabpanel"') || panel.includes("role='tabpanel'"), `Tab target must expose role=tabpanel: ${panelId}`);
