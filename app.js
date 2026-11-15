@@ -5022,11 +5022,13 @@ function setGroupInviteUrl(token){
 }
 async function loadGroupInviteLink(conversationId,isAdmin){
   if(!groupInviteRow||!groupInviteUrl)return;
+  if(groupInviteShareButton){groupInviteShareButton.hidden=true;groupInviteShareButton.disabled=true;}
   if(!isAdmin){
     const {data:settings,error}=await supabase.from("group_settings")
       .select("add_members_by").eq("conversation_id",conversationId).maybeSingle();
     if(error){
       groupInviteRow.hidden=true;
+      if(groupInviteShareButton)groupInviteShareButton.hidden=true;
       groupInviteUrl.value="";
       groupInviteTokenCache.delete(conversationId);
       console.warn("تعذر التحقق من صلاحية رابط الدعوة:",error.message);
@@ -5034,6 +5036,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
     }
     if((settings?.add_members_by||"admins")!=="everyone"){
       groupInviteRow.hidden=true;
+      if(groupInviteShareButton)groupInviteShareButton.hidden=true;
       groupInviteUrl.value="";
       groupInviteTokenCache.delete(conversationId);
       if(groupInviteStatus)groupInviteStatus.textContent="";
@@ -5041,11 +5044,13 @@ async function loadGroupInviteLink(conversationId,isAdmin){
     }
   }
   groupInviteRow.hidden=false;
+  if(groupInviteShareButton)groupInviteShareButton.hidden=false;
   groupInviteResetButton.hidden=!isAdmin;
   if(groupInviteRetryButton)groupInviteRetryButton.hidden=true;
   const showToken=token=>{
     if(activeConversation?.id!==conversationId)return;
     setGroupInviteUrl(token);
+    if(groupInviteShareButton)groupInviteShareButton.disabled=false;
     groupInviteStatus.textContent="";
   };
   const cachedToken=groupInviteTokenCache.get(conversationId);
@@ -5081,6 +5086,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
   }catch(error){
     if(activeConversation?.id!==conversationId)return;
     groupInviteUrl.value="";
+    if(groupInviteShareButton){groupInviteShareButton.hidden=true;groupInviteShareButton.disabled=true;}
     groupInviteStatus.textContent="تعذر تحميل رابط الدعوة. حاول مرة أخرى.";
     if(groupInviteRetryButton)groupInviteRetryButton.hidden=false;
     console.warn("تعذر تحميل رابط دعوة المجموعة:",error);
