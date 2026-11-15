@@ -23,9 +23,6 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
   const infoName = $("#channel-info-name");
   const infoDescription = $("#channel-info-description");
   const infoCreated = $("#channel-info-created");
-  const settingsView = $("#channel-settings-view");
-  const settingsOpenButton = $("#channel-settings-open");
-  const settingsBackButton = $("#channel-settings-back");
   const followerCountRow = $("#channel-follower-count-row");
   const followerCountValue = $("#channel-follower-count");
   const shareButton = $("#channel-share-button");
@@ -73,10 +70,6 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
     setText(detailBack, "العودة إلى القنوات", "Back to channels");
     setText(infoBack, "العودة إلى القناة", "Back to channel");
     setText(shareButton, "مشاركة رابط القناة", "Share channel link");
-    setText(settingsOpenButton, "إعدادات القناة", "Channel settings");
-    setText(settingsBackButton, "العودة إلى معلومات القناة", "Back to channel information");
-    const settingsTitle = settingsView?.querySelector(".channels-title");
-    if (settingsTitle) settingsTitle.textContent = t("إعدادات القناة", "Channel settings");
     const followerLabel = followerCountRow?.querySelector(".conversation-info-label");
     if (followerLabel) followerLabel.textContent = t("المتابعون", "Followers");
     setAttr(detailName, "aria-label", "فتح معلومات القناة", "Open channel information");
@@ -84,7 +77,7 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
     setText($("#channel-post-submit"), "نشر التحديث", "Publish update");
     setText(deleteChannelButton, "حذف القناة", "Delete channel");
     setText(notificationsButton, activeFollow?.notifications_enabled === false ? "تشغيل إشعارات القناة" : "إيقاف إشعارات القناة", activeFollow?.notifications_enabled === false ? "Turn on channel notifications" : "Turn off channel notifications");
-    setText(editOpenButton, "تعديل معلومات القناة", "Edit channel details");
+    setText(editOpenButton, "تعديل", "Edit");
     setText($("#channel-edit-save"), "حفظ التعديلات", "Save changes");
     setText(editCancelButton, "إلغاء", "Cancel");
     setAttr(editNameInput, "aria-label", "اسم القناة", "Channel name");
@@ -202,7 +195,6 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
     createView.hidden = true;
     detailView.hidden = true;
     if (infoView) infoView.hidden = true;
-    if (settingsView) settingsView.hidden = true;
     home.hidden = false;
     localize();
   }
@@ -264,7 +256,6 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
     createView.hidden = true;
     detailView.hidden = false;
     if (infoView) infoView.hidden = true;
-    if (settingsView) settingsView.hidden = true;
     detailName.textContent = channel.name;
     detailName.setAttribute("data-no-translate", "");
     detailDescription.textContent = channel.description || t("لا يوجد وصف للقناة.", "No channel description.");
@@ -692,18 +683,6 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
     detailName.focus();
     void startPostsRealtime(activeChannel.id);
   });
-  settingsOpenButton.addEventListener("click", () => {
-    if (!activeChannel) return;
-    infoView.hidden = true;
-    settingsView.hidden = false;
-    settingsBackButton.focus();
-  });
-  settingsBackButton.addEventListener("click", () => {
-    if (!activeChannel) return;
-    settingsView.hidden = true;
-    infoView.hidden = false;
-    settingsOpenButton.focus();
-  });
   detailBack.addEventListener("click", () => {
     showHome();
     renderList();
@@ -716,7 +695,6 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
     if (event.key === "Escape") {
       event.preventDefault();
       if (!createView.hidden) { showHome(); createButton.focus(); }
-      else if (settingsView && !settingsView.hidden) { settingsView.hidden = true; infoView.hidden = false; settingsOpenButton.focus(); }
       else if (infoView && !infoView.hidden) { infoView.hidden = true; detailView.hidden = false; detailName.focus(); void startPostsRealtime(activeChannel?.id); }
       else if (!detailView.hidden) { showHome(); title.focus(); }
       else close();
