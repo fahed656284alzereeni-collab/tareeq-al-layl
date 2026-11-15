@@ -722,137 +722,144 @@ body.calls-open .calls-view:not([hidden]) {
 }
 
 
-/* Channels and communities are first-class bottom-navigation pages, not modal overlays. */
-.channels-panel,
-.communities-panel {
-  position: fixed;
-  z-index: 70;
-  inset: 0 0 calc(68px + env(safe-area-inset-bottom)) 0;
-  display: block;
-  overflow: auto;
-  padding: 0;
-  background: var(--mx-bg);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-.channels-card,
-.communities-card {
-  width: 100%;
-  min-height: 100%;
-  height: auto;
-  max-height: none;
-  margin: 0;
-  overflow: visible;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-  padding: clamp(16px, 3vw, 30px);
-  background: var(--mx-bg);
-}
-
-
-/* Primary tab pages fill the viewport; the persistent tab bar stays above them. */
+/* Canonical primary-tab layout.
+   The application navigator controls which panel is active; CSS only lays out panels. */
 :root {
-  --mersal-tabbar-height: calc(68px + env(safe-area-inset-bottom));
+  --mersal-tabbar-height: calc(64px + env(safe-area-inset-bottom));
 }
-@media (max-width: 900px) {
-  :root { --mersal-tabbar-height: calc(64px + env(safe-area-inset-bottom)); }
-}
-#settings-panel,
-#calls-view,
-#status-view,
-#tools-view,
-.channels-panel,
-.communities-panel {
-  position: fixed !important;
-  inset: 0 !important;
-  width: 100vw !important;
-  max-width: none !important;
-  height: 100vh !important;
-  height: 100dvh !important;
-  min-height: 100dvh !important;
-  max-height: none !important;
-  overflow-x: hidden !important;
-  overflow-y: auto !important;
-  padding: max(14px, env(safe-area-inset-top)) 0 calc(var(--mersal-tabbar-height) + 12px + env(safe-area-inset-bottom)) !important;
-  margin: 0 !important;
-  border-radius: 0 !important;
-  box-sizing: border-box !important;
-  z-index: 150 !important;
-  background: var(--mx-bg, var(--ui-bg, #101827)) !important;
+@media (min-width: 901px) {
+  :root { --mersal-tabbar-height: calc(68px + env(safe-area-inset-bottom)); }
 }
 #bottom-navigation {
   position: fixed !important;
   inset-inline: 0 !important;
   bottom: 0 !important;
-  z-index: 220 !important;
+  z-index: 300 !important;
+  display: flex !important;
+  flex-wrap: nowrap;
+  visibility: visible !important;
 }
-#settings-panel .settings-card,
-.channels-card,
-.communities-card,
-#calls-view .calls-page,
-#tools-view .tools-page {
+#bottom-navigation[hidden] { display: none !important; }
+#bottom-navigation > .bottom-nav-button { flex: 1 1 0; min-width: 0; padding-inline: 2px; }
+
+#settings-panel {
+  position: fixed !important;
+  inset: 0 0 var(--mersal-tabbar-height) !important;
+  z-index: 150 !important;
+  display: block;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  place-items: stretch;
+}
+#settings-panel .settings-card {
   width: 100% !important;
   max-width: none !important;
-  min-height: calc(100dvh - var(--mersal-tabbar-height)) !important;
+  height: 100% !important;
+  min-height: 0 !important;
   max-height: none !important;
   margin: 0 !important;
-  border-radius: 0 !important;
-  box-sizing: border-box !important;
-}
-#status-view .status-list {
-  padding-bottom: 12px;
-}
-body.chat-fullscreen #bottom-navigation,
-body.conversation-info-fullscreen #bottom-navigation {
-  display: none !important;
+  padding: max(16px, env(safe-area-inset-top)) 16px 20px !important;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
-
-/* Channels and communities use the same full-viewport page behavior as other main tabs. */
-.channels-panel,
-.communities-panel {
+#channels-panel,
+#communities-panel {
   position: fixed !important;
-  inset: 0 !important;
+  inset: 0 0 var(--mersal-tabbar-height) 0 !important;
+  z-index: 150 !important;
+  display: block;
   width: 100vw !important;
-  height: 100vh !important;
-  height: 100dvh !important;
-  min-height: 100dvh !important;
+  height: auto !important;
+  min-height: 0 !important;
   max-height: none !important;
+  margin: 0 !important;
+  padding: max(14px, env(safe-area-inset-top)) 0 16px !important;
   overflow-x: hidden !important;
   overflow-y: auto !important;
-  padding: max(14px, env(safe-area-inset-top)) 0 calc(var(--mersal-tabbar-height, 68px) + 12px + env(safe-area-inset-bottom)) !important;
-  margin: 0 !important;
-  border-radius: 0 !important;
   box-sizing: border-box !important;
+  border: 0 !important;
+  border-radius: 0 !important;
   background: var(--mx-bg, var(--ui-bg, #101827)) !important;
-  z-index: 150 !important;
+}
+#channels-panel[hidden],
+#communities-panel[hidden] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+#channels-panel:not([hidden]),
+#communities-panel:not([hidden]) {
+  visibility: visible;
+  pointer-events: auto;
 }
 .channels-card,
 .communities-card {
+  display: flex !important;
+  flex-direction: column !important;
   width: 100% !important;
-  min-height: calc(100dvh - var(--mersal-tabbar-height, 68px)) !important;
   height: auto !important;
+  min-height: 100% !important;
   max-height: none !important;
   margin: 0 !important;
+  padding: 12px clamp(16px, 3vw, 30px) 20px !important;
   overflow: visible !important;
+  box-sizing: border-box !important;
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+  background: var(--mx-bg, var(--ui-bg, #101827)) !important;
+}
+.channels-home-toolbar,
+.communities-home-toolbar {
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding: 10px 0 14px !important;
+  margin: 0 0 12px !important;
+  background: var(--mx-bg, var(--ui-bg, #101827)) !important;
   box-sizing: border-box !important;
 }
-body.channels-open .topbar,
-body.communities-open .topbar { display: none !important; }
+.channels-home-toolbar > #channel-create-button,
+.communities-home-toolbar > #community-create-button {
+  position: static !important;
+  order: 0 !important;
+  display: inline-flex !important;
+  align-self: flex-start !important;
+  width: auto !important;
+  min-width: 148px !important;
+  min-height: 48px !important;
+  margin: 0 0 4px !important;
+}
+.channels-home-toolbar > label,
+.communities-home-toolbar > label { display: block !important; margin: 2px 0 0 !important; }
+.channels-home-toolbar > input,
+.communities-home-toolbar > input {
+  display: block !important;
+  width: 100% !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+}
 
-
-/* Full-viewport secondary tabs: statuses, calls and tools.
-   Keep the bottom tab bar visible and remove the desktop workspace frame. */
+/* Other primary pages share the same viewport boundary above the tab bar. */
 body.status-open #status-view,
 body.calls-open #calls-view,
 body.tools-open #tools-view {
   position: fixed !important;
-  z-index: 70 !important;
-  inset: 0 0 calc(68px + env(safe-area-inset-bottom)) 0 !important;
+  z-index: 150 !important;
+  inset: 0 0 var(--mersal-tabbar-height) 0 !important;
   width: 100vw !important;
   height: auto !important;
   min-height: 0 !important;
@@ -860,24 +867,27 @@ body.tools-open #tools-view {
   margin: 0 !important;
   padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 20px max(16px, env(safe-area-inset-left)) !important;
   overflow: auto !important;
+  box-sizing: border-box !important;
   border: 0 !important;
   border-radius: 0 !important;
   box-shadow: none !important;
 }
+#settings-panel[hidden],
+#status-view[hidden],
+#calls-view[hidden],
+#tools-view[hidden] { display: none !important; }
+body.settings-open .topbar,
+body.channels-open .topbar,
+body.communities-open .topbar,
 body.status-open .topbar,
 body.calls-open .topbar,
-body.tools-open .topbar {
-  display: none !important;
-}
-body.status-open #main-content,
-body.calls-open #main-content,
-body.tools-open #main-content {
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: visible !important;
-}
+body.tools-open .topbar { display: none !important; }
+body.channels-open #channels-panel,
+body.communities-open #communities-panel { display: block !important; }
+body.channels-open #communities-panel,
+body.communities-open #channels-panel { display: none !important; }
+body.channels-open #workspace,
+body.communities-open #workspace { display: none !important; }
 body.status-open #workspace,
 body.calls-open #workspace,
 body.tools-open #workspace {
@@ -892,224 +902,5 @@ body.tools-open #workspace {
   box-shadow: none !important;
   background: transparent !important;
 }
-body.status-open .bottom-navigation,
-body.calls-open .bottom-navigation,
-body.tools-open .bottom-navigation {
-  position: fixed !important;
-  z-index: 100 !important;
-  inset: auto 0 0 0 !important;
-}
-@supports (height: 100dvh) {
-  body.status-open #status-view,
-  body.calls-open #calls-view,
-  body.tools-open #tools-view {
-    height: calc(100dvh - 68px - env(safe-area-inset-bottom)) !important;
-  }
-}
-
-
-/* Corrected full-screen layout: channel/community content ends above the persistent tab bar. */
-.channels-panel,
-.communities-panel {
-  inset: 0 0 var(--mersal-tabbar-height) 0 !important;
-  height: auto !important;
-  min-height: 0 !important;
-  max-height: none !important;
-  padding: max(14px, env(safe-area-inset-top)) 0 16px !important;
-}
-.channels-card,
-.communities-card {
-  min-height: 100% !important;
-  height: auto !important;
-  padding-top: 12px !important;
-  padding-bottom: 20px !important;
-}
-#bottom-navigation {
-  display: flex !important;
-  visibility: visible !important;
-  z-index: 300 !important;
-}
-body.channels-open #bottom-navigation,
-body.communities-open #bottom-navigation {
-  display: flex !important;
-  visibility: visible !important;
-}
-#channel-create-button,
-#community-create-button {
-  display: block;
-  width: 100%;
-  margin: 0 0 16px;
-}
-
-
-/* Keep channel/community creation actions at the top of their own tab content. */
-#channels-home-view:not([hidden]),
-#communities-home-view:not([hidden]) {
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  justify-content: flex-start !important;
-  min-height: 0;
-}
-#channel-create-button,
-#community-create-button {
-  position: static !important;
-  inset: auto !important;
-  order: -1 !important;
-  align-self: stretch !important;
-  flex: 0 0 auto !important;
-  width: 100% !important;
-  margin: 0 0 16px !important;
-  transform: none !important;
-}
-
-
-/* Isolate channel/community tabs from the private chats workspace. */
-body.channels-open #workspace,
-body.communities-open #workspace {
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-body.channels-open .channels-panel,
-body.communities-open .communities-panel {
-  visibility: visible !important;
-  pointer-events: auto !important;
-  z-index: 180 !important;
-}
-
-
-/* Final tab isolation: remove the chat workspace from rendering entirely. */
-body.channels-open #workspace,
-body.communities-open #workspace {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-
-/* Authenticated app uses the full viewport; keep the brand bar only on sign-in. */
-body:has(#workspace:not([hidden])) .topbar {
-  display: none !important;
-}
-
-/* Make the channel/community home content a real full-height column. */
-.channels-panel,
-.communities-panel {
-  overflow: auto !important;
-}
-
-/* Hidden tab panels must remain absent, even when their visible layout is forced. */
-.channels-panel[hidden],
-.communities-panel[hidden] {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-.channels-card,
-.communities-card {
-  display: block !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 100% !important;
-  max-height: none !important;
-  overflow: auto !important;
-}
-#channels-home-view:not([hidden]),
-#communities-home-view:not([hidden]) {
-  display: flex !important;
-  flex-direction: column !important;
-  justify-content: flex-start !important;
-  align-items: stretch !important;
-  width: 100% !important;
-  min-height: 100% !important;
-  height: auto !important;
-  gap: 12px !important;
-}
-#channel-create-button,
-#community-create-button {
-  position: sticky !important;
-  top: 0 !important;
-  inset-inline: auto !important;
-  z-index: 20 !important;
-  order: -1000 !important;
-  display: block !important;
-  align-self: stretch !important;
-  flex: 0 0 auto !important;
-  width: 100% !important;
-  min-height: 50px !important;
-  margin: 0 0 8px !important;
-  transform: none !important;
-}
-
-
-/* Dedicated top toolbars: create and search controls stay together above tab content. */
-/* Match the Status tab's top action pattern: one clear primary action first,
-   followed by the search controls. Keep the action visible while the list scrolls. */
-.channels-home-toolbar,
-.communities-home-toolbar {
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 260 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  align-items: stretch !important;
-  gap: 8px !important;
-  width: 100% !important;
-  padding: 10px 0 14px !important;
-  margin: 0 0 12px !important;
-  background: var(--mx-bg, var(--ui-bg, #101827)) !important;
-  box-sizing: border-box !important;
-}
-.channels-home-toolbar > #channel-create-button,
-.communities-home-toolbar > #community-create-button {
-  position: static !important;
-  inset: auto !important;
-  order: 0 !important;
-  display: inline-flex !important;
-  align-self: flex-start !important;
-  width: auto !important;
-  min-width: 148px !important;
-  min-height: 48px !important;
-  margin: 0 0 4px !important;
-  transform: none !important;
-}
-.channels-home-toolbar > label,
-.communities-home-toolbar > label {
-  display: block !important;
-  margin: 2px 0 0 !important;
-}
-.channels-home-toolbar > input,
-.communities-home-toolbar > input {
-  display: block !important;
-  width: 100% !important;
-  min-height: 48px !important;
-  margin: 0 !important;
-}
-
-
-/* Strict mutual exclusion for the channels and communities tabs. The inactive surface
-   is removed from layout and accessibility, so it cannot overlap the active tab or chats. */
-body.channels-open #communities-panel,
-body.communities-open #channels-panel {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-body.channels-open #channels-panel:not([hidden]),
-body.communities-open #communities-panel:not([hidden]) {
-  display: block !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-  z-index: 190 !important;
-}
-body.channels-open #workspace,
-body.communities-open #workspace {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
-#channels-panel[hidden],
-#communities-panel[hidden] {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-}
+body.chat-fullscreen #bottom-navigation,
+body.conversation-info-fullscreen #bottom-navigation { display: none !important; }
