@@ -1358,17 +1358,12 @@ const notificationCount = $("#notification-count");
 function updateBottomTabAccessiblePositions(language = localStorage.getItem("mersal-language") || "ar") {
   const tabList = document.querySelector("#bottom-navigation");
   if (!tabList) return;
-  const tabs = [...tabList.querySelectorAll(':scope > [role="tab"]')].filter(tab => !tab.hidden);
-  const total = tabs.length;
-  tabs.forEach((tab, index) => {
+  tabList.querySelectorAll(':scope > [role="tab"]').forEach(tab => {
     const label = tab.querySelector(".bottom-nav-label")?.textContent?.trim() || tab.id.replace(/-tab$/, "");
-    const position = index + 1;
-    tab.setAttribute("aria-posinset", String(position));
-    tab.setAttribute("aria-setsize", String(total));
-    tab.setAttribute("aria-label", language === "en"
-      ? `${label}, tab ${position} of ${total}`
-      : `${label}، علامة تبويب ${position} من ${total}`);
-    tab.setAttribute("data-no-translate-aria-label", "");
+    tab.removeAttribute("aria-posinset");
+    tab.removeAttribute("aria-setsize");
+    tab.setAttribute("aria-label", label);
+    tab.removeAttribute("data-no-translate-aria-label");
   });
 }
 function setActiveBottomTab(tab) {
