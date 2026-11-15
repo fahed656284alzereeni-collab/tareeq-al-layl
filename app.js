@@ -5022,6 +5022,7 @@ function setGroupInviteUrl(token){
 }
 async function loadGroupInviteLink(conversationId,isAdmin){
   if(!groupInviteRow||!groupInviteUrl)return;
+  if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;groupInviteShareButton.setAttribute("aria-label","مشاركة رابط المجموعة");}
   if(groupInviteShareButton){groupInviteShareButton.hidden=true;groupInviteShareButton.disabled=true;}
   if(!isAdmin){
     const {data:settings,error}=await supabase.from("group_settings")
@@ -5086,7 +5087,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
   }catch(error){
     if(activeConversation?.id!==conversationId)return;
     groupInviteUrl.value="";
-    if(groupInviteShareButton){groupInviteShareButton.hidden=true;groupInviteShareButton.disabled=true;}
+    if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=false;groupInviteShareButton.setAttribute("aria-label","مشاركة رابط المجموعة");}
     groupInviteStatus.textContent="تعذر تحميل رابط الدعوة. حاول مرة أخرى.";
     if(groupInviteRetryButton)groupInviteRetryButton.hidden=false;
     console.warn("تعذر تحميل رابط دعوة المجموعة:",error);
@@ -5190,7 +5191,18 @@ function openGroupInviteShareOptions(){
   document.body.append(overlay);
   close.focus();
 }
-if(groupInviteShareButton)groupInviteShareButton.addEventListener("click",openGroupInviteShareOptions);
+if(groupInviteShareButton)groupInviteShareButton.addEventListener("click",async()=>{
+  const conversation=activeConversation;
+  if(!conversation?.is_group)return;
+  if(!groupInviteUrl?.value){
+    const permissions=await getCurrentGroupPermissions();
+    if(activeConversation?.id!==conversation.id)return;
+    await loadGroupInviteLink(conversation.id,permissions.isAdmin);
+  }
+  if(activeConversation?.id!==conversation.id)return;
+  if(groupInviteUrl?.value)openGroupInviteShareOptions();
+  else announce("تعذر تحميل رابط الدعوة. حاول مرة أخرى.","error");
+});
 if(groupInviteRetryButton)groupInviteRetryButton.addEventListener("click",async()=>{
   const conversation=activeConversation;
   if(!conversation?.is_group||!currentUser)return;
