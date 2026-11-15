@@ -1,0 +1,42 @@
+name: Gemini Invoke
+
+on:
+  workflow_call:
+    inputs:
+      additional_context:
+        type: string
+        description: Additional context from the request
+        required: false
+
+permissions:
+  contents: read
+  id-token: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  invoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Prepare prompt context
+        run: |
+          mkdir -p .gemini
+          jq -n --arg context "$ADDITIONAL_CONTEXT" --arg repo "$GITHUB_REPOSITORY" \
+            '{repository: $repo, additional_context: $context}' > .gemini/context.json
+        env:
+          ADDITIONAL_CONTEXT: ${{ inputs.additional_context }}
+
+      - name: Run Gemini CLI
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: "true"
+          GITHUB_TOKEN: ${{ github.token }}
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          workflow_name: gemini-invoke
+          prompt: "/gemini-invoke"
