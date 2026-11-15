@@ -1,6 +1,6 @@
 const $ = (selector) => document.querySelector(selector);
 
-export function initMersalChannels({ supabase, getCurrentUser, announce, safeText }) {
+export function initMersalChannels({ supabase, getCurrentUser, getConversations = () => [], announce, safeText }) {
   const panel = $("#channels-panel");
   const closeButton = $("#channels-close");
   const openButton = $("#open-channels-button");
@@ -604,7 +604,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     });
     addOption(t("نسخ الرابط", "Copy link"), () => copyChannelLink(url));
     const user = getCurrentUser();
-    const destinations = (window.mersalConversationList || []).filter(item => item.id);
+    const destinations = (getConversations() || []).filter(item => item.id);
     if (destinations.length) {
       card.append(safeText("p", "message-forward-title", t("إعادة توجيه الرابط إلى محادثة", "Forward link to a conversation")));
       for (const destination of destinations) {
