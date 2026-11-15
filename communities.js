@@ -2,7 +2,6 @@ const $ = selector => document.querySelector(selector);
 
 export function initMersalCommunities({ supabase, getCurrentUser, announce, safeText }) {
   const panel = $("#communities-panel");
-  const workspace = $("#workspace");
   const openButton = $("#open-communities-button");
   const closeButton = $("#communities-close");
   const home = $("#communities-home-view");
