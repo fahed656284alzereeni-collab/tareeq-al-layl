@@ -1,5 +1,5 @@
 import { initMersalTools } from "./tools.js?v=20261114-clean-tools-v1";
-import { initMersalChannels } from "./channels.js?v=20261115-exclusive-social-tabs-v7";
+import { initMersalChannels } from "./channels.js?v=20261116-channel-info-v12";
 import { initMersalCommunities } from "./communities.js?v=20261115-exclusive-social-tabs-v7";
 
 // Load Supabase Auth through two independent ESM CDNs. A failed static import
