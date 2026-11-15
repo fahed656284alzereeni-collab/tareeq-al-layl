@@ -57,15 +57,15 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     const setText = (node, ar, english) => { if (node) node.textContent = en() ? english : ar; };
     const setAttr = (node, name, ar, english) => { if (node) node.setAttribute(name, en() ? english : ar); };
     setText(title, "المجتمعات", "Communities");
-    setText(intro, "انضم إلى مجتمعات عامة وتابع إعلاناتها، أو أنشئ مجتمعك الخاص.", "Join public communities and follow their announcements, or create your own.");
+    setText(intro, "انضم إلى مجتمعات عامة وتابع منشوراتها، أو أنشئ مجتمعك الخاص.", "Join public communities and follow their posts, or create your own.");
     setText(createButton, "إنشاء مجتمع", "Create community");
     setText(closeButton, "إغلاق", "Close");
     setText($("#communities-create-title"), "إنشاء مجتمع", "Create community");
     setText(createSave, "حفظ المجتمع", "Save community");
     setText(createCancel, "إلغاء", "Cancel");
     setText(detailBack, "العودة إلى المجتمعات", "Back to communities");
-    setText($("#community-post-form label"), "إعلان جديد", "New announcement");
-    setText($("#community-post-submit"), "نشر الإعلان", "Publish announcement");
+    setText($("#community-post-form label"), "منشور جديد", "New post");
+    setText($("#community-post-submit"), "نشر المنشور", "Publish post");
     setText(deleteButton, "حذف المجتمع", "Delete community");
     setText($("#community-groups-title"), "مجموعات المجتمع", "Community groups");
     setText(communityGroupsManage, "إدارة المجموعات", "Manage groups");
@@ -90,25 +90,25 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
       const save = form.querySelector("[data-community-edit-save]");
       const cancel = form.querySelector("[data-community-edit-cancel]");
       const textarea = form.querySelector("textarea");
-      if (label) label.textContent = t("تعديل الإعلان", "Edit announcement");
+      if (label) label.textContent = t("تعديل المنشور", "Edit post");
       if (save) save.textContent = t("حفظ", "Save");
       if (cancel) cancel.textContent = t("إلغاء", "Cancel");
-      if (textarea) textarea.setAttribute("aria-label", t("نص الإعلان", "Announcement text"));
+      if (textarea) textarea.setAttribute("aria-label", t("نص المنشور", "Post text"));
     }
     setText($("#community-create-form label[for='community-name-input']"), "اسم المجتمع", "Community name");
     setText($("#community-create-form label[for='community-description-input']"), "وصف المجتمع", "Community description");
-    setAttr(panel, "aria-label", "المجتمعات", "Communities");
+    panel.removeAttribute("aria-label");
     setAttr(closeButton, "aria-label", "إغلاق المجتمعات", "Close communities");
     setAttr(search, "aria-label", "البحث في المجتمعات", "Search communities");
     setAttr(nameInput, "aria-label", "اسم المجتمع", "Community name");
     setAttr(descriptionInput, "aria-label", "وصف المجتمع", "Community description");
-    setAttr(postInput, "aria-label", "اكتب إعلان المجتمع", "Write a community announcement");
+    setAttr(postInput, "aria-label", "اكتب منشور المجتمع", "Write a community post");
     setAttr(list, "aria-label", "المجتمعات العامة", "Public communities");
-    setAttr(postsList, "aria-label", "إعلانات المجتمع", "Community announcements");
+    setAttr(postsList, "aria-label", "منشورات المجتمع", "Community posts");
     if (search) search.placeholder = t("ابحث عن مجتمع", "Search communities");
     if (nameInput) nameInput.placeholder = t("اسم المجتمع", "Community name");
     if (descriptionInput) descriptionInput.placeholder = t("وصف مختصر للمجتمع", "A short community description");
-    if (postInput) postInput.placeholder = t("اكتب إعلانًا لأعضاء المجتمع", "Write an announcement for community members");
+    if (postInput) postInput.placeholder = t("اكتب منشورًا لأعضاء المجتمع", "Write an post for community members");
     if (activeCommunity) {
       joinButton.textContent = isMember ? t("مغادرة المجتمع", "Leave community") : t("الانضمام إلى المجتمع", "Join community");
       joinButton.setAttribute("aria-label", joinButton.textContent);
@@ -214,7 +214,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     panel.setAttribute("aria-hidden", "false");
     showHome();
     void loadCommunities().catch(error => setStatus("تعذر تحميل المجتمعات: " + (error.message || ""), "Could not load communities: " + (error.message || ""), true));
-    title?.focus();
+    createButton?.focus();
   }
 
   function close({ restoreFocus = true } = {}) {
@@ -452,7 +452,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
 
   async function renderPosts(communityId) {
     if (activeCommunity?.id === communityId && activeCommunity.owner_id !== getCurrentUser()?.id && !isMember) {
-      postsList.replaceChildren(safeText("li", "empty-item", t("انضم إلى المجتمع لمشاهدة الإعلانات.", "Join this community to view announcements.")));
+      postsList.replaceChildren(safeText("li", "empty-item", t("انضم إلى المجتمع لمشاهدة المنشورات.", "Join this community to view posts.")));
       return;
     }
     const result = await supabase.from("community_posts")
@@ -460,18 +460,18 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
       .eq("community_id", communityId).order("created_at", { ascending: false }).limit(100);
     if (activeCommunity?.id !== communityId || detailView.hidden) return;
     if (result.error) {
-      postsList.replaceChildren(safeText("li", "empty-item", t("تعذر تحميل إعلانات المجتمع.", "Could not load community announcements.")));
+      postsList.replaceChildren(safeText("li", "empty-item", t("تعذر تحميل منشورات المجتمع.", "Could not load community posts.")));
       return;
     }
     postsList.replaceChildren();
     if (!result.data?.length) {
-      postsList.append(safeText("li", "empty-item", t("لا توجد إعلانات في هذا المجتمع بعد.", "No announcements in this community yet.")));
+      postsList.append(safeText("li", "empty-item", t("لا توجد منشورات في هذا المجتمع بعد.", "No posts in this community yet.")));
       return;
     }
     for (const post of result.data) {
       const item = document.createElement("li");
       item.className = "community-post-item";
-      const body = safeText("p", "community-post-body", post.is_deleted ? t("حذف مالك المجتمع هذا الإعلان.", "The community owner deleted this announcement.") : post.body);
+      const body = safeText("p", "community-post-body", post.is_deleted ? t("حذف مالك المجتمع هذا المنشور.", "The community owner deleted this post.") : post.body);
       body.setAttribute("data-no-translate", "");
       const time = safeText("time", "community-post-time", new Intl.DateTimeFormat(en() ? "en" : "ar-JO", { dateStyle: "medium", timeStyle: "short" }).format(new Date(post.created_at)));
       item.append(body, time);
@@ -486,7 +486,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
           const editor = document.createElement("form");
           editor.className = "community-post-edit-form";
           const label = document.createElement("label");
-          label.textContent = t("تعديل الإعلان", "Edit announcement");
+          label.textContent = t("تعديل المنشور", "Edit post");
           const textarea = document.createElement("textarea");
           textarea.id = "community-post-edit-" + post.id;
           label.htmlFor = textarea.id;
@@ -494,7 +494,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
           textarea.maxLength = 5000;
           textarea.required = true;
           textarea.value = post.body;
-          textarea.setAttribute("aria-label", t("نص الإعلان", "Announcement text"));
+          textarea.setAttribute("aria-label", t("نص المنشور", "Post text"));
           const save = safeText("button", "primary-button", t("حفظ", "Save"));
           save.type = "submit";
           save.dataset.communityEditSave = "";
@@ -519,7 +519,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
             event.preventDefault();
             const bodyValue = textarea.value.trim();
             if (!bodyValue || bodyValue.length > 5000) {
-              announce(t("يجب أن يكون الإعلان من حرف واحد إلى 5000 حرف.", "The announcement must contain 1 to 5000 characters."), "error");
+              announce(t("يجب أن يكون المنشور من حرف واحد إلى 5000 حرف.", "The post must contain 1 to 5000 characters."), "error");
               textarea.focus();
               return;
             }
@@ -528,27 +528,27 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
               .eq("id", post.id).eq("community_id", communityId);
             if (update.error) {
               save.disabled = false;
-              announce(t("تعذر تعديل الإعلان: ", "Could not edit announcement: ") + update.error.message, "error");
+              announce(t("تعذر تعديل المنشور: ", "Could not edit post: ") + update.error.message, "error");
               return;
             }
             await renderPosts(communityId);
-            announce(t("تم تعديل الإعلان.", "Announcement edited."));
+            announce(t("تم تعديل المنشور.", "Post edited."));
           });
         });
         const remove = safeText("button", "danger-button", t("حذف", "Delete"));
         remove.type = "button";
         remove.addEventListener("click", async () => {
-          if (!window.confirm(t("هل تريد حذف هذا الإعلان؟", "Delete this announcement?"))) return;
+          if (!window.confirm(t("هل تريد حذف هذا المنشور؟", "Delete this post?"))) return;
           remove.disabled = true;
           const update = await supabase.from("community_posts").update({ is_deleted: true })
             .eq("id", post.id).eq("community_id", communityId);
           if (update.error) {
             remove.disabled = false;
-            announce(t("تعذر حذف الإعلان: ", "Could not delete announcement: ") + update.error.message, "error");
+            announce(t("تعذر حذف المنشور: ", "Could not delete post: ") + update.error.message, "error");
             return;
           }
           await renderPosts(communityId);
-          announce(t("تم حذف الإعلان.", "Announcement deleted."));
+          announce(t("تم حذف المنشور.", "Post deleted."));
         });
         actions.append(edit, remove);
         item.append(actions);
@@ -676,7 +676,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     if (!activeCommunity || activeCommunity.owner_id !== getCurrentUser()?.id || busy) return;
     const body = postInput.value.trim();
     if (!body || body.length > 5000) {
-      announce(t("اكتب إعلانًا من حرف واحد إلى 5000 حرف.", "Write an announcement between 1 and 5000 characters."), "error");
+      announce(t("اكتب منشورًا من حرف واحد إلى 5000 حرف.", "Write an post between 1 and 5000 characters."), "error");
       postInput.focus();
       return;
     }
@@ -688,17 +688,17 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     busy = false;
     $("#community-post-submit").disabled = false;
     if (result.error) {
-      announce(t("تعذر نشر الإعلان: ", "Could not publish announcement: ") + result.error.message, "error");
+      announce(t("تعذر نشر المنشور: ", "Could not publish post: ") + result.error.message, "error");
       return;
     }
     postInput.value = "";
     await renderPosts(activeCommunity.id);
-    announce(t("تم نشر الإعلان.", "Announcement published."));
+    announce(t("تم نشر المنشور.", "Post published."));
   });
 
   deleteButton.addEventListener("click", async () => {
     if (!activeCommunity || activeCommunity.owner_id !== getCurrentUser()?.id || busy) return;
-    if (!window.confirm(t("حذف المجتمع سيحذف عضوياته وإعلاناته. هل تريد المتابعة؟", "Deleting this community also deletes its memberships and announcements. Continue?"))) return;
+    if (!window.confirm(t("حذف المجتمع سيحذف عضوياته ومنشوراته. هل تريد المتابعة؟", "Deleting this community also deletes its memberships and posts. Continue?"))) return;
     busy = true;
     deleteButton.disabled = true;
     const result = await supabase.from("communities").delete().eq("id", activeCommunity.id).eq("owner_id", getCurrentUser().id);
