@@ -43,8 +43,13 @@ function demoteGroupManagementLabel(root = document.body) {
   candidates.push(...root.querySelectorAll?.(selector) || []);
   for (const element of candidates) {
     if (element.textContent.trim() !== "إدارة المجموعة") continue;
-    element.setAttribute("role", "none");
-    element.removeAttribute("aria-level");
+    const plainText = document.createElement("div");
+    for (const attribute of [...element.attributes]) {
+      if (attribute.name === "role" || attribute.name === "aria-level") continue;
+      plainText.setAttribute(attribute.name, attribute.value);
+    }
+    plainText.textContent = element.textContent;
+    element.replaceWith(plainText);
   }
 }
 demoteGroupManagementLabel();
@@ -7426,7 +7431,7 @@ function appendMessage(message) {
   const stateIndicators = document.createElement("div");
   stateIndicators.className = "message-state-indicators";
   stateIndicators.hidden = true;
-  menu.append(closeButton, copyButton, replyButton, reactionPickerButton, forwardButton);
+  menu.append(closeButton, copyButton, replyButton, deleteMineButton, deleteEveryoneButton, reactionPickerButton, forwardButton);
   const reactionHost = document.createElement("div");
   reactionHost.className = "message-reactions";
   item.append(stateIndicators, reactionHost, reactionPicker, messageFooter);
