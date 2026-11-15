@@ -1450,6 +1450,7 @@ function resetAccountScopedPanels() {
   workspace.classList.remove("chat-open");
   document.body.classList.remove(
     "settings-open", "tools-open", "calls-open", "status-open",
+    "channels-open", "communities-open",
     "help-support-open", "chat-fullscreen", "conversation-info-fullscreen",
     "group-invite-preview-open"
   );
@@ -3253,6 +3254,7 @@ function openSettings() {
   mersalChannels.close();
   mersalCommunities.close();
   if (!currentUser) return;
+  document.body.classList.remove("channels-open", "communities-open");
   closeHelpSupportForNavigation();
   closeNewChatForNavigation();
   statusView.hidden = true;
