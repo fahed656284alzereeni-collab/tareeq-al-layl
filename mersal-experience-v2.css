@@ -976,3 +976,59 @@ body.communities-open .communities-panel {
   pointer-events: auto !important;
   z-index: 180 !important;
 }
+
+
+/* Final tab isolation: remove the chat workspace from rendering entirely. */
+body.channels-open #workspace,
+body.communities-open #workspace {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+/* Authenticated app uses the full viewport; keep the brand bar only on sign-in. */
+body:has(#workspace:not([hidden])) .topbar {
+  display: none !important;
+}
+
+/* Make the channel/community home content a real full-height column. */
+.channels-panel,
+.communities-panel {
+  display: block !important;
+  overflow: auto !important;
+}
+.channels-card,
+.communities-card {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  max-height: none !important;
+  overflow: auto !important;
+}
+#channels-home-view:not([hidden]),
+#communities-home-view:not([hidden]) {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  min-height: 100% !important;
+  height: auto !important;
+  gap: 12px !important;
+}
+#channel-create-button,
+#community-create-button {
+  position: sticky !important;
+  top: 0 !important;
+  inset-inline: auto !important;
+  z-index: 20 !important;
+  order: -1000 !important;
+  display: block !important;
+  align-self: stretch !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  min-height: 50px !important;
+  margin: 0 0 8px !important;
+  transform: none !important;
+}
