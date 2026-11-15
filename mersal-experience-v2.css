@@ -1078,3 +1078,32 @@ body:has(#workspace:not([hidden])) .topbar {
   min-height: 48px !important;
   margin: 0 !important;
 }
+
+
+/* Strict mutual exclusion for the channels and communities tabs. The inactive surface
+   is removed from layout and accessibility, so it cannot overlap the active tab or chats. */
+body.channels-open #communities-panel,
+body.communities-open #channels-panel {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+body.channels-open #channels-panel:not([hidden]),
+body.communities-open #communities-panel:not([hidden]) {
+  display: block !important;
+  visibility: visible !important;
+  pointer-events: auto !important;
+  z-index: 190 !important;
+}
+body.channels-open #workspace,
+body.communities-open #workspace {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+#channels-panel[hidden],
+#communities-panel[hidden] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
