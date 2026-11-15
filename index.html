@@ -429,23 +429,23 @@
           <button id="add-status-button" type="button" class="primary-button">إضافة حالة</button>
           <button id="refresh-statuses-button" type="button" class="quiet-button">تحديث الحالات</button>
         </div>
-        <ul id="status-list" class="status-list" aria-label="الحالات" aria-live="polite"></ul>
+        <ul id="status-list" class="status-list" aria-label="الحالات"></ul>
       </section>
       <div id="calls-view" class="calls-view" role="tabpanel" aria-labelledby="calls-tab" tabindex="0" hidden>
         <div class="calls-page">
           <div class="calls-intro">
-            <p id="calls-title" class="calls-page-title" tabindex="-1">المكالمات</p>
-            <p class="calls-description">ابدأ مكالمة صوتية أو مرئية مع شخص أو مجموعة من محادثاتك.</p>
+            <p id="calls-title" class="calls-page-title" aria-hidden="true">المكالمات</p>
+            <p class="calls-description" aria-hidden="true">ابدأ مكالمة صوتية أو مرئية مع شخص أو مجموعة من محادثاتك.</p>
           </div>
           <div class="calls-toolbar">
             <label class="visually-hidden" for="calls-search">ابحث عن شخص أو مجموعة</label>
             <input id="calls-search" type="search" placeholder="ابحث عن شخص أو مجموعة" autocomplete="off">
             <button id="refresh-calls" type="button" class="quiet-button">تحديث القائمة</button>
           </div>
-          <p class="calls-section-title">بدء مكالمة</p>
-          <ul id="calls-list" class="calls-list" aria-live="polite"></ul>
-          <p class="calls-section-title">سجل المكالمات</p>
-          <ul id="calls-history-list" class="calls-list calls-history-list" aria-live="polite"></ul>
+          <p class="calls-section-title" aria-hidden="true">بدء مكالمة</p>
+          <ul id="calls-list" class="calls-list"></ul>
+          <p class="calls-section-title" aria-hidden="true">سجل المكالمات</p>
+          <ul id="calls-history-list" class="calls-list calls-history-list"></ul>
         </div>
       </div>
       <div id="tools-view" class="tools-view" role="tabpanel" aria-labelledby="tools-tab" tabindex="0" hidden>
@@ -559,7 +559,7 @@
                   <button id="group-more-options-open" type="button" class="quiet-button" aria-controls="group-more-options-panel" hidden>تعديل معلومات المجموعة</button>
                 </div>
               </div>
-              <div id="group-invite-share-card" class="group-info-card group-invite-share-card info-section-card" hidden>
+              <div id="group-invite-share-card" class="group-info-card group-invite-share-card info-section-card">
                 <button id="group-invite-share" type="button" class="primary-button group-info-share-button" disabled>مشاركة رابط المجموعة</button>
                 <p id="group-invite-share-help" class="group-invite-share-help" hidden></p>
               </div>
@@ -726,8 +726,8 @@
             <label for="channels-search">البحث في القنوات</label>
             <input id="channels-search" type="search" placeholder="ابحث عن قناة" autocomplete="off">
           </div>
-          <p id="channels-title" class="channels-title" tabindex="-1">القنوات</p>
-          <p id="channels-intro" class="channels-intro">تابع القنوات العامة أو أنشئ قناة لنشر التحديثات.</p>
+          <p id="channels-title" class="channels-title" aria-hidden="true">القنوات</p>
+          <p id="channels-intro" class="channels-intro" aria-hidden="true">تابع القنوات العامة أو أنشئ قناة لنشر التحديثات.</p>
           <p id="channels-status" class="channels-status" aria-live="polite"></p>
           <ul id="channels-list" class="channels-list" aria-label="القنوات العامة"></ul>
         </div>
@@ -751,7 +751,7 @@
             <textarea id="channel-post-input" rows="3" maxlength="5000" placeholder="اكتب تحديثًا لمتابعي القناة"></textarea>
             <button id="channel-post-submit" type="submit" class="primary-button">نشر التحديث</button>
           </form>
-          <ul id="channel-posts" class="channel-posts" aria-label="تحديثات القناة" aria-live="polite"></ul>
+          <ul id="channel-posts" class="channel-posts" aria-label="منشورات القناة"></ul>
         </div>
         <div id="channel-info-view" class="conversation-info channel-info-view" hidden>
           <button id="channel-info-back" type="button" class="quiet-button">العودة إلى القناة</button>
@@ -790,8 +790,8 @@
             <label for="communities-search">البحث في المجتمعات</label>
             <input id="communities-search" type="search" placeholder="ابحث عن مجتمع" autocomplete="off">
           </div>
-          <p id="communities-title" class="communities-title" tabindex="-1">المجتمعات</p>
-          <p id="communities-intro" class="communities-intro">انضم إلى مجتمعات عامة وتابع إعلاناتها، أو أنشئ مجتمعك الخاص.</p>
+          <p id="communities-title" class="communities-title" aria-hidden="true">المجتمعات</p>
+          <p id="communities-intro" class="communities-intro" aria-hidden="true">انضم إلى مجتمعات عامة وتابع منشوراتها، أو أنشئ مجتمعك الخاص.</p>
           <p id="communities-status" class="communities-status" aria-live="polite"></p>
           <ul id="communities-list" class="communities-list" aria-label="المجتمعات العامة"></ul>
         </div>
@@ -840,11 +840,11 @@
             </div>
           </div>
           <form id="community-post-form" class="community-post-form" hidden>
-            <label for="community-post-input">إعلان جديد</label>
-            <textarea id="community-post-input" rows="3" maxlength="5000" placeholder="اكتب إعلانًا لأعضاء المجتمع"></textarea>
-            <button id="community-post-submit" type="submit" class="primary-button">نشر الإعلان</button>
+            <label for="community-post-input">منشور جديد</label>
+            <textarea id="community-post-input" rows="3" maxlength="5000" placeholder="اكتب منشورًا لأعضاء المجتمع"></textarea>
+            <button id="community-post-submit" type="submit" class="primary-button">نشر المنشور</button>
           </form>
-          <ul id="community-posts" class="community-posts" aria-label="إعلانات المجتمع" aria-live="polite"></ul>
+          <ul id="community-posts" class="community-posts" aria-label="منشورات المجتمع"></ul>
         </div>
       </div>
     </section>
