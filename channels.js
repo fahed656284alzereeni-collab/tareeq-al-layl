@@ -65,7 +65,7 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
     setText($("#channel-create-form label[for='channel-name-input']"), "اسم القناة", "Channel name");
     setText($("#channel-create-form label[for='channel-description-input']"), "وصف القناة", "Channel description");
     setAttr(list, "aria-label", "القنوات العامة", "Public channels");
-    setAttr(postsList, "aria-label", "تحديثات القناة", "Channel updates");
+    setAttr(postsList, "aria-label", "منشورات القناة", "Channel posts");
     setText($("#channel-create-save"), "حفظ القناة", "Save channel");
     setText(detailBack, "العودة إلى القنوات", "Back to channels");
     setText(infoBack, "العودة إلى القناة", "Back to channel");
@@ -85,7 +85,7 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
     setText($("#channel-edit-form label[for='channel-edit-description']"), "وصف القناة", "Channel description");
     if (editNameInput) editNameInput.placeholder = t("اسم القناة", "Channel name");
     if (editDescriptionInput) editDescriptionInput.placeholder = t("وصف مختصر للقناة", "A short channel description");
-    setAttr(panel, "aria-label", "القنوات", "Channels");
+    panel.removeAttribute("aria-label");
     setAttr(closeButton, "aria-label", "إغلاق القنوات", "Close channels");
     setAttr(nameInput, "aria-label", "اسم القناة", "Channel name");
     setAttr(descriptionInput, "aria-label", "وصف القناة", "Channel description");
@@ -217,7 +217,7 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
         announce(t("لم يتم العثور على القناة أو أنها لم تعد عامة.", "The channel was not found or is no longer public."), "error");
       }
     }).catch(error => setStatus("تعذر تحميل القنوات: " + (error.message || ""), "Could not load channels: " + (error.message || ""), true));
-    title?.focus();
+    createButton?.focus();
   }
 
   function close({ restoreFocus = true } = {}) {
