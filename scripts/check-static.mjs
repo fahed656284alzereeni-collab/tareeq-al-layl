@@ -146,6 +146,11 @@ assert.match(channels, /await stopPostsRealtime\(\);\s*if \(activeChannel\?\.id 
 assert.match(channels, /const loadId = \+\+listLoadSequence;[\s\S]*?if \(loadId !== listLoadSequence \|\| panel\.hidden \|\| getCurrentUser\(\)\?\.id !== user\.id\) return;/,
   "Late channel list loads must not overwrite a newer navigation or session");
 const communities = readFileSync(new URL("../communities.js", import.meta.url), "utf8");
+assert.doesNotMatch(app, /setAttribute\("role",\s*"group"\)/, "Avoid redundant VoiceOver group announcements on generic content");
+assert.doesNotMatch(app, /setAttribute\("role",\s*"status"\)/, "Avoid redundant status roles on static scheduled-message text");
+assert.doesNotMatch(channels, /setAttribute\("role",\s*isError\s*\?\s*"alert"\s*:\s*"status"\)/, "Channel status updates must not create extra alert/status roles");
+assert.doesNotMatch(communities, /setAttribute\("role",\s*error\s*\?\s*"alert"\s*:\s*"status"\)/, "Community status updates must not create extra alert/status roles");
+assert.ok(!html.includes('<section id="channel-info-view"') && !html.includes('<section id="community-groups-section"'), "Informational containers must not create extra region landmarks");
 assert.match(communities, /const loadId = \+\+listLoadSequence;[\s\S]*?if \(loadId !== listLoadSequence \|\| panel\.hidden \|\| getCurrentUser\(\)\?\.id !== user\.id\) return;/,
   "Late community list loads must not overwrite a newer navigation or session");
 assert.match(communities, /if \(activeCommunity\?\.id !== community\.id \|\| panel\.hidden \|\| getCurrentUser\(\)\?\.id !== user\.id\) return;/,
