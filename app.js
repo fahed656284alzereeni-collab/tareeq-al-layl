@@ -4242,8 +4242,6 @@ async function renderStatusInteractions(row, own, requestId = statusViewerReques
     for (const item of reactionsResult.data || []) counts.set(item.emoji, (counts.get(item.emoji) || 0) + 1);
     const reactionGroup = document.createElement("div");
     reactionGroup.className = "status-reaction-buttons";
-    reactionGroup.setAttribute("role", "group");
-    reactionGroup.setAttribute("aria-label", english ? "Status reactions" : "تفاعلات الحالة");
     for (const emoji of ["👍", "❤️", "😂", "😮", "😢", "🙏"]) {
       const count = counts.get(emoji) || 0;
       const button = safeText("button", "status-reaction-button", emoji + (count ? " " + count : ""));
@@ -6811,8 +6809,6 @@ async function renderConversationPoll(pollId, host, messageId, focusOptionIndex 
     }
     const card = document.createElement("div");
     card.className = "poll-card";
-    card.setAttribute("role", "group");
-    card.setAttribute("aria-label", english ? "Poll" : "استطلاع رأي");
     const question = safeText("p", "poll-question", poll.question);
     question.setAttribute("data-no-translate", "");
     card.append(question);
@@ -7280,8 +7276,6 @@ function appendMessage(message) {
   const time = sentAt.toLocaleString("ar-JO", { dateStyle: "full", timeStyle: "short" });
   const messageFooter = document.createElement("div");
   messageFooter.className = "message-footer";
-  messageFooter.setAttribute("role", "group");
-  messageFooter.setAttribute("aria-label", "تاريخ ووقت الرسالة وخياراتها");
   const timeElement = safeText("time", "message-time", time);
   timeElement.dateTime = sentAt.toISOString();
   timeElement.setAttribute("aria-label", "تاريخ ووقت الإرسال: " + time);
@@ -7365,8 +7359,6 @@ function appendMessage(message) {
   pinButton.addEventListener("click", () => { void toggleMessagePin(message, item, menu, toggle); });
   const reactionPicker = document.createElement("div");
   reactionPicker.className = "message-reaction-picker";
-  reactionPicker.setAttribute("role", "group");
-  reactionPicker.setAttribute("aria-label", document.documentElement.lang === "en" ? "Choose a message reaction" : "اختيار تفاعل للرسالة");
   reactionPicker.hidden = true;
   for (const emoji of ["👍", "❤️", "😂", "😮", "😢", "🙏"]) {
     const reactionChoice = safeText("button", "message-reaction-choice", emoji);
@@ -7410,8 +7402,6 @@ function appendMessage(message) {
   menu.append(closeButton, copyButton, replyButton, reactionPickerButton, forwardButton);
   const reactionHost = document.createElement("div");
   reactionHost.className = "message-reactions";
-  reactionHost.setAttribute("role", "group");
-  reactionHost.setAttribute("aria-label", document.documentElement.lang === "en" ? "Message reactions" : "تفاعلات الرسالة");
   item.append(stateIndicators, reactionHost, reactionPicker, messageFooter);
   void refreshMessageInteractions(message, item);
   messagesList.append(item);
@@ -7766,7 +7756,6 @@ async function loadScheduledMessages() {
     const status = safeText("p", "scheduled-message-time", failed
       ? "لم تُرسل الرسالة: " + (scheduled.failure_reason || "تعذر الإرسال.")
       : "حالة الرسالة: بانتظار الإرسال.");
-    status.setAttribute("role", "status");
     if (failed) {
       item.classList.add("scheduled-message-failed");
       item.append(body, time, status);
