@@ -212,17 +212,9 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
   function open(returnElement = openButton) {
     if (!getCurrentUser() || !panel) return;
     returnFocus = returnElement || openButton;
-    // Enforce one visible social tab even if this module is opened outside the main navigator.
-    const channelsPanel = document.getElementById("channels-panel");
-    if (channelsPanel) {
-      channelsPanel.hidden = true;
-      channelsPanel.setAttribute("aria-hidden", "true");
-    }
-    document.body.classList.remove("channels-open");
+    // The primary navigator owns tab exclusivity and page visibility.
     panel.hidden = false;
     panel.setAttribute("aria-hidden", "false");
-    workspace?.setAttribute("aria-hidden", "true");
-    document.body.classList.add("communities-open");
     showHome();
     void loadCommunities().catch(error => setStatus("تعذر تحميل المجتمعات: " + (error.message || ""), "Could not load communities: " + (error.message || ""), true));
     title?.focus();
@@ -232,8 +224,6 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     listLoadSequence++;
     panel.hidden = true;
     panel.setAttribute("aria-hidden", "true");
-    workspace?.removeAttribute("aria-hidden");
-    document.body.classList.remove("communities-open");
     showHome();
     communities = [];
     linkedCommunityGroups = [];
