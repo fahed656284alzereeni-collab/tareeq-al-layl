@@ -610,8 +610,12 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
       for (const destination of destinations) {
         const label = destination.is_group ? (destination.group_name || t("مجموعة", "Group")) : (destination.partner_name || destination.display_name || t("محادثة فردية", "Private conversation"));
         addOption(label, async () => {
-          const { error } = await supabase.from("messages").insert({ conversation_id: destination.id, sender_id: user.id, body: t("رابط القناة: ", "Channel link: ") + url });
+          const { data, error } = await supabase.from("messages").insert({ conversation_id: destination.id, sender_id: user.id, body: t("رابط القناة: ", "Channel link: ") + url }).select("id").single();
           if (error) throw error;
+          if (data?.id) {
+            const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
+            if (pushError) console.warn("Channel link forwarding push failed:", pushError.message);
+          }
           announce(t("تمت إعادة توجيه رابط القناة.", "Channel link forwarded."));
         });
       }
