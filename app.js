@@ -5856,7 +5856,7 @@ async function loadGroupManagement(expectedConversationId = activeConversation?.
     memberName.setAttribute("data-no-translate","");
     memberButton.append(memberName);
     if(isSelf)memberButton.append(document.createTextNode(localStorage.getItem("mersal-language")==="en"?" (You)":" (أنت)"));
-    memberButton.setAttribute("aria-label",(localStorage.getItem("mersal-language")==="en"?"Options for ":"خيارات ")+name+(isSelf?(localStorage.getItem("mersal-language")==="en"?", you":"، أنت"):""));
+    memberButton.setAttribute("aria-label",name+(isSelf?(localStorage.getItem("mersal-language")==="en"?", you":"، أنت"):""));
     memberButton.addEventListener("click",()=>openGroupMemberOptions(member.user_id,name,roleLabel,member.role,isGroupOwner,permissions,memberButton));
     item.append(memberButton,safeText("span","group-member-role",roleLabel));
     groupMemberList.append(item);
