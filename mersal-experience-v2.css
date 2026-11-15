@@ -882,10 +882,11 @@ body.communities-open .topbar,
 body.status-open .topbar,
 body.calls-open .topbar,
 body.tools-open .topbar { display: none !important; }
-body.channels-open #channels-panel,
-body.communities-open #communities-panel { display: block !important; }
 body.channels-open #communities-panel,
-body.communities-open #channels-panel { display: none !important; }
+body.communities-open #channels-panel {
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
 body.channels-open #workspace,
 body.communities-open #workspace { display: none !important; }
 body.status-open #workspace,
