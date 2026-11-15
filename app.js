@@ -1,6 +1,6 @@
 import { initMersalTools } from "./tools.js?v=20261114-clean-tools-v1";
-import { initMersalChannels } from "./channels.js?v=20261116-voiceover-clean-v15";
-import { initMersalCommunities } from "./communities.js?v=20261116-voiceover-clean-v8";
+import { initMersalChannels } from "./channels.js?v=20261116-voiceover-clean-v16";
+import { initMersalCommunities } from "./communities.js?v=20261116-voiceover-clean-v9";
 
 // Load Supabase Auth through two independent ESM CDNs. A failed static import
 // prevents this entire module from running, leaving the HTML startup timer visible.
