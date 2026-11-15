@@ -2,6 +2,7 @@ const $ = selector => document.querySelector(selector);
 
 export function initMersalCommunities({ supabase, getCurrentUser, announce, safeText }) {
   const panel = $("#communities-panel");
+  const workspace = $("#workspace");
   const openButton = $("#open-communities-button");
   const closeButton = $("#communities-close");
   const home = $("#communities-home-view");
@@ -212,6 +213,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     if (!getCurrentUser() || !panel) return;
     returnFocus = returnElement || openButton;
     panel.hidden = false;
+    workspace?.setAttribute("aria-hidden", "true");
     document.body.classList.add("communities-open");
     showHome();
     void loadCommunities().catch(error => setStatus("تعذر تحميل المجتمعات: " + (error.message || ""), "Could not load communities: " + (error.message || ""), true));
@@ -221,6 +223,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
   function close({ restoreFocus = true } = {}) {
     listLoadSequence++;
     panel.hidden = true;
+    workspace?.removeAttribute("aria-hidden");
     document.body.classList.remove("communities-open");
     showHome();
     communities = [];
