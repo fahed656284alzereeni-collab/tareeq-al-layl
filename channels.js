@@ -569,33 +569,87 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     createButton.focus();
   });
 
-  shareButton?.addEventListener("click", async () => {
+  function openChannelShareOptions() {
     if (!activeChannel || busy) return;
+    const channel = activeChannel;
     const shareUrl = new URL(window.location.pathname, window.location.origin);
-    shareUrl.searchParams.set("channel", activeChannel.id);
+    shareUrl.searchParams.set("channel", channel.id);
     const url = shareUrl.toString();
-    const shareData = { title: activeChannel.name, text: activeChannel.description || t("تابع هذه القناة على مرسال", "Follow this channel on Mersal"), url };
-    try {
-      if (navigator.share) await navigator.share(shareData);
-      else if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(url);
-        announce(t("تم نسخ رابط القناة. يمكنك مشاركته الآن.", "Channel link copied. You can share it now."));
-      } else {
-        const field = document.createElement("input");
-        field.value = url;
-        field.setAttribute("readonly", "");
-        field.style.position = "fixed";
-        field.style.opacity = "0";
-        document.body.append(field);
-        field.select();
-        const copied = document.execCommand("copy");
-        field.remove();
-        announce(copied ? t("تم نسخ رابط القناة.", "Channel link copied.") : t("تعذر نسخ الرابط على هذا الجهاز.", "Could not copy the link on this device."), copied ? "info" : "error");
+    const overlay = document.createElement("div");
+    overlay.className = "message-forward-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", t("مشاركة رابط القناة", "Share channel link"));
+    const card = document.createElement("div");
+    card.className = "message-forward-card";
+    const heading = safeText("p", "message-forward-title", t("مشاركة رابط القناة", "Share channel link"));
+    const close = safeText("button", "quiet-button", t("إغلاق", "Close"));
+    close.type = "button";
+    const finish = () => { overlay.remove(); if (shareButton?.isConnected) shareButton.focus(); };
+    close.addEventListener("click", finish);
+    card.append(heading, close);
+    const addOption = (label, action) => {
+      const button = safeText("button", "message-forward-destination", label);
+      button.type = "button";
+      button.addEventListener("click", async () => {
+        button.disabled = true;
+        try { await action(); finish(); }
+        catch (error) { button.disabled = false; announce(t("تعذر تنفيذ العملية: ", "Could not complete: ") + (error?.message || ""), "error"); }
+      });
+      card.append(button);
+    };
+    addOption(t("مشاركة الرابط", "Share link"), async () => {
+      if (navigator.share) await navigator.share({ title: channel.name, text: channel.description || t("تابع هذه القناة على مرسال", "Follow this channel on Mersal"), url });
+      else await copyChannelLink(url);
+    });
+    addOption(t("نسخ الرابط", "Copy link"), () => copyChannelLink(url));
+    const user = getCurrentUser();
+    const destinations = (window.mersalConversationList || []).filter(item => item.id);
+    if (destinations.length) {
+      card.append(safeText("p", "message-forward-title", t("إعادة توجيه الرابط إلى محادثة", "Forward link to a conversation")));
+      for (const destination of destinations) {
+        const label = destination.is_group ? (destination.group_name || t("مجموعة", "Group")) : (destination.partner_name || destination.display_name || t("محادثة فردية", "Private conversation"));
+        addOption(label, async () => {
+          const { error } = await supabase.from("messages").insert({ conversation_id: destination.id, sender_id: user.id, body: t("رابط القناة: ", "Channel link: ") + url });
+          if (error) throw error;
+          announce(t("تمت إعادة توجيه رابط القناة.", "Channel link forwarded."));
+        });
       }
-    } catch (error) {
-      if (error?.name !== "AbortError") announce(t("تعذرت مشاركة رابط القناة.", "Could not share channel link."), "error");
+    } else {
+      card.append(safeText("p", "message-forward-empty", t("لا توجد محادثات متاحة لإعادة التوجيه إليها.", "No conversations are available to forward to.")));
     }
-  });
+    overlay.append(card);
+    overlay.addEventListener("click", event => { if (event.target === overlay) finish(); });
+    overlay.addEventListener("keydown", event => {
+      if (event.key === "Escape") { event.preventDefault(); finish(); return; }
+      if (event.key !== "Tab") return;
+      const controls = [...card.querySelectorAll("button:not([disabled])")];
+      const first = controls[0], last = controls[controls.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    });
+    document.body.append(overlay);
+    close.focus();
+  }
+
+  async function copyChannelLink(url) {
+    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(url);
+    else {
+      const field = document.createElement("input");
+      field.value = url;
+      field.setAttribute("readonly", "");
+      field.style.position = "fixed";
+      field.style.opacity = "0";
+      document.body.append(field);
+      field.select();
+      const copied = document.execCommand("copy");
+      field.remove();
+      if (!copied) throw new Error(t("تعذر نسخ الرابط على هذا الجهاز.", "Could not copy the link on this device."));
+    }
+    announce(t("تم نسخ رابط القناة.", "Channel link copied."));
+  }
+
+  shareButton?.addEventListener("click", openChannelShareOptions);
 
   detailName.addEventListener("click", () => {
     if (!activeChannel || !infoView) return;
