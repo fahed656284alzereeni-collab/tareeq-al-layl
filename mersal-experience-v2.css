@@ -940,3 +940,25 @@ body.communities-open #bottom-navigation {
   width: 100%;
   margin: 0 0 16px;
 }
+
+
+/* Keep channel/community creation actions at the top of their own tab content. */
+#channels-home-view:not([hidden]),
+#communities-home-view:not([hidden]) {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  min-height: 0;
+}
+#channel-create-button,
+#community-create-button {
+  position: static !important;
+  inset: auto !important;
+  order: -1 !important;
+  align-self: stretch !important;
+  flex: 0 0 auto !important;
+  width: 100% !important;
+  margin: 0 0 16px !important;
+  transform: none !important;
+}
