@@ -2833,3 +2833,19 @@ body.calls-open #main-content { padding-bottom:0 !important; }
   .calls-start-actions .calls-start-button { width:100%; min-width:0; }
   .voice-call-video-grid { grid-template-columns:1fr; }
 }
+
+/* Keep destructive conversation and group actions together at the very bottom. */
+.conversation-danger-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 760px;
+  margin: 22px auto 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.conversation-danger-actions > button {
+  width: 100%;
+  min-height: 52px;
+}
