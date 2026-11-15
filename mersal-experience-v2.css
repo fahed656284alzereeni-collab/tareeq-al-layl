@@ -994,8 +994,15 @@ body:has(#workspace:not([hidden])) .topbar {
 /* Make the channel/community home content a real full-height column. */
 .channels-panel,
 .communities-panel {
-  display: block !important;
   overflow: auto !important;
+}
+
+/* Hidden tab panels must remain absent, even when their visible layout is forced. */
+.channels-panel[hidden],
+.communities-panel[hidden] {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 .channels-card,
 .communities-card {
