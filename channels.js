@@ -2,7 +2,6 @@ const $ = (selector) => document.querySelector(selector);
 
 export function initMersalChannels({ supabase, getCurrentUser, announce, safeText }) {
   const panel = $("#channels-panel");
-  const workspace = $("#workspace");
   const closeButton = $("#channels-close");
   const openButton = $("#open-channels-button");
   const home = $("#channels-home-view");
