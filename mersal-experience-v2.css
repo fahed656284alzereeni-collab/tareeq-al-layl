@@ -1076,6 +1076,7 @@ body.tools-open #workspace {
 
 /* Make the group invitation action independently discoverable in group information. */
 #group-conversation-info-list .group-info-actions .group-info-share-button {
+  grid-column: 1 / -1;
   flex: 1 1 100%;
   width: 100%;
   min-height: 50px;
