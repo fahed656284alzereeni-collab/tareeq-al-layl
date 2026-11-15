@@ -73,7 +73,6 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     setText($("#community-groups-editor-help"), "اختر المجموعات التي تريد ربطها بهذا المجتمع. يجب أن تكون مشرفًا في المجموعة.", "Choose groups to link to this community. You must be a group admin.");
     setText(communityGroupsSave, "حفظ المجموعات", "Save groups");
     setText(communityGroupsCancel, "إلغاء", "Cancel");
-    setAttr(communityGroupsSection, "aria-label", "مجموعات المجتمع", "Community groups");
     setAttr(communityGroupsList, "aria-label", "مجموعات المجتمع", "Community groups");
     setAttr(communityGroupsAvailable, "aria-label", "المجموعات المتاحة", "Available groups");
 
@@ -131,7 +130,6 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
 
   function setStatus(ar, english, error = false) {
     status.textContent = t(ar, english);
-    status.setAttribute("role", error ? "alert" : "status");
   }
 
   async function stopRealtime() {
