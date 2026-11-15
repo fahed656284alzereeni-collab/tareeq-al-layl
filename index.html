@@ -536,7 +536,6 @@
           </div>
           <section id="conversation-info" class="conversation-info" hidden>
             <button id="close-conversation-info" type="button" class="quiet-button">إغلاق المعلومات</button>
-            <button id="conversation-starred-messages-button" type="button" class="quiet-button" aria-controls="starred-messages-panel">الرسائل المميزة بنجمة</button>
             <div id="conversation-info-name-card" class="conversation-info-list conversation-info-common-list info-identity-card">
               <div id="conversation-info-name-row"><span id="conversation-info-name-label" class="conversation-info-label">الاسم</span><span class="conversation-info-value" id="conversation-info-name">—</span></div>
             </div>
@@ -552,11 +551,10 @@
                   <span class="conversation-info-value" id="group-info-description">—</span>
                 </div>
                 <div class="group-info-actions">
-                  <button id="group-info-call-button" type="button" class="quiet-button">اتصال صوتي</button>
-                  
-                  <button id="group-add-members-button" type="button" class="quiet-button" hidden>إضافة أعضاء</button>
                   <button id="group-settings-open" type="button" class="quiet-button" hidden>إعدادات المجموعة</button>
                   <button id="group-more-options-open" type="button" class="quiet-button" aria-controls="group-more-options-panel" hidden>تعديل معلومات المجموعة</button>
+                  <button id="group-add-members-button" type="button" class="quiet-button" hidden>إضافة أعضاء</button>
+                  <button id="group-info-call-button" type="button" class="quiet-button">اتصال صوتي</button>
                 </div>
               </div>
               <div id="group-invite-share-card" class="group-info-card group-invite-share-card info-section-card">
@@ -586,10 +584,6 @@
                 <span class="conversation-info-label">تاريخ إنشاء المجموعة</span>
                 <span class="conversation-info-value" id="conversation-info-created">—</span>
               </div>
-              <div class="group-info-membership-actions">
-                <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
-                <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
-              </div>
             </div>
             <div id="individual-conversation-info-list" class="conversation-info-list individual-info-layout" hidden>
               <h2 class="conversation-info-section-title">معلومات الحساب</h2>
@@ -605,19 +599,22 @@
               <h2 class="conversation-info-section-title">إدارة المحادثة</h2>
               <label class="visually-hidden" for="conversation-search-input">البحث في الرسائل</label>
               <input id="conversation-search-input" class="conversation-search-input" type="search" autocomplete="off" placeholder="ابحث في الرسائل" aria-label="البحث في الرسائل">
+              <button id="conversation-starred-messages-button" type="button" class="quiet-button" aria-controls="starred-messages-panel">الرسائل المميزة بنجمة</button>
               <button id="conversation-info-export" type="button" class="quiet-button">تنزيل سجل المحادثة</button>
               <button id="conversation-info-mute" type="button" class="quiet-button">كتم إشعارات المحادثة</button>
-              <button id="conversation-info-clear" type="button" class="danger-button">مسح المحادثة من جهازي</button>
-              <button id="block-person-button" type="button" class="danger-button" hidden>حظر الشخص</button>
 
             </div>
 
-            <div class="conversation-membership-actions info-section-card">
-              <button id="conversation-delete-button" type="button" class="danger-button">حذف الدردشة من عندي</button>
-            </div>
             <div id="conversation-search-area" class="conversation-search-area" hidden>
               <p id="conversation-search-status" aria-live="polite">اكتب كلمة لعرض النتائج.</p>
               <ul id="conversation-search-results" class="conversation-search-results"></ul>
+            </div>
+            <div class="conversation-danger-actions info-section-card" aria-label="إجراءات الحذف والمغادرة">
+              <button id="group-leave" type="button" class="danger-button" hidden>مغادرة المجموعة</button>
+              <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
+              <button id="conversation-info-clear" type="button" class="danger-button">مسح المحادثة من جهازي</button>
+              <button id="block-person-button" type="button" class="danger-button" hidden>حظر الشخص</button>
+              <button id="conversation-delete-button" type="button" class="danger-button">حذف الدردشة من عندي</button>
             </div>
           
             
