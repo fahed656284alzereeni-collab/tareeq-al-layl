@@ -744,11 +744,13 @@
       <div class="channels-card">
         <button id="channels-close" type="button" class="quiet-button" aria-label="إغلاق القنوات" hidden>إغلاق</button>
         <div id="channels-home-view">
-          <button id="channel-create-button" type="button" class="primary-button">إنشاء قناة</button>
+          <div class="channels-home-toolbar" role="group" aria-label="إنشاء قناة والبحث عن القنوات">
+            <button id="channel-create-button" type="button" class="primary-button">إنشاء قناة</button>
+            <label for="channels-search">البحث في القنوات</label>
+            <input id="channels-search" type="search" placeholder="ابحث عن قناة" autocomplete="off">
+          </div>
           <p id="channels-title" class="channels-title" tabindex="-1">القنوات</p>
           <p id="channels-intro" class="channels-intro">تابع القنوات العامة أو أنشئ قناة لنشر التحديثات.</p>
-          <label for="channels-search">البحث في القنوات</label>
-          <input id="channels-search" type="search" placeholder="ابحث عن قناة" autocomplete="off">
           <p id="channels-status" class="channels-status" role="status" aria-live="polite"></p>
           <ul id="channels-list" class="channels-list" aria-label="القنوات العامة"></ul>
         </div>
@@ -797,11 +799,13 @@
       <div class="communities-card">
         <button id="communities-close" type="button" class="quiet-button" aria-label="إغلاق المجتمعات" hidden>إغلاق</button>
         <div id="communities-home-view">
-          <button id="community-create-button" type="button" class="primary-button">إنشاء مجتمع</button>
+          <div class="communities-home-toolbar" role="group" aria-label="إنشاء مجتمع والبحث عن المجتمعات">
+            <button id="community-create-button" type="button" class="primary-button">إنشاء مجتمع</button>
+            <label for="communities-search">البحث في المجتمعات</label>
+            <input id="communities-search" type="search" placeholder="ابحث عن مجتمع" autocomplete="off">
+          </div>
           <p id="communities-title" class="communities-title" tabindex="-1">المجتمعات</p>
           <p id="communities-intro" class="communities-intro">انضم إلى مجتمعات عامة وتابع إعلاناتها، أو أنشئ مجتمعك الخاص.</p>
-          <label for="communities-search">البحث في المجتمعات</label>
-          <input id="communities-search" type="search" placeholder="ابحث عن مجتمع" autocomplete="off">
           <p id="communities-status" class="communities-status" role="status" aria-live="polite"></p>
           <ul id="communities-list" class="communities-list" aria-label="المجتمعات العامة"></ul>
         </div>
