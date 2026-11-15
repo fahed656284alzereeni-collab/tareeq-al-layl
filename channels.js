@@ -18,6 +18,11 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
   const detailBack = $("#channel-detail-back");
   const detailName = $("#channel-detail-name");
   const detailDescription = $("#channel-detail-description");
+  const infoView = $("#channel-info-view");
+  const infoBack = $("#channel-info-back");
+  const infoName = $("#channel-info-name");
+  const infoDescription = $("#channel-info-description");
+  const infoCreated = $("#channel-info-created");
   const followButton = $("#channel-follow-toggle");
   const notificationsButton = $("#channel-notifications-toggle");
   const deleteChannelButton = $("#channel-delete-button");
@@ -60,6 +65,9 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     setAttr(postsList, "aria-label", "تحديثات القناة", "Channel updates");
     setText($("#channel-create-save"), "حفظ القناة", "Save channel");
     setText(detailBack, "العودة إلى القنوات", "Back to channels");
+    setText(infoBack, "العودة إلى القناة", "Back to channel");
+    setAttr(detailName, "aria-label", "فتح معلومات القناة", "Open channel information");
+    setAttr(infoView, "aria-label", "معلومات القناة", "Channel information");
     setText($("#channel-post-submit"), "نشر التحديث", "Publish update");
     setText(deleteChannelButton, "حذف القناة", "Delete channel");
     setText(notificationsButton, activeFollow?.notifications_enabled === false ? "تشغيل إشعارات القناة" : "إيقاف إشعارات القناة", activeFollow?.notifications_enabled === false ? "Turn on channel notifications" : "Turn off channel notifications");
@@ -180,6 +188,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     activeFollow = null;
     createView.hidden = true;
     detailView.hidden = true;
+    if (infoView) infoView.hidden = true;
     home.hidden = false;
     localize();
   }
@@ -228,10 +237,16 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     home.hidden = true;
     createView.hidden = true;
     detailView.hidden = false;
+    if (infoView) infoView.hidden = true;
     detailName.textContent = channel.name;
     detailName.setAttribute("data-no-translate", "");
     detailDescription.textContent = channel.description || t("لا يوجد وصف للقناة.", "No channel description.");
     detailDescription.setAttribute("data-no-translate", "");
+    if (infoName) infoName.textContent = channel.name || "—";
+    if (infoDescription) infoDescription.textContent = channel.description || t("لا يوجد وصف للقناة.", "No channel description.");
+    if (infoCreated) infoCreated.textContent = channel.created_at
+      ? new Intl.DateTimeFormat(isEnglish() ? "en" : "ar-JO", { dateStyle: "long" }).format(new Date(channel.created_at))
+      : "—";
     const own = channel.owner_id === user.id;
     followButton.hidden = own;
     notificationsButton.hidden = own || !activeFollow;
@@ -540,6 +555,20 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     createButton.focus();
   });
 
+  detailName.addEventListener("click", () => {
+    if (!activeChannel || !infoView) return;
+    void stopPostsRealtime();
+    detailView.hidden = true;
+    infoView.hidden = false;
+    infoBack.focus();
+  });
+  infoBack.addEventListener("click", () => {
+    if (!activeChannel) return;
+    infoView.hidden = true;
+    detailView.hidden = false;
+    detailName.focus();
+    void startPostsRealtime(activeChannel.id);
+  });
   detailBack.addEventListener("click", () => {
     showHome();
     renderList();
@@ -552,6 +581,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     if (event.key === "Escape") {
       event.preventDefault();
       if (!createView.hidden) { showHome(); createButton.focus(); }
+      else if (infoView && !infoView.hidden) { infoView.hidden = true; detailView.hidden = false; detailName.focus(); void startPostsRealtime(activeChannel?.id); }
       else if (!detailView.hidden) { showHome(); title.focus(); }
       else close();
       return;
