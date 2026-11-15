@@ -67,6 +67,11 @@ for insert to authenticated with check (
     where c.id = channel_followers.channel_id and c.is_public and c.owner_id <> (select auth.uid()))
 );
 
+drop policy if exists channel_followers_update_self on public.channel_followers;
+create policy channel_followers_update_self on public.channel_followers
+for update to authenticated using (follower_id = (select auth.uid()))
+with check (follower_id = (select auth.uid()));
+
 drop policy if exists channel_followers_delete_self_or_owner on public.channel_followers;
 create policy channel_followers_delete_self_or_owner on public.channel_followers
 for delete to authenticated using (
@@ -114,16 +119,5 @@ for delete to authenticated using (
 );
 
 grant select, insert, update, delete on public.channels to authenticated;
-revoke update on public.channel_followers from authenticated;
-grant select, insert, delete on public.channel_followers to authenticated;
+grant select, insert, update, delete on public.channel_followers to authenticated;
 grant select, insert, update, delete on public.channel_posts to authenticated;
-
-do $$
-begin
-  if not exists (
-    select 1 from pg_publication_tables
-    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'channel_posts'
-  ) then
-    alter publication supabase_realtime add table public.channel_posts;
-  end if;
-end $$;

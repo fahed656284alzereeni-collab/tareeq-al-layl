@@ -1,3 +1,4 @@
+
 create or replace function private.can_schedule_message(
   p_conversation_id uuid,
   p_sender_id uuid

@@ -1,1 +1,0 @@
-grant update (body, edited_at) on public.messages to authenticated;

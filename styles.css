@@ -1083,7 +1083,7 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 body.group-member-options-fullscreen{overflow:hidden}
 
 
-/* Persistent, VoiceOver-friendly two-tab bottom navigation */
+/* Persistent, VoiceOver-friendly seven-tab bottom navigation */
 #main-content { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
 .bottom-navigation {
   position: fixed;
@@ -1091,7 +1091,7 @@ body.group-member-options-fullscreen{overflow:hidden}
   bottom: 0;
   z-index: 150;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 10px;
   min-height: 76px;
   padding: 9px clamp(12px, 4vw, 28px) calc(9px + env(safe-area-inset-bottom));
@@ -1340,7 +1340,7 @@ input::placeholder, textarea::placeholder { color: #c4d0e2; opacity: 1; }
 .attachment-choice { width: 100%; text-align: right; }
 .bottom-navigation {
   min-height: 88px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 12px;
   padding: 10px clamp(12px, 4vw, 30px) calc(10px + env(safe-area-inset-bottom));
 }

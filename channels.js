@@ -33,6 +33,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
   const status = $("#channels-status");
 
   let rows = [];
+  let listLoadSequence = 0;
   let activeChannel = null;
   let activeFollow = null;
   let returnFocus = null;
@@ -110,7 +111,8 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
 
   async function loadChannels() {
     const user = getCurrentUser();
-    if (!user) return;
+    if (!user || panel.hidden) return;
+    const loadId = ++listLoadSequence;
     setStatus("جارٍ تحميل القنوات…", "Loading channels…");
     const [channelsResult, followsResult] = await Promise.all([
       supabase.from("channels").select("id,owner_id,name,description,created_at,updated_at")
@@ -118,6 +120,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
       supabase.from("channel_followers").select("channel_id,notifications_enabled")
         .eq("follower_id", user.id)
     ]);
+    if (loadId !== listLoadSequence || panel.hidden || getCurrentUser()?.id !== user.id) return;
     if (channelsResult.error) throw channelsResult.error;
     if (followsResult.error) throw followsResult.error;
     const follows = new Map((followsResult.data || []).map(row => [row.channel_id, row]));
@@ -161,6 +164,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
 
   async function startPostsRealtime(channelId) {
     await stopPostsRealtime();
+    if (activeChannel?.id !== channelId || detailView.hidden || panel.hidden) return;
     postsRealtimeChannel = supabase.channel("mersal-channel-posts-" + channelId)
       .on("postgres_changes", {
         event: "*", schema: "public", table: "channel_posts", filter: "channel_id=eq." + channelId
@@ -184,25 +188,35 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     if (!getCurrentUser() || !panel) return;
     returnFocus = returnElement || openButton;
     panel.hidden = false;
+    document.body.classList.add("channels-open");
     showHome();
     void loadChannels().catch(error => setStatus("تعذر تحميل القنوات: " + (error.message || ""), "Could not load channels: " + (error.message || ""), true));
     title?.focus();
   }
 
-  function close() {
-    if (!panel || panel.hidden) return;
-    panel.hidden = true;
+  function close({ restoreFocus = true } = {}) {
+    listLoadSequence++;
+    if (panel) panel.hidden = true;
+    document.body.classList.remove("channels-open");
     showHome();
-    if (returnFocus?.isConnected) returnFocus.focus();
-    else openButton?.focus();
+    rows = [];
+    list.replaceChildren();
+    postsList.replaceChildren();
+    setStatus("", "");
+    if (restoreFocus) {
+      if (returnFocus?.isConnected) returnFocus.focus();
+      else openButton?.focus();
+    }
   }
 
   async function openChannel(channel, trigger) {
     const user = getCurrentUser();
+    if (!user) return;
     activeChannel = channel;
     const followResult = await supabase.from("channel_followers")
       .select("channel_id,notifications_enabled").eq("channel_id", channel.id)
       .eq("follower_id", user.id).maybeSingle();
+    if (activeChannel?.id !== channel.id || panel.hidden || getCurrentUser()?.id !== user.id) return;
     if (followResult.error) {
       announce(t("تعذر فتح القناة: ", "Could not open channel: ") + followResult.error.message, "error");
       return;
@@ -232,6 +246,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     const result = await supabase.from("channel_posts")
       .select("id,channel_id,author_id,body,created_at,edited_at,is_deleted")
       .eq("channel_id", channelId).order("created_at", { ascending: false }).limit(100);
+    if (activeChannel?.id !== channelId || detailView.hidden) return;
     if (result.error) {
       postsList.replaceChildren(safeText("li", "empty-item", t("تعذر تحميل تحديثات القناة.", "Could not load channel updates.")));
       return;

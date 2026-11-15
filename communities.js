@@ -41,6 +41,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
   const status = $("#communities-status");
 
   let communities = [];
+  let listLoadSequence = 0;
   let activeCommunity = null;
   let isMember = false;
   let returnFocus = null;
@@ -142,6 +143,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
 
   async function startRealtime(communityId) {
     await stopRealtime();
+    if (activeCommunity?.id !== communityId || detailView.hidden || panel.hidden) return;
     realtimeChannel = supabase.channel("mersal-community-posts-" + communityId)
       .on("postgres_changes", {
         event: "*", schema: "public", table: "community_posts", filter: "community_id=eq." + communityId
@@ -153,13 +155,15 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
 
   async function loadCommunities() {
     const user = getCurrentUser();
-    if (!user) return;
+    if (!user || panel.hidden) return;
+    const loadId = ++listLoadSequence;
     setStatus("جارٍ تحميل المجتمعات…", "Loading communities…");
     const [communityResult, memberResult] = await Promise.all([
       supabase.from("communities").select("id,owner_id,name,description,created_at,updated_at")
         .eq("is_public", true).order("updated_at", { ascending: false }).limit(100),
       supabase.from("community_members").select("community_id").eq("user_id", user.id)
     ]);
+    if (loadId !== listLoadSequence || panel.hidden || getCurrentUser()?.id !== user.id) return;
     if (communityResult.error) throw communityResult.error;
     if (memberResult.error) throw memberResult.error;
     const memberIds = new Set((memberResult.data || []).map(row => row.community_id));
@@ -208,17 +212,30 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     if (!getCurrentUser() || !panel) return;
     returnFocus = returnElement || openButton;
     panel.hidden = false;
+    document.body.classList.add("communities-open");
     showHome();
     void loadCommunities().catch(error => setStatus("تعذر تحميل المجتمعات: " + (error.message || ""), "Could not load communities: " + (error.message || ""), true));
     title?.focus();
   }
 
-  function close() {
-    if (panel.hidden) return;
+  function close({ restoreFocus = true } = {}) {
+    listLoadSequence++;
     panel.hidden = true;
+    document.body.classList.remove("communities-open");
     showHome();
-    if (returnFocus?.isConnected) returnFocus.focus();
-    else openButton?.focus();
+    communities = [];
+    linkedCommunityGroups = [];
+    list.replaceChildren();
+    postsList.replaceChildren();
+    communityGroupsList.replaceChildren();
+    communityGroupsAvailable.replaceChildren();
+    communityGroupsEditor.hidden = true;
+    communityGroupsManage.hidden = false;
+    setStatus("", "");
+    if (restoreFocus) {
+      if (returnFocus?.isConnected) returnFocus.focus();
+      else openButton?.focus();
+    }
   }
 
   function renderCommunityGroups() {
@@ -278,9 +295,11 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
       return;
     }
     communityGroupsSection.hidden = false;
+    const communityId = activeCommunity.id;
     const result = await supabase.from("community_groups")
       .select("id,community_id,conversation_id,group_name,invite_token,created_at")
-      .eq("community_id", activeCommunity.id).order("created_at", { ascending: true });
+      .eq("community_id", communityId).order("created_at", { ascending: true });
+    if (activeCommunity?.id !== communityId || detailView.hidden || panel.hidden) return;
     if (result.error) {
       communityGroupsList.replaceChildren(safeText("li", "empty-item", t("تعذر تحميل مجموعات المجتمع.", "Could not load community groups.")));
       announce(t("تعذر تحميل مجموعات المجتمع: ", "Could not load community groups: ") + result.error.message, "error");
@@ -399,9 +418,11 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
 
   async function openCommunity(community) {
     const user = getCurrentUser();
+    if (!user) return;
     activeCommunity = community;
     const membership = await supabase.from("community_members").select("community_id")
       .eq("community_id", community.id).eq("user_id", user.id).maybeSingle();
+    if (activeCommunity?.id !== community.id || panel.hidden || getCurrentUser()?.id !== user.id) return;
     if (membership.error) {
       announce(t("تعذر فتح المجتمع: ", "Could not open community: ") + membership.error.message, "error");
       return;
@@ -438,6 +459,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
     const result = await supabase.from("community_posts")
       .select("id,community_id,author_id,body,created_at,edited_at,is_deleted")
       .eq("community_id", communityId).order("created_at", { ascending: false }).limit(100);
+    if (activeCommunity?.id !== communityId || detailView.hidden) return;
     if (result.error) {
       postsList.replaceChildren(safeText("li", "empty-item", t("تعذر تحميل إعلانات المجتمع.", "Could not load community announcements.")));
       return;

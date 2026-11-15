@@ -1,6 +1,6 @@
 import { initMersalTools } from "./tools.js?v=20261114-clean-tools-v1";
-import { initMersalChannels } from "./channels.js?v=20261114-a11y-v2";
-import { initMersalCommunities } from "./communities.js?v=20261114-a11y-v2";
+import { initMersalChannels } from "./channels.js?v=20261114-race-guard-v4";
+import { initMersalCommunities } from "./communities.js?v=20261114-race-guard-v4";
 
 // Load Supabase Auth through two independent ESM CDNs. A failed static import
 // prevents this entire module from running, leaving the HTML startup timer visible.
@@ -23,7 +23,7 @@ try {
 
 const SUPABASE_URL = "https://nnsleztgbqeuqavkhrpw.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_0V7aL9rnFz5hFjKoPhz2ig_mSbxBK-T";
-const VAPID_PUBLIC_KEY = "BJ8N8a64oyzKOAgPPRhRU9jiP3XQoe4cXA16ku1Iuf_Mo4Ll2-jtYBLDyx69hZa5YhX1yN0hJ9NZRCX-bqIrHa4";
+const VAPID_PUBLIC_KEY = "BIIdiJVxOT89p_bj_T4p6btgilseeHTVSTMqeYlFx4MEjBsQ4grBPJOQEanNjcsqh-ZKRroInkrW7tNWpYOs_LA";
 const serviceWorkerReady = "serviceWorker" in navigator
   ? navigator.serviceWorker.register("/sw.js").then(() => navigator.serviceWorker.ready).catch(error => { console.error("Service worker:", error); return null; })
   : Promise.resolve(null);
@@ -1343,6 +1343,7 @@ const broadcastListNameInput=$("#broadcast-list-name"),broadcastPeopleSearch=$("
 const broadcastPeopleList=$("#broadcast-people-list"),broadcastSelectedCount=$("#broadcast-selected-count");
 const saveBroadcastListButton=$("#save-broadcast-list"),cancelBroadcastCreateButton=$("#cancel-broadcast-create");
 let selectedBroadcastRecipients=new Set();
+let broadcastListLoadSequence = 0;
 
 let selectedGroupMembers=new Set(),newChatReturnFocus=null;
 const peopleSearch = $("#people-search");
@@ -1404,6 +1405,55 @@ function closeHelpSupportForNavigation() {
 }
 function closeNewChatForNavigation() {
   if (newChatPanel && !newChatPanel.hidden) closeNewChat();
+}
+function resetBroadcastPanel() {
+  broadcastListLoadSequence++;
+  broadcastPanel.hidden = true;
+  broadcastLists.replaceChildren();
+  broadcastPeopleList.replaceChildren();
+  selectedBroadcastRecipients.clear();
+  broadcastListNameInput.value = "";
+  broadcastPeopleSearch.value = "";
+  broadcastListsView.hidden = false;
+  broadcastCreateView.hidden = true;
+  saveBroadcastListButton.disabled = false;
+  broadcastReturnFocus = null;
+}
+function resetAccountScopedPanels() {
+  if (settingsPanel) settingsPanel.hidden = true;
+  if (deleteAccountPanel) deleteAccountPanel.hidden = true;
+  if (statusView) statusView.hidden = true;
+  if (toolsView) toolsView.hidden = true;
+  if (callsView) callsView.hidden = true;
+  if (statusComposerPanel) statusComposerPanel.hidden = true;
+  if (statusViewerPanel) statusViewerPanel.hidden = true;
+  if (messageSchedulePanel) messageSchedulePanel.hidden = true;
+  if (scheduledMessagesPanel) scheduledMessagesPanel.hidden = true;
+  if (conversationInfoPanel) conversationInfoPanel.hidden = true;
+  if (notificationsPanel) notificationsPanel.hidden = true;
+  if (privacyContactPicker) privacyContactPicker.hidden = true;
+  if (helpSupportPanel) helpSupportPanel.hidden = true;
+  if (newChatPanel) newChatPanel.hidden = true;
+  if (groupInvitePreviewPanel) {
+    groupInvitePreviewPanel.hidden = true;
+    groupInvitePreviewPanel.setAttribute("aria-hidden", "true");
+  }
+  resetBroadcastPanel();
+  mersalTools.closeTool(false);
+  mersalChannels.close({ restoreFocus: false });
+  mersalCommunities.close({ restoreFocus: false });
+  closeHelpSupportForNavigation();
+  if (statusExpiryTimer) clearTimeout(statusExpiryTimer);
+  statusExpiryTimer = null;
+  activePrivacyPicker = null;
+  pendingGroupInviteToken = null;
+  pendingGroupInvitePreview = null;
+  workspace.classList.remove("chat-open");
+  document.body.classList.remove(
+    "settings-open", "tools-open", "calls-open", "status-open",
+    "help-support-open", "chat-fullscreen", "conversation-info-fullscreen",
+    "group-invite-preview-open"
+  );
 }
 function returnToHomeTab() {
   mersalTools.closeTool(false);
@@ -1580,6 +1630,26 @@ const groupJoinRequestsSection = $("#group-join-requests-section");
 const groupJoinRequestsList = $("#group-join-requests-list");
 const groupJoinRequestsStatus = $("#group-join-requests-status");
 const groupJoinRequestsRefreshButton = $("#group-join-requests-refresh");
+const groupSettingsContent = groupSettingsPanel?.querySelector(".group-settings-content");
+const groupSettingsMemberManagement = document.createElement("section");
+groupSettingsMemberManagement.className = "group-settings-section group-settings-member-management";
+groupSettingsMemberManagement.setAttribute("aria-labelledby", "group-settings-member-title");
+groupSettingsMemberManagement.hidden = true;
+const groupSettingsMemberTitle = document.createElement("h3");
+groupSettingsMemberTitle.id = "group-settings-member-title";
+groupSettingsMemberTitle.tabIndex = -1;
+groupSettingsMemberTitle.textContent = "إدارة عضو في المجموعة";
+const groupSettingsMemberName = document.createElement("p");
+groupSettingsMemberName.className = "group-member-options-name";
+groupSettingsMemberName.setAttribute("data-no-translate", "");
+const groupSettingsMemberRole = document.createElement("p");
+groupSettingsMemberRole.className = "group-member-options-role";
+const groupSettingsMemberActions = document.createElement("div");
+groupSettingsMemberActions.className = "group-member-options-actions";
+const groupSettingsMemberBackButton = safeText("button", "quiet-button", "رجوع إلى إعدادات المجموعة");
+groupSettingsMemberBackButton.type = "button";
+groupSettingsMemberManagement.append(groupSettingsMemberTitle, groupSettingsMemberName, groupSettingsMemberRole, groupSettingsMemberActions, groupSettingsMemberBackButton);
+groupSettingsContent?.append(groupSettingsMemberManagement);
 const groupInvitePreviewPanel = $("#group-invite-preview-panel");
 const groupInvitePreviewCancelButton = $("#group-invite-preview-cancel");
 const groupInvitePreviewJoinButton = $("#group-invite-preview-join");
@@ -1598,6 +1668,19 @@ const groupAddSearch = $("#group-add-search");
 const groupAddPeople = $("#group-add-people");
 const groupAddSelectedButton = $("#group-add-selected");
 const groupMemberList = $("#group-member-list");
+const groupSettingsAddMembers = document.createElement("section");
+groupSettingsAddMembers.className = "group-settings-section group-settings-add-members";
+groupSettingsAddMembers.setAttribute("aria-labelledby", "group-settings-add-members-title");
+groupSettingsAddMembers.hidden = true;
+const groupSettingsAddMembersTitle = document.createElement("h3");
+groupSettingsAddMembersTitle.id = "group-settings-add-members-title";
+groupSettingsAddMembersTitle.tabIndex = -1;
+groupSettingsAddMembersTitle.textContent = "إضافة أعضاء للمجموعة";
+closeGroupAddButton.textContent = "رجوع إلى إعدادات المجموعة";
+groupSettingsAddMembers.append(groupSettingsAddMembersTitle, groupAddSearch, groupAddPeople, groupAddSelectedButton, closeGroupAddButton);
+groupSettingsContent?.append(groupSettingsAddMembers);
+groupAddPanel.hidden = true;
+groupSettingsAddMembers.addEventListener("keydown", event => { if (event.key === "Escape") closeGroupAddPanel(); });
 const groupMemberOptionsPanel = $("#group-member-options-panel");
 const closeGroupMemberOptionsButton = $("#close-group-member-options");
 const groupMemberOptionsName = $("#group-member-options-name");
@@ -2333,6 +2416,7 @@ function safeText(tag, className, value) {
 }
 function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكنك المحاولة مرة أخرى باستخدام Google.") {
   finishStartup();
+  resetAccountScopedPanels();
   settingsPanel.hidden = true;
   document.body.classList.remove("settings-open");
   bottomNavigation.hidden = true;
@@ -2399,6 +2483,32 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   if (alreadyLoadedForThisUser) {
     finishOAuthPopup();
     return;
+  }
+  if (currentUser?.id && currentUser.id !== session.user.id) {
+    // Close every account-scoped view before showing the next account.
+    resetAccountScopedPanels();
+    if (realtimeChannel) void supabase.removeChannel(realtimeChannel);
+    if (presenceChannel) void supabase.removeChannel(presenceChannel);
+    if (notificationChannel) void supabase.removeChannel(notificationChannel);
+    realtimeChannel = null;
+    presenceChannel = null;
+    notificationChannel = null;
+    void endVoiceCall(false);
+    void closeCallChannel();
+    activeConversation = null;
+    activePartner = null;
+    conversations = [];
+    people = [];
+    notifications = [];
+    callsProfileCache = new Map();
+    conversationList.replaceChildren();
+    messagesList.replaceChildren();
+    peopleList.replaceChildren();
+    notificationsList.replaceChildren();
+    if (statusList) statusList.replaceChildren();
+    if (callsHistoryList) callsHistoryList.replaceChildren();
+    if (statusExpiryTimer) clearTimeout(statusExpiryTimer);
+    statusExpiryTimer = null;
   }
   if (currentUser?.id !== session.user.id) {
     privacySettings = { last_seen_visibility:"contacts", online_visibility:"everyone", read_receipts_enabled:true,
@@ -2581,7 +2691,18 @@ async function syncPushNotificationState() {
   }
   try {
     const registration = await serviceWorkerReady;
-    const subscription = registration ? await registration.pushManager.getSubscription() : null;
+    let subscription = registration ? await registration.pushManager.getSubscription() : null;
+    if (subscription?.options?.applicationServerKey) {
+      const currentKey = new Uint8Array(subscription.options.applicationServerKey);
+      const expectedKey = applicationServerKeyFromBase64(VAPID_PUBLIC_KEY);
+      const keyMatches = currentKey.length === expectedKey.length && currentKey.every((byte, index) => byte === expectedKey[index]);
+      if (!keyMatches) {
+        await supabase.from("push_subscriptions").delete().eq("user_id", currentUser.id).eq("endpoint", subscription.endpoint);
+        await subscription.unsubscribe();
+        subscription = null;
+        pushNotificationsHelp.textContent = "تم تحديث مفتاح الإشعارات لأسباب أمنية. شغّل الإشعارات مجددًا لإعادة ربط هذا الجهاز.";
+      }
+    }
     if (Notification.permission === "granted" && subscription) {
       const { error } = await supabase.from("push_subscriptions").upsert({
         user_id: currentUser.id,
@@ -2691,21 +2812,28 @@ pushNotificationsButton.addEventListener("click", async () => {
 });
 
 async function loadNotifications() {
-  if (!currentUser) return;
+  const userId = currentUser?.id;
+  if (!userId) return;
+  const requestId = (loadNotifications.sequence = (loadNotifications.sequence || 0) + 1);
+  const isCurrent = () => loadNotifications.sequence === requestId && currentUser?.id === userId;
   const { data, error } = await supabase.from("notifications")
     .select("id,recipient_id,sender_id,conversation_id,message_id,preview,created_at,read_at")
     .order("created_at", { ascending: false })
     .limit(50);
+  if (!isCurrent()) return;
   if (error) throw error;
-  notifications = data || [];
-  const senderIds = [...new Set(notifications.map(item => item.sender_id))];
+  const loadedNotifications = data || [];
+  const senderIds = [...new Set(loadedNotifications.map(item => item.sender_id))];
   let profileMap = new Map();
   if (senderIds.length) {
     const { data: profiles, error: profileError } = await supabase.from("profiles")
       .select("id,display_name").in("id", senderIds);
+    if (!isCurrent()) return;
     if (profileError) throw profileError;
     profileMap = new Map((profiles || []).map(profile => [profile.id, profile]));
   }
+  if (!isCurrent()) return;
+  notifications = loadedNotifications;
   renderNotifications(profileMap);
 }
 function renderNotifications(profileMap = new Map()) {
@@ -2736,16 +2864,21 @@ function renderNotifications(profileMap = new Map()) {
   }
 }
 async function openNotification(notification, sender) {
-  if (!currentUser) return;
+  const userId = currentUser?.id;
+  if (!userId || !notification?.conversation_id) return;
+  const requestId = (openNotification.sequence = (openNotification.sequence || 0) + 1);
+  const isCurrent = () => openNotification.sequence === requestId && currentUser?.id === userId;
   notificationsPanel.hidden = true;
   const { data: conversation, error } = await supabase.from("conversations")
     .select("id,user_one,user_two,created_at,last_message_at,is_group,group_name")
     .eq("id", notification.conversation_id).single();
+  if (!isCurrent()) return;
   if (error) {
     announce("تعذر فتح المحادثة من الإشعار: " + error.message, "error");
     return;
   }
   await selectConversation(conversation, sender);
+  if (!isCurrent() || activeConversation?.id !== conversation.id) return;
   if (conversation.is_group) {
     chatPartnerName.textContent = conversation.group_name || "مجموعة";
     chatPartnerPresence.textContent = "مجموعة";
@@ -2753,27 +2886,33 @@ async function openNotification(notification, sender) {
   }
 }
 function startNotificationsRealtime() {
-  if (!currentUser) return;
+  const userId = currentUser?.id;
+  if (!userId) return;
+  const isCurrent = () => currentUser?.id === userId && notificationChannel?.topic === "realtime:notifications-" + userId;
   if (notificationChannel) void supabase.removeChannel(notificationChannel);
-  notificationChannel = supabase.channel("notifications-" + currentUser.id)
+  notificationChannel = supabase.channel("notifications-" + userId)
     .on("postgres_changes", {
       event: "INSERT", schema: "public", table: "notifications",
-      filter: "recipient_id=eq." + currentUser.id
+      filter: "recipient_id=eq." + userId
     }, async (payload) => {
       try {
-        if(payload.new?.message_id && payload.new.sender_id !== currentUser.id){
+        if (!isCurrent()) return;
+        if(payload.new?.message_id && payload.new.sender_id !== userId){
           const {error:deliveryError}=await supabase.from("message_deliveries").upsert(
-            {message_id:payload.new.message_id,user_id:currentUser.id},
+            {message_id:payload.new.message_id,user_id:userId},
             {onConflict:"message_id,user_id",ignoreDuplicates:true}
           );
+          if (!isCurrent()) return;
           if(deliveryError)console.warn("تعذر تسجيل تسليم الرسالة من الإشعار:",deliveryError.message);
         }
         await loadNotifications();
+        if (!isCurrent()) return;
         const { data } = await supabase.from("profiles").select("display_name")
           .eq("id", payload.new.sender_id).maybeSingle();
+        if (!isCurrent()) return;
         announce("إشعار جديد من " + (data?.display_name || "مستخدم مرسال"));
       } catch (error) {
-        announce("وصلك إشعار جديد، لكن تعذر تحديث القائمة: " + error.message, "error");
+        if (isCurrent()) announce("وصلك إشعار جديد، لكن تعذر تحديث القائمة: " + error.message, "error");
       }
     })
     // When an administrator approves a group join request, the approved
@@ -2781,9 +2920,9 @@ function startNotificationsRealtime() {
     // list immediately so the newly available group appears without reload.
     .on("postgres_changes", {
       event: "INSERT", schema: "public", table: "conversation_members",
-      filter: "user_id=eq." + currentUser.id
+      filter: "user_id=eq." + userId
     }, payload => {
-      if (!payload.new?.conversation_id) return;
+      if (!isCurrent() || !payload.new?.conversation_id) return;
       void loadConversations().catch(error =>
         console.warn("تعذر إظهار المجموعة بعد الموافقة على طلب الانضمام:", error)
       );
@@ -2791,9 +2930,8 @@ function startNotificationsRealtime() {
     .on("postgres_changes", {
       event: "UPDATE", schema: "public", table: "messages"
     }, payload => {
-      if (payload.new?.is_deleted) {
-        void loadConversations().catch(error => console.warn("تعذر تحديث معاينة الرسالة المحذوفة:", error));
-      }
+      if (!isCurrent() || !payload.new?.is_deleted) return;
+      void loadConversations().catch(error => console.warn("تعذر تحديث معاينة الرسالة المحذوفة:", error));
     })
     .subscribe();
 }
@@ -2853,8 +2991,12 @@ function applyTheme(choice) {
 
 
 async function loadPrivacySettings() {
-  if (!currentUser) return;
-  const { data, error } = await supabase.from("privacy_settings").select("*").eq("user_id", currentUser.id).maybeSingle();
+  const userId = currentUser?.id;
+  if (!userId) return;
+  const requestId = (loadPrivacySettings.sequence = (loadPrivacySettings.sequence || 0) + 1);
+  const isCurrent = () => loadPrivacySettings.sequence === requestId && currentUser?.id === userId;
+  const { data, error } = await supabase.from("privacy_settings").select("*").eq("user_id", userId).maybeSingle();
+  if (!isCurrent()) return;
   if (error) throw error;
   if (data) privacySettings = { ...privacySettings, ...data };
   if (privacySettings.status_visibility === "custom") privacySettings.status_visibility = "contacts_except";
@@ -2879,6 +3021,7 @@ async function loadPrivacySettings() {
     ? "حدد الأشخاص الذين سيتمكنون من مشاهدة حالاتك فقط."
     : "حدد الأشخاص الذين لن يتمكنوا من مشاهدة حالاتك.";
   await Promise.all([renderPrivacyExclusionChoices("last_seen",false), renderPrivacyExclusionChoices("group_add",false), renderPrivacyExclusionChoices("profile_photo",false), renderPrivacyExclusionChoices("about",false), renderStatusAudienceChoices(false), renderBlockedUsers()]);
+  if (!isCurrent()) return;
   if (notifications.length) renderNotifications();
   updatePrivacySaveButtons();
 }
@@ -3128,21 +3271,25 @@ function openSettings() {
   $("#open-account-settings").focus();
 }
 async function loadOwnProfile() {
-  const [{data,error},visibleProfile] = await Promise.all([
-    supabase.from("profiles").select("display_name,avatar_url").eq("id",currentUser.id).maybeSingle(),
-    supabase.rpc("get_visible_profiles",{p_user_ids:[currentUser.id]})
-  ]);
-  if(error)throw error;
+  const userId = currentUser?.id;
+  if (!userId) return;
+  const requestId = (loadOwnProfile.sequence = (loadOwnProfile.sequence || 0) + 1);
+  const isCurrent = () => loadOwnProfile.sequence === requestId && currentUser?.id === userId;
+  const visibleProfile = await supabase.rpc("get_visible_profiles",{p_user_ids:[userId]});
+  if (!isCurrent()) return;
   if(visibleProfile.error)throw visibleProfile.error;
-  displayNameInput.value=data?.display_name||currentUser.email?.split("@")[0]||"";
-  settingsAboutInput.value=visibleProfile.data?.[0]?.about||"";
+  const profile = visibleProfile.data?.[0] || null;
+  displayNameInput.value=profile?.display_name||currentUser.email?.split("@")[0]||"";
+  settingsAboutInput.value=profile?.about||"";
   profileSavedSnapshot = getProfileFormSnapshot();
   updateProfileSaveButton();
-  currentProfilePhotoPath = data?.avatar_url && !/^https?:\/\//i.test(data.avatar_url) ? data.avatar_url : null;
-  currentProfilePhotoExternal = Boolean(data?.avatar_url && !currentProfilePhotoPath);
-  const ownPhoto = await resolveProfileAvatar({ avatar_url: data?.avatar_url || null });
+  currentProfilePhotoPath = profile?.avatar_url && !/^https?:\/\//i.test(profile.avatar_url) ? profile.avatar_url : null;
+  currentProfilePhotoExternal = Boolean(profile?.avatar_url && !currentProfilePhotoPath);
+  const ownPhoto = await resolveProfileAvatar({ avatar_url: profile?.avatar_url || null });
+  if (!isCurrent()) return;
   setProfilePhotoPreview(ownPhoto?.avatar_url || null);
 }
+
 let mersalTools = {
   closeTool() {},
   openTool() {
@@ -3585,20 +3732,27 @@ supabase.auth.onAuthStateChange((event, session) => {
 });
 
 async function loadPeople() {
+  const userId = currentUser?.id;
+  if (!userId) return;
+  const requestId = (loadPeople.sequence = (loadPeople.sequence || 0) + 1);
+  const isCurrent = () => loadPeople.sequence === requestId && currentUser?.id === userId;
   const { data, error } = await supabase.from("profiles")
     .select("id,display_name")
-    .neq("id", currentUser.id)
+    .neq("id", userId)
     .order("display_name", { ascending: true })
     .limit(100);
+  if (!isCurrent()) return;
   if (error) throw error;
   const ids=(data||[]).map(person=>person.id);
   let visibleProfiles=[];
   if(ids.length){
     const result=await supabase.rpc("get_visible_profiles",{p_user_ids:ids});
+    if (!isCurrent()) return;
     if(result.error)throw result.error;
     visibleProfiles=result.data||[];
   }
   visibleProfiles = await resolveProfileAvatars(visibleProfiles);
+  if (!isCurrent()) return;
   const visibleMap=new Map(visibleProfiles.map(profile=>[profile.id,profile]));
   people=(data||[]).map(person=>({...person,...(visibleMap.get(person.id)||{})}));
   renderPeople();
@@ -3671,9 +3825,13 @@ function renderBroadcastPeople() {
 }
 async function loadBroadcastLists() {
   const english = document.documentElement.lang === "en";
+  const userId = currentUser?.id;
+  if (!userId || broadcastPanel.hidden) return;
+  const loadId = ++broadcastListLoadSequence;
   broadcastLists.replaceChildren();
   const { data: lists, error } = await supabase.from("broadcast_lists")
-    .select("id,name,created_at").eq("owner_id", currentUser.id).order("created_at", { ascending: false });
+    .select("id,name,created_at").eq("owner_id", userId).order("created_at", { ascending: false });
+  if (loadId !== broadcastListLoadSequence || currentUser?.id !== userId || broadcastPanel.hidden) return;
   if (error) {
     broadcastLists.append(safeText("li", "empty-item", english ? "Could not load broadcast lists." : "تعذر تحميل قوائم الرسائل الجماعية."));
     return;
@@ -3684,6 +3842,7 @@ async function loadBroadcastLists() {
   }
   const { data: members, error: membersError } = await supabase.from("broadcast_list_members")
     .select("broadcast_list_id,recipient_id").in("broadcast_list_id", lists.map(list => list.id));
+  if (loadId !== broadcastListLoadSequence || currentUser?.id !== userId || broadcastPanel.hidden) return;
   if (membersError) {
     broadcastLists.append(safeText("li", "empty-item", english ? "Could not load broadcast recipients." : "تعذر تحميل مستلمي قوائم الرسائل الجماعية."));
     return;
@@ -3700,9 +3859,11 @@ async function loadBroadcastLists() {
     remove.type = "button";
     remove.setAttribute("aria-label", (english ? "Delete broadcast list " : "حذف قائمة الرسائل الجماعية ") + list.name);
     remove.addEventListener("click", async () => {
+      if (currentUser?.id !== userId) return;
       if (!window.confirm(english ? "Delete this broadcast list?" : "هل تريد حذف قائمة الرسائل الجماعية؟")) return;
       remove.disabled = true;
-      const result = await supabase.from("broadcast_lists").delete().eq("id", list.id).eq("owner_id", currentUser.id);
+      const result = await supabase.from("broadcast_lists").delete().eq("id", list.id).eq("owner_id", userId);
+      if (currentUser?.id !== userId) return;
       if (result.error) {
         remove.disabled = false;
         announce((english ? "Could not delete the list: " : "تعذر حذف القائمة: ") + result.error.message, "error");
@@ -3716,8 +3877,8 @@ async function loadBroadcastLists() {
     broadcastLists.append(item);
   }
 }
-async function getOrCreateBroadcastConversation(recipientId) {
-  const [one, two] = [currentUser.id, recipientId].sort();
+async function getOrCreateBroadcastConversation(recipientId, ownerId) {
+  const [one, two] = [ownerId, recipientId].sort();
   const existing = await supabase.from("conversations").select("id")
     .eq("user_one", one).eq("user_two", two).maybeSingle();
   if (existing.error) throw existing.error;
@@ -3733,8 +3894,11 @@ async function getOrCreateBroadcastConversation(recipientId) {
 }
 async function sendBroadcastList(list) {
   const english = document.documentElement.lang === "en";
+  const senderId = currentUser?.id;
+  if (!senderId || broadcastPanel.hidden) return;
   const { data: members, error } = await supabase.from("broadcast_list_members")
     .select("recipient_id").eq("broadcast_list_id", list.id);
+  if (currentUser?.id !== senderId || broadcastPanel.hidden) return;
   if (error) {
     announce((english ? "Could not load recipients: " : "تعذر تحميل المستلمين: ") + error.message, "error");
     return;
@@ -3753,10 +3917,12 @@ async function sendBroadcastList(list) {
   let sent = 0;
   const failed = [];
   for (const member of members) {
+    if (currentUser?.id !== senderId) return;
     try {
-      const conversationId = await getOrCreateBroadcastConversation(member.recipient_id);
+      const conversationId = await getOrCreateBroadcastConversation(member.recipient_id, senderId);
+      if (currentUser?.id !== senderId) return;
       const result = await supabase.from("messages").insert({
-        conversation_id: conversationId, sender_id: currentUser.id, body: messageBody
+        conversation_id: conversationId, sender_id: senderId, body: messageBody
       }).select("id").single();
       if (result.error) throw result.error;
       sent++;
@@ -3766,6 +3932,7 @@ async function sendBroadcastList(list) {
       failed.push(sendError.message || member.recipient_id);
     }
   }
+  if (currentUser?.id !== senderId) return;
   void loadConversations().catch(error => console.warn("Broadcast conversation refresh failed:", error));
   if (failed.length) {
     announce((english ? "Message sent to " : "تم إرسال الرسالة إلى ") + sent + (english ? " recipients. Could not send to some recipients: " : " مستلمين. تعذر الإرسال إلى بعض المستلمين: ") + failed.length, "error");
@@ -3786,21 +3953,26 @@ function openBroadcastPanel(returnElement = newChatButton) {
 newBroadcastListButton.addEventListener("click", () => openBroadcastPanel(newChatButton));
 $("#open-broadcast-settings")?.addEventListener("click", () => openBroadcastPanel($("#open-broadcast-settings")));
 closeBroadcastPanelButton.addEventListener("click", () => {
-  broadcastPanel.hidden = true;
-  (broadcastReturnFocus?.isConnected ? broadcastReturnFocus : newChatButton).focus();
+  const returnElement = broadcastReturnFocus?.isConnected ? broadcastReturnFocus : newChatButton;
+  resetBroadcastPanel();
+  returnElement.focus();
 });
 broadcastPanel.addEventListener("keydown", event => {
   if (event.key === "Escape") {
     event.preventDefault();
-    broadcastPanel.hidden = true;
-    (broadcastReturnFocus?.isConnected ? broadcastReturnFocus : newChatButton).focus();
+    const returnElement = broadcastReturnFocus?.isConnected ? broadcastReturnFocus : newChatButton;
+    resetBroadcastPanel();
+    returnElement.focus();
   }
 });
 createBroadcastListButton.addEventListener("click", async () => {
+  const ownerId = currentUser?.id;
+  if (!ownerId || broadcastPanel.hidden) return;
   selectedBroadcastRecipients.clear();
   broadcastListNameInput.value = "";
   broadcastPeopleSearch.value = "";
   if (!people.length) await loadPeople();
+  if (currentUser?.id !== ownerId || broadcastPanel.hidden) return;
   renderBroadcastPeople();
   updateBroadcastSelectedCount();
   broadcastListsView.hidden = true;
@@ -3814,6 +3986,8 @@ cancelBroadcastCreateButton.addEventListener("click", () => {
   createBroadcastListButton.focus();
 });
 saveBroadcastListButton.addEventListener("click", async () => {
+  const ownerId = currentUser?.id;
+  if (!ownerId || broadcastPanel.hidden) return;
   const english = document.documentElement.lang === "en";
   const name = broadcastListNameInput.value.trim();
   const recipients = [...selectedBroadcastRecipients];
@@ -3828,23 +4002,27 @@ saveBroadcastListButton.addEventListener("click", async () => {
   }
   saveBroadcastListButton.disabled = true;
   try {
-    const created = await supabase.from("broadcast_lists").insert({ owner_id: currentUser.id, name })
+    const created = await supabase.from("broadcast_lists").insert({ owner_id: ownerId, name })
       .select("id").single();
     if (created.error) throw created.error;
+    if (currentUser?.id !== ownerId || broadcastPanel.hidden) return;
     const members = await supabase.from("broadcast_list_members").insert(
       recipients.map(recipient_id => ({ broadcast_list_id: created.data.id, recipient_id }))
     );
     if (members.error) {
-      await supabase.from("broadcast_lists").delete().eq("id", created.data.id).eq("owner_id", currentUser.id);
+      await supabase.from("broadcast_lists").delete().eq("id", created.data.id).eq("owner_id", ownerId);
       throw members.error;
     }
+    if (currentUser?.id !== ownerId || broadcastPanel.hidden) return;
     announce(english ? "Broadcast list saved." : "تم حفظ قائمة الرسائل الجماعية.", "success");
     broadcastCreateView.hidden = true;
     broadcastListsView.hidden = false;
     await loadBroadcastLists();
-    createBroadcastListButton.focus();
+    if (currentUser?.id === ownerId && !broadcastPanel.hidden) createBroadcastListButton.focus();
   } catch (error) {
-    announce((english ? "Could not save the broadcast list: " : "تعذر حفظ قائمة الرسائل الجماعية: ") + (error.message || ""), "error");
+    if (currentUser?.id === ownerId) {
+      announce((english ? "Could not save the broadcast list: " : "تعذر حفظ قائمة الرسائل الجماعية: ") + (error.message || ""), "error");
+    }
   } finally {
     saveBroadcastListButton.disabled = false;
   }
@@ -3914,6 +4092,8 @@ createGroupButton.addEventListener("click",async()=>{
 let selectedStatusKind = "text";
 let selectedStatusFile = null;
 let statusExpiryTimer = null;
+let statusLoadSequence = 0;
+let statusViewerRequestId = 0;
 let statusViewerReturnFocus = null;
 let activeViewedStatus = null;
 function statusKindLabel(kind) { return kind === "image" ? "صورة" : kind === "video" ? "فيديو" : "نص"; }
@@ -3922,10 +4102,13 @@ function statusTimeLabel(value) {
 }
 async function loadStatuses() {
   if (!currentUser || !statusList) return;
+  const loadId = ++statusLoadSequence;
+  const userId = currentUser.id;
   if (statusExpiryTimer) clearTimeout(statusExpiryTimer);
   const { data, error } = await supabase.from("statuses")
     .select("id,user_id,kind,content,media_path,media_type,created_at,expires_at")
     .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false });
+  if (loadId !== statusLoadSequence || currentUser?.id !== userId) return;
   if (error) throw error;
   const rows = data || [];
   const nextExpiry = rows.reduce((nearest, row) => Math.min(nearest, new Date(row.expires_at).getTime()), Infinity);
@@ -3938,9 +4121,11 @@ async function loadStatuses() {
   let profiles = new Map();
   if (ids.length) {
     const result = await supabase.from("profiles").select("id,display_name").in("id", ids);
+    if (loadId !== statusLoadSequence || currentUser?.id !== userId) return;
     if (result.error) throw result.error;
     profiles = new Map((result.data || []).map(profile => [profile.id, profile]));
   }
+  if (loadId !== statusLoadSequence || currentUser?.id !== userId) return;
   statusList.replaceChildren();
   if (!rows.length) { statusList.append(safeText("li", "empty-item", "لا توجد حالات حاليًا.")); return; }
   for (const row of rows) {
@@ -4029,9 +4214,10 @@ $("#publish-status-button").addEventListener("click", async () => {
     announce("تعذر نشر الحالة: " + (error.message || "حاول مرة أخرى."), "error");
   } finally { button.disabled = false; }
 });
-async function renderStatusInteractions(row, own) {
+async function renderStatusInteractions(row, own, requestId = statusViewerRequestId) {
   const host = $("#status-viewer-interactions");
-  if (!host || !row?.id || !currentUser || activeViewedStatus?.id !== row.id) return;
+  const isCurrent = () => requestId === statusViewerRequestId && activeViewedStatus?.id === row?.id && Boolean(currentUser);
+  if (!host || !row?.id || !isCurrent()) return;
   const english = document.documentElement.lang === "en";
   host.replaceChildren();
   const reactionsHeading = safeText("p", "status-interaction-heading", english ? "Status reactions" : "تفاعلات الحالة");
@@ -4039,7 +4225,7 @@ async function renderStatusInteractions(row, own) {
   if (!own) {
     const reactionsResult = await supabase.from("status_reactions")
       .select("user_id,emoji").eq("status_id", row.id);
-    if (activeViewedStatus?.id !== row.id) return;
+    if (!isCurrent()) return;
     if (reactionsResult.error) {
       host.append(safeText("p", "empty-item", english ? "Could not load status reactions." : "تعذر تحميل تفاعلات الحالة."));
       return;
@@ -4074,7 +4260,8 @@ async function renderStatusInteractions(row, own) {
             });
           }
           if (result.error) throw result.error;
-          await renderStatusInteractions(row, false);
+          if (!isCurrent()) return;
+          await renderStatusInteractions(row, false, requestId);
           host.querySelector('button[data-emoji="' + emoji + '"]')?.focus();
         } catch (error) {
           announce((english ? "Could not update the reaction: " : "تعذر تحديث التفاعل: ") + (error.message || ""), "error");
@@ -4093,7 +4280,7 @@ async function renderStatusInteractions(row, own) {
     .select("id,sender_id,body,created_at")
     .eq("status_id", row.id)
     .order("created_at", { ascending: true });
-  if (activeViewedStatus?.id !== row.id) return;
+  if (!isCurrent()) return;
   if (repliesResult.error) {
     repliesList.append(safeText("li", "empty-item", english ? "Could not load replies." : "تعذر تحميل الردود."));
   } else if (!repliesResult.data?.length) {
@@ -4101,7 +4288,7 @@ async function renderStatusInteractions(row, own) {
   } else {
     const ids = [...new Set(repliesResult.data.map(reply => reply.sender_id))];
     const profilesResult = await supabase.from("profiles").select("id,display_name").in("id", ids);
-    if (activeViewedStatus?.id !== row.id) return;
+    if (!isCurrent()) return;
     const names = new Map((profilesResult.data || []).map(profile => [profile.id, profile.display_name]));
     for (const reply of repliesResult.data) {
       const name = reply.sender_id === currentUser.id
@@ -4164,29 +4351,34 @@ async function renderStatusInteractions(row, own) {
         return;
       }
       announce(english ? "Your status reply was sent." : "تم إرسال ردك على الحالة.", "success");
-      await renderStatusInteractions(row, false);
-      host.querySelector(".status-reply-form textarea")?.focus();
+      if (!isCurrent()) return;
+      await renderStatusInteractions(row, false, requestId);
+      if (isCurrent()) host.querySelector(".status-reply-form textarea")?.focus();
     });
     host.append(form);
   }
 }
 async function openStatusViewer(row, name, trigger) {
+  const requestId = ++statusViewerRequestId;
+  const isCurrent = () => requestId === statusViewerRequestId && activeViewedStatus?.id === row?.id;
   if (new Date(row.expires_at).getTime() <= Date.now()) {
     await loadStatuses();
-    announce("انتهت صلاحية هذه الحالة.");
+    if (requestId === statusViewerRequestId) announce("انتهت صلاحية هذه الحالة.");
     return;
   }
   statusViewerReturnFocus = trigger; activeViewedStatus = row;
   $("#status-viewer-content").replaceChildren(); $("#status-viewer-views").replaceChildren();
   $("#status-viewer-caption").textContent = row.content || "";
   $("#status-viewer-meta").textContent = name + "، " + statusTimeLabel(row.created_at);
-  void renderStatusInteractions(row, row.user_id === currentUser.id).catch(error => console.warn("Status interactions could not be loaded:", error));
+  void renderStatusInteractions(row, row.user_id === currentUser.id, requestId).catch(error => console.warn("Status interactions could not be loaded:", error));
   const own = row.user_id === currentUser.id;
   $("#delete-status-button").hidden = !own;
   if (!own && privacySettings.read_receipts_enabled) {
     const viewed = await supabase.from("status_views").insert({ status_id: row.id, viewer_id: currentUser.id });
+    if (!isCurrent()) return;
     if (viewed.error && viewed.error.code !== "23505") console.warn("تعذر تسجيل مشاهدة الحالة:", viewed.error.message);
   }
+  if (!isCurrent()) return;
   if (row.kind === "text") {
     $("#status-viewer-content").append(safeText("p", "status-viewer-text", row.content || ""));
   } else if (row.media_path) {
@@ -4195,6 +4387,7 @@ async function openStatusViewer(row, name, trigger) {
       $("#status-viewer-content").append(safeText("p", "empty-item", "انتهت صلاحية هذه الحالة."));
     } else {
       const signed = await supabase.storage.from("mersal-attachments").createSignedUrl(row.media_path, Math.min(3600, remaining));
+      if (!isCurrent()) return;
       if (signed.error || !signed.data?.signedUrl) {
         $("#status-viewer-content").append(safeText("p", "empty-item", "تعذر فتح الحالة."));
       } else if (row.kind === "image") {
@@ -4212,19 +4405,23 @@ async function openStatusViewer(row, name, trigger) {
     $("#status-viewer-views").append(safeText("li","empty-item","أوقفت مؤشرات القراءة؛ لذلك لا يمكنك مشاهدة من شاهد حالتك."));
   } else if (own) {
     const result = await supabase.from("status_views").select("viewer_id,viewed_at").eq("status_id", row.id).order("viewed_at", { ascending: false });
+    if (!isCurrent()) return;
     if (result.error) $("#status-viewer-views").append(safeText("li", "empty-item", "تعذر تحميل المشاهدات."));
     else if (!result.data?.length) $("#status-viewer-views").append(safeText("li", "empty-item", "لم يشاهدها أحد بعد."));
     else {
       const ids = [...new Set(result.data.map(view => view.viewer_id))];
       const profiles = await supabase.from("profiles").select("id,display_name").in("id", ids);
+      if (!isCurrent()) return;
       const names = new Map((profiles.data || []).map(profile => [profile.id, profile.display_name]));
       for (const view of result.data) $("#status-viewer-views").append(safeText("li", "status-viewer-person",
         (names.get(view.viewer_id) || "مستخدم مرسال") + "، " + statusTimeLabel(view.viewed_at)));
     }
   }
+  if (!isCurrent()) return;
   statusViewerPanel.hidden = false; $("#close-status-viewer").focus();
 }
 function closeStatusViewer() {
+  statusViewerRequestId++;
   statusViewerPanel.hidden = true; activeViewedStatus = null; $("#status-viewer-content").replaceChildren(); $("#status-viewer-interactions").replaceChildren();
   if (statusViewerReturnFocus?.isConnected) statusViewerReturnFocus.focus();
 }
@@ -4250,53 +4447,70 @@ statusComposerPanel.addEventListener("keydown", event => { if (event.key === "Es
 statusViewerPanel.addEventListener("keydown", event => { if (event.key === "Escape") closeStatusViewer(); });
 
 async function loadConversations() {
+  const userId = currentUser?.id;
+  if (!userId) return;
+  const loadId = (loadConversations.sequence = (loadConversations.sequence || 0) + 1);
+  const isCurrent = () => loadConversations.sequence === loadId && currentUser?.id === userId;
   const { data, error } = await supabase.from("conversations")
     .select("id,user_one,user_two,last_message_at,is_group,group_name,group_description,group_photo_path,created_at")
-    .or("user_one.eq." + currentUser.id + ",user_two.eq." + currentUser.id)
+    .or("user_one.eq." + userId + ",user_two.eq." + userId)
     .order("last_message_at", { ascending: false });
+  if (!isCurrent()) return;
   if (error) throw error;
-  conversations = data || [];
-  const {data: memberships, error: membershipError} = await supabase.from("conversation_members").select("conversation_id").eq("user_id",currentUser.id);
+  const baseConversations = data || [];
+  const {data: memberships, error: membershipError} = await supabase.from("conversation_members").select("conversation_id").eq("user_id",userId);
+  if (!isCurrent()) return;
   if(membershipError) throw membershipError;
   const groupIds=(memberships||[]).map(m=>m.conversation_id);
   let groupRows=[];
-  if(groupIds.length){const result=await supabase.from("conversations").select("id,user_one,user_two,last_message_at,is_group,group_name,group_description,group_photo_path,created_at").in("id",groupIds);if(result.error)throw result.error;groupRows=result.data||[];}
-  conversations=[...new Map([...conversations,...groupRows].map(c=>[c.id,c])).values()].sort((a,b)=>new Date(b.last_message_at||b.created_at||0)-new Date(a.last_message_at||a.created_at||0));
-  const {data:hiddenRows,error:hiddenError}=await supabase.from("conversation_hidden_for").select("conversation_id,hidden_at").eq("user_id",currentUser.id);
+  if(groupIds.length){
+    const result=await supabase.from("conversations").select("id,user_one,user_two,last_message_at,is_group,group_name,group_description,group_photo_path,created_at").in("id",groupIds);
+    if (!isCurrent()) return;
+    if(result.error)throw result.error;
+    groupRows=result.data||[];
+  }
+  let loadedConversations=[...new Map([...baseConversations,...groupRows].map(c=>[c.id,c])).values()].sort((a,b)=>new Date(b.last_message_at||b.created_at||0)-new Date(a.last_message_at||a.created_at||0));
+  const {data:hiddenRows,error:hiddenError}=await supabase.from("conversation_hidden_for").select("conversation_id,hidden_at").eq("user_id",userId);
+  if (!isCurrent()) return;
   if(hiddenError)throw hiddenError;
   const hiddenMap=new Map((hiddenRows||[]).map(row=>[row.conversation_id,row.hidden_at]));
   const visibleConversations=[];
-  for(const conversation of conversations){
+  for(const conversation of loadedConversations){
     const hiddenAt=hiddenMap.get(conversation.id);
     if(!hiddenAt){visibleConversations.push(conversation);continue;}
     const latestAt=conversation.last_message_at||conversation.created_at||0;
     if(new Date(latestAt)>new Date(hiddenAt)){
       visibleConversations.push(conversation);
-      void supabase.from("conversation_hidden_for").delete().eq("conversation_id",conversation.id).eq("user_id",currentUser.id);
+      void supabase.from("conversation_hidden_for").delete().eq("conversation_id",conversation.id).eq("user_id",userId);
     }
   }
-  conversations=visibleConversations;
-  void syncCallChannels().catch(error=>console.warn("Voice call channel sync:",error));
-  const partnerIds = conversations.filter(c=>!c.is_group).map(c => c.user_one === currentUser.id ? c.user_two : c.user_one);
+  loadedConversations=visibleConversations;
+  const partnerIds = loadedConversations.filter(c=>!c.is_group).map(c => c.user_one === userId ? c.user_two : c.user_one);
   let profileMap = new Map();
   if (partnerIds.length) {
     const { data: profiles, error: profileError } = await supabase.from("profiles")
       .select("id,display_name").in("id", partnerIds);
+    if (!isCurrent()) return;
     if (profileError) throw profileError;
     const visible=await supabase.rpc("get_visible_profiles",{p_user_ids:partnerIds});
+    if (!isCurrent()) return;
     if(visible.error)throw visible.error;
     const resolvedProfiles=await resolveProfileAvatars(visible.data||[]);
+    if (!isCurrent()) return;
     const visibleMap=new Map(resolvedProfiles.map(profile=>[profile.id,profile]));
     profileMap=new Map((profiles||[]).map(profile=>[profile.id,{...profile,...(visibleMap.get(profile.id)||{})}]));
   }
+  if (!isCurrent()) return;
+  conversations = loadedConversations;
   callsProfileCache = profileMap;
+  void syncCallChannels().catch(error=>console.warn("Voice call channel sync:",error));
   conversationList.replaceChildren();
-  if (!conversations.length) {
+  if (!loadedConversations.length) {
     conversationList.append(safeText("li", "empty-item", "لا توجد محادثات بعد."));
     renderCallsList();
     return;
   }
-  const conversationIds = conversations.map(conversation => conversation.id);
+  const conversationIds = loadedConversations.map(conversation => conversation.id);
   const [latestMessagesResult, unreadNotificationsResult] = await Promise.all([
     supabase.from("messages")
       .select("id,conversation_id,sender_id,body,created_at,is_deleted")
@@ -4305,10 +4519,11 @@ async function loadConversations() {
       .limit(1000),
     supabase.from("notifications")
       .select("conversation_id")
-      .eq("recipient_id", currentUser.id)
+      .eq("recipient_id", userId)
       .is("read_at", null)
       .in("conversation_id", conversationIds)
   ]);
+  if (!isCurrent()) return;
   if (latestMessagesResult.error) throw latestMessagesResult.error;
   if (unreadNotificationsResult.error) throw unreadNotificationsResult.error;
   const latestMessageByConversation = new Map();
@@ -4329,13 +4544,15 @@ async function loadConversations() {
   if (latestMessageIds.length) {
     const { data: hiddenMessages, error: hiddenMessagesError } = await supabase.from("message_hidden_for")
       .select("message_id")
-      .eq("user_id", currentUser.id)
+      .eq("user_id", userId)
       .in("message_id", latestMessageIds);
+    if (!isCurrent()) return;
     if (hiddenMessagesError) throw hiddenMessagesError;
     hiddenMessageIds = new Set((hiddenMessages || []).map(row => row.message_id));
   }
-  for (const conversation of conversations) {
-    const partnerId = conversation.user_one === currentUser.id ? conversation.user_two : conversation.user_one;
+  if (!isCurrent()) return;
+  for (const conversation of loadedConversations) {
+    const partnerId = conversation.user_one === userId ? conversation.user_two : conversation.user_one;
     const person = conversation.is_group ? {id:partnerId,display_name:conversation.group_name||"مجموعة"} : (profileMap.get(partnerId) || { id: partnerId, display_name: "مستخدم مرسال" });
     const item = document.createElement("li");
     const button = document.createElement("button");
@@ -4351,7 +4568,7 @@ async function loadConversations() {
       lastMessageText = "تم حذف هذه الرسالة";
     } else if (latestMessage && !hiddenMessageIds.has(latestMessage.id)) {
       lastMessageText = getMessagePreviewText(latestMessage.body || "").trim() || "رسالة غير نصية";
-      if (latestMessage.sender_id === currentUser.id) lastMessageText = "أنت: " + lastMessageText;
+      if (latestMessage.sender_id === userId) lastMessageText = "أنت: " + lastMessageText;
     } else if (latestMessage) {
       lastMessageText = "آخر رسالة مخفية";
     }
@@ -4459,26 +4676,36 @@ function renderCallHistory(rows) {
   if (!callsHistoryList.children.length) callsHistoryList.append(safeText("li","empty-item",english ? "No previous calls." : "لا توجد مكالمات سابقة."));
 }
 async function loadCallHistory() {
-  if (!currentUser || !callsHistoryList) return;
+  const userId = currentUser?.id;
+  if (!userId || !callsHistoryList) return;
+  const requestId = (loadCallHistory.sequence = (loadCallHistory.sequence || 0) + 1);
   const {data,error}=await supabase.from("call_logs")
     .select("id,conversation_id,initiated_by,call_type,status,started_at,ended_at")
     .order("started_at",{ascending:false}).limit(100);
+  if (loadCallHistory.sequence !== requestId || currentUser?.id !== userId) return;
   if(error)throw error;
   renderCallHistory(data||[]);
 }
 async function updateCallLogStatus(callLogId,statusValue) {
   if(!callLogId||!currentUser)return;
+  const userId=currentUser.id;
   const {error}=await supabase.from("call_logs")
     .update({status:statusValue,ended_at:new Date().toISOString()}).eq("id",callLogId);
+  if(currentUser?.id!==userId)return;
   if(error){console.warn("Call history update:",error);return;}
   if(callsView&&!callsView.hidden)void loadCallHistory().catch(error=>console.warn("Call history refresh:",error));
 }
+
 async function openConversation(person) {
-  if (!currentUser || person.id === currentUser.id) return;
-  const [one, two] = [currentUser.id, person.id].sort();
+  const userId = currentUser?.id;
+  if (!userId || !person || person.id === userId) return;
+  const requestId = (openConversation.sequence = (openConversation.sequence || 0) + 1);
+  const isCurrentRequest = () => openConversation.sequence === requestId && currentUser?.id === userId;
+  const [one, two] = [userId, person.id].sort();
   let { data, error } = await supabase.from("conversations")
     .select("id,user_one,user_two,last_message_at")
     .eq("user_one", one).eq("user_two", two).maybeSingle();
+  if (!isCurrentRequest()) return;
   if (error) {
     announce("تعذر فتح المحادثة: " + error.message, "error");
     return;
@@ -4487,6 +4714,7 @@ async function openConversation(person) {
     const created = await supabase.from("conversations")
       .insert({ user_one: one, user_two: two })
       .select("id,user_one,user_two,last_message_at").single();
+    if (!isCurrentRequest()) return;
     if (created.error && created.error.code !== "23505") {
       announce("تعذر إنشاء المحادثة: " + created.error.message, "error");
       return;
@@ -4496,6 +4724,7 @@ async function openConversation(person) {
       const retry = await supabase.from("conversations")
         .select("id,user_one,user_two,last_message_at")
         .eq("user_one", one).eq("user_two", two).single();
+      if (!isCurrentRequest()) return;
       if (retry.error) {
         announce("تعذر استرجاع المحادثة: " + retry.error.message, "error");
         return;
@@ -4503,8 +4732,9 @@ async function openConversation(person) {
       data = retry.data;
     }
   }
+  if (!isCurrentRequest() || !data) return;
   await selectConversation(data, person);
-  await loadConversations();
+  if (isCurrentRequest() && activeConversation?.id === data.id) await loadConversations();
 }
 function reportChatOpenFailure(error, conversation) {
   const english = localStorage.getItem("mersal-language") === "en";
@@ -4785,6 +5015,24 @@ function setGroupInviteUrl(token){
 }
 async function loadGroupInviteLink(conversationId,isAdmin){
   if(!groupInviteRow||!groupInviteUrl)return;
+  if(!isAdmin){
+    const {data:settings,error}=await supabase.from("group_settings")
+      .select("add_members_by").eq("conversation_id",conversationId).maybeSingle();
+    if(error){
+      groupInviteRow.hidden=true;
+      groupInviteUrl.value="";
+      groupInviteTokenCache.delete(conversationId);
+      console.warn("تعذر التحقق من صلاحية رابط الدعوة:",error.message);
+      return;
+    }
+    if((settings?.add_members_by||"admins")!=="everyone"){
+      groupInviteRow.hidden=true;
+      groupInviteUrl.value="";
+      groupInviteTokenCache.delete(conversationId);
+      if(groupInviteStatus)groupInviteStatus.textContent="";
+      return;
+    }
+  }
   groupInviteRow.hidden=false;
   groupInviteResetButton.hidden=!isAdmin;
   if(groupInviteRetryButton)groupInviteRetryButton.hidden=true;
@@ -4801,9 +5049,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
     request=(async()=>{
       let timeoutId=null;
       try{
-        // The RPC checks group membership and creates the token atomically.
-        // Avoid a direct table read here: its RLS policy adds no value and can
-        // leave the invite screen waiting before the authorized RPC is reached.
+        // The RPC enforces the group's add-members permission before returning a token.
         const rpc=supabase.rpc("get_or_create_group_invite",{p_conversation_id:conversationId});
         const timeout=new Promise((_,reject)=>{
           timeoutId=window.setTimeout(()=>reject(new Error("انتهت مهلة تحميل رابط الدعوة.")),12000);
@@ -5227,6 +5473,8 @@ function updateGroupSettingsSaveButton() {
 async function openGroupSettings() {
   if (!activeConversation?.is_group || !currentUser || !groupSettingsPanel) return;
   const conversationId = activeConversation.id;
+  groupSettingsMemberManagement.hidden = true;
+  groupSettingsAddMembers.hidden = true;
   groupSettingsReturnFocus = document.activeElement;
   if (groupSettingsPermissionsSection) {
     groupSettingsPermissionsSection.hidden = false;
@@ -5248,6 +5496,7 @@ async function openGroupSettings() {
       return;
     }
     const canManage = Boolean(permissions.isAdmin);
+    if (groupSettingsPermissionsSection) groupSettingsPermissionsSection.hidden = !canManage;
     const { data, error } = await supabase.from("group_settings")
       .select("send_messages_by,add_members_by,require_admin_approval")
       .eq("conversation_id", conversationId)
@@ -5277,6 +5526,8 @@ function closeGroupSettings() {
   if (!groupSettingsPanel) return;
   groupSettingsPanel.hidden = true;
   groupSettingsPanel.setAttribute("aria-hidden", "true");
+  groupSettingsMemberManagement.hidden = true;
+  groupSettingsAddMembers.hidden = true;
   document.body.classList.remove("group-settings-open");
   const target = groupSettingsReturnFocus?.isConnected ? groupSettingsReturnFocus : groupSettingsOpenButton;
   groupSettingsReturnFocus = null;
@@ -5339,8 +5590,9 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
   groupSettingsSaving = true;
   updateGroupSettingsSaveButton();
   try {
+    const conversationId = activeConversation.id;
     const payload = {
-      conversation_id: activeConversation.id,
+      conversation_id: conversationId,
       send_messages_by: groupSettingsSendSelect.value,
       add_members_by: groupSettingsAddSelect.value,
       require_admin_approval: groupSettingsApprovalCheckbox.checked,
@@ -5348,6 +5600,11 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
     };
     const { error } = await supabase.from("group_settings").upsert(payload, { onConflict: "conversation_id" });
     if (error) throw error;
+    groupInviteTokenCache.delete(conversationId);
+    if (activeConversation?.id === conversationId) {
+      const permissions = await getCurrentGroupPermissions();
+      if (activeConversation?.id === conversationId) await loadGroupInviteLink(conversationId, permissions.isAdmin);
+    }
     groupSettingsSnapshot = getGroupSettingsSnapshot();
     updateGroupSettingsSaveButton();
     announce("تم حفظ إعدادات المجموعة.");
@@ -5489,12 +5746,42 @@ function renderGroupAddPeople(){
     label.append(checkbox,document.createTextNode(displayName(person)));item.append(label);groupAddPeople.append(item);
   }
 }
-function openGroupMemberOptions(userId,name,roleLabel,role,isGroupOwner,permissions,returnFocus){
+async function openGroupMemberOptions(userId,name,roleLabel,role,isGroupOwner,permissions,returnFocus){
   groupMemberOptionsReturnFocus=returnFocus;
+  const isSelf=userId===currentUser?.id;
+  // All admin changes to members and moderators are shown only inside Group Settings.
+  if(!isSelf && permissions.isAdmin && !isGroupOwner){
+    await openGroupSettings();
+    if(groupSettingsPanel.hidden || !activeConversation?.is_group)return;
+    const livePermissions=await getCurrentGroupPermissions();
+    if(!livePermissions.isAdmin || !activeConversation?.is_group)return;
+    groupSettingsMemberName.textContent=name;
+    groupSettingsMemberRole.textContent=roleLabel;
+    groupSettingsMemberActions.replaceChildren();
+    if(livePermissions.isOwner){
+      const roleButton=safeText("button","quiet-button group-member-action",role==="admin"?"إزالة صفة المشرف":"تعيين مشرف");
+      roleButton.type="button";
+      roleButton.addEventListener("click",()=>{void manageGroupMember(userId,name,role==="admin"?"demote":"promote");});
+      groupSettingsMemberActions.append(roleButton);
+    }
+    if(livePermissions.isOwner || role!=="admin"){
+      const remove=safeText("button","danger-button group-member-remove","إزالة من المجموعة");
+      remove.type="button";
+      remove.addEventListener("click",()=>{void manageGroupMember(userId,name,"remove");});
+      groupSettingsMemberActions.append(remove);
+    }
+    if(!groupSettingsMemberActions.childElementCount){
+      groupSettingsMemberActions.append(safeText("p","group-member-no-actions","لا توجد إجراءات متاحة لهذا العضو."));
+    }
+    groupSettingsMemberManagement.hidden=false;
+    groupSettingsMemberManagement.scrollIntoView({block:"start",behavior:"auto"});
+    groupSettingsMemberTitle.focus();
+    return;
+  }
+  // Non-admin member actions are limited to messaging; no management controls are exposed.
   groupMemberOptionsName.textContent=name;
   groupMemberOptionsRole.textContent=roleLabel;
   groupMemberOptionsActions.replaceChildren();
-  const isSelf=userId===currentUser?.id;
   if(!isSelf){
     const messageButton=safeText("button","primary-button group-member-action","مراسلة");
     messageButton.type="button";
@@ -5503,20 +5790,6 @@ function openGroupMemberOptions(userId,name,roleLabel,role,isGroupOwner,permissi
       void openConversation({id:userId,display_name:name});
     });
     groupMemberOptionsActions.append(messageButton);
-  }
-  if(!isSelf && permissions.isAdmin && !isGroupOwner){
-    if(permissions.isOwner){
-      const roleButton=safeText("button","quiet-button group-member-action",role==="admin"?"إزالة صفة المشرف":"تعيين مشرف");
-      roleButton.type="button";
-      roleButton.addEventListener("click",()=>{void manageGroupMember(userId,name,role==="admin"?"demote":"promote");});
-      groupMemberOptionsActions.append(roleButton);
-    }
-    if(permissions.isOwner || role!=="admin"){
-      const remove=safeText("button","danger-button group-member-remove","إزالة من المجموعة");
-      remove.type="button";
-      remove.addEventListener("click",()=>{void manageGroupMember(userId,name,"remove");});
-      groupMemberOptionsActions.append(remove);
-    }
   }
   if(!groupMemberOptionsActions.childElementCount){
     groupMemberOptionsActions.append(safeText("p","group-member-no-actions","لا توجد إجراءات متاحة لهذا العضو."));
@@ -5530,6 +5803,12 @@ function closeGroupMemberOptions(){
   document.body.classList.remove("group-member-options-fullscreen");
   if(groupMemberOptionsReturnFocus?.isConnected)groupMemberOptionsReturnFocus.focus();
 }
+function closeGroupSettingsMemberManagement(){
+  groupSettingsMemberManagement.hidden=true;
+  groupSettingsMemberActions.replaceChildren();
+  groupSettingsCloseButton?.focus();
+}
+groupSettingsMemberBackButton.addEventListener("click",closeGroupSettingsMemberManagement);
 closeGroupMemberOptionsButton.addEventListener("click",closeGroupMemberOptions);
 groupMemberOptionsPanel.addEventListener("keydown",event=>{if(event.key==="Escape")closeGroupMemberOptions();});
 async function manageGroupMember(userId,name,action){
@@ -5538,7 +5817,8 @@ async function manageGroupMember(userId,name,action){
   if(!window.confirm(prompts[action]||"تأكيد الإجراء؟"))return;
   const {error}=await supabase.rpc("manage_group_member",{p_conversation_id:activeConversation.id,p_target_user_id:userId,p_action:action});
   if(error){announce("تعذر تنفيذ الإجراء: "+(error.message||"حاول مرة أخرى."),"error");return;}
-  closeGroupMemberOptions();
+  if(!groupSettingsMemberManagement.hidden)closeGroupSettingsMemberManagement();
+  else closeGroupMemberOptions();
   await loadGroupManagement();await loadConversations();
   announce(action==="promote"?"تم تعيينه مشرفًا.":action==="demote"?"تمت إزالة صفة المشرف.":"تمت إزالة العضو.");
 }
@@ -5554,17 +5834,16 @@ async function canCurrentUserAddGroupMembers(){
 groupAddMembersButton.addEventListener("click",async()=>{
   if(!activeConversation?.is_group||!(await canCurrentUserAddGroupMembers()))return;
   closeGroupMoreOptions();
-  conversationInfoPanel.hidden=true;
-  document.body.classList.remove("conversation-info-fullscreen");
-  groupAddPanel.hidden=false;
-  document.body.classList.add("group-add-fullscreen");
+  await openGroupSettings();
+  if(groupSettingsPanel.hidden||!activeConversation?.is_group||!(await canCurrentUserAddGroupMembers()))return;
+  groupSettingsAddMembers.hidden=false;
   renderGroupAddPeople();
+  groupSettingsAddMembers.scrollIntoView({block:"start",behavior:"auto"});
   groupAddSearch.focus();
 });
 function closeGroupAddPanel(){
-  groupAddPanel.hidden=true;
-  document.body.classList.remove("group-add-fullscreen");
-  groupAddMembersButton.focus();
+  groupSettingsAddMembers.hidden=true;
+  groupSettingsCloseButton?.focus();
 }
 closeGroupAddButton.addEventListener("click",closeGroupAddPanel);
 groupAddPanel.addEventListener("keydown",event=>{if(event.key==="Escape")closeGroupAddPanel();});
@@ -7037,13 +7316,14 @@ function appendMessage(message) {
   messagesList.scrollTop = messagesList.scrollHeight;
 }
 async function loadMessages() {
-  if (!activeConversation) return;
+  const userId = currentUser?.id;
+  if (!userId || !activeConversation) return;
   // Do not hold chat rendering while account-wide privacy controls are still loading.
   // The session starts with the same safe defaults used by the privacy settings loader.
   const conversation = activeConversation;
   const conversationId = conversation.id;
   const partner = activePartner;
-  const isCurrent = () => activeConversation?.id === conversationId;
+  const isCurrent = () => currentUser?.id === userId && activeConversation?.id === conversationId;
   messagesList.replaceChildren();
   // Keep the first chat render lightweight on mobile: fetch only the newest
   // 50 messages, then restore chronological order for the conversation view.
@@ -7177,7 +7457,9 @@ messageSchedulePanel.addEventListener("keydown", event => {
   }
 });
 confirmMessageScheduleButton.addEventListener("click", async () => {
-  if (!activeConversation || !currentUser) return;
+  const conversation = activeConversation;
+  const sender = currentUser;
+  if (!conversation || !sender) return;
   const body = currentMessageBody();
   const scheduledAt = new Date(messageScheduleTimeInput.value);
   if (!body) {
@@ -7198,17 +7480,19 @@ confirmMessageScheduleButton.addEventListener("click", async () => {
   confirmMessageScheduleButton.disabled = true;
   try {
     const { error } = await supabase.from("scheduled_messages").insert({
-      conversation_id: activeConversation.id,
-      sender_id: currentUser.id,
+      conversation_id: conversation.id,
+      sender_id: sender.id,
       body,
       scheduled_at: scheduledAt.toISOString()
     });
     if (error) throw error;
-    messageInput.value = "";
-    updateSendButtonVisibility();
-    replyingToMessage = null;
-    replyingTo.hidden = true;
-    closeMessageSchedulePanel();
+    if (currentUser?.id === sender.id && activeConversation?.id === conversation.id && !messageSchedulePanel.hidden) {
+      messageInput.value = "";
+      updateSendButtonVisibility();
+      replyingToMessage = null;
+      replyingTo.hidden = true;
+      closeMessageSchedulePanel();
+    }
     announce("تمت جدولة الرسالة.", "success");
   } catch (error) {
     messageScheduleHelp.textContent = "تعذرت جدولة الرسالة: " + (error.message || "حاول مرة أخرى.");
@@ -7322,24 +7606,33 @@ starredMessagesPanel.addEventListener("keydown", event => {
     starredMessagesButton.focus();
   }
 });
+let scheduledMessagesLoadSequence = 0;
 async function loadScheduledMessages() {
-  if (!activeConversation || !currentUser) return;
+  const conversationId = activeConversation?.id;
+  const senderId = currentUser?.id;
+  if (!conversationId || !senderId) return;
+  const sequence = ++scheduledMessagesLoadSequence;
+  const isCurrent = () => sequence === scheduledMessagesLoadSequence &&
+    activeConversation?.id === conversationId && currentUser?.id === senderId && !scheduledMessagesPanel.hidden;
   scheduledMessagesList.replaceChildren();
   const { data, error } = await supabase.from("scheduled_messages")
     .select("id,body,scheduled_at,status,failure_reason")
-    .eq("conversation_id", activeConversation.id)
-    .eq("sender_id", currentUser.id)
+    .eq("conversation_id", conversationId)
+    .eq("sender_id", senderId)
     .in("status", ["pending", "failed"])
     .order("scheduled_at", { ascending: true });
+  if (!isCurrent()) return;
   if (error) {
     scheduledMessagesList.append(safeText("li", "empty-item", "تعذر تحميل الرسائل المجدولة: " + error.message));
     return;
   }
   if (!data?.length) {
+    if (!isCurrent()) return;
     scheduledMessagesList.append(safeText("li", "empty-item", "لا توجد رسائل مجدولة في هذه المحادثة."));
     return;
   }
   for (const scheduled of data) {
+    if (!isCurrent()) return;
     const item = document.createElement("li");
     item.className = "scheduled-message-item";
     const body = safeText("p", "scheduled-message-body", normalizeMessageLineBreaks(scheduled.body));
@@ -7360,7 +7653,7 @@ async function loadScheduledMessages() {
         const { data: updated, error: updateError } = await supabase.from("scheduled_messages")
           .update({ status: "cancelled" })
           .eq("id", scheduled.id)
-          .eq("sender_id", currentUser.id)
+          .eq("sender_id", senderId)
           .eq("status", "pending")
           .select("id")
           .maybeSingle();
@@ -7589,10 +7882,17 @@ $("#choose-files").addEventListener("click", () => documentFileInput.click());
 
 async function uploadAttachments(fileList, options = {}) {
   const files = [...(fileList || [])];
-  if (!files.length || !currentUser || !activeConversation) return;
+  const conversation = activeConversation;
+  const sender = currentUser;
+  const partner = activePartner;
+  if (!files.length || !sender || !conversation) return;
   if(isPrivateConversationBlocked()){announce("لا يمكنك إرسال مرفقات في هذه المحادثة بسبب الحظر.","error");return;}
   closeAttachmentChooser();
   for (const file of files) {
+    if (currentUser?.id !== sender.id) {
+      announce("توقف رفع المرفقات لأن الحساب تغيّر. لم يتم إرسال الملفات المتبقية.", "error");
+      break;
+    }
     const useViewOnce = Boolean(options.viewOnce);
     const isPhotoOrVideo = file.type?.startsWith("image/") || file.type?.startsWith("video/");
     if (useViewOnce && !isPhotoOrVideo) {
@@ -7611,7 +7911,7 @@ async function uploadAttachments(fileList, options = {}) {
       const extensionMatch = String(file.name || "").match(/\.([a-zA-Z0-9]{1,10})$/);
       const safeExtension = extensionMatch ? "." + extensionMatch[1].toLowerCase() : "";
       const unique = (crypto.randomUUID ? crypto.randomUUID() : Date.now() + "-" + Math.random().toString(16).slice(2));
-      const path = activeConversation.id + "/" + currentUser.id + "/" + unique + safeExtension;
+      const path = conversation.id + "/" + sender.id + "/" + unique + safeExtension;
       const { data: uploaded, error: uploadError } = await supabase.storage.from("mersal-attachments").upload(path, file, {
         contentType: file.type || "application/octet-stream",
         upsert: false
@@ -7619,18 +7919,28 @@ async function uploadAttachments(fileList, options = {}) {
       if (uploadError) throw uploadError;
       const attachment = { path: uploaded.path, name: file.name, type: file.type || "application/octet-stream", size: file.size, ...(options.voiceMessage ? { kind: "voice" } : {}) };
       const body = (options.voiceMessage ? "رسالة صوتية" : "📎 " + file.name) + "\nMERSAL_ATTACHMENT:" + JSON.stringify(attachment);
+      if (currentUser?.id !== sender.id) {
+        await supabase.storage.from("mersal-attachments").remove([uploaded.path]);
+        throw new Error("تغيّر الحساب أثناء رفع الملف؛ لم يتم إرسال المرفق.");
+      }
       const { data, error } = await supabase.from("messages").insert({
-        conversation_id: activeConversation.id, sender_id: currentUser.id, body, view_once: useViewOnce
+        conversation_id: conversation.id, sender_id: sender.id, body, view_once: useViewOnce
       }).select("id,conversation_id,sender_id,body,created_at,view_once").single();
       if (error) {
         await supabase.storage.from("mersal-attachments").remove([uploaded.path]);
         throw error;
       }
-      appendMessage(data);
-      void refreshOutgoingMessageStatus(data.id, activeConversation, activePartner).catch(error => console.warn("Could not refresh attachment message status:", error));
-      await loadConversations();
-      const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
-      if (pushError) console.warn("Push notification could not be sent:", pushError.message);
+      if (activeConversation?.id === conversation.id && currentUser?.id === sender.id) {
+        appendMessage(data);
+        void refreshOutgoingMessageStatus(data.id, conversation, partner).catch(error => console.warn("Could not refresh attachment message status:", error));
+      }
+      void loadConversations().catch(error => console.warn("Could not refresh conversations after attachment send:", error));
+      try {
+        const { error: pushError } = await supabase.functions.invoke("send-push", { body: { message_id: data.id } });
+        if (pushError) console.warn("Push notification could not be sent:", pushError.message);
+      } catch (pushError) {
+        console.warn("Push notification request failed after attachment send:", pushError);
+      }
       announce("تم الإرسال.", "success");
     } catch (error) {
       announce("تعذر إرسال الملف " + file.name + ": " + (error.message || "حاول مرة أخرى."), "error");
