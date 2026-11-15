@@ -73,7 +73,6 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
     const followerLabel = followerCountRow?.querySelector(".conversation-info-label");
     if (followerLabel) followerLabel.textContent = t("المتابعون", "Followers");
     setAttr(detailName, "aria-label", "فتح معلومات القناة", "Open channel information");
-    setAttr(infoView, "aria-label", "معلومات القناة", "Channel information");
     setText($("#channel-post-submit"), "نشر التحديث", "Publish update");
     setText(deleteChannelButton, "حذف القناة", "Delete channel");
     setText(notificationsButton, activeFollow?.notifications_enabled === false ? "تشغيل إشعارات القناة" : "إيقاف إشعارات القناة", activeFollow?.notifications_enabled === false ? "Turn on channel notifications" : "Turn off channel notifications");
@@ -120,7 +119,6 @@ export function initMersalChannels({ supabase, getCurrentUser, getConversations 
   function setStatus(ar, en, isError = false) {
     if (!status) return;
     status.textContent = t(ar, en);
-    status.setAttribute("role", isError ? "alert" : "status");
   }
 
   async function loadChannels() {
