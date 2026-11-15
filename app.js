@@ -2442,7 +2442,8 @@ function showLoggedOut(message = "لم يتم تسجيل الدخول. يمكن�
   activePartner = null;
   authPanel.hidden = false;
   workspace.hidden = true;
-  account.textContent = "غير مسجل الدخول";
+  account.hidden = false;
+   account.textContent = "غير مسجل الدخول";
   if (realtimeChannel) supabase.removeChannel(realtimeChannel);
   if (presenceChannel) supabase.removeChannel(presenceChannel);
   if (notificationChannel) supabase.removeChannel(notificationChannel);
@@ -2524,7 +2525,8 @@ async function handleSession(session, authEvent = "UNKNOWN") {
   workspace.hidden = false;
   bottomNavigation.hidden = false;
   setActiveBottomTab("home");
-  account.textContent = "مرحبًا بك في مرسال · متصل الآن";
+  account.textContent = "";
+   account.hidden = true;
 
   // Reveal the usable app immediately; load account data and live updates in the background.
   finishStartup();
