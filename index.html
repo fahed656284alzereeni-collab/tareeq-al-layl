@@ -625,12 +625,6 @@
               <button id="confirm-message-schedule" type="button" class="primary-button">جدولة الرسالة</button>
             </div>
           </section>
-          <section id="starred-messages-panel" class="starred-messages-panel" role="dialog" aria-modal="true" aria-label="الرسائل المميزة بنجمة" hidden>
-            <div class="starred-messages-card">
-              <button id="close-starred-messages" type="button" class="quiet-button">إغلاق</button>
-              <ul id="starred-messages-list" class="starred-messages-list" aria-label="قائمة الرسائل المميزة بنجمة" aria-live="polite"></ul>
-            </div>
-          </section>
           <section id="scheduled-messages-panel" class="scheduled-messages-panel" role="dialog" aria-modal="true" aria-label="الرسائل المجدولة" hidden>
             <div class="scheduled-messages-card">
               <button id="close-scheduled-messages" type="button" class="quiet-button">إغلاق</button>
@@ -652,6 +646,12 @@
       </div>
     </div>
   </div>
+          <section id="starred-messages-panel" class="starred-messages-panel" role="dialog" aria-modal="true" aria-label="الرسائل المميزة بنجمة" hidden>
+            <div class="starred-messages-card">
+              <button id="close-starred-messages" type="button" class="quiet-button">إغلاق</button>
+              <ul id="starred-messages-list" class="starred-messages-list" aria-label="قائمة الرسائل المميزة بنجمة" aria-live="polite"></ul>
+            </div>
+          </section>
     <div id="bottom-navigation" class="bottom-navigation" role="tablist" hidden>
       <button id="home-tab" class="bottom-nav-button" type="button" role="tab" tabindex="0" aria-controls="workspace" aria-label="الدردشات، علامة تبويب 1 من 7" aria-posinset="1" aria-setsize="7" aria-selected="true">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-7h-4v7H4a1 1 0 0 1-1-1V10Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
