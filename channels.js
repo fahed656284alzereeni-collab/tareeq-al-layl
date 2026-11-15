@@ -23,6 +23,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
   const infoName = $("#channel-info-name");
   const infoDescription = $("#channel-info-description");
   const infoCreated = $("#channel-info-created");
+  const shareButton = $("#channel-share-button");
   const followButton = $("#channel-follow-toggle");
   const notificationsButton = $("#channel-notifications-toggle");
   const deleteChannelButton = $("#channel-delete-button");
@@ -66,6 +67,7 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     setText($("#channel-create-save"), "حفظ القناة", "Save channel");
     setText(detailBack, "العودة إلى القنوات", "Back to channels");
     setText(infoBack, "العودة إلى القناة", "Back to channel");
+    setText(shareButton, "مشاركة رابط القناة", "Share channel link");
     setAttr(detailName, "aria-label", "فتح معلومات القناة", "Open channel information");
     setAttr(infoView, "aria-label", "معلومات القناة", "Channel information");
     setText($("#channel-post-submit"), "نشر التحديث", "Publish update");
@@ -200,7 +202,19 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     panel.hidden = false;
     panel.setAttribute("aria-hidden", "false");
     showHome();
-    void loadChannels().catch(error => setStatus("تعذر تحميل القنوات: " + (error.message || ""), "Could not load channels: " + (error.message || ""), true));
+    void loadChannels().then(async () => {
+      const sharedId = new URLSearchParams(window.location.search).get("channel");
+      if (!sharedId || panel.hidden) return;
+      const channel = rows.find(row => row.id === sharedId);
+      if (channel) {
+        await openChannel(channel, null);
+        const cleanUrl = new URL(window.location.href);
+        cleanUrl.searchParams.delete("channel");
+        window.history.replaceState({}, "", cleanUrl);
+      } else {
+        announce(t("لم يتم العثور على القناة أو أنها لم تعد عامة.", "The channel was not found or is no longer public."), "error");
+      }
+    }).catch(error => setStatus("تعذر تحميل القنوات: " + (error.message || ""), "Could not load channels: " + (error.message || ""), true));
     title?.focus();
   }
 
@@ -553,6 +567,34 @@ export function initMersalChannels({ supabase, getCurrentUser, announce, safeTex
     await loadChannels();
     announce(t("تم حذف القناة.", "Channel deleted."));
     createButton.focus();
+  });
+
+  shareButton?.addEventListener("click", async () => {
+    if (!activeChannel || busy) return;
+    const shareUrl = new URL(window.location.pathname, window.location.origin);
+    shareUrl.searchParams.set("channel", activeChannel.id);
+    const url = shareUrl.toString();
+    const shareData = { title: activeChannel.name, text: activeChannel.description || t("تابع هذه القناة على مرسال", "Follow this channel on Mersal"), url };
+    try {
+      if (navigator.share) await navigator.share(shareData);
+      else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        announce(t("تم نسخ رابط القناة. يمكنك مشاركته الآن.", "Channel link copied. You can share it now."));
+      } else {
+        const field = document.createElement("input");
+        field.value = url;
+        field.setAttribute("readonly", "");
+        field.style.position = "fixed";
+        field.style.opacity = "0";
+        document.body.append(field);
+        field.select();
+        const copied = document.execCommand("copy");
+        field.remove();
+        announce(copied ? t("تم نسخ رابط القناة.", "Channel link copied.") : t("تعذر نسخ الرابط على هذا الجهاز.", "Could not copy the link on this device."), copied ? "info" : "error");
+      }
+    } catch (error) {
+      if (error?.name !== "AbortError") announce(t("تعذرت مشاركة رابط القناة.", "Could not share channel link."), "error");
+    }
   });
 
   detailName.addEventListener("click", () => {
