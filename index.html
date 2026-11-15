@@ -737,7 +737,7 @@
         </div>
         <div id="channel-detail-view" hidden>
           <button id="channel-detail-back" type="button" class="quiet-button">العودة إلى القنوات</button>
-          <p id="channel-detail-name" class="channels-title" tabindex="-1"></p>
+          <button id="channel-detail-name" class="channels-title channel-title-info-button" type="button" aria-label="معلومات القناة"></button>
           <p id="channel-detail-description" class="channels-intro"></p>
           <button id="channel-edit-open" type="button" class="quiet-button" hidden>تعديل معلومات القناة</button>
           <form id="channel-edit-form" class="channel-edit-form" hidden>
@@ -763,6 +763,14 @@
           </form>
           <ul id="channel-posts" class="channel-posts" aria-label="تحديثات القناة" aria-live="polite"></ul>
         </div>
+        <section id="channel-info-view" class="conversation-info channel-info-view" aria-label="معلومات القناة" hidden>
+          <button id="channel-info-back" type="button" class="quiet-button">العودة إلى القناة</button>
+          <div class="conversation-info-list">
+            <div><span class="conversation-info-label">اسم القناة</span><span id="channel-info-name" class="conversation-info-value" data-no-translate>—</span></div>
+            <div><span class="conversation-info-label">الوصف</span><span id="channel-info-description" class="conversation-info-value" data-no-translate>—</span></div>
+            <div><span class="conversation-info-label">تاريخ الإنشاء</span><time id="channel-info-created" class="conversation-info-value">—</time></div>
+          </div>
+        </section>
       </div>
     </section>
     <section id="communities-panel" class="communities-panel" role="tabpanel" aria-labelledby="communities-tab" tabindex="0" hidden>
