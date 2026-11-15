@@ -67,12 +67,12 @@ assert.doesNotMatch(app, /from\(["']profiles["']\)\s*\.select\(["'][^"']*(?:abou
   "Private profile fields must be read through visibility-checked RPCs");
 assert.match(app, /async function loadOwnProfile\(\)[\s\S]*?supabase\.rpc\("get_visible_profiles",\{p_user_ids:\[userId\]\}\)[\s\S]*?const profile = visibleProfile\.data\?\.\[0\] \|\| null;/,
   "Own profile details and avatar paths must use the privacy-checked profile RPC");
-const groupInviteLoader = app.match(/async function loadGroupInviteLink\\(conversationId,isAdmin\\)\\{[\\s\\S]*?\\n\\}/)?.[0] || "";
+const groupInviteLoader = app.match(/async function loadGroupInviteLink\(conversationId,isAdmin\)\{[\s\S]*?\n\}/)?.[0] || "";
 assert.ok(groupInviteLoader.includes("groupInviteShareButton.hidden=false"), "Group invite sharing must be independently exposed in conversation info");
-assert.doesNotMatch(groupInviteLoader, /groupInviteShareButton\\.hidden\\s*=\\s*true/, "Invite-link loading must not hide the independent group share action");
+assert.doesNotMatch(groupInviteLoader, /groupInviteShareButton\.hidden\s*=\s*true/, "Invite-link loading must not hide the independent group share action");
 assert.ok(app.includes('if(groupInviteShareButton)groupInviteShareButton.addEventListener("click",async()=>'), "The standalone group share action must retry loading its invite link");
-assert.doesNotMatch(html, /aria-label="[^"]*علامة تبويب \\d من 7"/, "Tab labels must not repeat tab role and position announcements");
-assert.doesNotMatch(baseCss + "\\n" + experienceCss, /body\\.chat-fullscreen[^}]*#bottom-navigation|body\\.conversation-info-fullscreen[^}]*bottom-navigation/, "The bottom navigation must remain visible in chats and conversation info");
+assert.doesNotMatch(html, /aria-label="[^"]*علامة تبويب \d من 7"/, "Tab labels must not repeat tab role and position announcements");
+assert.doesNotMatch(baseCss + "\\n" + experienceCss, /body\.chat-fullscreen[^}]*#bottom-navigation|body\.conversation-info-fullscreen[^}]*bottom-navigation/, "The bottom navigation must remain visible in chats and conversation info");
 assert.ok(app.includes("let mersalTools =") && app.includes("mersalTools = initMersalTools("),
   "The core application must initialize its tools module");
 assert.ok(app.includes("mersalChannels = initMersalChannels(") && app.includes("mersalCommunities = initMersalCommunities("),
