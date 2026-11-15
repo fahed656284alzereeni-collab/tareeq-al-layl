@@ -517,8 +517,7 @@ body.chat-fullscreen {
   height: 100dvh;
 }
 body.chat-fullscreen .topbar,
-body.chat-fullscreen #main-content > :not(#workspace),
-body.chat-fullscreen #bottom-navigation {
+body.chat-fullscreen #main-content > :not(#workspace) {
   display: none !important;
 }
 body.chat-fullscreen #main-content {
@@ -1131,7 +1130,6 @@ body.settings-open .workspace { visibility: hidden; }
 .workspace.chat-open .chat-view {
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
-body.conversation-info-fullscreen .bottom-navigation { display: none; }
 :root[data-theme="light"] .bottom-navigation {
   border-color: #c4d1e2;
   background: #f7f9fcf5;
