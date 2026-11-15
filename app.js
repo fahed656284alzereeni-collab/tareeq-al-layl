@@ -7500,10 +7500,13 @@ confirmMessageScheduleButton.addEventListener("click", async () => {
   }
 });
 const starredMessagesButton = $("#starred-messages-button");
+const conversationStarredMessagesButton = $("#conversation-starred-messages-button");
 const starredMessagesPanel = $("#starred-messages-panel");
 const starredMessagesList = $("#starred-messages-list");
 const closeStarredMessagesButton = $("#close-starred-messages");
-async function loadStarredMessages() {
+let starredMessagesReturnFocus = starredMessagesButton;
+let starredConversationFilter = null;
+async function loadStarredMessages(conversationId = null) {
   if (!currentUser || !starredMessagesList) return;
   starredMessagesList.replaceChildren();
   const english = document.documentElement.lang === "en";
@@ -7528,7 +7531,7 @@ async function loadStarredMessages() {
   }
   const hiddenIds = new Set((hidden || []).map(row => row.message_id));
   const messageMap = new Map((messages || []).map(message => [message.id, message]));
-  const ordered = ids.map(id => messageMap.get(id)).filter(message => message && !hiddenIds.has(message.id));
+  const ordered = ids.map(id => messageMap.get(id)).filter(message => message && !hiddenIds.has(message.id) && (!conversationId || message.conversation_id === conversationId));
   if (!ordered.length) {
     starredMessagesList.append(safeText("li", "empty-item", english ? "No starred messages." : "لا توجد رسائل مميزة بنجمة."));
     return;
@@ -7590,19 +7593,29 @@ async function loadStarredMessages() {
   }
 }
 starredMessagesButton.addEventListener("click", async () => {
+  starredConversationFilter = null;
+  starredMessagesReturnFocus = starredMessagesButton;
   starredMessagesPanel.hidden = false;
   await loadStarredMessages();
   closeStarredMessagesButton.focus();
 });
+conversationStarredMessagesButton.addEventListener("click", async () => {
+  if (!activeConversation?.id) return;
+  starredConversationFilter = activeConversation.id;
+  starredMessagesReturnFocus = conversationStarredMessagesButton;
+  starredMessagesPanel.hidden = false;
+  await loadStarredMessages(starredConversationFilter);
+  closeStarredMessagesButton.focus();
+});
 closeStarredMessagesButton.addEventListener("click", () => {
   starredMessagesPanel.hidden = true;
-  starredMessagesButton.focus();
+  starredMessagesReturnFocus?.focus();
 });
 starredMessagesPanel.addEventListener("keydown", event => {
   if (event.key === "Escape") {
     event.preventDefault();
     starredMessagesPanel.hidden = true;
-    starredMessagesButton.focus();
+    starredMessagesReturnFocus?.focus();
   }
 });
 let scheduledMessagesLoadSequence = 0;
