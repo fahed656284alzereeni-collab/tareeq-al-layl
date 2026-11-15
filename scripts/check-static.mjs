@@ -71,8 +71,6 @@ const groupInviteLoader = app.match(/async function loadGroupInviteLink\(convers
 assert.ok(groupInviteLoader.includes("groupInviteShareButton.hidden=false"), "Group invite sharing must be independently exposed in conversation info");
 assert.doesNotMatch(groupInviteLoader, /groupInviteShareButton\.hidden\s*=\s*true/, "Invite-link loading must not hide the independent group share action");
 assert.ok(app.includes('if(groupInviteShareButton)groupInviteShareButton.addEventListener("click",async()=>'), "The standalone group share action must retry loading its invite link");
-const channels = readFileSync(new URL("../channels.js", import.meta.url), "utf8");
-const communities = readFileSync(new URL("../communities.js", import.meta.url), "utf8");
 assert.match(html, /<div id="group-invite-share-card"[^>]*info-section-card">/,
   "The group share action must live in its own visible information card");
 assert.ok(app.includes("if(groupInviteShareCard)groupInviteShareCard.hidden=false"),
@@ -83,10 +81,6 @@ for (const id of ["calls-title", "channels-title", "communities-title"]) {
   assert.match(html, new RegExp('id="' + id + '"[^>]*aria-hidden="true"'),
     "Duplicate page titles must stay visual-only when the tab already names the panel: " + id);
 }
-assert.ok(channels.includes('panel.removeAttribute("aria-label")') && communities.includes('panel.removeAttribute("aria-label")'),
-  "Tab panels must use their existing aria-labelledby relationship without a duplicate label");
-assert.ok(communities.includes('setAttr(postsList, "aria-label", "منشورات المجتمع", "Community posts")'),
-  "Community posts must not be announced as advertisements");
 assert.doesNotMatch(html, /aria-label="[^"]*علامة تبويب \d من 7"/, "Tab labels must not repeat tab role and position announcements");
 assert.doesNotMatch(baseCss + "\\n" + experienceCss, /body\.chat-fullscreen[^}]*#bottom-navigation|body\.conversation-info-fullscreen[^}]*bottom-navigation/, "The bottom navigation must remain visible in chats and conversation info");
 assert.ok(app.includes("let mersalTools =") && app.includes("mersalTools = initMersalTools("),
@@ -162,6 +156,10 @@ assert.match(channels, /await stopPostsRealtime\(\);\s*if \(activeChannel\?\.id 
 assert.match(channels, /const loadId = \+\+listLoadSequence;[\s\S]*?if \(loadId !== listLoadSequence \|\| panel\.hidden \|\| getCurrentUser\(\)\?\.id !== user\.id\) return;/,
   "Late channel list loads must not overwrite a newer navigation or session");
 const communities = readFileSync(new URL("../communities.js", import.meta.url), "utf8");
+assert.ok(channels.includes('panel.removeAttribute("aria-label")') && communities.includes('panel.removeAttribute("aria-label")'),
+  "Tab panels must use their existing aria-labelledby relationship without a duplicate label");
+assert.ok(communities.includes('setAttr(postsList, "aria-label", "منشورات المجتمع", "Community posts")'),
+  "Community posts must not be announced as advertisements");
 assert.doesNotMatch(app, /setAttribute\("role",\s*"group"\)/, "Avoid redundant VoiceOver group announcements on generic content");
 assert.doesNotMatch(app, /setAttribute\("role",\s*"status"\)/, "Avoid redundant status roles on static scheduled-message text");
 assert.doesNotMatch(channels, /setAttribute\("role",\s*isError\s*\?\s*"alert"\s*:\s*"status"\)/, "Channel status updates must not create extra alert/status roles");
