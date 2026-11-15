@@ -21,7 +21,7 @@
   <link rel="stylesheet" href="/styles.css?v=20261114-cache-refresh-v1">
   <link rel="stylesheet" href="/inclusive-responsive.css?v=20261114-cache-refresh-v1">
     <link rel="stylesheet" href="/mersal-redesign.css?v=20261114-cache-refresh-v1">
-    <link rel="stylesheet" href="/mersal-experience-v2.css?v=20261116-channel-settings-v1">
+    <link rel="stylesheet" href="/mersal-experience-v2.css?v=20261116-channel-info-edit-v2">
   <script type="module" src="/app.js?v=20261116-channel-share-v13"></script>
 </head>
 <body>
@@ -749,18 +749,13 @@
         <section id="channel-info-view" class="conversation-info channel-info-view" aria-label="معلومات القناة" hidden>
           <button id="channel-info-back" type="button" class="quiet-button">العودة إلى القناة</button>
           <button id="channel-share-button" type="button" class="primary-button">مشاركة رابط القناة</button>
-          <button id="channel-settings-open" type="button" class="quiet-button">إعدادات القناة</button>
           <div class="conversation-info-list">
             <div><span class="conversation-info-label">اسم القناة</span><span id="channel-info-name" class="conversation-info-value" data-no-translate>—</span></div>
             <div><span class="conversation-info-label">الوصف</span><span id="channel-info-description" class="conversation-info-value" data-no-translate>—</span></div>
             <div><span class="conversation-info-label">تاريخ الإنشاء</span><time id="channel-info-created" class="conversation-info-value">—</time></div>
             <div id="channel-follower-count-row" hidden><span class="conversation-info-label">المتابعون</span><span id="channel-follower-count" class="conversation-info-value">—</span></div>
           </div>
-        </section>
-        <section id="channel-settings-view" class="conversation-info channel-info-view channel-settings-view" aria-label="إعدادات القناة" hidden>
-          <button id="channel-settings-back" type="button" class="quiet-button">العودة إلى معلومات القناة</button>
-          <p class="channels-title">إعدادات القناة</p>
-          <button id="channel-edit-open" type="button" class="quiet-button" hidden>تعديل معلومات القناة</button>
+          <button id="channel-edit-open" type="button" class="quiet-button" hidden>تعديل</button>
           <form id="channel-edit-form" class="channel-edit-form" hidden>
             <label for="channel-edit-name">اسم القناة</label>
             <input id="channel-edit-name" type="text" maxlength="80" required autocomplete="off">
