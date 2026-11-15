@@ -866,11 +866,17 @@ body.tools-open #tools-view {
 }
 body.status-open .topbar,
 body.calls-open .topbar,
-body.tools-open .topbar,
+body.tools-open .topbar {
+  display: none !important;
+}
 body.status-open #main-content,
 body.calls-open #main-content,
 body.tools-open #main-content {
-  display: none !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
 }
 body.status-open #workspace,
 body.calls-open #workspace,
