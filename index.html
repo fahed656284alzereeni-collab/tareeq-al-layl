@@ -537,11 +537,11 @@
           <section id="conversation-info" class="conversation-info" hidden>
             <button id="close-conversation-info" type="button" class="quiet-button">إغلاق المعلومات</button>
             <button id="conversation-starred-messages-button" type="button" class="quiet-button" aria-controls="starred-messages-panel">الرسائل المميزة بنجمة</button>
-            <div id="conversation-info-name-card" class="conversation-info-list conversation-info-common-list">
+            <div id="conversation-info-name-card" class="conversation-info-list conversation-info-common-list info-identity-card">
               <div id="conversation-info-name-row"><span id="conversation-info-name-label" class="conversation-info-label">الاسم</span><span class="conversation-info-value" id="conversation-info-name">—</span></div>
             </div>
             <div id="group-conversation-info-list" class="conversation-info-list group-info-layout" hidden>
-              <div class="group-info-profile">
+              <div class="group-info-profile info-identity-card">
                 <div id="group-info-photo-row" class="group-info-photo-row" hidden>
                   <img id="group-info-photo" class="group-info-photo" alt="" hidden>
                   <span id="group-info-photo-placeholder" class="group-info-photo-placeholder" aria-hidden="true">م</span>
@@ -558,7 +558,7 @@
                   <button id="group-more-options-open" type="button" class="quiet-button" aria-controls="group-more-options-panel" hidden>تعديل معلومات المجموعة</button>
                 </div>
               </div>
-              <div id="group-invite-row" class="group-info-card group-invite-card" hidden>
+              <div id="group-invite-row" class="group-info-card group-invite-card info-section-card" hidden>
                 <span class="conversation-info-label">الدعوة عبر الرابط</span>
                 <div class="conversation-info-value group-invite-actions">
                   <label class="visually-hidden" for="group-invite-url">رابط دعوة المجموعة</label>
@@ -570,7 +570,7 @@
                   <p id="group-invite-status" role="status" aria-live="polite" aria-atomic="true"></p>
                 </div>
               </div>
-              <div class="group-info-card group-members-section">
+              <div class="group-info-card group-members-section info-section-card">
                 <div class="group-members-heading">
                   <span>أعضاء المجموعة</span>
                   <span id="group-member-count" aria-label="عدد أعضاء المجموعة">0</span>
@@ -586,7 +586,7 @@
                 <button id="group-delete-everyone" type="button" class="danger-button" hidden>حذف المجموعة للجميع</button>
               </div>
             </div>
-            <div id="individual-conversation-info-list" class="conversation-info-list" hidden>
+            <div id="individual-conversation-info-list" class="conversation-info-list individual-info-layout" hidden>\n              <h2 class="conversation-info-section-title">معلومات الحساب</h2>
               <div id="conversation-info-photo-row"><span class="conversation-info-label">الصورة الشخصية</span><img id="conversation-info-photo" class="conversation-info-photo" alt="" hidden></div>
               <div ><span class="conversation-info-label">النبذة</span><span class="conversation-info-value" id="conversation-info-about">—</span></div>
               <div id="conversation-info-status-row"><span class="conversation-info-label">الحالة</span><span class="conversation-info-value" id="conversation-info-status">—</span></div>
@@ -595,7 +595,7 @@
             <div class="conversation-info-list conversation-info-common-list">
               <div ><span class="conversation-info-label">عدد الرسائل</span><span class="conversation-info-value" id="conversation-info-count">—</span></div>
             </div>
-            <div class="conversation-info-tools">
+            <div class="conversation-info-tools info-section-card">\n              <h2 class="conversation-info-section-title">إدارة المحادثة</h2>
               <label class="visually-hidden" for="conversation-search-input">البحث في الرسائل</label>
               <input id="conversation-search-input" class="conversation-search-input" type="search" autocomplete="off" placeholder="ابحث في الرسائل" aria-label="البحث في الرسائل">
               <button id="conversation-info-export" type="button" class="quiet-button">تنزيل سجل المحادثة</button>
@@ -605,7 +605,7 @@
 
             </div>
 
-            <div class="conversation-membership-actions">
+            <div class="conversation-membership-actions info-section-card">
               <button id="conversation-delete-button" type="button" class="danger-button">حذف الدردشة من عندي</button>
             </div>
             <div id="conversation-search-area" class="conversation-search-area" hidden>

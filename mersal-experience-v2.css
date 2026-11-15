@@ -949,3 +949,129 @@ body.conversation-info-fullscreen #bottom-navigation { display: none !important;
 /* WhatsApp-style channel settings page */
 .channel-info-view > #channel-edit-open,.channel-info-view .channel-follow-actions > button { width:100%; min-height:46px; justify-content:flex-start; text-align:start; }
 #channel-follower-count-row[hidden] { display:none !important; }
+
+
+/* WhatsApp-inspired conversation information layout */
+.conversation-info { padding: max(16px, env(safe-area-inset-top)) clamp(14px, 3vw, 28px) max(24px, env(safe-area-inset-bottom)); }
+.conversation-info > #close-conversation-info { min-height:44px; }
+.conversation-info-section-title {
+  margin: 4px 0 2px;
+  padding: 0 2px;
+  color: var(--mx-muted);
+  font-size: .92rem;
+  line-height: 1.5;
+  font-weight: 750;
+  text-align: start;
+}
+.conversation-info .info-identity-card {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  min-height:150px;
+  padding:24px 18px;
+  border-radius:20px;
+  text-align:center;
+}
+#conversation-info-name-card.info-identity-card {
+  gap:6px;
+  margin-top:8px;
+  border:0;
+  background:transparent;
+  padding:8px 12px 16px;
+  min-height:0;
+}
+#conversation-info-name-card #conversation-info-name-row {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  width:100%;
+  border:0;
+  padding:0;
+}
+#conversation-info-name-label { font-size:.86rem; }
+#conversation-info-name { font-size:1.3rem; font-weight:800; text-align:center; }
+#individual-conversation-info-list.individual-info-layout {
+  display:grid;
+  gap:10px;
+  padding:16px;
+  border-radius:20px;
+}
+#individual-conversation-info-list #conversation-info-photo-row {
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+  padding:6px 0 16px;
+  border-bottom:1px solid var(--mx-line);
+}
+#individual-conversation-info-list .conversation-info-photo {
+  width:112px;
+  height:112px;
+  border-radius:50%;
+  object-fit:cover;
+}
+#individual-conversation-info-list > div:not(#conversation-info-photo-row) {
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:space-between;
+  gap:8px 16px;
+  padding:10px 0;
+  border-bottom:1px solid var(--mx-line);
+}
+#individual-conversation-info-list > div:last-child { border-bottom:0; }
+#group-conversation-info-list .group-info-profile {
+  gap:10px;
+  padding:24px 18px;
+  border-radius:20px;
+}
+#group-info-name { font-size:1.35rem; font-weight:800; line-height:1.4; }
+#group-info-description-row {
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  width:100%;
+  padding:10px 0 0;
+  border-top:1px solid var(--mx-line);
+}
+#group-conversation-info-list .group-info-actions { width:100%; }
+#group-conversation-info-list .group-info-actions button,
+#group-invite-row button,
+#conversation-info .info-section-card > button {
+  min-height:44px;
+}
+#group-conversation-info-list .info-section-card,
+#conversation-info .info-section-card {
+  border-radius:18px;
+  padding:16px;
+}
+#group-conversation-info-list .group-members-section { margin-top:4px; }
+#group-conversation-info-list .group-members-heading {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  color:var(--mx-text);
+  font-size:1rem;
+}
+.conversation-info-tools.info-section-card {
+  display:grid;
+  gap:10px;
+}
+.conversation-info-tools .conversation-search-input { width:100%; min-height:46px; }
+.conversation-info-tools > button,
+.conversation-membership-actions > button {
+  width:100%;
+  min-height:46px;
+  justify-content:flex-start;
+  text-align:start;
+}
+.conversation-membership-actions.info-section-card { padding:12px 16px; }
+#conversation-starred-messages-button { min-height:44px; }
+@media (max-width:520px) {
+  .conversation-info { padding-inline:12px; }
+  .conversation-info-list, .group-info-card, .group-info-profile, .conversation-info-tools, .conversation-search-area { padding:14px; }
+  #individual-conversation-info-list.individual-info-layout { padding:14px; }
+}
