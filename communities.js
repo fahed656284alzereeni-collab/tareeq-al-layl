@@ -212,7 +212,15 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
   function open(returnElement = openButton) {
     if (!getCurrentUser() || !panel) return;
     returnFocus = returnElement || openButton;
+    // Enforce one visible social tab even if this module is opened outside the main navigator.
+    const channelsPanel = document.getElementById("channels-panel");
+    if (channelsPanel) {
+      channelsPanel.hidden = true;
+      channelsPanel.setAttribute("aria-hidden", "true");
+    }
+    document.body.classList.remove("channels-open");
     panel.hidden = false;
+    panel.setAttribute("aria-hidden", "false");
     workspace?.setAttribute("aria-hidden", "true");
     document.body.classList.add("communities-open");
     showHome();
@@ -223,6 +231,7 @@ export function initMersalCommunities({ supabase, getCurrentUser, announce, safe
   function close({ restoreFocus = true } = {}) {
     listLoadSequence++;
     panel.hidden = true;
+    panel.setAttribute("aria-hidden", "true");
     workspace?.removeAttribute("aria-hidden");
     document.body.classList.remove("communities-open");
     showHome();
