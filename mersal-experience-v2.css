@@ -1111,6 +1111,9 @@ body.tools-open #workspace {
   display: block;
   width: 100%;
 }
+#group-invite-share-card[hidden] {
+  display: none !important;
+}
 #group-invite-share-card .group-info-share-button {
   display: flex;
   width: 100%;
