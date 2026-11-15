@@ -5023,13 +5023,13 @@ function setGroupInviteUrl(token){
 async function loadGroupInviteLink(conversationId,isAdmin){
   if(!groupInviteRow||!groupInviteUrl)return;
   if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;groupInviteShareButton.setAttribute("aria-label","مشاركة رابط المجموعة");}
-  if(groupInviteShareButton){groupInviteShareButton.hidden=true;groupInviteShareButton.disabled=true;}
+
   if(!isAdmin){
     const {data:settings,error}=await supabase.from("group_settings")
       .select("add_members_by").eq("conversation_id",conversationId).maybeSingle();
     if(error){
       groupInviteRow.hidden=true;
-      if(groupInviteShareButton)groupInviteShareButton.hidden=true;
+      if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;groupInviteShareButton.setAttribute("aria-label","مشاركة رابط المجموعة، متاحة للمشرفين فقط");}
       groupInviteUrl.value="";
       groupInviteTokenCache.delete(conversationId);
       console.warn("تعذر التحقق من صلاحية رابط الدعوة:",error.message);
@@ -5037,7 +5037,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
     }
     if((settings?.add_members_by||"admins")!=="everyone"){
       groupInviteRow.hidden=true;
-      if(groupInviteShareButton)groupInviteShareButton.hidden=true;
+      if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;groupInviteShareButton.setAttribute("aria-label","مشاركة رابط المجموعة، متاحة للمشرفين فقط");}
       groupInviteUrl.value="";
       groupInviteTokenCache.delete(conversationId);
       if(groupInviteStatus)groupInviteStatus.textContent="";
