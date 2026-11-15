@@ -1362,6 +1362,10 @@ function updateBottomTabAccessiblePositions(language = localStorage.getItem("mer
     const label = tab.querySelector(".bottom-nav-label")?.textContent?.trim() || tab.id.replace(/-tab$/, "");
     tab.removeAttribute("aria-posinset");
     tab.removeAttribute("aria-setsize");
+    tab.removeAttribute("aria-description");
+    tab.removeAttribute("aria-describedby");
+    tab.removeAttribute("aria-roledescription");
+    tab.removeAttribute("title");
     tab.setAttribute("aria-label", label);
     tab.removeAttribute("data-no-translate-aria-label");
   });
