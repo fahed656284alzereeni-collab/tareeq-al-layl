@@ -21,8 +21,8 @@
   <link rel="stylesheet" href="/styles.css?v=20261114-cache-refresh-v1">
   <link rel="stylesheet" href="/inclusive-responsive.css?v=20261114-cache-refresh-v1">
     <link rel="stylesheet" href="/mersal-redesign.css?v=20261114-cache-refresh-v1">
-    <link rel="stylesheet" href="/mersal-experience-v2.css?v=20261116-channel-info-edit-v2">
-  <script type="module" src="/app.js?v=20261116-landmark-clean-v1"></script>
+    <link rel="stylesheet" href="/mersal-experience-v2.css?v=20261116-conversation-info-v3">
+  <script type="module" src="/app.js?v=20261116-conversation-info-v3"></script>
 </head>
 <body>
 <div class="topbar">
@@ -553,6 +553,7 @@
                 </div>
                 <div class="group-info-actions">
                   <button id="group-info-call-button" type="button" class="quiet-button">اتصال صوتي</button>
+                  <button id="group-invite-share" type="button" class="primary-button group-info-share-button" hidden disabled>مشاركة رابط المجموعة</button>
                   <button id="group-add-members-button" type="button" class="quiet-button" hidden>إضافة أعضاء</button>
                   <button id="group-settings-open" type="button" class="quiet-button" hidden>إعدادات المجموعة</button>
                   <button id="group-more-options-open" type="button" class="quiet-button" aria-controls="group-more-options-panel" hidden>تعديل معلومات المجموعة</button>
@@ -564,7 +565,7 @@
                   <label class="visually-hidden" for="group-invite-url">رابط دعوة المجموعة</label>
                   <input id="group-invite-url" type="text" readonly aria-label="رابط دعوة المجموعة">
                   <button id="group-invite-copy" type="button" class="quiet-button" hidden>نسخ رابط الدعوة</button>
-                  <button id="group-invite-share" type="button" class="quiet-button">مشاركة رابط الدعوة</button>
+                  
                   <button id="group-invite-reset" type="button" class="quiet-button" hidden>إعادة تعيين رابط الدعوة</button>
                   <button id="group-invite-retry" type="button" class="quiet-button" hidden>إعادة المحاولة</button>
                   <p id="group-invite-status" role="status" aria-live="polite" aria-atomic="true"></p>
