@@ -7431,12 +7431,12 @@ function appendMessage(message) {
   const stateIndicators = document.createElement("div");
   stateIndicators.className = "message-state-indicators";
   stateIndicators.hidden = true;
-  menu.append(closeButton, copyButton, replyButton, deleteMineButton, deleteEveryoneButton, reactionPickerButton, forwardButton);
+  menu.append(closeButton, copyButton, replyButton, ...(editButton ? [editButton] : []), starButton, pinButton, deleteMineButton, deleteEveryoneButton, reactionPickerButton, forwardButton);
   const reactionHost = document.createElement("div");
   reactionHost.className = "message-reactions";
   item.append(stateIndicators, reactionHost, reactionPicker, messageFooter);
-  void refreshMessageInteractions(message, item);
   messagesList.append(item);
+  void refreshMessageInteractions(message, item);
   if (pollHost) void renderConversationPoll(pollMessage.pollId, pollHost, message.id);
   messagesList.scrollTop = messagesList.scrollHeight;
 }
