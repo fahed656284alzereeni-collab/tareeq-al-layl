@@ -1135,3 +1135,35 @@ body.tools-open #workspace {
 }
 #group-invite-share-help[hidden] { display: none !important; }
 
+
+
+/* Keep the active pinned message visible at the top of the chat timeline. */
+.pinned-message-banner {
+  position: sticky;
+  top: 0;
+  z-index: 8;
+  margin: 0 12px 8px;
+  padding: 7px;
+  border: 1px solid var(--mx-line);
+  border-radius: 12px;
+  background: var(--mx-panel);
+  box-shadow: 0 4px 14px rgba(0,0,0,.12);
+}
+.pinned-message-button {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--mx-brand-soft);
+  color: var(--mx-text);
+  text-align: start;
+  font: inherit;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.pinned-message-button:focus-visible {
+  outline: 3px solid var(--mx-brand);
+  outline-offset: 3px;
+}
