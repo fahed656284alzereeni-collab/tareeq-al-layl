@@ -1,6 +1,8 @@
-const STATIC_CACHE = "mersal-static-v25";
+const STATIC_CACHE = "mersal-static-v26";
 const STATIC_PATHS = new Set([
   "/app.js",
+  "/auth-bootstrap.js",
+  "/supabase-client.js",
   "/tools.js",
   "/channels.js",
   "/communities.js",
