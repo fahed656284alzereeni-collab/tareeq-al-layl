@@ -1624,6 +1624,7 @@ const conversationInfoJoined = $("#conversation-info-joined");
 const conversationInfoCount = $("#conversation-info-count");
 const conversationInfoNameLabel = $("#conversation-info-name-label");
 const conversationInfoNameRow = $("#conversation-info-name-card");
+const conversationInfoNameValueRow = $("#conversation-info-name-row");
 const conversationInfoStatusRow = $("#conversation-info-status-row");
 const conversationInfoExportButton = $("#conversation-info-export");
 const conversationInfoMuteButton = $("#conversation-info-mute");
@@ -1748,6 +1749,39 @@ const conversationSearchInput = $("#conversation-search-input");
 const conversationSearchStatus = $("#conversation-search-status");
 const conversationSearchResults = $("#conversation-search-results");
 const messagesList = $("#messages");
+const pinnedMessageBanner = document.createElement("section");
+pinnedMessageBanner.className = "pinned-message-banner";
+pinnedMessageBanner.hidden = true;
+pinnedMessageBanner.setAttribute("aria-label", "الرسالة المثبتة في هذه المحادثة");
+const pinnedMessageButton = document.createElement("button");
+pinnedMessageButton.type = "button";
+pinnedMessageButton.className = "pinned-message-button";
+pinnedMessageButton.addEventListener("click", async () => {
+  const conversationId = activeConversation?.id;
+  const messageId = pinnedMessageBanner.dataset.messageId;
+  if (!conversationId || !messageId) return;
+  let target = [...messagesList.querySelectorAll("[data-message-id]")].find(node => node.dataset.messageId === messageId);
+  if (!target) {
+    const { data, error } = await supabase.from("messages")
+      .select("id,conversation_id,sender_id,body,created_at,edited_at,is_deleted,view_once")
+      .eq("id", messageId).eq("conversation_id", conversationId).maybeSingle();
+    if (activeConversation?.id !== conversationId) return;
+    if (error || !data || data.is_deleted) {
+      announce("تعذر فتح الرسالة المثبتة.", "error");
+      return;
+    }
+    appendMessage(data);
+    target = [...messagesList.querySelectorAll("[data-message-id]")].find(node => node.dataset.messageId === messageId);
+    if (target) messagesList.insertBefore(target, messagesList.firstChild);
+  }
+  if (target) {
+    target.tabIndex = -1;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    target.focus({ preventScroll: true });
+  }
+});
+pinnedMessageBanner.append(pinnedMessageButton);
+if (messagesList?.parentElement) messagesList.parentElement.insertBefore(pinnedMessageBanner, messagesList);
 const messageForm = $("#message-form");
 const messageInput = $("#message-input");
 const sendButton = $("#send-button");
@@ -5459,6 +5493,7 @@ async function updateConversationInfo() {
   conversationDeleteButton.hidden = false;
   conversationInfoNameLabel.textContent = isGroup ? "اسم المجموعة" : "اسم الشخص";
   if(conversationInfoNameRow)conversationInfoNameRow.hidden=isGroup;
+  if(conversationInfoNameValueRow)conversationInfoNameValueRow.hidden=isGroup;
   conversationInfoStatusRow.hidden = isGroup;
   if (conversationInfoCreatedRow) conversationInfoCreatedRow.hidden = !isGroup;
   if (conversationInfoJoined?.parentElement) conversationInfoJoined.parentElement.hidden = isGroup;
@@ -7041,6 +7076,41 @@ async function refreshMessageInteractions(message, item) {
     indicators.hidden = !indicators.childNodes.length;
   }
 }
+async function refreshPinnedMessageBanner(conversationId = activeConversation?.id) {
+  if (!pinnedMessageBanner || !pinnedMessageButton) return;
+  if (!conversationId || !currentUser) {
+    pinnedMessageBanner.hidden = true;
+    pinnedMessageBanner.removeAttribute("data-message-id");
+    return;
+  }
+  const { data: pin, error } = await supabase.from("message_pins")
+    .select("message_id").eq("conversation_id", conversationId).limit(1).maybeSingle();
+  if (activeConversation?.id !== conversationId) return;
+  if (error) {
+    console.warn("تعذر تحميل الرسالة المثبتة:", error.message);
+    pinnedMessageBanner.hidden = true;
+    return;
+  }
+  if (!pin?.message_id) {
+    pinnedMessageBanner.hidden = true;
+    pinnedMessageBanner.removeAttribute("data-message-id");
+    return;
+  }
+  const { data: pinnedMessage, error: messageError } = await supabase.from("messages")
+    .select("id,body,is_deleted").eq("id", pin.message_id).maybeSingle();
+  if (activeConversation?.id !== conversationId) return;
+  if (messageError || !pinnedMessage || pinnedMessage.is_deleted) {
+    pinnedMessageBanner.hidden = true;
+    pinnedMessageBanner.removeAttribute("data-message-id");
+    return;
+  }
+  const english = document.documentElement.lang === "en";
+  const preview = getMessagePreviewText(pinnedMessage.body || "");
+  pinnedMessageBanner.dataset.messageId = pinnedMessage.id;
+  pinnedMessageButton.textContent = (english ? "📌 Pinned message: " : "📌 رسالة مثبتة: ") + preview;
+  pinnedMessageButton.setAttribute("aria-label", (english ? "Go to pinned message: " : "الانتقال إلى الرسالة المثبتة: ") + preview);
+  pinnedMessageBanner.hidden = false;
+}
 async function editMessage(message, item, menu, toggle) {
   const english = document.documentElement.lang === "en";
   if (message.sender_id !== currentUser?.id) return;
@@ -7102,6 +7172,7 @@ async function toggleMessagePin(message, item, menu, toggle) {
     return;
   }
   await refreshMessageInteractions(message, item);
+  await refreshPinnedMessageBanner(conversationId);
   closeMessageOptions(menu, toggle);
   announce(existing.data ? "تم إلغاء تثبيت الرسالة." : "تم تثبيت الرسالة.", "success");
 }
@@ -7450,6 +7521,9 @@ async function loadMessages() {
   const partner = activePartner;
   const isCurrent = () => currentUser?.id === userId && activeConversation?.id === conversationId;
   messagesList.replaceChildren();
+  pinnedMessageBanner.hidden = true;
+  pinnedMessageBanner.removeAttribute("data-message-id");
+  void refreshPinnedMessageBanner(conversationId);
   // Keep the first chat render lightweight on mobile: fetch only the newest
   // 50 messages, then restore chronological order for the conversation view.
   const { data: newestFirst, error } = await supabase.from("messages")
