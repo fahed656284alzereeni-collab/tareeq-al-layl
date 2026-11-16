@@ -1,4 +1,4 @@
-const STATIC_CACHE = "mersal-static-v23";
+const STATIC_CACHE = "mersal-static-v24";
 const STATIC_PATHS = new Set([
   "/app.js",
   "/tools.js",
