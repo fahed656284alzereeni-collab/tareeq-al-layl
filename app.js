@@ -5976,7 +5976,9 @@ function closeGroupSettingsMemberManagement(){
   groupSettingsMemberActions.replaceChildren();
   groupSettingsCloseButton?.focus();
 }
-groupSettingsMemberBackButton.addEventListener("click",closeGroupSettingsMemberManagement);
+groupSettingsMemberBackButton.textContent = "العودة إلى معلومات المجموعة";
+groupSettingsMemberBackButton.setAttribute("aria-label", "العودة إلى معلومات المجموعة");
+groupSettingsMemberBackButton.addEventListener("click", closeGroupSettings);
 closeGroupMemberOptionsButton.addEventListener("click",closeGroupMemberOptions);
 groupMemberOptionsPanel.addEventListener("keydown",event=>{if(event.key==="Escape")closeGroupMemberOptions();});
 async function manageGroupMember(userId,name,action){
