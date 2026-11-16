@@ -1,4 +1,4 @@
-const STATIC_CACHE = "mersal-static-v24";
+const STATIC_CACHE = "mersal-static-v25";
 const STATIC_PATHS = new Set([
   "/app.js",
   "/tools.js",
@@ -39,15 +39,20 @@ self.addEventListener("fetch", event => {
     if (url.pathname !== "/" || url.search) return;
     event.respondWith((async () => {
       const cache = await caches.open(STATIC_CACHE);
-      try {
-        const response = await fetch(request);
-        if (response.ok) await cache.put("/", response.clone());
-        return response;
-      } catch (error) {
-        const cached = await cache.match("/");
-        if (cached) return cached;
-        throw error;
+      const cached = await cache.match("/");
+      if (cached) {
+        // Show the last known app shell immediately; refresh it without blocking navigation.
+        event.waitUntil(fetch(request).then(response => {
+          if (response.ok) return cache.put("/", response.clone());
+          return undefined;
+        }).catch(error => {
+          console.warn("Mersal background page refresh failed:", error);
+        }));
+        return cached;
       }
+      const response = await fetch(request);
+      if (response.ok) await cache.put("/", response.clone());
+      return response;
     })());
     return;
   }
