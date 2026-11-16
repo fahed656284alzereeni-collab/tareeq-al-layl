@@ -1641,8 +1641,7 @@ const groupDescriptionInput=$("#group-description-input"),groupDescriptionSaveBu
 const groupPhotoInput=$("#group-photo-input"),groupPhotoPreview=$("#group-photo-preview"),groupPhotoChooseButton=$("#group-photo-choose"),groupPhotoRemoveButton=$("#group-photo-remove"),groupPhotoSaveButton=$("#group-photo-save");
 const conversationInfoNameCard=$("#conversation-info-name-card");
 const groupInfoPhotoRow=$("#group-info-photo-row"),groupInfoPhoto=$("#group-info-photo"),groupInfoPhotoPlaceholder=$("#group-info-photo-placeholder"),groupInfoName=$("#group-info-name"),groupInfoDescriptionRow=$("#group-info-description-row"),groupInfoDescription=$("#group-info-description");
-const groupInviteRow=$("#group-invite-row"),groupInviteUrl=$("#group-invite-url"),groupInviteCopyButton=$("#group-invite-copy"),groupInviteShareButton=$("#group-invite-share"),groupInviteShareCard=$("#group-invite-share-card"),groupInviteShareHelp=$("#group-invite-share-help"),groupInviteResetButton=$("#group-invite-reset"),groupInviteStatus=$("#group-invite-status");
-const groupInviteRetryButton=$("#group-invite-retry"),groupMemberCountLabel=$("#group-member-count");
+const groupInviteUrl=$("#group-invite-url"),groupInviteShareButton=$("#group-invite-share"),groupInviteShareCard=$("#group-invite-share-card"),groupInviteShareHelp=$("#group-invite-share-help"),groupInviteResetButton=$("#group-invite-reset"),groupMemberCountLabel=$("#group-member-count");
 const groupInviteTokenCache=new Map();
 const groupInviteRequests=new Map();
 let pendingGroupInviteInProgress=false;
@@ -5085,7 +5084,7 @@ function setGroupInviteUrl(token){
   groupInviteUrl.value=url.href;
 }
 async function loadGroupInviteLink(conversationId,isAdmin){
-  if(!groupInviteRow||!groupInviteUrl)return;
+  if(!groupInviteUrl)return;
   if(groupInviteShareCard)groupInviteShareCard.hidden=false;
   if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
   if(groupInviteShareHelp){groupInviteShareHelp.hidden=true;groupInviteShareHelp.textContent="";}
@@ -5094,7 +5093,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
     const {data:settings,error}=await supabase.from("group_settings")
       .select("add_members_by").eq("conversation_id",conversationId).maybeSingle();
     if(error){
-      groupInviteRow.hidden=true;
+
       if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
       if(groupInviteShareHelp){groupInviteShareHelp.textContent="مشاركة رابط الدعوة متاحة للمشرفين فقط حسب إعدادات المجموعة.";groupInviteShareHelp.hidden=false;}
       groupInviteUrl.value="";
@@ -5103,30 +5102,30 @@ async function loadGroupInviteLink(conversationId,isAdmin){
       return;
     }
     if((settings?.add_members_by||"admins")!=="everyone"){
-      groupInviteRow.hidden=true;
+
       if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
       if(groupInviteShareHelp){groupInviteShareHelp.textContent="مشاركة رابط الدعوة متاحة للمشرفين فقط حسب إعدادات المجموعة.";groupInviteShareHelp.hidden=false;}
       groupInviteUrl.value="";
       groupInviteTokenCache.delete(conversationId);
-      if(groupInviteStatus)groupInviteStatus.textContent="";
+
       return;
     }
   }
-  groupInviteRow.hidden=true;
+
   if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
   if(groupInviteShareHelp)groupInviteShareHelp.hidden=true;
   groupInviteResetButton.hidden=!isAdmin;
-  if(groupInviteRetryButton)groupInviteRetryButton.hidden=true;
+
   const showToken=token=>{
     if(activeConversation?.id!==conversationId)return;
     setGroupInviteUrl(token);
     if(groupInviteShareButton)groupInviteShareButton.disabled=false;
     if(groupInviteShareHelp)groupInviteShareHelp.hidden=true;
-    groupInviteStatus.textContent="";
+
   };
   const cachedToken=groupInviteTokenCache.get(conversationId);
   if(cachedToken){showToken(cachedToken);return;}
-  groupInviteStatus.textContent="جارٍ تحميل رابط الدعوة…";
+
   let request=groupInviteRequests.get(conversationId);
   if(!request){
     request=(async()=>{
@@ -5159,8 +5158,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
     groupInviteUrl.value="";
     if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
     if(groupInviteShareHelp){groupInviteShareHelp.textContent="تعذر تحميل رابط الدعوة. استخدم إعادة المحاولة.";groupInviteShareHelp.hidden=false;}
-    groupInviteStatus.textContent="تعذر تحميل رابط الدعوة. حاول مرة أخرى.";
-    if(groupInviteRetryButton)groupInviteRetryButton.hidden=false;
+
     console.warn("تعذر تحميل رابط دعوة المجموعة:",error);
   }finally{
     if(groupInviteRequests.get(conversationId)===request)groupInviteRequests.delete(conversationId);
@@ -5172,14 +5170,18 @@ async function copyGroupInviteLink(){
   try{
     if(navigator.clipboard?.writeText)await navigator.clipboard.writeText(value);
     else{
-      groupInviteUrl.focus();groupInviteUrl.select();
-      if(!document.execCommand("copy"))throw new Error("Clipboard unavailable");
+      const temporary=document.createElement("textarea");
+      temporary.value=value;temporary.setAttribute("readonly","");
+      temporary.style.position="fixed";temporary.style.opacity="0";
+      document.body.append(temporary);temporary.select();
+      const copied=document.execCommand("copy");temporary.remove();
+      if(!copied)throw new Error("Clipboard unavailable");
     }
-    groupInviteStatus.textContent="تم نسخ رابط الدعوة.";
+
     announce("تم نسخ رابط الدعوة.");
   }catch(error){announce("تعذر نسخ الرابط. يمكنك تحديده ونسخه يدويًا.","error");}
 }
-if(groupInviteCopyButton)groupInviteCopyButton.addEventListener("click",()=>void copyGroupInviteLink());
+
 async function shareGroupInviteLink(){
   const value=groupInviteUrl?.value||"";
   if(!value)return;
@@ -5274,17 +5276,6 @@ if(groupInviteShareButton)groupInviteShareButton.addEventListener("click",async(
   if(groupInviteUrl?.value)openGroupInviteShareOptions();
   else announce("تعذر تحميل رابط الدعوة. حاول مرة أخرى.","error");
 });
-if(groupInviteRetryButton)groupInviteRetryButton.addEventListener("click",async()=>{
-  const conversation=activeConversation;
-  if(!conversation?.is_group||!currentUser)return;
-  groupInviteRetryButton.disabled=true;
-  try{
-    const permissions=await getCurrentGroupPermissions();
-    await loadGroupInviteLink(conversation.id,permissions.isAdmin);
-  }finally{
-    groupInviteRetryButton.disabled=false;
-  }
-});
 if(groupInviteResetButton)groupInviteResetButton.addEventListener("click",async()=>{
   const conversationId=activeConversation?.id;
   if(!activeConversation?.is_group||!conversationId||!groupInviteUrl||groupInviteResetButton.disabled)return;
@@ -5300,7 +5291,7 @@ if(groupInviteResetButton)groupInviteResetButton.addEventListener("click",async(
     groupInviteTokenCache.set(conversationId,token);
     if(activeConversation?.id!==conversationId)return;
     setGroupInviteUrl(token);
-    groupInviteStatus.textContent="تم إنشاء رابط دعوة جديد، وأُلغي الرابط السابق.";
+
     announce("تم تجديد رابط الدعوة.");
   }catch(error){
     if(activeConversation?.id===conversationId)announce("تعذر تجديد رابط الدعوة: "+(error.message||"حاول مرة أخرى."),"error");
@@ -5470,9 +5461,8 @@ async function updateConversationInfo() {
   groupInfoPhotoRow.hidden = true;
   if(groupInfoPhotoPlaceholder)groupInfoPhotoPlaceholder.hidden=false;
   groupInfoDescriptionRow.hidden = true;
-  if(groupInviteRow)groupInviteRow.hidden=true;
+
   if(groupInviteUrl)groupInviteUrl.value="";
-  if(groupInviteStatus)groupInviteStatus.textContent="";
 
   const { isOwner, isAdmin } = isGroup ? await getCurrentGroupPermissions() : { isOwner: false, isAdmin: false };
   if (!isCurrent()) return;
