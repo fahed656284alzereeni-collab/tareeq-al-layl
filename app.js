@@ -5089,28 +5089,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
   if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
   if(groupInviteShareHelp){groupInviteShareHelp.hidden=true;groupInviteShareHelp.textContent="";}
 
-  if(!isAdmin){
-    const {data:settings,error}=await supabase.from("group_settings")
-      .select("add_members_by").eq("conversation_id",conversationId).maybeSingle();
-    if(error){
-
-      if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
-      if(groupInviteShareHelp){groupInviteShareHelp.textContent="مشاركة رابط الدعوة متاحة للمشرفين فقط حسب إعدادات المجموعة.";groupInviteShareHelp.hidden=false;}
-      groupInviteUrl.value="";
-      groupInviteTokenCache.delete(conversationId);
-      console.warn("تعذر التحقق من صلاحية رابط الدعوة:",error.message);
-      return;
-    }
-    if((settings?.add_members_by||"admins")!=="everyone"){
-
-      if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
-      if(groupInviteShareHelp){groupInviteShareHelp.textContent="مشاركة رابط الدعوة متاحة للمشرفين فقط حسب إعدادات المجموعة.";groupInviteShareHelp.hidden=false;}
-      groupInviteUrl.value="";
-      groupInviteTokenCache.delete(conversationId);
-
-      return;
-    }
-  }
+  // Let the database RPC be the single source of truth for invite permissions.
 
   if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
   if(groupInviteShareHelp)groupInviteShareHelp.hidden=true;
