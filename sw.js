@@ -37,23 +37,19 @@ self.addEventListener("fetch", event => {
 
   if (request.mode === "navigate") {
     if (url.pathname !== "/" || url.search) return;
-    event.respondWith((async () => {
-      const cache = await caches.open(STATIC_CACHE);
-      const cached = await cache.match("/");
-      if (cached) {
-        // Show the last known app shell immediately; refresh it without blocking navigation.
-        event.waitUntil(fetch(request).then(response => {
-          if (response.ok) return cache.put("/", response.clone());
-          return undefined;
-        }).catch(error => {
-          console.warn("Mersal background page refresh failed:", error);
-        }));
-        return cached;
-      }
-      const response = await fetch(request);
-      if (response.ok) await cache.put("/", response.clone());
+    const cachePromise = caches.open(STATIC_CACHE);
+    const refreshPromise = cachePromise.then(cache => fetch(request).then(response => {
+      if (response.ok) return cache.put("/", response.clone()).then(() => response);
       return response;
-    })());
+    }));
+    // Register background refresh during the fetch event, without delaying cached navigation.
+    event.waitUntil(refreshPromise.then(() => undefined).catch(error => {
+      console.warn("Mersal background page refresh failed:", error);
+    }));
+    event.respondWith(cachePromise.then(cache => cache.match("/")).then(cached => {
+      if (cached) return cached;
+      return refreshPromise;
+    }));
     return;
   }
 
