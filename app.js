@@ -5156,8 +5156,8 @@ async function loadGroupInviteLink(conversationId,isAdmin){
   }catch(error){
     if(activeConversation?.id!==conversationId)return;
     groupInviteUrl.value="";
-    if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
-    if(groupInviteShareHelp){groupInviteShareHelp.textContent="تعذر تحميل رابط الدعوة. استخدم إعادة المحاولة.";groupInviteShareHelp.hidden=false;}
+    if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=false;}
+    if(groupInviteShareHelp)groupInviteShareHelp.hidden=true;
 
     console.warn("تعذر تحميل رابط دعوة المجموعة:",error);
   }finally{
