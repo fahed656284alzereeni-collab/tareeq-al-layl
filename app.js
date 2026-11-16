@@ -5520,7 +5520,7 @@ async function updateConversationInfo() {
       if (!isCurrent()) return;
       if (url) {
         groupInfoPhoto.src = url;
-        groupInfoPhoto.alt = "صورة مجموعة " + (conversation.group_name || "");
+        groupInfoPhoto.alt = "صورة المجموعة";
         groupInfoPhoto.hidden = false;
         if(groupInfoPhotoPlaceholder)groupInfoPhotoPlaceholder.hidden=true;
       } else {
