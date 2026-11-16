@@ -31,6 +31,19 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
 });
 
+// Capture the first auth event as soon as the client exists, rather than waiting
+// for the remaining large application module to finish evaluating.
+let authHandlingReady = false;
+let pendingAuthState = null;
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event !== "SIGNED_IN" && event !== "INITIAL_SESSION" && event !== "TOKEN_REFRESHED" && event !== "SIGNED_OUT") return;
+  if (!authHandlingReady) {
+    pendingAuthState = { session, event };
+    return;
+  }
+  void queueSessionHandling(session, event);
+});
+
 // Subscribe to session restoration immediately. Registering this near client creation
 // avoids waiting for the rest of the large application module to initialize before
 // Supabase can deliver INITIAL_SESSION. The callback is deferred until module setup ends.
@@ -3798,12 +3811,6 @@ loginButton.addEventListener("click", async () => {
     try { authWindow?.close(); } catch {}
     announce("تعذر بدء تسجيل الدخول: " + (error?.message || "خطأ غير معروف"), "error");
     loginButton.disabled = false;
-  }
-});
-
-supabase.auth.onAuthStateChange((event, session) => {
-  if (event === "SIGNED_IN" || event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED" || event === "SIGNED_OUT") {
-    setTimeout(() => { void queueSessionHandling(session, event); }, 0);
   }
 });
 
@@ -8219,6 +8226,15 @@ messageForm.addEventListener("submit", async (event) => {
     if (activeConversation?.id === conversation.id && !chatView.hidden) messageInput.focus();
   }
 });
+
+// All session-dependent UI and handlers are now initialized. Process the earliest
+// captured auth event immediately; future auth events go straight to the queue.
+authHandlingReady = true;
+if (pendingAuthState) {
+  const firstAuthState = pendingAuthState;
+  pendingAuthState = null;
+  void queueSessionHandling(firstAuthState.session, firstAuthState.event);
+}
 
 // Do not block application startup on getSession(). Supabase emits INITIAL_SESSION
 // through onAuthStateChange after restoring persisted auth state.
