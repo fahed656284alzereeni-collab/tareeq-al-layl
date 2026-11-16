@@ -1639,6 +1639,7 @@ const groupRenameInput = $("#group-rename-input");
 const groupRenameSaveButton = $("#group-rename-save");
 const groupDescriptionInput=$("#group-description-input"),groupDescriptionSaveButton=$("#group-description-save");
 const groupPhotoInput=$("#group-photo-input"),groupPhotoPreview=$("#group-photo-preview"),groupPhotoChooseButton=$("#group-photo-choose"),groupPhotoRemoveButton=$("#group-photo-remove"),groupPhotoSaveButton=$("#group-photo-save");
+const conversationInfoNameCard=$("#conversation-info-name-card");
 const groupInfoPhotoRow=$("#group-info-photo-row"),groupInfoPhoto=$("#group-info-photo"),groupInfoPhotoPlaceholder=$("#group-info-photo-placeholder"),groupInfoName=$("#group-info-name"),groupInfoDescriptionRow=$("#group-info-description-row"),groupInfoDescription=$("#group-info-description");
 const groupInviteRow=$("#group-invite-row"),groupInviteUrl=$("#group-invite-url"),groupInviteCopyButton=$("#group-invite-copy"),groupInviteShareButton=$("#group-invite-share"),groupInviteShareCard=$("#group-invite-share-card"),groupInviteShareHelp=$("#group-invite-share-help"),groupInviteResetButton=$("#group-invite-reset"),groupInviteStatus=$("#group-invite-status");
 const groupInviteRetryButton=$("#group-invite-retry"),groupMemberCountLabel=$("#group-member-count");
@@ -5493,6 +5494,7 @@ async function updateConversationInfo() {
   conversationDeleteButton.hidden = false;
   conversationInfoNameLabel.textContent = isGroup ? "اسم المجموعة" : "اسم الشخص";
   if(conversationInfoNameRow)conversationInfoNameRow.hidden=isGroup;
+  if(conversationInfoNameCard)conversationInfoNameCard.hidden=isGroup;
   if(conversationInfoNameValueRow)conversationInfoNameValueRow.hidden=isGroup;
   conversationInfoStatusRow.hidden = isGroup;
   if (conversationInfoCreatedRow) conversationInfoCreatedRow.hidden = !isGroup;
@@ -5917,39 +5919,29 @@ function renderGroupAddPeople(){
 async function openGroupMemberOptions(userId,name,roleLabel,role,isGroupOwner,permissions,returnFocus){
   groupMemberOptionsReturnFocus=returnFocus;
   const isSelf=userId===currentUser?.id;
-  // All admin changes to members and moderators are shown only inside Group Settings.
-  if(!isSelf && permissions.isAdmin && !isGroupOwner){
-    await openGroupSettings();
-    if(groupSettingsPanel.hidden || !activeConversation?.is_group)return;
-    const livePermissions=await getCurrentGroupPermissions();
+  // Keep member actions inside the member-options dialog; never jump to Group Settings.
+  let livePermissions=permissions;
+  if(!isSelf && !isGroupOwner && permissions.isAdmin){
+    livePermissions=await getCurrentGroupPermissions();
     if(!livePermissions.isAdmin || !activeConversation?.is_group)return;
-    groupSettingsMemberName.textContent=name;
-    groupSettingsMemberRole.textContent=roleLabel;
-    groupSettingsMemberActions.replaceChildren();
+  }
+  groupMemberOptionsName.textContent=name;
+  groupMemberOptionsRole.textContent=roleLabel;
+  groupMemberOptionsActions.replaceChildren();
+  if(!isSelf && livePermissions.isAdmin && !isGroupOwner){
     if(livePermissions.isOwner){
       const roleButton=safeText("button","quiet-button group-member-action",role==="admin"?"إزالة صفة المشرف":"تعيين مشرف");
       roleButton.type="button";
       roleButton.addEventListener("click",()=>{void manageGroupMember(userId,name,role==="admin"?"demote":"promote");});
-      groupSettingsMemberActions.append(roleButton);
+      groupMemberOptionsActions.append(roleButton);
     }
     if(livePermissions.isOwner || role!=="admin"){
       const remove=safeText("button","danger-button group-member-remove","إزالة من المجموعة");
       remove.type="button";
       remove.addEventListener("click",()=>{void manageGroupMember(userId,name,"remove");});
-      groupSettingsMemberActions.append(remove);
+      groupMemberOptionsActions.append(remove);
     }
-    if(!groupSettingsMemberActions.childElementCount){
-      groupSettingsMemberActions.append(safeText("p","group-member-no-actions","لا توجد إجراءات متاحة لهذا العضو."));
-    }
-    groupSettingsMemberManagement.hidden=false;
-    groupSettingsMemberManagement.scrollIntoView({block:"start",behavior:"auto"});
-    groupSettingsMemberTitle.focus();
-    return;
   }
-  // Non-admin member actions are limited to messaging; no management controls are exposed.
-  groupMemberOptionsName.textContent=name;
-  groupMemberOptionsRole.textContent=roleLabel;
-  groupMemberOptionsActions.replaceChildren();
   if(!isSelf){
     const messageButton=safeText("button","primary-button group-member-action","مراسلة");
     messageButton.type="button";
