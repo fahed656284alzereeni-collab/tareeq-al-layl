@@ -6295,6 +6295,11 @@ backToChatsButton.addEventListener("click", async () => {
   chatView.hidden = true;
   chatEmpty.hidden = false;
   conversationInfoPanel.hidden = true;
+  const chatHeader = chatView.querySelector(".chat-header");
+  if (chatHeader) {
+    chatHeader.removeAttribute("aria-hidden");
+    chatHeader.removeAttribute("inert");
+  }
   messageSchedulePanel.hidden = true;
   scheduledMessagesPanel.hidden = true;
   document.body.classList.remove("conversation-info-fullscreen");
@@ -6304,6 +6309,11 @@ chatPartnerAccessible.addEventListener("click", async () => {
   if (!activeConversation) return;
   if (status.textContent) status.textContent = "";
   conversationInfoPanel.hidden = false;
+  const chatHeader = chatView.querySelector(".chat-header");
+  if (chatHeader) {
+    chatHeader.setAttribute("aria-hidden", "true");
+    chatHeader.setAttribute("inert", "");
+  }
   document.body.classList.add("conversation-info-fullscreen");
   await updateConversationInfo();
   closeConversationInfoButton.focus();
@@ -6311,6 +6321,11 @@ chatPartnerAccessible.addEventListener("click", async () => {
 closeConversationInfoButton.addEventListener("click", () => {
   conversationInfoPanel.hidden = true;
   document.body.classList.remove("conversation-info-fullscreen");
+  const chatHeader = chatView.querySelector(".chat-header");
+  if (chatHeader) {
+    chatHeader.removeAttribute("aria-hidden");
+    chatHeader.removeAttribute("inert");
+  }
   chatPartnerAccessible.focus();
 });
 
