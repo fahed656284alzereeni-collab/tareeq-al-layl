@@ -5463,6 +5463,7 @@ async function updateConversationInfo() {
   if (groupInfoPhoto) {
     groupInfoPhoto.removeAttribute("src");
     groupInfoPhoto.alt = "";
+    groupInfoPhoto.setAttribute("aria-hidden", "true");
     groupInfoPhoto.hidden = true;
   }
   setConversationInfoValue(groupInfoDescription, "—");
@@ -5494,7 +5495,10 @@ async function updateConversationInfo() {
   conversationDeleteButton.hidden = false;
   conversationInfoNameLabel.textContent = isGroup ? "اسم المجموعة" : "اسم الشخص";
   if(conversationInfoNameRow)conversationInfoNameRow.hidden=isGroup;
-  if(conversationInfoNameCard)conversationInfoNameCard.hidden=isGroup;
+  if(conversationInfoNameCard) {
+    conversationInfoNameCard.hidden = isGroup;
+    conversationInfoNameCard.setAttribute("aria-hidden", isGroup ? "true" : "false");
+  }
   if(conversationInfoNameValueRow)conversationInfoNameValueRow.hidden=isGroup;
   conversationInfoStatusRow.hidden = isGroup;
   if (conversationInfoCreatedRow) conversationInfoCreatedRow.hidden = !isGroup;
@@ -5520,7 +5524,8 @@ async function updateConversationInfo() {
       if (!isCurrent()) return;
       if (url) {
         groupInfoPhoto.src = url;
-        groupInfoPhoto.alt = "صورة المجموعة";
+        groupInfoPhoto.alt = "";
+        groupInfoPhoto.setAttribute("aria-hidden", "true");
         groupInfoPhoto.hidden = false;
         if(groupInfoPhotoPlaceholder)groupInfoPhotoPlaceholder.hidden=true;
       } else {
@@ -5898,9 +5903,12 @@ async function loadGroupManagement(expectedConversationId = activeConversation?.
     memberName.setAttribute("data-no-translate","");
     memberButton.append(memberName);
     if(isSelf)memberButton.append(document.createTextNode(localStorage.getItem("mersal-language")==="en"?" (You)":" (أنت)"));
-    memberButton.setAttribute("aria-label",name+(isSelf?(localStorage.getItem("mersal-language")==="en"?", you":"، أنت"):""));
+    const english = localStorage.getItem("mersal-language") === "en";
+    memberButton.setAttribute("aria-label", name + (isSelf ? (english ? ", you" : "، أنت") : "") + (english ? ", " : "، ") + (english ? (isGroupOwner ? "Group creator" : member.role === "admin" ? "Admin" : "Member") : roleLabel));
     memberButton.addEventListener("click",()=>openGroupMemberOptions(member.user_id,name,roleLabel,member.role,isGroupOwner,permissions,memberButton));
-    item.append(memberButton,safeText("span","group-member-role",roleLabel));
+    const roleText = safeText("span","group-member-role",roleLabel);
+    roleText.setAttribute("aria-hidden","true");
+    item.append(memberButton,roleText);
     groupMemberList.append(item);
   }
   renderGroupAddPeople();
