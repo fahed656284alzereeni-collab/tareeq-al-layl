@@ -1,35 +1,12 @@
+import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
 import { initMersalTools } from "./tools.js?v=20261114-clean-tools-v1";
 import { initMersalChannels } from "./channels.js?v=20261116-voiceover-clean-v16";
 import { initMersalCommunities } from "./communities.js?v=20261116-voiceover-clean-v9";
 
-// Load Supabase Auth through two independent ESM CDNs. A failed static import
-// prevents this entire module from running, leaving the HTML startup timer visible.
-let createClient;
-try {
-  ({ createClient } = await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.119.0/+esm"));
-} catch (primaryCdnError) {
-  console.warn("Primary Supabase module CDN failed; trying fallback:", primaryCdnError);
-  try {
-    ({ createClient } = await import("https://esm.sh/@supabase/supabase-js@2.119.0"));
-  } catch (fallbackCdnError) {
-    const startupStatus = document.querySelector("#status");
-    const startupRetry = document.querySelector("#startup-retry");
-    if (startupStatus) startupStatus.textContent = "تعذر تحميل خدمة تسجيل الدخول. أعد المحاولة بعد قليل.";
-    if (startupRetry) startupRetry.hidden = false;
-    console.error("Both Supabase module CDNs failed:", fallbackCdnError);
-    throw fallbackCdnError;
-  }
-}
-
-const SUPABASE_URL = "https://nnsleztgbqeuqavkhrpw.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_0V7aL9rnFz5hFjKoPhz2ig_mSbxBK-T";
 const VAPID_PUBLIC_KEY = "BIIdiJVxOT89p_bj_T4p6btgilseeHTVSTMqeYlFx4MEjBsQ4grBPJOQEanNjcsqh-ZKRroInkrW7tNWpYOs_LA";
 const serviceWorkerReady = "serviceWorker" in navigator
   ? navigator.serviceWorker.register("/sw.js").then(() => navigator.serviceWorker.ready).catch(error => { console.error("Service worker:", error); return null; })
   : Promise.resolve(null);
-const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
-});
 
 // Capture the first auth event as soon as the client exists, rather than waiting
 // for the remaining large application module to finish evaluating.
