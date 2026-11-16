@@ -5112,7 +5112,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
       return;
     }
   }
-  groupInviteRow.hidden=false;
+  groupInviteRow.hidden=true;
   if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
   if(groupInviteShareHelp)groupInviteShareHelp.hidden=true;
   groupInviteResetButton.hidden=!isAdmin;
