@@ -31,6 +31,10 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true, flowType: "pkce" }
 });
 
+// Subscribe to session restoration immediately. Registering this near client creation
+// avoids waiting for the rest of the large application module to initialize before
+// Supabase can deliver INITIAL_SESSION. The callback is deferred until module setup ends.
+
 const $ = (selector) => document.querySelector(selector);
 
 // Keep the group-management label visible while exposing it as plain text,
