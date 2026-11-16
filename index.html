@@ -22,7 +22,7 @@
   <link rel="stylesheet" href="/inclusive-responsive.css?v=20261114-cache-refresh-v1">
     <link rel="stylesheet" href="/mersal-redesign.css?v=20261114-cache-refresh-v1">
     <link rel="stylesheet" href="/mersal-experience-v2.css?v=20261116-pinned-banner-v1">
-  <script type="module" src="/app.js?v=20261116-group-photo-alt-v4"></script>
+  <script type="module" src="/app.js?v=20261116-group-member-role-a11y-v1"></script>
 </head>
 <body>
 <div class="topbar">
@@ -542,10 +542,10 @@
             <div id="group-conversation-info-list" class="conversation-info-list group-info-layout" hidden>
               <div class="group-info-profile info-identity-card">
                 <div id="group-info-photo-row" class="group-info-photo-row" hidden>
-                  <img id="group-info-photo" class="group-info-photo" alt="" hidden>
+                  <img id="group-info-photo" class="group-info-photo" alt="" aria-hidden="true" hidden>
                   <span id="group-info-photo-placeholder" class="group-info-photo-placeholder" aria-hidden="true">م</span>
                 </div>
-                <div id="group-info-name" class="group-info-name" data-no-translate>مجموعة</div>
+                <div id="group-info-name" class="group-info-name" role="heading" aria-level="2" data-no-translate>مجموعة</div>
                 <div id="group-info-description-row" class="group-info-description-row" hidden>
                   <span class="conversation-info-label">وصف المجموعة</span>
                   <span class="conversation-info-value" id="group-info-description">—</span>
