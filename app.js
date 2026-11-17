@@ -6377,6 +6377,30 @@ closeConversationInfoButton.addEventListener("click", () => {
 });
 
 
+const CALL_RINGTONE_URLS = {
+  incoming: "/assets/mersal-call-incoming.mp3",
+  outgoing: "/assets/mersal-call-outgoing.mp3"
+};
+let callRingtonePlayer = null;
+function playCallRingtone(kind) {
+  stopCallRingtone();
+  const source = CALL_RINGTONE_URLS[kind];
+  if (!source) return;
+  const player = new Audio(source);
+  player.loop = true;
+  player.preload = "auto";
+  player.setAttribute("aria-hidden", "true");
+  callRingtonePlayer = player;
+  void player.play().catch(error => console.info("Call ringtone playback was blocked by the browser:", error));
+}
+function stopCallRingtone() {
+  if (!callRingtonePlayer) return;
+  callRingtonePlayer.pause();
+  callRingtonePlayer.currentTime = 0;
+  callRingtonePlayer.src = "";
+  callRingtonePlayer = null;
+}
+
 function updateVoiceCallPanel() {
   if (!activeCall) { voiceCallPanel.hidden = true; return; }
   voiceCallPanel.hidden = false;
@@ -6523,6 +6547,7 @@ async function startVoiceCall(conversation = activeConversation, launchButton = 
       voiceCallLocalVideo.srcObject=stream;
       void voiceCallLocalVideo.play().catch(()=>{});
     }
+    playCallRingtone("outgoing");
     updateVoiceCallPanel();
     voiceCallEndButton.focus();
     setVoiceCallStatus("جارٍ الاتصال بالمشاركين…");
@@ -6662,6 +6687,7 @@ async function handleCallSignal(signal) {
       peers: new Map(), readyUsers: new Set([from]),
       pendingOffers: new Map(), pendingIce: new Map(), everConnected:false
     };
+    playCallRingtone("incoming");
     updateVoiceCallPanel();
     setVoiceCallStatus((people.find(person => person.id === from) ? displayName(people.find(person => person.id === from)) : "أحد المشاركين") + (incomingCallType==="video"?" يتصل بك مرئيًا.":" يتصل بك صوتيًا."));
     voiceCallAcceptButton.focus();
@@ -6720,6 +6746,7 @@ async function acceptVoiceCall() {
       void voiceCallLocalVideo.play().catch(()=>{});
     }
     activeCall.accepted = true;
+    stopCallRingtone();
     activeCall.readyUsers.add(currentUser.id);
     updateVoiceCallPanel();
     voiceCallMuteButton.focus();
@@ -6767,6 +6794,7 @@ async function endVoiceCall(notifyOthers = true) {
   await finishVoiceCall();
 }
 async function finishVoiceCall() {
+  stopCallRingtone();
   const call = activeCall;
   activeCall = null;
   if (call?.logId && (call.initiatorId===currentUser?.id || call.finalStatus==="declined")) {
