@@ -5245,7 +5245,7 @@ function openGroupInviteShareOptions(){
       let sent=0;const failures=[];
       for(const destination of targets){
         try{
-          const prefix=english?"Group invitation link:\\n":"رابط دعوة المجموعة:\\n";
+          const prefix=english?"Group invitation link:\n":"رابط دعوة المجموعة:\n";
           const {data,error}=await supabase.from("messages").insert({conversation_id:destination.id,sender_id:currentUser.id,body:prefix+inviteUrl}).select("id").single();
           if(error)throw error;
           if(data?.id){
