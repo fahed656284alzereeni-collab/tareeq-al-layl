@@ -79,6 +79,10 @@ export default async function handler(request, response) {
   if (!process.env.BLOB_READ_WRITE_TOKEN) {
     return response.status(503).json({ code: "storage-not-configured" });
   }
+  const requestUrl = new URL(request.url || "/", "https://mersal-v2.vercel.app");
+  if (requestUrl.searchParams.get("check") === "1") {
+    return response.status(200).json({ ready:true });
+  }
   try {
     const workerUrl = await getOrCreateSandbox();
     return response.status(200).json({ workerUrl });

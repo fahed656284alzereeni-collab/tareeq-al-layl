@@ -16,6 +16,7 @@ async function authenticate(accessToken) {
 
 export default async function handler(request, response) {
   if (request.method !== "POST") return response.status(405).json({ code:"method-not-allowed" });
+  if (!process.env.BLOB_READ_WRITE_TOKEN) return response.status(503).json({ code:"storage-not-configured" });
   try {
     const result = await handleUpload({
       body: request.body,

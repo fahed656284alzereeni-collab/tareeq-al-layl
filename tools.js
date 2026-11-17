@@ -648,6 +648,11 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     try { saved = JSON.parse(localStorage.getItem(key) || "null"); } catch {}
     const sameFile = saved && saved.filename === file.name && Number(saved.size) === file.size
       && Number(saved.lastModified) === Number(file.lastModified) && saved.direction === direction && saved.inputPath;
+    const preflight = await fetch("/api/converter/worker?check=1", {
+      method:"POST", headers:{ Authorization:"Bearer " + await getAccessToken() }
+    });
+    const preflightData = await preflight.json().catch(() => ({}));
+    if (!preflight.ok) throw new Error(preflightData.code || "storage-not-configured");
     let jobId = sameFile ? saved.jobId : (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(16).slice(2));
     let inputPath = sameFile ? saved.inputPath : "";
     let workerUrl = "";
