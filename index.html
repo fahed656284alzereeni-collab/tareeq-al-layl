@@ -461,7 +461,6 @@
               <button class="tool-card tool-launch-button" type="button" data-tool="calculator"><span class="tool-icon" aria-hidden="true">＋</span><span class="tool-card-title">الآلة الحاسبة</span></button>
               <button class="tool-card tool-launch-button" type="button" data-tool="notes"><span class="tool-icon" aria-hidden="true">✎</span><span class="tool-card-title">المفكرة السريعة</span></button>
               <button class="tool-card tool-launch-button" type="button" data-tool="qr"><span class="tool-icon" aria-hidden="true">▦</span><span class="tool-card-title">إنشاء رموز QR</span></button>
-              <button class="tool-card tool-launch-button" type="button" data-tool="convert"><span class="tool-icon" aria-hidden="true">⇄</span><span class="tool-card-title">تحويل PDF وWord</span></button>
             </div>
           </div>
           <div id="tool-detail-view" class="tool-detail-view" hidden>
@@ -496,27 +495,7 @@
               <button id="qr-generate-button" type="button" class="primary-button">إنشاء رمز QR</button><p id="qr-status" class="tool-help" aria-live="polite"></p>
               <div id="qr-result" class="qr-result" hidden><canvas id="qr-canvas" role="img" aria-label="رمز QR الذي تم إنشاؤه"></canvas><p id="qr-content-preview" class="qr-content-preview" data-no-translate=""></p><div class="tool-action-row"><button id="qr-download-button" type="button" class="quiet-button" disabled>تنزيل رمز QR</button><button id="qr-copy-button" type="button" class="quiet-button" disabled>نسخ المحتوى</button></div></div>
             </div>
-            <div id="convert-tool" class="tool-panel document-converter" hidden>
-              <p class="tool-help">الملفات حتى 25 ميغابايت تُحوّل على جهازك. الملفات الأكبر تُرفع مباشرة إلى مساحة تخزين خاصة على أجزاء قابلة لإعادة المحاولة، ويُحذف الملف الأصلي بعد انتهاء التحويل.</p>
-              <label for="convert-direction">نوع التحويل</label>
-              <select id="convert-direction" class="document-converter-select">
-                <option value="pdf-to-word">PDF إلى Word</option>
-                <option value="word-to-pdf">Word إلى PDF</option>
-              </select>
-              <label for="convert-file-input">اختر الملف</label>
-              <input id="convert-file-input" type="file" accept=".pdf,application/pdf" aria-label="اختر ملف PDF">
-              <p id="convert-file-name" class="tool-help" aria-live="polite">لم يتم اختيار ملف</p>
-              <button id="convert-start-button" type="button" class="primary-button">بدء التحويل</button>
-              <p id="convert-status" class="tool-help document-converter-status" aria-live="polite" aria-atomic="true">اختر ملف PDF أو Word للبدء. الحد الأقصى 1 جيجابايت.</p>
-              <div id="convert-progress-wrap" class="document-converter-progress" hidden>
-                <progress id="convert-progress" max="100" value="0" aria-label="تقدم رفع الملف"></progress>
-                <p id="convert-progress-text" class="tool-help" aria-live="polite" aria-atomic="true"></p>
-              </div>
-              <div class="tool-action-row document-converter-actions">
-                <button id="convert-download-button" type="button" class="quiet-button" disabled>تنزيل الملف</button>
-                <button id="convert-share-button" type="button" class="primary-button" disabled>مشاركة الملف</button>
-              </div>
-              <p class="tool-help">يدعم PDF إلى DOCX وDOCX إلى PDF. الحد الأقصى لحجم الملف 1 جيجابايت. لا يدعم ملفات DOC القديمة أو ملفات PDF المصوّرة التي تحتاج OCR. رابط المشاركة صالح لمدة 24 ساعة، وتُحذف الملفات الناتجة تلقائيًا بعد 7 أيام.</p>
+             <p class="tool-help">يدعم PDF إلى DOCX وDOCX إلى PDF. الحد الأقصى لحجم الملف 1 جيجابايت. لا يدعم ملفات DOC القديمة أو ملفات PDF المصوّرة التي تحتاج OCR. رابط المشاركة صالح لمدة 24 ساعة، وتُحذف الملفات الناتجة تلقائيًا بعد 7 أيام.</p>
             </div>
             </div>
             </div>

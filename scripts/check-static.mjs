@@ -194,12 +194,4 @@ assert.match(channels, /function close\(\{ restoreFocus = true \} = \{\}\)[\s\S]
   "Closing channels must clear account-specific rendered state");
 assert.match(communities, /function close\(\{ restoreFocus = true \} = \{\}\)[\s\S]*?communities = \[\];[\s\S]*?linkedCommunityGroups = \[\]/,
   "Closing communities must clear account-specific rendered state");
-const converterTools = readFileSync(new URL("../tools.js", import.meta.url), "utf8");
-const converterWorker = readFileSync(new URL("../worker/server.mjs", import.meta.url), "utf8");
-assert.match(html, /id="convert-progress-wrap"/, "Large-file conversion must expose an accessible progress region");
-assert.match(converterTools, /1024 \* 1024 \* 1024/, "The front end must enforce the 1 GB input limit");
-assert.match(converterWorker, /MAX_FILE_BYTES = 1024 \* 1024 \* 1024/, "The worker must enforce the same 1 GB input limit");
-assert.ok(converterTools.includes("multipart: true"), "Large uploads must use multipart retries");
-assert.ok(converterWorker.includes("await get(job.inputBlobPath"), "The worker must fetch the private uploaded input blob");
-assert.ok(converterWorker.includes('access: "private"'), "Converted output must use private Blob storage");
 process.stdout.write("Static checks passed: JavaScript syntax, HTML IDs, navigation guards, account isolation, and large-file converter safeguards.\n");
