@@ -5183,7 +5183,7 @@ function openGroupInviteShareOptions(){
     button.type="button";
     button.addEventListener("click",async()=>{
       button.disabled=true;
-      try{await action();if(closeAfter&&overlay.isConnected)finish();}
+      try{await action();if(closeAfter&&overlay.isConnected)finish();else button.disabled=false;}
       catch(error){button.disabled=false;announce((english?"Could not complete: ":"تعذر تنفيذ العملية: ")+(error?.message||""),"error");}
     });
     card.append(button);
@@ -5210,7 +5210,7 @@ function openGroupInviteShareOptions(){
       button.addEventListener("click",async()=>{
         button.disabled=true;
         try{
-          const prefix=english?"Group invitation link:\\n":"رابط دعوة المجموعة:\\n";
+          const prefix=english?"Group invitation link:\n":"رابط دعوة المجموعة:\n";
           const {data,error}=await supabase.from("messages").insert({conversation_id:destination.id,sender_id:currentUser.id,body:prefix+inviteUrl}).select("id").single();
           if(error)throw error;
           void loadConversations().catch(error=>console.warn("Invite forwarding refresh:",error));
