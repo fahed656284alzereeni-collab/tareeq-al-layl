@@ -1008,8 +1008,8 @@ const mersalTranslations = {
 
   "قائمة رسائل جماعية جديدة":"New broadcast list",
   "قوائم الرسائل الجماعية":"Broadcast lists",
-  "استكشاف القنوات":"Explore channels",
-  "استكشاف المجتمعات":"Explore communities",
+  "إنشاء قناة":"Create channel",
+  "إنشاء مجتمع":"Create community",
   "عرض الصور والفيديوهات لمرة واحدة":"Send photos and videos for one-time viewing",
   "يمكن فتح الوسائط مرة واحدة داخل مرسال، لكن لا يمكن منع تصوير الشاشة أو تسجيلها.":"Media can be opened once inside Mersal, but screenshots or screen recording cannot be prevented.",
   "عرض لمرة واحدة":"View once",
@@ -1359,8 +1359,8 @@ let selectedGroupCreationPhoto=null,newGroupPhotoPreviewUrl=null;
 const groupPeopleSearch=$("#group-people-search"),groupPeopleList=$("#group-people-list"),createGroupButton=$("#create-group-button");
 const newPrivateChatButton=$("#new-private-chat"),newGroupChatButton=$("#new-group-chat");
 const newBroadcastListButton=$("#new-broadcast-list");
-const openChannelsButton=$("#open-channels-button");
-const openCommunitiesButton=$("#open-communities-button");
+const createChannelFromNewChatButton=$("#create-channel-from-new-chat");
+const createCommunityFromNewChatButton=$("#create-community-from-new-chat");
 const broadcastPanel=$("#broadcast-panel"),closeBroadcastPanelButton=$("#close-broadcast-panel");
 const broadcastListsView=$("#broadcast-lists-view"),broadcastCreateView=$("#broadcast-create-view");
 const broadcastLists=$("#broadcast-lists"),createBroadcastListButton=$("#create-broadcast-list");
@@ -3374,14 +3374,14 @@ try {
 } catch (channelsInitializationError) {
   console.error("Mersal channels initialization failed; continuing core startup:", channelsInitializationError);
 }
-openChannelsButton?.addEventListener("click", openChannelsTab);
+createChannelFromNewChatButton?.addEventListener("click", () => { openChannelsTab(); document.querySelector("#channel-create-button")?.click(); });
 let mersalCommunities = { open() {}, close() {} };
 try {
   mersalCommunities = initMersalCommunities({ supabase, getCurrentUser: () => currentUser, announce, safeText });
 } catch (communitiesInitializationError) {
   console.error("Mersal communities initialization failed; continuing core startup:", communitiesInitializationError);
 }
-openCommunitiesButton?.addEventListener("click", openCommunitiesTab);
+createCommunityFromNewChatButton?.addEventListener("click", () => { openCommunitiesTab(); document.querySelector("#community-create-button")?.click(); });
 settingsLanguageSelect.addEventListener("change", () => {
   applyMersalLanguage(settingsLanguageSelect.value);
   updateChatPartnerPresence();
@@ -4087,12 +4087,12 @@ saveBroadcastListButton.addEventListener("click", async () => {
     saveBroadcastListButton.disabled = false;
   }
 });
-function openNewChat(){newChatReturnFocus=newChatButton;newChatPanel.hidden=false;privateChatView.hidden=true;groupChatView.hidden=true;newPrivateChatButton.hidden=false;newGroupChatButton.hidden=false;newBroadcastListButton.hidden=false;if(openChannelsButton)openChannelsButton.hidden=false;if(openCommunitiesButton)openCommunitiesButton.hidden=false;closeNewChatButton.focus();}
+function openNewChat(){newChatReturnFocus=newChatButton;newChatPanel.hidden=false;privateChatView.hidden=true;groupChatView.hidden=true;newPrivateChatButton.hidden=false;newGroupChatButton.hidden=false;newBroadcastListButton.hidden=false;if(createChannelFromNewChatButton)createChannelFromNewChatButton.hidden=false;if(createCommunityFromNewChatButton)createCommunityFromNewChatButton.hidden=false;closeNewChatButton.focus();}
 function closeNewChat(){newChatPanel.hidden=true;if(newChatReturnFocus?.isConnected)newChatReturnFocus.focus();}
 newChatButton.addEventListener("click",openNewChat);closeNewChatButton.addEventListener("click",closeNewChat);
 newChatPanel.addEventListener("keydown",e=>{if(e.key==="Escape")closeNewChat();});
-newPrivateChatButton.addEventListener("click",()=>{privateChatView.hidden=false;groupChatView.hidden=true;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;if(openChannelsButton)openChannelsButton.hidden=true;if(openCommunitiesButton)openCommunitiesButton.hidden=true;peopleSearch.value="";renderPeople();peopleSearch.focus();});
-newGroupChatButton.addEventListener("click",()=>{selectedGroupMembers.clear();if(openChannelsButton)openChannelsButton.hidden=true;if(openCommunitiesButton)openCommunitiesButton.hidden=true;groupNameInput.value="";newGroupDescriptionInput.value="";groupPeopleSearch.value="";selectedGroupCreationPhoto=null;newGroupPhotoInput.value="";if(newGroupPhotoPreviewUrl){URL.revokeObjectURL(newGroupPhotoPreviewUrl);newGroupPhotoPreviewUrl=null;}newGroupPhotoPreview.removeAttribute("src");newGroupPhotoPreview.hidden=true;newGroupPhotoRemoveButton.hidden=true;privateChatView.hidden=true;groupChatView.hidden=false;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;renderGroupPeople();groupNameInput.focus();});
+newPrivateChatButton.addEventListener("click",()=>{privateChatView.hidden=false;groupChatView.hidden=true;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;if(createChannelFromNewChatButton)createChannelFromNewChatButton.hidden=true;if(createCommunityFromNewChatButton)createCommunityFromNewChatButton.hidden=true;peopleSearch.value="";renderPeople();peopleSearch.focus();});
+newGroupChatButton.addEventListener("click",()=>{selectedGroupMembers.clear();if(createChannelFromNewChatButton)createChannelFromNewChatButton.hidden=true;if(createCommunityFromNewChatButton)createCommunityFromNewChatButton.hidden=true;groupNameInput.value="";newGroupDescriptionInput.value="";groupPeopleSearch.value="";selectedGroupCreationPhoto=null;newGroupPhotoInput.value="";if(newGroupPhotoPreviewUrl){URL.revokeObjectURL(newGroupPhotoPreviewUrl);newGroupPhotoPreviewUrl=null;}newGroupPhotoPreview.removeAttribute("src");newGroupPhotoPreview.hidden=true;newGroupPhotoRemoveButton.hidden=true;privateChatView.hidden=true;groupChatView.hidden=false;newPrivateChatButton.hidden=true;newGroupChatButton.hidden=true;newBroadcastListButton.hidden=true;renderGroupPeople();groupNameInput.focus();});
 peopleSearch.addEventListener("input",renderPeople);groupPeopleSearch.addEventListener("input",renderGroupPeople);
 newGroupPhotoChooseButton.addEventListener("click",()=>newGroupPhotoInput.click());
 newGroupPhotoInput.addEventListener("change",()=>{
