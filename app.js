@@ -1236,6 +1236,12 @@ const themeSelect = $("#settings-theme");
 const settingsLanguageSelect = $("#settings-language");
 const settingsEmail = $("#settings-email");
 const settingsHome = $("#settings-home");
+const privacyPolicyView = $("#privacy-policy-view");
+const termsOfServiceView = $("#terms-of-service-view");
+const privacyPolicyButton = $("#privacy-policy-link");
+const termsOfServiceButton = $("#terms-of-service-link");
+const backPrivacyPolicyButton = $("#back-privacy-policy");
+const backTermsOfServiceButton = $("#back-terms-of-service");
 const generalSettingsView = $("#general-settings-view");
 const openGeneralSettingsButton = $("#open-general-settings");
 const backGeneralSettingsButton = $("#back-general-settings");
@@ -3407,6 +3413,28 @@ refreshCallsButton.addEventListener("click", async () => {
   } catch (error) { announce("تعذر تحميل قائمة المكالمات: " + (error.message || "حاول مرة أخرى."), "error"); }
   finally { refreshCallsButton.disabled = false; }
 });
+function openLegalSettingsView(view, focusTarget) {
+  settingsHome.hidden = true;
+  accountSettingsView.hidden = true;
+  profileSettingsView.hidden = true;
+  privacySettingsView.hidden = true;
+  chatsSettingsView.hidden = true;
+  generalSettingsView.hidden = true;
+  privacyPolicyView.hidden = view !== privacyPolicyView;
+  termsOfServiceView.hidden = view !== termsOfServiceView;
+  view.hidden = false;
+  focusTarget?.focus();
+}
+function closeLegalSettingsView(view, returnButton) {
+  view.hidden = true;
+  settingsHome.hidden = false;
+  returnButton?.focus();
+}
+privacyPolicyButton?.addEventListener("click", () => openLegalSettingsView(privacyPolicyView, backPrivacyPolicyButton));
+termsOfServiceButton?.addEventListener("click", () => openLegalSettingsView(termsOfServiceView, backTermsOfServiceButton));
+backPrivacyPolicyButton?.addEventListener("click", () => closeLegalSettingsView(privacyPolicyView, privacyPolicyButton));
+backTermsOfServiceButton?.addEventListener("click", () => closeLegalSettingsView(termsOfServiceView, termsOfServiceButton));
+
 openGeneralSettingsButton.addEventListener("click", () => {
   settingsHome.hidden = true; accountSettingsView.hidden = true; profileSettingsView.hidden = true; privacySettingsView.hidden = true; chatsSettingsView.hidden = true;
   generalSettingsView.hidden = false; backGeneralSettingsButton.focus();
@@ -3567,6 +3595,14 @@ confirmDeleteAccountButton.addEventListener("click", async () => {
 });
 settingsPanel.addEventListener("keydown", (event) => {
   if (event.key !== "Escape") return;
+  if (!privacyPolicyView.hidden) {
+    closeLegalSettingsView(privacyPolicyView, privacyPolicyButton);
+    return;
+  }
+  if (!termsOfServiceView.hidden) {
+    closeLegalSettingsView(termsOfServiceView, termsOfServiceButton);
+    return;
+  }
   if (!profileSettingsView.hidden) {
     profileSettingsView.hidden = true;
     settingsHome.hidden = false;
