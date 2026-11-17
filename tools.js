@@ -37,6 +37,28 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       ["label[for='qr-content-input']","النص أو الرابط أو رقم الهاتف","Text, link, or phone number"],
     ];
     for (const [selector, ar, enText] of labels) text(selector, ar, enText);
+    const converterLabels = [
+      ["label[for='convert-direction']", "نوع التحويل", "Conversion type"],
+      ["label[for='convert-file-input']", "اختر الملف", "Choose a file"],
+    ];
+    for (const [selector, ar, enText] of converterLabels) text(selector, ar, enText);
+    text("#convert-start-button", "بدء التحويل", "Start conversion");
+    text("#convert-download-button", "تنزيل الملف", "Download file");
+    text("#convert-share-button", "مشاركة الملف", "Share file");
+    text("#convert-file-name", "لم يتم اختيار ملف", "No file selected");
+    const converterHelp = $("#convert-tool > .tool-help");
+    if (converterHelp) converterHelp.textContent = en
+      ? "Convert PDF and Word files directly on your device. Files are not uploaded to Mersal servers."
+      : "حوّل ملفاتك بين PDF وWord مباشرة على جهازك. لا يتم رفع الملفات إلى خوادم مرسال.";
+    const converterLimits = $("#convert-tool > p.tool-help:last-child");
+    if (converterLimits) converterLimits.textContent = en
+      ? "Supports PDF to DOCX and DOCX to PDF. Legacy DOC files are not currently supported. Maximum file size: 25 MB."
+      : "يدعم PDF إلى DOCX وDOCX إلى PDF. ملفات Word القديمة بصيغة DOC غير مدعومة حاليًا. الحد الأقصى لحجم الملف 25 ميغابايت.";
+    const direction = $("#convert-direction");
+    if (direction?.options?.length >= 2) {
+      direction.options[0].textContent = en ? "PDF to Word" : "PDF إلى Word";
+      direction.options[1].textContent = en ? "Word to PDF" : "Word إلى PDF";
+    }
     const buttons = [
       ["#calculator-tool [data-calc-key='clear']","مسح","Clear"],["#calculator-tool .calculator-secondary[aria-label='حذف آخر رقم']","حذف","Delete"],
       ["#bill-split-calculate","احسب نصيب كل شخص","Calculate each person's share"],["#note-new-button","ملاحظة جديدة","New note"],
@@ -60,6 +82,14 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     attr("#calculator-tool","aria-label","الآلة الحاسبة","Calculator");
     attr("#notes-tool","aria-label","المفكرة السريعة","Quick notes");
     attr("#qr-tool","aria-label","إنشاء رموز QR","QR code generator");
+    attr("#convert-tool","aria-label","تحويل ملفات PDF وWord","PDF and Word file converter");
+    const convertInput = $("#convert-file-input");
+    if (convertInput && !convertInput.files?.length) {
+      const toWord = $("#convert-direction")?.value !== "word-to-pdf";
+      convertInput.setAttribute("aria-label", en
+        ? (toWord ? "Choose a PDF file" : "Choose a Word DOCX file")
+        : (toWord ? "اختر ملف PDF" : "اختر ملف Word بصيغة DOCX"));
+    }
     
     const help = $("#qr-canvas"); if (help) help.setAttribute("aria-label", en ? "Generated QR code" : "رمز QR الذي تم إنشاؤه");
     
