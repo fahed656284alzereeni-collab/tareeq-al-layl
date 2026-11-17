@@ -3434,6 +3434,12 @@ privacyPolicyButton?.addEventListener("click", () => openLegalSettingsView(priva
 termsOfServiceButton?.addEventListener("click", () => openLegalSettingsView(termsOfServiceView, backTermsOfServiceButton));
 backPrivacyPolicyButton?.addEventListener("click", () => closeLegalSettingsView(privacyPolicyView, privacyPolicyButton));
 backTermsOfServiceButton?.addEventListener("click", () => closeLegalSettingsView(termsOfServiceView, termsOfServiceButton));
+privacyPolicyView?.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeLegalSettingsView(privacyPolicyView, privacyPolicyButton);
+});
+termsOfServiceView?.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeLegalSettingsView(termsOfServiceView, termsOfServiceButton);
+});
 
 openGeneralSettingsButton.addEventListener("click", () => {
   settingsHome.hidden = true; accountSettingsView.hidden = true; profileSettingsView.hidden = true; privacySettingsView.hidden = true; chatsSettingsView.hidden = true;
