@@ -5178,12 +5178,12 @@ function openGroupInviteShareOptions(){
   close.addEventListener("click",finish);
   card.append(title,close);
   const inviteUrl=groupInviteUrl.value;
-  const addOption=(label,action)=>{
+  const addOption=(label,action,closeAfter=true)=>{
     const button=safeText("button","message-forward-destination",label);
     button.type="button";
     button.addEventListener("click",async()=>{
       button.disabled=true;
-      try{await action();if(overlay.isConnected)finish();}
+      try{await action();if(closeAfter&&overlay.isConnected)finish();}
       catch(error){button.disabled=false;announce((english?"Could not complete: ":"تعذر تنفيذ العملية: ")+(error?.message||""),"error");}
     });
     card.append(button);
@@ -5226,7 +5226,7 @@ function openGroupInviteShareOptions(){
       for(const entry of entries)entry.button.hidden=!entry.label.toLocaleLowerCase().includes(query);
     });
     search.focus();
-  });
+  },false);
   addOption(english?"Share link":"مشاركة الرابط",shareGroupInviteLink);
   addOption(english?"Copy link":"نسخ الرابط",copyGroupInviteLink);
   overlay.append(card);
