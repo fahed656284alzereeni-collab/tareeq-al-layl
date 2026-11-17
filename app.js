@@ -5081,7 +5081,7 @@ async function loadGroupInviteLink(conversationId,isAdmin){
 
   if(groupInviteShareButton){groupInviteShareButton.hidden=false;groupInviteShareButton.disabled=true;}
   if(groupInviteShareHelp)groupInviteShareHelp.hidden=true;
-  groupInviteResetButton.hidden=!isAdmin;
+  if(groupInviteResetButton)groupInviteResetButton.hidden=true;
 
   const showToken=token=>{
     if(activeConversation?.id!==conversationId)return;
@@ -5168,52 +5168,45 @@ function openGroupInviteShareOptions(){
   overlay.className="message-forward-overlay";
   overlay.setAttribute("role","dialog");
   overlay.setAttribute("aria-modal","true");
-  overlay.setAttribute("aria-label",english?"Send group invite link via Mersal":"إرسال رابط المجموعة عبر مرسال");
+  overlay.setAttribute("aria-label",english?"Group invite link options":"خيارات مشاركة رابط الدعوة");
   const card=document.createElement("div");
   card.className="message-forward-card";
-  const title=safeText("p","message-forward-title",english?"Choose a conversation":"اختر محادثة لإرسال الرابط عبر مرسال");
+  const title=safeText("p","message-forward-title",english?"Group invite link":"رابط دعوة المجموعة");
   const close=safeText("button","quiet-button",english?"Close":"إغلاق");
   close.type="button";
   const finish=()=>{overlay.remove();if(trigger?.isConnected)trigger.focus();};
   close.addEventListener("click",finish);
   card.append(title,close);
-  const addOption=(label,action,closeAfter=true)=>{
+  const inviteUrl=groupInviteUrl.value;
+  const addOption=(label,action)=>{
     const button=safeText("button","message-forward-destination",label);
     button.type="button";
     button.addEventListener("click",async()=>{
       button.disabled=true;
-      try{await action();if(closeAfter)finish();}
+      try{await action();if(overlay.isConnected)finish();}
       catch(error){button.disabled=false;announce((english?"Could not complete: ":"تعذر تنفيذ العملية: ")+(error?.message||""),"error");}
     });
     card.append(button);
+    return button;
   };
-  const inviteUrl=groupInviteUrl.value;
-  let pickerSearch=null;
-
-  addOption(english?"Copy link":"نسخ الرابط",async()=>{await copyGroupInviteLink();});
-  const destinations=(conversations||[]).filter(item=>item.id!==activeConversation?.id);
-  if(destinations.length){
-    const forwardTitle=safeText("p","message-forward-title",english?"Choose a Mersal conversation":"اختر محادثة لإرسال الرابط عبر مرسال");
-    card.append(forwardTitle);
+  addOption(english?"Reset invite link":"إعادة تعيين رابط الدعوة",resetGroupInviteLink);
+  addOption(english?"Send link via Mersal":"إرسال الرابط عبر مرسال",async()=>{
+    const destinations=(conversations||[]).filter(item=>item.id!==activeConversation?.id);
+    if(!destinations.length){announce(english?"There are no other conversations to send to.":"لا توجد محادثات أخرى لإرسال الرابط إليها.");return;}
+    const pickerTitle=safeText("p","message-forward-title",english?"Choose a conversation":"اختر محادثة لإرسال الرابط عبر مرسال");
     const search=document.createElement("input");
-    pickerSearch=search;
-    search.type="search";
-    search.className="message-forward-search";
+    search.type="search";search.className="message-forward-search";
     search.placeholder=english?"Search conversations":"البحث في المحادثات";
     search.setAttribute("aria-label",search.placeholder);
-    card.append(search);
-    const list=document.createElement("div");
-    list.className="message-forward-destinations";
-    list.setAttribute("role","list");
-    card.append(list);
+    const list=document.createElement("div");list.className="message-forward-destinations";list.setAttribute("role","list");
+    card.append(pickerTitle,search,list);
     const entries=[];
     for(const destination of destinations){
       const partnerId=destination.user_one===currentUser.id?destination.user_two:destination.user_one;
       const person=destination.is_group?null:(callsProfileCache.get(partnerId)||null);
       const label=destination.is_group?(destination.group_name||(english?"Group":"مجموعة")):(person?.display_name||(english?"Private conversation":"محادثة فردية"));
       const button=safeText("button","message-forward-destination",label);
-      button.type="button";
-      button.setAttribute("role","listitem");
+      button.type="button";button.setAttribute("role","listitem");
       button.addEventListener("click",async()=>{
         button.disabled=true;
         try{
@@ -5226,28 +5219,28 @@ function openGroupInviteShareOptions(){
           finish();
         }catch(error){button.disabled=false;announce((english?"Could not send link: ":"تعذر إرسال الرابط: ")+(error?.message||""),"error");}
       });
-      entries.push({button,label});
-      list.append(button);
+      entries.push({button,label});list.append(button);
     }
     search.addEventListener("input",()=>{
       const query=search.value.trim().toLocaleLowerCase();
       for(const entry of entries)entry.button.hidden=!entry.label.toLocaleLowerCase().includes(query);
     });
-  }else{
-    card.append(safeText("p","message-forward-empty",english?"There are no other conversations to send to.":"لا توجد محادثات أخرى لإرسال الرابط إليها."));
-  }
+    search.focus();
+  });
+  addOption(english?"Share link":"مشاركة الرابط",shareGroupInviteLink);
+  addOption(english?"Copy link":"نسخ الرابط",copyGroupInviteLink);
   overlay.append(card);
   overlay.addEventListener("click",event=>{if(event.target===overlay)finish();});
   overlay.addEventListener("keydown",event=>{
     if(event.key==="Escape"){event.preventDefault();finish();return;}
     if(event.key!=="Tab")return;
-    const controls=[...card.querySelectorAll("button:not([disabled])")];
+    const controls=[...card.querySelectorAll("button:not([disabled]),input:not([disabled])")];
     const first=controls[0],last=controls[controls.length-1];
     if(event.shiftKey&&document.activeElement===first){event.preventDefault();last?.focus();}
     else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
   });
   document.body.append(overlay);
-  if(pickerSearch)pickerSearch.focus();else close.focus();
+  close.focus();
 }
 if(groupInviteShareButton)groupInviteShareButton.addEventListener("click",async()=>{
   const conversation=activeConversation;
@@ -5261,10 +5254,10 @@ if(groupInviteShareButton)groupInviteShareButton.addEventListener("click",async(
   if(groupInviteUrl?.value)openGroupInviteShareOptions();
   else announce("تعذر تحميل رابط الدعوة. حاول مرة أخرى.","error");
 });
-if(groupInviteResetButton)groupInviteResetButton.addEventListener("click",async()=>{
+async function resetGroupInviteLink(){
   const conversationId=activeConversation?.id;
-  if(!activeConversation?.is_group||!conversationId||!groupInviteUrl||groupInviteResetButton.disabled)return;
-  groupInviteResetButton.disabled=true;
+  if(!activeConversation?.is_group||!conversationId||!groupInviteUrl||groupInviteResetButton?.disabled)return;
+  if(groupInviteResetButton)groupInviteResetButton.disabled=true;
   try{
     const permissions=await getCurrentGroupPermissions();
     if(!permissions.isAdmin||activeConversation?.id!==conversationId)return;
@@ -5276,12 +5269,11 @@ if(groupInviteResetButton)groupInviteResetButton.addEventListener("click",async(
     groupInviteTokenCache.set(conversationId,token);
     if(activeConversation?.id!==conversationId)return;
     setGroupInviteUrl(token);
-
     announce("تم تجديد رابط الدعوة.");
   }catch(error){
     if(activeConversation?.id===conversationId)announce("تعذر تجديد رابط الدعوة: "+(error.message||"حاول مرة أخرى."),"error");
-  }finally{groupInviteResetButton.disabled=false;}
-});
+  }finally{if(groupInviteResetButton)groupInviteResetButton.disabled=false;}
+}
 function clearGroupInviteQuery() {
   const url = new URL(window.location.href);
   url.searchParams.delete("group_invite");
