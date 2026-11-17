@@ -1,5 +1,5 @@
 import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
-import { initMersalTools } from "./tools.js?v=20261114-clean-tools-v1";
+import { initMersalTools } from "./tools.js?v=20261117-document-converter-v1";
 import { initMersalChannels } from "./channels.js?v=20261116-voiceover-clean-v16";
 import { initMersalCommunities } from "./communities.js?v=20261116-voiceover-clean-v9";
 
