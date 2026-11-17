@@ -5196,7 +5196,7 @@ function openGroupInviteShareOptions(){
     const forwardTitle=safeText("p","message-forward-title",english?"Choose a Mersal conversation":"اختر محادثة لإرسال الرابط عبر مرسال");
     card.append(forwardTitle);
     const search=document.createElement("input");
-    pickerSearch=search;\n    pickerSearch=search;
+    pickerSearch=search;
     search.type="search";
     search.className="message-forward-search";
     search.placeholder=english?"Search conversations":"البحث في المحادثات";
