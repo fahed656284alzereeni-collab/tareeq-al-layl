@@ -7389,6 +7389,7 @@ function appendMessage(message) {
   if (attachmentIndex >= 0) {
     try { attachment = JSON.parse(message.body.slice(attachmentIndex + attachmentPrefix.length)); } catch { attachment = null; }
   }
+  const isPlainTextMessage = !pollMessage && !stickerMessage && attachmentIndex < 0;
   if (stickerMessage) {
     item.classList.add("message-sticker-message");
     const english = document.documentElement.lang === "en";
@@ -7513,7 +7514,7 @@ function appendMessage(message) {
   deleteEveryoneButton.setAttribute("aria-label", message.sender_id === currentUser.id ? "حذف هذه الرسالة لدى الجميع" : "حذف لدى الجميع، متاح لرسائلك أنت فقط");
   deleteEveryoneButton.addEventListener("click", () => { void deleteMessageForEveryone(message, item, menu, toggle); });
   let editButton = null;
-  if (message.sender_id === currentUser.id) {
+  if (message.sender_id === currentUser.id && isPlainTextMessage) {
     editButton = safeText("button", "message-option-button", "تعديل الرسالة");
     editButton.type = "button";
     editButton.addEventListener("click", () => { void editMessage(message, item, menu, toggle); });
