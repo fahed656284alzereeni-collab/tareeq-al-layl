@@ -1172,3 +1172,87 @@ body.tools-open #workspace {
   outline: 3px solid var(--mx-brand);
   outline-offset: 3px;
 }
+
+
+/* Full-screen group invite forwarding with accessible multi-selection. */
+.message-forward-overlay.group-invite-forward-overlay {
+  display:block;
+  padding:0;
+  background:var(--mx-bg);
+  backdrop-filter:none;
+}
+.group-invite-forward-card.message-forward-card {
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  width:100%;
+  height:100vh;
+  height:100dvh;
+  max-height:none;
+  margin:0;
+  padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));
+  overflow:hidden;
+  border:0;
+  border-radius:0;
+  box-shadow:none;
+}
+.group-invite-forward-header {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  flex:0 0 auto;
+}
+.group-invite-forward-header .message-forward-title { font-size:1.12rem; }
+.group-invite-forward-card .message-forward-search {
+  flex:0 0 auto;
+  width:100%;
+  min-height:48px;
+  padding:11px 13px;
+  border:1px solid var(--mx-line);
+  border-radius:12px;
+  background:var(--mx-panel-soft);
+  color:var(--mx-text);
+  font:inherit;
+}
+.group-invite-forward-list {
+  display:grid;
+  align-content:start;
+  gap:8px;
+  flex:1 1 auto;
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.group-invite-forward-choice {
+  display:flex;
+  align-items:center;
+  gap:13px;
+  min-height:58px;
+  padding:11px 13px;
+  border:1px solid var(--mx-line);
+  border-radius:13px;
+  background:var(--mx-panel-soft);
+  color:var(--mx-text);
+  cursor:pointer;
+}
+.group-invite-forward-choice input {
+  flex:0 0 22px;
+  width:22px;
+  height:22px;
+  min-height:22px;
+  margin:0;
+  accent-color:var(--mx-brand);
+}
+.group-invite-forward-choice span { overflow-wrap:anywhere; }
+.group-invite-forward-choice[hidden] { display:none !important; }
+.group-invite-forward-footer {
+  display:grid;
+  gap:9px;
+  flex:0 0 auto;
+  padding-top:10px;
+  border-top:1px solid var(--mx-line);
+}
+.group-invite-selection-status { margin:0; color:var(--mx-muted); }
+.group-invite-send-selected { min-height:52px; text-align:center; font-weight:800; }
+.group-invite-send-selected:disabled { opacity:.55; cursor:not-allowed; }
