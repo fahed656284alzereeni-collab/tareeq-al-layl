@@ -1,4 +1,4 @@
-const STATIC_CACHE = "mersal-static-v32";
+const STATIC_CACHE = "mersal-static-v33";
 const STATIC_PATHS = new Set([
   "/app.js",
   "/auth-bootstrap.js",
