@@ -1259,7 +1259,7 @@ body.tools-open #workspace {
 
 /* In-app legal information pages */
 .legal-settings-view {
-  position:absolute;
+  position:fixed;
   inset:0;
   z-index:30;
   display:flex;
