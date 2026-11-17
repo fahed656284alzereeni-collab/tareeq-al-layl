@@ -181,6 +181,8 @@ assert.match(app, /async function getOrCreateBroadcastConversation\(recipientId,
   "Broadcast conversations must be created for the account that started the send");
 assert.match(app, /async function sendBroadcastList\(list\)[\s\S]*?const senderId = currentUser\?\.id;[\s\S]*?currentUser\?\.id !== senderId[\s\S]*?sender_id: senderId/,
   "Broadcast sends must stop after an account switch");
+assert.ok(app.includes("const isPlainTextMessage = !pollMessage && !stickerMessage && attachmentIndex < 0;"), "Message editing must exclude polls, stickers, and all attachments");
+assert.ok(app.includes("if (message.sender_id === currentUser.id && isPlainTextMessage)"), "Only the sender may see edit on plain text messages");
 readFileSync(new URL("../tools.js", import.meta.url), "utf8");
 assert.match(app, /function resetAccountScopedPanels\(\)[\s\S]*?mersalChannels\.close\(\{ restoreFocus: false \}\)[\s\S]*?mersalCommunities\.close\(\{ restoreFocus: false \}\)[\s\S]*?resetBroadcastPanel\(\)/,
   "Account changes and logout must close account-scoped panels");
