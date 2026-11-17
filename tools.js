@@ -5,7 +5,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   const detail = $("#tool-detail-view");
   const title = $("#tool-detail-title");
   const back = $("#tool-back-button");
-  const panels = ["calculator", "notes", "qr"].map((name) => $("#" + name + "-tool"));
+  const panels = ["calculator", "notes", "qr", "convert"].map((name) => $("#" + name + "-tool"));
   let activeTool = null;
   let returnFocus = null;
 
@@ -21,14 +21,15 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       [".tool-launch-button[data-tool='calculator']", "الآلة الحاسبة", "Calculator"],
       [".tool-launch-button[data-tool='notes']", "المفكرة السريعة", "Quick notes"],
       [".tool-launch-button[data-tool='qr']", "إنشاء رموز QR", "QR code generator"],
+      [".tool-launch-button[data-tool='convert']", "تحويل PDF وWord", "PDF and Word converter"],
     ];
     for (const [selector, arTitle, enTitle] of cards) {
       const titleNode = $(selector)?.querySelector(".tool-card-title");
       if (titleNode) titleNode.textContent = en ? enTitle : arTitle;
     }
     text("#tool-back-button", "العودة إلى الأدوات", "Back to tools");
-    text("#tool-detail-title", ({calculator:"الآلة الحاسبة",notes:"المفكرة السريعة",qr:"إنشاء رموز QR"}[activeTool] || "الأداة"),
-      ({calculator:"Calculator",notes:"Quick notes",qr:"QR code generator"}[activeTool] || "Tool"));
+    text("#tool-detail-title", ({calculator:"الآلة الحاسبة",notes:"المفكرة السريعة",qr:"إنشاء رموز QR",convert:"تحويل PDF وWord"}[activeTool] || "الأداة"),
+      ({calculator:"Calculator",notes:"Quick notes",qr:"QR code generator",convert:"PDF and Word converter"}[activeTool] || "Tool"));
     const labels = [
       ["label[for='bill-total-input']","قيمة الفاتورة","Bill amount"],["label[for='bill-people-input']","عدد الأشخاص","Number of people"],
       ["label[for='bill-tip-input']","نسبة الإكرامية (%)","Tip percentage (%)"],["label[for='note-title-input']","عنوان الملاحظة","Note title"],
@@ -78,6 +79,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       calculator: "الآلة الحاسبة",
       notes: "المفكرة السريعة",
       qr: "إنشاء رموز QR",
+      convert: "تحويل PDF وWord",
     };
     if (!labels[name]) return;
     activeTool = name;
@@ -95,6 +97,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     title.focus();
     if (name === "notes") loadNotes();
     if (name === "calculator") renderCalculator();
+    if (name === "convert") resetConversionTool();
   }
 
   function closeTool(restoreFocus = true) {
@@ -453,6 +456,204 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     catch { announce(document.documentElement.lang === "en" ? "Could not copy the content." : "تعذر نسخ المحتوى.", "error"); }
   });
 
+
+
+  // Document conversion runs entirely in the browser. Files are never uploaded
+  // to Mersal or a third-party conversion server.
+  const convertFileInput = $("#convert-file-input");
+  const convertFileName = $("#convert-file-name");
+  const convertDirection = $("#convert-direction");
+  const convertButton = $("#convert-start-button");
+  const convertStatus = $("#convert-status");
+  const convertDownload = $("#convert-download-button");
+  const convertShare = $("#convert-share-button");
+  let convertedBlob = null;
+  let convertedName = "";
+
+  function conversionText(ar, en) { return document.documentElement.lang === "en" ? en : ar; }
+  function resetConversionTool() {
+    convertedBlob = null;
+    convertedName = "";
+    convertDownload.disabled = true;
+    convertShare.disabled = true;
+    convertStatus.textContent = conversionText("اختر ملف PDF أو Word للبدء. تتم المعالجة على جهازك.", "Choose a PDF or Word file. Conversion happens on your device.");
+    convertFileInput.value = "";
+    convertFileName.textContent = conversionText("لم يتم اختيار ملف", "No file selected");
+  }
+  function loadConversionScript(src, test) {
+    if (test()) return Promise.resolve();
+    const existing = document.querySelector('script[data-conversion-src="' + src + '"]');
+    if (existing) return new Promise((resolve, reject) => {
+      existing.addEventListener("load", resolve, { once: true });
+      existing.addEventListener("error", reject, { once: true });
+    });
+    return new Promise((resolve, reject) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      script.dataset.conversionSrc = src;
+      script.onload = resolve;
+      script.onerror = () => reject(new Error("library-load"));
+      document.head.append(script);
+    });
+  }
+  async function convertPdfToWord(file) {
+    const pdfjs = await import("https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs");
+    pdfjs.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs";
+    await loadConversionScript("https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js", () => !!window.docx?.Document);
+    const pdf = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    if (pdf.numPages > 150) throw new Error("too-many-pages");
+    const paragraphs = [];
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
+      convertStatus.textContent = conversionText("جارٍ استخراج نص الصفحة " + pageNumber + " من " + pdf.numPages, "Extracting page " + pageNumber + " of " + pdf.numPages);
+      const page = await pdf.getPage(pageNumber);
+      const textContent = await page.getTextContent();
+      let lines = [];
+      let currentY = null;
+      let currentLine = "";
+      for (const item of textContent.items) {
+        if (!item.str) continue;
+        const y = Math.round(item.transform?.[5] || 0);
+        if (currentY !== null && Math.abs(y - currentY) > 3) {
+          if (currentLine.trim()) lines.push(currentLine.trim());
+          currentLine = "";
+        }
+        currentY = y;
+        currentLine += (currentLine && !currentLine.endsWith(" ") ? " " : "") + item.str;
+      }
+      if (currentLine.trim()) lines.push(currentLine.trim());
+      if (!lines.length) lines = [conversionText("[لا يوجد نص قابل للاستخراج في هذه الصفحة]", "[No extractable text on this page]")];
+      if (pageNumber > 1) paragraphs.push(new window.docx.Paragraph({ children: [], pageBreakBefore: true }));
+      for (const line of lines) paragraphs.push(new window.docx.Paragraph({
+        bidirectional: true,
+        alignment: window.docx.AlignmentType.RIGHT,
+        children: [new window.docx.TextRun({ text: line, rightToLeft: true })]
+      }));
+    }
+    const doc = new window.docx.Document({ sections: [{ properties: {}, children: paragraphs }] });
+    return window.docx.Packer.toBlob(doc);
+  }
+  async function convertWordToPdf(file) {
+    await Promise.all([
+      loadConversionScript("https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js", () => !!window.mammoth),
+      loadConversionScript("https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js", () => !!window.html2canvas),
+      loadConversionScript("https://cdn.jsdelivr.net/npm/jspdf@2.5.2/dist/jspdf.umd.min.js", () => !!window.jspdf?.jsPDF)
+    ]);
+    const result = await window.mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() });
+    const stage = document.createElement("article");
+    stage.dir = "auto";
+    stage.lang = "ar";
+    stage.style.cssText = "position:fixed;left:-100000px;top:0;width:794px;padding:48px;background:#fff;color:#111;font:16px/1.75 Arial,sans-serif;overflow:visible;direction:rtl;box-sizing:border-box";
+    stage.innerHTML = result.value || "<p></p>";
+    stage.querySelectorAll("img").forEach(img => { img.style.maxWidth = "100%"; });
+    document.body.append(stage);
+    try {
+      await Promise.all([...stage.querySelectorAll("img")].map(img => img.decode?.().catch(() => {}) || Promise.resolve()));
+      const canvas = await window.html2canvas(stage, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
+      const pageWidth = 210;
+      const pageHeight = 297;
+      const sliceHeight = Math.floor(canvas.width * pageHeight / pageWidth);
+      let page = 0;
+      for (let y = 0; y < canvas.height; y += sliceHeight) {
+        if (page > 0) pdf.addPage();
+        const part = document.createElement("canvas");
+        part.width = canvas.width;
+        part.height = Math.min(sliceHeight, canvas.height - y);
+        part.getContext("2d").drawImage(canvas, 0, y, canvas.width, part.height, 0, 0, part.width, part.height);
+        const image = part.toDataURL("image/jpeg", 0.92);
+        pdf.addImage(image, "JPEG", 0, 0, pageWidth, part.height * pageWidth / part.width, undefined, "FAST");
+        page++;
+        convertStatus.textContent = conversionText("جارٍ تجهيز صفحة PDF رقم " + page, "Preparing PDF page " + page);
+        if (page > 100) throw new Error("too-many-pages");
+      }
+      return pdf.output("blob");
+    } finally {
+      stage.remove();
+    }
+  }
+  convertFileInput.addEventListener("change", () => {
+    const file = convertFileInput.files?.[0];
+    convertedBlob = null;
+    convertDownload.disabled = true;
+    convertShare.disabled = true;
+    convertFileName.textContent = file ? file.name : conversionText("لم يتم اختيار ملف", "No file selected");
+    convertStatus.textContent = file ? conversionText("الملف جاهز للتحويل.", "File ready to convert.") : conversionText("اختر ملف PDF أو Word للبدء.", "Choose a PDF or Word file.");
+  });
+  convertDirection.addEventListener("change", () => {
+    convertFileInput.value = "";
+    resetConversionTool();
+    const toWord = convertDirection.value === "pdf-to-word";
+    convertFileInput.accept = toWord ? ".pdf,application/pdf" : ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    convertFileInput.setAttribute("aria-label", toWord ? conversionText("اختر ملف PDF", "Choose a PDF file") : conversionText("اختر ملف Word بصيغة DOCX", "Choose a Word DOCX file"));
+  });
+  convertButton.addEventListener("click", async () => {
+    const file = convertFileInput.files?.[0];
+    const toWord = convertDirection.value === "pdf-to-word";
+    const expected = toWord ? /.pdf$/i : /.docx$/i;
+    if (!file || !expected.test(file.name)) {
+      convertStatus.textContent = toWord
+        ? conversionText("اختر ملف PDF صحيحًا.", "Choose a valid PDF file.")
+        : conversionText("اختر ملف Word بصيغة DOCX. ملفات DOC القديمة غير مدعومة حاليًا.", "Choose a Word DOCX file. Legacy DOC files are not supported yet.");
+      convertFileInput.focus();
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      convertStatus.textContent = conversionText("حجم الملف يتجاوز الحد المسموح وهو 25 ميغابايت.", "The file exceeds the 25 MB limit.");
+      return;
+    }
+    convertButton.disabled = true;
+    convertDownload.disabled = true;
+    convertShare.disabled = true;
+    convertedBlob = null;
+    try {
+      convertStatus.textContent = conversionText("جارٍ بدء التحويل…", "Starting conversion…");
+      convertedBlob = toWord ? await convertPdfToWord(file) : await convertWordToPdf(file);
+      const baseName = file.name.replace(/.(pdf|docx)$/i, "");
+      convertedName = baseName + (toWord ? ".docx" : ".pdf");
+      convertDownload.disabled = false;
+      convertShare.disabled = false;
+      convertStatus.textContent = conversionText("اكتمل التحويل بنجاح. يمكنك تنزيل الملف أو مشاركته.", "Conversion completed. You can download or share the file.");
+      announce(conversionText("اكتمل تحويل الملف.", "File conversion completed."));
+    } catch (error) {
+      console.error("Document conversion failed:", error);
+      const message = error.message === "too-many-pages"
+        ? conversionText("الملف طويل جدًا. الحد الأقصى 100 صفحة لملفات Word و150 صفحة لملفات PDF.", "The file is too long. Limits are 100 Word pages and 150 PDF pages.")
+        : error.message === "library-load"
+          ? conversionText("تعذر تحميل مكتبة التحويل. تحقق من اتصال الإنترنت وحاول مجددًا.", "Could not load the conversion library. Check your internet connection and try again.")
+          : conversionText("تعذر تحويل هذا الملف. قد يكون محميًا أو يحتوي على عناصر غير مدعومة.", "Could not convert this file. It may be protected or contain unsupported elements.");
+      convertStatus.textContent = message;
+      announce(message, "error");
+    } finally {
+      convertButton.disabled = false;
+    }
+  });
+  convertDownload.addEventListener("click", () => {
+    if (!convertedBlob) return;
+    const url = URL.createObjectURL(convertedBlob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = convertedName;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  });
+  convertShare.addEventListener("click", async () => {
+    if (!convertedBlob) return;
+    const file = new File([convertedBlob], convertedName, { type: convertedName.endsWith(".pdf") ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+    try {
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+        await navigator.share({ files: [file], title: convertedName });
+        announce(conversionText("تم فتح قائمة مشاركة الملف.", "File sharing opened."));
+      } else {
+        convertStatus.textContent = conversionText("المشاركة المباشرة للملفات غير مدعومة في هذا المتصفح. استخدم زر التنزيل.", "Direct file sharing is not supported in this browser. Use Download instead.");
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        convertStatus.textContent = conversionText("تعذرت مشاركة الملف. يمكنك تنزيله بدلًا من ذلك.", "Could not share the file. You can download it instead.");
+      }
+    }
+  });
 
   localizeTools();
 
