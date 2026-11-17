@@ -6695,6 +6695,7 @@ async function handleCallSignal(signal) {
   }
   if (!activeCall || activeCall.id !== signal.callId || activeCall.conversationId !== signal.conversationId || !activeCall.participants.has(from)) return;
   if (signal.type === "ready") {
+    stopCallRingtone();
     activeCall.readyUsers.add(from);
     if (activeCall.accepted) await maybeCreateVoiceOffer(from);
   } else if (signal.type === "offer") {
