@@ -48,12 +48,13 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     text("#convert-file-name", "لم يتم اختيار ملف", "No file selected");
     const converterHelp = $("#convert-tool > .tool-help");
     if (converterHelp) converterHelp.textContent = en
-      ? "Convert PDF and Word files directly on your device. Files are not uploaded to Mersal servers."
-      : "حوّل ملفاتك بين PDF وWord مباشرة على جهازك. لا يتم رفع الملفات إلى خوادم مرسال.";
+      ? "Files up to 25 MB are converted on your device. Larger files are temporarily uploaded to a private processing workspace; the original file is removed after conversion."
+      : "الملفات حتى 25 ميغابايت تُحوّل على جهازك. الملفات الأكبر تُرفع مؤقتًا إلى مساحة معالجة خاصة، ويُحذف الملف الأصلي بعد انتهاء التحويل.";
     const converterLimits = $("#convert-tool > p.tool-help:last-child");
     if (converterLimits) converterLimits.textContent = en
-      ? "Supports PDF to DOCX and DOCX to PDF. Legacy DOC files are not currently supported. Maximum file size: 25 MB."
-      : "يدعم PDF إلى DOCX وDOCX إلى PDF. ملفات Word القديمة بصيغة DOC غير مدعومة حاليًا. الحد الأقصى لحجم الملف 25 ميغابايت.";
+      ? "Supports PDF to DOCX and DOCX to PDF. Maximum input size: 1 GB. DOC files and scanned PDFs that require OCR are not supported. Converted files are automatically deleted after 7 days."
+      : "يدعم PDF إلى DOCX وDOCX إلى PDF. الحد الأقصى لحجم الملف 1 جيجابايت. لا يدعم ملفات DOC القديمة أو ملفات PDF المصوّرة التي تحتاج OCR. تُحذف الملفات الناتجة تلقائيًا بعد 7 أيام.";
+    if (convertProgress) convertProgress.setAttribute("aria-label", en ? "File upload progress" : "تقدم رفع الملف");
     const direction = $("#convert-direction");
     if (direction?.options?.length >= 2) {
       direction.options[0].textContent = en ? "PDF to Word" : "PDF إلى Word";
@@ -497,16 +498,24 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   const convertStatus = $("#convert-status");
   const convertDownload = $("#convert-download-button");
   const convertShare = $("#convert-share-button");
+  const convertProgressWrap = $("#convert-progress-wrap");
+  const convertProgress = $("#convert-progress");
+  const convertProgressText = $("#convert-progress-text");
   let convertedBlob = null;
+  let convertedDownloadUrl = "";
   let convertedName = "";
 
   function conversionText(ar, en) { return document.documentElement.lang === "en" ? en : ar; }
   function resetConversionTool() {
     convertedBlob = null;
+    convertedDownloadUrl = "";
     convertedName = "";
     convertDownload.disabled = true;
     convertShare.disabled = true;
-    convertStatus.textContent = conversionText("اختر ملف PDF أو Word للبدء. تتم المعالجة على جهازك.", "Choose a PDF or Word file. Conversion happens on your device.");
+    convertStatus.textContent = conversionText("اختر ملف PDF أو Word للبدء. الملفات الكبيرة تُرفع مؤقتًا إلى مساحة خاصة للتحويل.", "Choose a PDF or Word file. Large files are temporarily uploaded to a private conversion workspace.");
+    if (convertProgressWrap) convertProgressWrap.hidden = true;
+    if (convertProgress) { convertProgress.value = 0; convertProgress.setAttribute("aria-label", conversionText("تقدم رفع الملف", "File upload progress")); }
+    if (convertProgressText) convertProgressText.textContent = "";
     convertFileInput.value = "";
     convertFileName.textContent = conversionText("لم يتم اختيار ملف", "No file selected");
   }
@@ -607,8 +616,12 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   convertFileInput.addEventListener("change", () => {
     const file = convertFileInput.files?.[0];
     convertedBlob = null;
+    convertedDownloadUrl = "";
     convertDownload.disabled = true;
     convertShare.disabled = true;
+    if (convertProgressWrap) convertProgressWrap.hidden = true;
+    if (convertProgress) convertProgress.value = 0;
+    if (convertProgressText) convertProgressText.textContent = "";
     convertFileName.textContent = file ? file.name : conversionText("لم يتم اختيار ملف", "No file selected");
     convertStatus.textContent = file ? conversionText("الملف جاهز للتحويل.", "File ready to convert.") : conversionText("اختر ملف PDF أو Word للبدء.", "Choose a PDF or Word file.");
   });
@@ -619,10 +632,179 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     convertFileInput.accept = toWord ? ".pdf,application/pdf" : ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
     convertFileInput.setAttribute("aria-label", toWord ? conversionText("اختر ملف PDF", "Choose a PDF file") : conversionText("اختر ملف Word بصيغة DOCX", "Choose a Word DOCX file"));
   });
+  async function convertLargeFile(file, toWord) {
+    const user = getCurrentUser();
+    if (!user?.id) throw new Error("not-authenticated");
+    const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
+    const accessToken = async () => {
+      const result = await supabase.auth.getSession();
+      const token = result?.data?.session?.access_token;
+      if (!token) throw new Error("not-authenticated");
+      return token;
+    };
+    const requestWorker = async () => {
+      const response = await fetch("/api/converter/worker", {
+        method: "POST",
+        headers: { Authorization: "Bearer " + await accessToken() }
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.workerUrl) throw new Error(data.code || "worker-unavailable");
+      return String(data.workerUrl).replace(/\/+$/, "");
+    };
+    let workerUrl = await requestWorker();
+    const waitForWorker = async () => {
+      for (let i = 0; i < 120; i++) {
+        try {
+          const response = await fetch(workerUrl + "/health");
+          if (response.ok && (await response.json()).ready) return;
+        } catch {}
+        convertStatus.textContent = conversionText("جارٍ تجهيز محرك التحويل للملفات الكبيرة…", "Preparing the large-file conversion engine…");
+        await wait(2000);
+      }
+      throw new Error("worker-start-timeout");
+    };
+    await waitForWorker();
+
+    const key = "mersal.converter.large." + user.id;
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(key) || "null"); } catch {}
+    const direction = toWord ? "pdf-to-word" : "word-to-pdf";
+    const sameFile = saved && saved.filename === file.name && Number(saved.size) === file.size
+      && Number(saved.lastModified) === Number(file.lastModified) && saved.direction === direction;
+    let jobId = sameFile ? saved.jobId : "";
+    const save = () => {
+      try { localStorage.setItem(key, JSON.stringify({ jobId, filename:file.name, size:file.size, lastModified:file.lastModified, direction, workerUrl })); } catch {}
+    };
+    const api = async (route, options = {}) => {
+      const headers = Object.assign({}, options.headers || {}, { Authorization: "Bearer " + await accessToken() });
+      return fetch(workerUrl + route, Object.assign({}, options, { headers }));
+    };
+    const reconnect = async () => {
+      workerUrl = await requestWorker();
+      await waitForWorker();
+      save();
+    };
+    const readJob = async () => {
+      const response = await api("/jobs/" + encodeURIComponent(jobId));
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.code || "job-unavailable");
+      return data;
+    };
+    let state = null;
+    if (jobId) {
+      try { state = await readJob(); } catch { state = null; }
+    }
+    if (!state || !jobId || (state.status === "failed" && state.errorCode !== "upload-interrupted")) {
+      const response = await api("/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename:file.name, size:file.size, direction, lastModified:file.lastModified })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.jobId) throw new Error(data.code || "job-create-failed");
+      jobId = data.jobId;
+      state = data;
+      save();
+    } else {
+      save();
+    }
+
+    const getShare = async () => {
+      let response;
+      try { response = await api("/jobs/" + encodeURIComponent(jobId) + "/share"); }
+      catch { await reconnect(); response = await api("/jobs/" + encodeURIComponent(jobId) + "/share"); }
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.url) throw new Error(data.code || "share-unavailable");
+      return data;
+    };
+    if (state.status === "completed") {
+      const share = await getShare();
+      return { downloadUrl:share.url, outputName:state.outputName };
+    }
+
+    let uploaded = Number(state.uploadedBytes) || 0;
+    const chunkSize = Number(state.chunkSize) || 4 * 1024 * 1024;
+    if (state.status === "uploading" && uploaded < file.size) {
+      convertProgressWrap.hidden = false;
+      let lastSpoken = -10;
+      while (uploaded < file.size) {
+        const start = uploaded;
+        const end = Math.min(start + chunkSize, file.size);
+        let sent = false;
+        for (let attempt = 0; attempt < 3 && !sent; attempt++) {
+          try {
+            const response = await api("/jobs/" + encodeURIComponent(jobId) + "/chunk", {
+              method: "PUT",
+              headers: { "Content-Type":"application/octet-stream", "Content-Range":"bytes " + start + "-" + (end - 1) + "/" + file.size },
+              body: file.slice(start, end)
+            });
+            const data = await response.json().catch(() => ({}));
+            if (response.status === 409) {
+              state = await readJob();
+              uploaded = Number(state.uploadedBytes) || 0;
+              sent = true;
+              break;
+            }
+            if (!response.ok) throw new Error(data.code || "upload-failed");
+            uploaded = Number(data.uploadedBytes) || end;
+            sent = true;
+          } catch (error) {
+            if (attempt === 2) throw new Error("upload-interrupted");
+            try {
+              await reconnect();
+              state = await readJob();
+              uploaded = Number(state.uploadedBytes) || 0;
+            } catch {
+              await wait(1500 * (attempt + 1));
+            }
+          }
+        }
+        if (!sent) throw new Error("upload-interrupted");
+        const percent = Math.min(100, Math.floor(uploaded / file.size * 100));
+        convertProgress.value = percent;
+        if (percent >= lastSpoken + 10 || percent === 100) {
+          lastSpoken = percent;
+          convertProgressText.textContent = conversionText("تم رفع " + percent + "% من الملف", percent + "% of the file uploaded");
+        }
+      }
+    }
+
+    if (state.status === "uploading" || (state.status === "failed" && state.errorCode === "upload-interrupted")) {
+      const response = await api("/jobs/" + encodeURIComponent(jobId) + "/complete", { method:"POST" });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.code || "conversion-start-failed");
+      state = data;
+    }
+
+    convertProgressWrap.hidden = false;
+    convertProgress.removeAttribute("value");
+    convertProgress.setAttribute("aria-label", conversionText("حالة تحويل الملف", "File conversion status"));
+    const started = Date.now();
+    while (Date.now() - started < 40 * 60 * 1000) {
+      try { state = await readJob(); }
+      catch { await reconnect(); state = await readJob(); }
+      if (state.status === "completed") break;
+      if (state.status === "failed") throw new Error(state.errorCode || "conversion-failed");
+      if (state.status === "queued") {
+        convertProgressText.textContent = conversionText("تم رفع الملف. ينتظر دوره للتحويل…", "File uploaded. Waiting for its turn to convert…");
+      } else if (state.status === "uploading-result") {
+        convertProgressText.textContent = conversionText("اكتمل التحويل. جارٍ حفظ الملف الناتج…", "Conversion complete. Saving the output file…");
+      } else {
+        convertProgressText.textContent = conversionText("جارٍ تحويل الملف. قد يستغرق ذلك بعض الوقت…", "Converting the file. This may take a while…");
+      }
+      await wait(2500);
+    }
+    if (state.status !== "completed") throw new Error("conversion-timeout");
+    const share = await getShare();
+    convertProgress.value = 100;
+    convertProgressText.textContent = conversionText("اكتمل التحويل بنسبة 100%.", "Conversion completed: 100%.");
+    return { downloadUrl:share.url, outputName:state.outputName || file.name.replace(/\.(pdf|docx)$/i, "") + (toWord ? ".docx" : ".pdf") };
+  }
+
   convertButton.addEventListener("click", async () => {
     const file = convertFileInput.files?.[0];
     const toWord = convertDirection.value === "pdf-to-word";
-    const expected = toWord ? /\\.pdf$/i : /\\.docx$/i;
+    const expected = toWord ? /\.pdf$/i : /\.docx$/i;
     if (!file || !expected.test(file.name)) {
       convertStatus.textContent = toWord
         ? conversionText("اختر ملف PDF صحيحًا.", "Choose a valid PDF file.")
@@ -630,18 +812,58 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       convertFileInput.focus();
       return;
     }
-    if (file.size > 25 * 1024 * 1024) {
-      convertStatus.textContent = conversionText("حجم الملف يتجاوز الحد المسموح وهو 25 ميغابايت.", "The file exceeds the 25 MB limit.");
+    if (file.size > 1024 * 1024 * 1024) {
+      convertStatus.textContent = conversionText("حجم الملف يتجاوز الحد الأقصى وهو 1 جيجابايت.", "The file exceeds the 1 GB maximum size.");
       return;
     }
     convertButton.disabled = true;
     convertDownload.disabled = true;
     convertShare.disabled = true;
     convertedBlob = null;
+    convertedDownloadUrl = "";
+    if (file.size > 25 * 1024 * 1024) {
+      convertProgressWrap.hidden = false;
+      convertProgress.value = 0;
+      convertProgress.setAttribute("aria-label", conversionText("تقدم رفع الملف", "File upload progress"));
+      convertProgressText.textContent = conversionText("جارٍ تجهيز الرفع الآمن…", "Preparing secure upload…");
+      try {
+        const result = await convertLargeFile(file, toWord);
+        convertedDownloadUrl = result.downloadUrl;
+        convertedName = result.outputName;
+        convertDownload.disabled = false;
+        convertShare.disabled = false;
+        convertStatus.textContent = conversionText("اكتمل التحويل. يمكنك تنزيل الملف أو مشاركة رابطه.", "Conversion completed. You can download the file or share its link.");
+        announce(conversionText("اكتمل تحويل الملف.", "File conversion completed."));
+      } catch (error) {
+        console.error("Large document conversion failed:", error);
+        const code = error.message || "conversion-failed";
+        const message = code === "not-authenticated"
+          ? conversionText("يجب تسجيل الدخول أولًا لاستخدام تحويل الملفات الكبيرة.", "Sign in first to convert large files.")
+          : code === "storage-not-configured"
+            ? conversionText("مساحة التخزين الخاصة لم تُفعّل بعد.", "Private file storage has not been enabled yet.")
+            : code === "sandbox-not-configured"
+              ? conversionText("محرك التحويل غير مهيأ بعد. حاول مرة أخرى لاحقًا.", "The conversion engine is not configured yet. Try again later.")
+              : code === "active-job-exists"
+                ? conversionText("لديك ملف آخر قيد الرفع أو التحويل. أكمل العملية السابقة أولًا.", "You already have a file uploading or converting. Finish the previous job first.")
+                : code === "upload-interrupted"
+                  ? conversionText("انقطع الاتصال أثناء الرفع. اضغط بدء التحويل مرة أخرى وسيكمل من حيث توقف.", "The upload was interrupted. Press Start conversion again to resume where it stopped.")
+                  : code === "too-many-pages"
+                    ? conversionText("الملف طويل جدًا. الحد الأقصى 100 صفحة لملفات Word و150 صفحة لملفات PDF.", "The file is too long. Limits are 100 Word pages and 150 PDF pages.")
+                    : code === "conversion-timeout"
+                      ? conversionText("استغرق التحويل وقتًا أطول من المسموح. جرّب ملفًا أصغر أو أعد المحاولة.", "Conversion took longer than allowed. Try a smaller file or retry.")
+                      : conversionText("تعذر تحويل الملف الكبير. تأكد من اتصال الإنترنت ثم أعد المحاولة.", "Could not convert the large file. Check your connection and try again.");
+        convertStatus.textContent = message;
+        convertProgressText.textContent = message;
+        announce(message, "error");
+      } finally {
+        convertButton.disabled = false;
+      }
+      return;
+    }
     try {
       convertStatus.textContent = conversionText("جارٍ بدء التحويل…", "Starting conversion…");
       convertedBlob = toWord ? await convertPdfToWord(file) : await convertWordToPdf(file);
-      const baseName = file.name.replace(/\\.(pdf|docx)$/i, "");
+      const baseName = file.name.replace(/\.(pdf|docx)$/i, "");
       convertedName = baseName + (toWord ? ".docx" : ".pdf");
       convertDownload.disabled = false;
       convertShare.disabled = false;
@@ -661,6 +883,14 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     }
   });
   convertDownload.addEventListener("click", () => {
+    if (convertedDownloadUrl) {
+      const link = document.createElement("a");
+      link.href = convertedDownloadUrl;
+      link.target = "_blank";
+      link.rel = "noopener";
+      link.click();
+      return;
+    }
     if (!convertedBlob) return;
     const url = URL.createObjectURL(convertedBlob);
     const link = document.createElement("a");
@@ -670,19 +900,32 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     setTimeout(() => URL.revokeObjectURL(url), 60000);
   });
   convertShare.addEventListener("click", async () => {
+    if (convertedDownloadUrl) {
+      try {
+        if (navigator.share) {
+          await navigator.share({ title:convertedName, text:conversionText("رابط الملف الناتج من مرسال", "Converted file from Mersal"), url:convertedDownloadUrl });
+        } else if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(convertedDownloadUrl);
+          announce(conversionText("تم نسخ رابط الملف.", "File link copied."));
+        } else {
+          convertStatus.textContent = conversionText("تعذرت المشاركة التلقائية. انسخ رابط التنزيل من المتصفح.", "Automatic sharing is unavailable. Copy the download link from your browser.");
+        }
+      } catch (error) {
+        if (error.name !== "AbortError") convertStatus.textContent = conversionText("تعذرت مشاركة الرابط. يمكنك تنزيل الملف بدلًا من ذلك.", "Could not share the link. You can download the file instead.");
+      }
+      return;
+    }
     if (!convertedBlob) return;
-    const file = new File([convertedBlob], convertedName, { type: convertedName.endsWith(".pdf") ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
+    const file = new File([convertedBlob], convertedName, { type:convertedName.endsWith(".pdf") ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document" });
     try {
-      if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-        await navigator.share({ files: [file], title: convertedName });
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files:[file] }))) {
+        await navigator.share({ files:[file], title:convertedName });
         announce(conversionText("تم فتح قائمة مشاركة الملف.", "File sharing opened."));
       } else {
         convertStatus.textContent = conversionText("المشاركة المباشرة للملفات غير مدعومة في هذا المتصفح. استخدم زر التنزيل.", "Direct file sharing is not supported in this browser. Use Download instead.");
       }
     } catch (error) {
-      if (error.name !== "AbortError") {
-        convertStatus.textContent = conversionText("تعذرت مشاركة الملف. يمكنك تنزيله بدلًا من ذلك.", "Could not share the file. You can download it instead.");
-      }
+      if (error.name !== "AbortError") convertStatus.textContent = conversionText("تعذرت مشاركة الملف. يمكنك تنزيله بدلًا من ذلك.", "Could not share the file. You can download it instead.");
     }
   });
 

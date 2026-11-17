@@ -2873,3 +2873,9 @@ body.calls-open #main-content { padding-bottom:0 !important; }
 @media(max-width:520px) { .document-converter-actions { grid-template-columns:1fr; } }
 :root[data-theme="light"] .document-converter input[type="file"],
 :root[data-theme="light"] .document-converter-select { background:#fff; color:#20334d; }
+
+
+/* Accessible progress display for large document conversion. */
+.document-converter-progress { display:grid; gap:8px; margin:12px 0; }
+.document-converter-progress progress { display:block; width:100%; min-height:14px; border-radius:999px; }
+.document-converter-progress p { margin:0; }
