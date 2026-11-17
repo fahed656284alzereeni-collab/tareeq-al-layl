@@ -549,6 +549,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     document.body.append(stage);
     try {
       await Promise.all([...stage.querySelectorAll("img")].map(img => img.decode?.().catch(() => {}) || Promise.resolve()));
+      if (stage.scrollHeight > 30000) throw new Error("too-many-pages");
       const canvas = await window.html2canvas(stage, { scale: 2, backgroundColor: "#ffffff", useCORS: true, logging: false });
       const { jsPDF } = window.jspdf;
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
@@ -591,7 +592,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   convertButton.addEventListener("click", async () => {
     const file = convertFileInput.files?.[0];
     const toWord = convertDirection.value === "pdf-to-word";
-    const expected = toWord ? /.pdf$/i : /.docx$/i;
+    const expected = toWord ? /\\.pdf$/i : /\\.docx$/i;
     if (!file || !expected.test(file.name)) {
       convertStatus.textContent = toWord
         ? conversionText("اختر ملف PDF صحيحًا.", "Choose a valid PDF file.")
@@ -610,7 +611,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     try {
       convertStatus.textContent = conversionText("جارٍ بدء التحويل…", "Starting conversion…");
       convertedBlob = toWord ? await convertPdfToWord(file) : await convertWordToPdf(file);
-      const baseName = file.name.replace(/.(pdf|docx)$/i, "");
+      const baseName = file.name.replace(/\\.(pdf|docx)$/i, "");
       convertedName = baseName + (toWord ? ".docx" : ".pdf");
       convertDownload.disabled = false;
       convertShare.disabled = false;
