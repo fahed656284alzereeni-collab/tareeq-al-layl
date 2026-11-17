@@ -3,7 +3,7 @@ import { initMersalTools } from "./tools.js?v=20261117-document-converter-v2";
 import { initMersalChannels } from "./channels.js?v=20261116-voiceover-clean-v16";
 import { initMersalCommunities } from "./communities.js?v=20261116-voiceover-clean-v9";
 
-const VAPID_PUBLIC_KEY = "BIIdiJVxOT89p_bj_T4p6btgilseeHTVSTMqeYlFx4MEjBsQ4grBPJOQEanNjcsqh-ZKRroInkrW7tNWpYOs_LA";
+const VAPID_PUBLIC_KEY = "BMoC648dv4JBQ-9UpQBGYfHTgppb1-cFBM-aU15D_TffIy1DdWUtSXQMoZTYQp3eIgwcINgjBJE_X01oAaL8UkU";
 const serviceWorkerReady = "serviceWorker" in navigator
   ? navigator.serviceWorker.register("/sw.js").then(() => navigator.serviceWorker.ready).catch(error => { console.error("Service worker:", error); return null; })
   : Promise.resolve(null);
