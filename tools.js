@@ -48,8 +48,8 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     text("#convert-file-name", "لم يتم اختيار ملف", "No file selected");
     const converterHelp = $("#convert-tool > .tool-help");
     if (converterHelp) converterHelp.textContent = en
-      ? "Files up to 25 MB are converted on your device. Larger files are temporarily uploaded to a private processing workspace; the original file is removed after conversion."
-      : "الملفات حتى 25 ميغابايت تُحوّل على جهازك. الملفات الأكبر تُرفع مؤقتًا إلى مساحة معالجة خاصة، ويُحذف الملف الأصلي بعد انتهاء التحويل.";
+      ? "Files up to 25 MB are converted on your device. Larger files are uploaded directly to private storage in retryable parts; the original file is removed after conversion."
+      : "الملفات حتى 25 ميغابايت تُحوّل على جهازك. الملفات الأكبر تُرفع مباشرة إلى مساحة تخزين خاصة على أجزاء قابلة لإعادة المحاولة، ويُحذف الملف الأصلي بعد انتهاء التحويل.";
     const converterLimits = $("#convert-tool > p.tool-help:last-child");
     if (converterLimits) converterLimits.textContent = en
       ? "Supports PDF to DOCX and DOCX to PDF. Maximum input size: 1 GB. DOC files and scanned PDFs that require OCR are not supported. Converted files are automatically deleted after 7 days."
@@ -636,22 +636,66 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     const user = getCurrentUser();
     if (!user?.id) throw new Error("not-authenticated");
     const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-    const accessToken = async () => {
+    const getAccessToken = async () => {
       const result = await supabase.auth.getSession();
       const token = result?.data?.session?.access_token;
       if (!token) throw new Error("not-authenticated");
       return token;
     };
+    const direction = toWord ? "pdf-to-word" : "word-to-pdf";
+    const key = "mersal.converter.large." + user.id;
+    let saved = null;
+    try { saved = JSON.parse(localStorage.getItem(key) || "null"); } catch {}
+    const sameFile = saved && saved.filename === file.name && Number(saved.size) === file.size
+      && Number(saved.lastModified) === Number(file.lastModified) && saved.direction === direction && saved.inputPath;
+    let jobId = sameFile ? saved.jobId : (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + "-" + Math.random().toString(16).slice(2));
+    let inputPath = sameFile ? saved.inputPath : "";
+    let workerUrl = "";
+    const save = () => {
+      try { localStorage.setItem(key, JSON.stringify({jobId,inputPath,filename:file.name,size:file.size,lastModified:file.lastModified,direction,workerUrl})); } catch {}
+    };
+
+    if (!inputPath) {
+      let blobClient;
+      try { blobClient = await import("https://esm.sh/@vercel/blob@2.9.0/client?bundle"); }
+      catch { throw new Error("upload-library-load"); }
+      const extension = toWord ? "pdf" : "docx";
+      const pathname = "mersal-converter/" + user.id + "/" + jobId + "/input." + extension;
+      const mime = toWord ? "application/pdf" : "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+      let lastSpoken = -10;
+      convertProgressWrap.hidden = false;
+      convertProgress.value = 0;
+      convertProgress.setAttribute("aria-label", conversionText("تقدم رفع الملف", "File upload progress"));
+      convertProgressText.textContent = conversionText("جارٍ رفع الملف بأجزاء آمنة…", "Uploading the file in secure parts…");
+      const uploadedBlob = await blobClient.upload(pathname, file, {
+        access: "private",
+        handleUploadUrl: "/api/converter/upload",
+        multipart: true,
+        addRandomSuffix: false,
+        contentType: file.type || mime,
+        clientPayload: JSON.stringify({ accessToken: await getAccessToken(), jobId, direction }),
+        onUploadProgress: event => {
+          const percent = Math.max(0, Math.min(100, Math.floor(Number(event.percentage) || 0)));
+          convertProgress.value = percent;
+          if (percent >= lastSpoken + 10 || percent === 100) {
+            lastSpoken = percent;
+            convertProgressText.textContent = conversionText("تم رفع " + percent + "% من الملف", percent + "% of the file uploaded");
+          }
+        }
+      });
+      inputPath = uploadedBlob.pathname;
+      save();
+    }
+
     const requestWorker = async () => {
       const response = await fetch("/api/converter/worker", {
         method: "POST",
-        headers: { Authorization: "Bearer " + await accessToken() }
+        headers: { Authorization: "Bearer " + await getAccessToken() }
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok || !data.workerUrl) throw new Error(data.code || "worker-unavailable");
       return String(data.workerUrl).replace(/\/+$/, "");
     };
-    let workerUrl = await requestWorker();
     const waitForWorker = async () => {
       for (let i = 0; i < 300; i++) {
         try {
@@ -663,53 +707,24 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       }
       throw new Error("worker-start-timeout");
     };
-    await waitForWorker();
-
-    const key = "mersal.converter.large." + user.id;
-    let saved = null;
-    try { saved = JSON.parse(localStorage.getItem(key) || "null"); } catch {}
-    const direction = toWord ? "pdf-to-word" : "word-to-pdf";
-    const sameFile = saved && saved.filename === file.name && Number(saved.size) === file.size
-      && Number(saved.lastModified) === Number(file.lastModified) && saved.direction === direction;
-    let jobId = sameFile ? saved.jobId : "";
-    const save = () => {
-      try { localStorage.setItem(key, JSON.stringify({ jobId, filename:file.name, size:file.size, lastModified:file.lastModified, direction, workerUrl })); } catch {}
-    };
-    const api = async (route, options = {}) => {
-      const headers = Object.assign({}, options.headers || {}, { Authorization: "Bearer " + await accessToken() });
-      return fetch(workerUrl + route, Object.assign({}, options, { headers }));
-    };
     const reconnect = async () => {
       workerUrl = await requestWorker();
       await waitForWorker();
       save();
     };
+    await reconnect();
+
+    const api = async (route, options = {}) => {
+      const headers = Object.assign({}, options.headers || {}, { Authorization: "Bearer " + await getAccessToken() });
+      return fetch(workerUrl + route, Object.assign({}, options, { headers }));
+    };
     const readJob = async () => {
       const response = await api("/jobs/" + encodeURIComponent(jobId));
       const data = await response.json().catch(() => ({}));
+      if (response.status === 404) return null;
       if (!response.ok) throw new Error(data.code || "job-unavailable");
       return data;
     };
-    let state = null;
-    if (jobId) {
-      try { state = await readJob(); } catch { state = null; }
-    }
-    if (state?.status === "failed" && state.errorCode !== "upload-interrupted") throw new Error(state.errorCode || "conversion-failed");
-    if (!state || !jobId || (state.status === "failed" && state.errorCode === "upload-interrupted" && Number(state.uploadedBytes) < file.size)) {
-      const response = await api("/jobs", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename:file.name, size:file.size, direction, lastModified:file.lastModified })
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok || !data.jobId) throw new Error(data.code || "job-create-failed");
-      jobId = data.jobId;
-      state = data;
-      save();
-    } else {
-      save();
-    }
-
     const getShare = async () => {
       let response;
       try { response = await api("/jobs/" + encodeURIComponent(jobId) + "/share"); }
@@ -718,64 +733,25 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       if (!response.ok || !data.url) throw new Error(data.code || "share-unavailable");
       return data;
     };
+
+    let state = await readJob();
+    if (!state) {
+      const response = await api("/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId, filename:file.name, size:file.size, direction, inputPath })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.jobId) throw new Error(data.code || "job-create-failed");
+      state = data;
+    }
+    save();
+
     if (state.status === "completed") {
       const share = await getShare();
       return { downloadUrl:share.url, outputName:state.outputName };
     }
-
-    let uploaded = Number(state.uploadedBytes) || 0;
-    const chunkSize = Number(state.chunkSize) || 4 * 1024 * 1024;
-    if (state.status === "uploading" && uploaded < file.size) {
-      convertProgressWrap.hidden = false;
-      let lastSpoken = -10;
-      while (uploaded < file.size) {
-        const start = uploaded;
-        const end = Math.min(start + chunkSize, file.size);
-        let sent = false;
-        for (let attempt = 0; attempt < 3 && !sent; attempt++) {
-          try {
-            const response = await api("/jobs/" + encodeURIComponent(jobId) + "/chunk", {
-              method: "PUT",
-              headers: { "Content-Type":"application/octet-stream", "Content-Range":"bytes " + start + "-" + (end - 1) + "/" + file.size },
-              body: file.slice(start, end)
-            });
-            const data = await response.json().catch(() => ({}));
-            if (response.status === 409) {
-              state = await readJob();
-              uploaded = Number(state.uploadedBytes) || 0;
-              sent = true;
-              break;
-            }
-            if (!response.ok) throw new Error(data.code || "upload-failed");
-            uploaded = Number(data.uploadedBytes) || end;
-            sent = true;
-          } catch (error) {
-            if (attempt === 2) throw new Error("upload-interrupted");
-            try {
-              await reconnect();
-              state = await readJob();
-              uploaded = Number(state.uploadedBytes) || 0;
-            } catch {
-              await wait(1500 * (attempt + 1));
-            }
-          }
-        }
-        if (!sent) throw new Error("upload-interrupted");
-        const percent = Math.min(100, Math.floor(uploaded / file.size * 100));
-        convertProgress.value = percent;
-        if (percent >= lastSpoken + 10 || percent === 100) {
-          lastSpoken = percent;
-          convertProgressText.textContent = conversionText("تم رفع " + percent + "% من الملف", percent + "% of the file uploaded");
-        }
-      }
-    }
-
-    if (state.status === "uploading" || (state.status === "failed" && state.errorCode === "upload-interrupted")) {
-      const response = await api("/jobs/" + encodeURIComponent(jobId) + "/complete", { method:"POST" });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.code || "conversion-start-failed");
-      state = data;
-    }
+    if (state.status === "failed") throw new Error(state.errorCode || "conversion-failed");
 
     convertProgressWrap.hidden = false;
     convertProgress.removeAttribute("value");
@@ -784,18 +760,20 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     while (Date.now() - started < 40 * 60 * 1000) {
       try { state = await readJob(); }
       catch { await reconnect(); state = await readJob(); }
-      if (state.status === "completed") break;
-      if (state.status === "failed") throw new Error(state.errorCode || "conversion-failed");
-      if (state.status === "queued") {
-        convertProgressText.textContent = conversionText("تم رفع الملف. ينتظر دوره للتحويل…", "File uploaded. Waiting for its turn to convert…");
-      } else if (state.status === "uploading-result") {
+      if (state?.status === "completed") break;
+      if (state?.status === "failed") throw new Error(state.errorCode || "conversion-failed");
+      if (state?.status === "preparing") {
+        convertProgressText.textContent = conversionText("تم رفع الملف. جارٍ تجهيزه للمعالجة…", "File uploaded. Preparing it for conversion…");
+      } else if (state?.status === "queued") {
+        convertProgressText.textContent = conversionText("الملف جاهز وينتظر دوره للتحويل…", "File is ready and waiting for its turn…");
+      } else if (state?.status === "uploading-result") {
         convertProgressText.textContent = conversionText("اكتمل التحويل. جارٍ حفظ الملف الناتج…", "Conversion complete. Saving the output file…");
       } else {
         convertProgressText.textContent = conversionText("جارٍ تحويل الملف. قد يستغرق ذلك بعض الوقت…", "Converting the file. This may take a while…");
       }
-      await wait(2500);
+      await wait(3000);
     }
-    if (state.status !== "completed") throw new Error("conversion-timeout");
+    if (state?.status !== "completed") throw new Error("conversion-timeout");
     const share = await getShare();
     convertProgress.value = 100;
     convertProgressText.textContent = conversionText("اكتمل التحويل بنسبة 100%.", "Conversion completed: 100%.");
@@ -847,7 +825,9 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
               : code === "active-job-exists"
                 ? conversionText("لديك ملف آخر قيد الرفع أو التحويل. أكمل العملية السابقة أولًا.", "You already have a file uploading or converting. Finish the previous job first.")
                 : code === "upload-interrupted"
-                  ? conversionText("انقطع الاتصال أثناء الرفع. اضغط بدء التحويل مرة أخرى وسيكمل من حيث توقف.", "The upload was interrupted. Press Start conversion again to resume where it stopped.")
+                  ? conversionText("انقطع الاتصال أثناء الرفع. أعد المحاولة؛ سيعيد النظام رفع الأجزاء التي لم تكتمل.", "The upload was interrupted. Retry; only incomplete upload parts will be retried.")
+                  : code === "upload-library-load"
+                    ? conversionText("تعذر تحميل مكتبة الرفع الآمن. تحقق من اتصال الإنترنت وحاول مجددًا.", "Could not load the secure upload library. Check your connection and try again.")
                   : code === "too-many-pages"
                     ? conversionText("الملف طويل جدًا. الحد الأقصى 100 صفحة لملفات Word و150 صفحة لملفات PDF.", "The file is too long. Limits are 100 Word pages and 150 PDF pages.")
                     : code === "conversion-timeout"
