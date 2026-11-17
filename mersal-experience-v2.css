@@ -1106,26 +1106,40 @@ body.tools-open #workspace {
   box-shadow: var(--mx-shadow);
 }
 
-/* Standalone group invite action, separated from call and membership controls. */
+/* Independent group invite actions, grouped together and kept screen-reader friendly. */
 #group-invite-share-card {
-  display: block;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
   width: 100%;
+  align-items: stretch;
 }
 #group-invite-share-card[hidden] {
   display: none !important;
 }
-#group-invite-share-card .group-info-share-button {
+#group-invite-share-card .group-info-share-button,
+#group-invite-share-card .group-invite-reset-button {
   display: flex;
   width: 100%;
+  min-width: 0;
   min-height: 52px;
+  padding: 10px 8px;
   align-items: center;
   justify-content: center;
   border-radius: 14px;
   font-weight: 800;
+  text-align: center;
+  white-space: normal;
 }
 #group-invite-share-card .group-info-share-button:disabled {
   opacity: .72;
   cursor: not-allowed;
+}
+#group-invite-share-card .group-invite-reset-button[hidden] {
+  display: none !important;
+}
+@media (max-width: 360px) {
+  #group-invite-share-card { grid-template-columns: 1fr; }
 }
 #group-invite-share-help {
   margin: 9px 0 0;
