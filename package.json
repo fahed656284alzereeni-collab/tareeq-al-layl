@@ -13,6 +13,7 @@
     "node": "24.x"
   },
   "dependencies": {
-    "@vercel/sandbox": "4.0.0"
+    "@vercel/sandbox": "4.0.0",
+    "@vercel/blob": "2.9.0"
   }
 }

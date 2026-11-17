@@ -653,7 +653,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     };
     let workerUrl = await requestWorker();
     const waitForWorker = async () => {
-      for (let i = 0; i < 120; i++) {
+      for (let i = 0; i < 300; i++) {
         try {
           const response = await fetch(workerUrl + "/health");
           if (response.ok && (await response.json()).ready) return;
@@ -694,7 +694,8 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
     if (jobId) {
       try { state = await readJob(); } catch { state = null; }
     }
-    if (!state || !jobId || (state.status === "failed" && state.errorCode !== "upload-interrupted")) {
+    if (state?.status === "failed" && state.errorCode !== "upload-interrupted") throw new Error(state.errorCode || "conversion-failed");
+    if (!state || !jobId || (state.status === "failed" && state.errorCode === "upload-interrupted" && Number(state.uploadedBytes) < file.size)) {
       const response = await api("/jobs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
