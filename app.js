@@ -5171,7 +5171,7 @@ function openGroupInviteShareOptions(){
   overlay.setAttribute("aria-label",english?"Send group invite link via Mersal":"إرسال رابط المجموعة عبر مرسال");
   const card=document.createElement("div");
   card.className="message-forward-card";
-  const title=safeText("p","message-forward-title",english?"Share group invite link":"مشاركة رابط دعوة المجموعة");
+  const title=safeText("p","message-forward-title",english?"Choose a conversation":"اختر محادثة لإرسال الرابط عبر مرسال");
   const close=safeText("button","quiet-button",english?"Close":"إغلاق");
   close.type="button";
   const finish=()=>{overlay.remove();if(trigger?.isConnected)trigger.focus();};
@@ -5188,7 +5188,7 @@ function openGroupInviteShareOptions(){
     card.append(button);
   };
   const inviteUrl=groupInviteUrl.value;
-  addOption(english?"Send link via Mersal":"إرسال الرابط عبر مرسال",async()=>{},false);
+
   addOption(english?"Copy link":"نسخ الرابط",async()=>{await copyGroupInviteLink();});
   const destinations=(conversations||[]).filter(item=>item.id!==activeConversation?.id);
   if(destinations.length){
@@ -5234,11 +5234,6 @@ function openGroupInviteShareOptions(){
     search.focus();
   }else{
     card.append(safeText("p","message-forward-empty",english?"There are no other conversations to send to.":"لا توجد محادثات أخرى لإرسال الرابط إليها."));
-  }
-  if(groupInviteResetButton&&!groupInviteResetButton.hidden){
-    addOption(english?"Reset invite link":"إعادة تعيين رابط الدعوة",async()=>{
-      groupInviteResetButton.click();
-    });
   }
   overlay.append(card);
   overlay.addEventListener("click",event=>{if(event.target===overlay)finish();});
