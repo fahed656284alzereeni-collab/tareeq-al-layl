@@ -5168,7 +5168,7 @@ function openGroupInviteShareOptions(){
   overlay.className="message-forward-overlay";
   overlay.setAttribute("role","dialog");
   overlay.setAttribute("aria-modal","true");
-  overlay.setAttribute("aria-label",english?"Share group invite link":"مشاركة رابط دعوة المجموعة");
+  overlay.setAttribute("aria-label",english?"Send group invite link via Mersal":"إرسال رابط المجموعة عبر مرسال");
   const card=document.createElement("div");
   card.className="message-forward-card";
   const title=safeText("p","message-forward-title",english?"Share group invite link":"مشاركة رابط دعوة المجموعة");
@@ -5188,30 +5188,55 @@ function openGroupInviteShareOptions(){
     card.append(button);
   };
   const inviteUrl=groupInviteUrl.value;
-  addOption(english?"Share link":"مشاركة الرابط",async()=>{
+  addOption(english?"Send link via Mersal":"إرسال الرابط عبر مرسال",async()=>{
     if(typeof navigator.share==="function")await navigator.share({title:activeConversation?.group_name||"Mersal",text:english?"Join this group on Mersal":"دعوة للانضمام إلى المجموعة",url:inviteUrl});
     else await copyGroupInviteLink();
   });
   addOption(english?"Copy link":"نسخ الرابط",async()=>{await copyGroupInviteLink();});
   const destinations=(conversations||[]).filter(item=>item.id!==activeConversation?.id);
   if(destinations.length){
-    const forwardTitle=safeText("p","message-forward-title",english?"Forward link to a conversation":"إعادة توجيه الرابط إلى محادثة");
+    const forwardTitle=safeText("p","message-forward-title",english?"Choose a Mersal conversation":"اختر محادثة لإرسال الرابط عبر مرسال");
     card.append(forwardTitle);
+    const search=document.createElement("input");
+    search.type="search";
+    search.className="message-forward-search";
+    search.placeholder=english?"Search conversations":"البحث في المحادثات";
+    search.setAttribute("aria-label",search.placeholder);
+    card.append(search);
+    const list=document.createElement("div");
+    list.className="message-forward-destinations";
+    list.setAttribute("role","list");
+    card.append(list);
+    const entries=[];
     for(const destination of destinations){
       const partnerId=destination.user_one===currentUser.id?destination.user_two:destination.user_one;
       const person=destination.is_group?null:(callsProfileCache.get(partnerId)||null);
       const label=destination.is_group?(destination.group_name||(english?"Group":"مجموعة")):(person?.display_name||(english?"Private conversation":"محادثة فردية"));
-      addOption(label,async()=>{
-        const prefix=english?"Group invitation link:\n":"رابط دعوة المجموعة:\n";
-        const {data,error}=await supabase.from("messages").insert({conversation_id:destination.id,sender_id:currentUser.id,body:prefix+inviteUrl}).select("id").single();
-        if(error)throw error;
-        void loadConversations().catch(error=>console.warn("Invite forwarding refresh:",error));
-        if(data?.id){const {error:pushError}=await supabase.functions.invoke("send-push",{body:{message_id:data.id}});if(pushError)console.warn("Invite forwarding push failed:",pushError.message);}
-        announce(english?"Invitation link forwarded.":"تمت إعادة توجيه رابط الدعوة.","success");
+      const button=safeText("button","message-forward-destination",label);
+      button.type="button";
+      button.setAttribute("role","listitem");
+      button.addEventListener("click",async()=>{
+        button.disabled=true;
+        try{
+          const prefix=english?"Group invitation link:\\n":"رابط دعوة المجموعة:\\n";
+          const {data,error}=await supabase.from("messages").insert({conversation_id:destination.id,sender_id:currentUser.id,body:prefix+inviteUrl}).select("id").single();
+          if(error)throw error;
+          void loadConversations().catch(error=>console.warn("Invite forwarding refresh:",error));
+          if(data?.id){const {error:pushError}=await supabase.functions.invoke("send-push",{body:{message_id:data.id}});if(pushError)console.warn("Invite forwarding push failed:",pushError.message);}
+          announce(english?"Invitation link forwarded.":"تم إرسال رابط الدعوة عبر مرسال.","success");
+          finish();
+        }catch(error){button.disabled=false;announce((english?"Could not send link: ":"تعذر إرسال الرابط: ")+(error?.message||""),"error");}
       });
+      entries.push({button,label});
+      list.append(button);
     }
+    search.addEventListener("input",()=>{
+      const query=search.value.trim().toLocaleLowerCase();
+      for(const entry of entries)entry.button.hidden=!entry.label.toLocaleLowerCase().includes(query);
+    });
+    search.focus();
   }else{
-    card.append(safeText("p","message-forward-empty",english?"There are no other conversations to forward to.":"لا توجد محادثات أخرى لإعادة التوجيه إليها."));
+    card.append(safeText("p","message-forward-empty",english?"There are no other conversations to send to.":"لا توجد محادثات أخرى لإرسال الرابط إليها."));
   }
   if(groupInviteResetButton&&!groupInviteResetButton.hidden){
     addOption(english?"Reset invite link":"إعادة تعيين رابط الدعوة",async()=>{
