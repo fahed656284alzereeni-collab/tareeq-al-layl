@@ -1108,17 +1108,13 @@ body.tools-open #workspace {
 
 /* Independent group invite actions, grouped together and kept screen-reader friendly. */
 #group-invite-share-card {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  display: block;
   width: 100%;
-  align-items: stretch;
 }
 #group-invite-share-card[hidden] {
   display: none !important;
 }
-#group-invite-share-card .group-info-share-button,
-#group-invite-share-card .group-invite-reset-button {
+#group-invite-share-card .group-info-share-button {
   display: flex;
   width: 100%;
   min-width: 0;
@@ -1135,12 +1131,7 @@ body.tools-open #workspace {
   opacity: .72;
   cursor: not-allowed;
 }
-#group-invite-share-card .group-invite-reset-button[hidden] {
-  display: none !important;
-}
-@media (max-width: 360px) {
-  #group-invite-share-card { grid-template-columns: 1fr; }
-}
+#group-invite-reset { display: none !important; }
 #group-invite-share-help {
   margin: 9px 0 0;
   color: var(--mx-muted);
