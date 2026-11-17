@@ -5177,21 +5177,18 @@ function openGroupInviteShareOptions(){
   const finish=()=>{overlay.remove();if(trigger?.isConnected)trigger.focus();};
   close.addEventListener("click",finish);
   card.append(title,close);
-  const addOption=(label,action)=>{
+  const addOption=(label,action,closeAfter=true)=>{
     const button=safeText("button","message-forward-destination",label);
     button.type="button";
     button.addEventListener("click",async()=>{
       button.disabled=true;
-      try{await action();finish();}
+      try{await action();if(closeAfter)finish();}
       catch(error){button.disabled=false;announce((english?"Could not complete: ":"تعذر تنفيذ العملية: ")+(error?.message||""),"error");}
     });
     card.append(button);
   };
   const inviteUrl=groupInviteUrl.value;
-  addOption(english?"Send link via Mersal":"إرسال الرابط عبر مرسال",async()=>{
-    if(typeof navigator.share==="function")await navigator.share({title:activeConversation?.group_name||"Mersal",text:english?"Join this group on Mersal":"دعوة للانضمام إلى المجموعة",url:inviteUrl});
-    else await copyGroupInviteLink();
-  });
+  addOption(english?"Send link via Mersal":"إرسال الرابط عبر مرسال",async()=>{},false);
   addOption(english?"Copy link":"نسخ الرابط",async()=>{await copyGroupInviteLink();});
   const destinations=(conversations||[]).filter(item=>item.id!==activeConversation?.id);
   if(destinations.length){
