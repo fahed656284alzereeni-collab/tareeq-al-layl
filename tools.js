@@ -5,7 +5,7 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
   const detail = $("#tool-detail-view");
   const title = $("#tool-detail-title");
   const back = $("#tool-back-button");
-  const panels = ["calculator", "notes", "qr", "convert"].map((name) => $("#" + name + "-tool"));
+  const panels = ["calculator", "notes", "qr"].map((name) => $("#" + name + "-tool"));
   let activeTool = null;
   let returnFocus = null;
 
@@ -21,15 +21,14 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       [".tool-launch-button[data-tool='calculator']", "الآلة الحاسبة", "Calculator"],
       [".tool-launch-button[data-tool='notes']", "المفكرة السريعة", "Quick notes"],
       [".tool-launch-button[data-tool='qr']", "إنشاء رموز QR", "QR code generator"],
-      [".tool-launch-button[data-tool='convert']", "تحويل PDF وWord", "PDF and Word converter"],
     ];
     for (const [selector, arTitle, enTitle] of cards) {
       const titleNode = $(selector)?.querySelector(".tool-card-title");
       if (titleNode) titleNode.textContent = en ? enTitle : arTitle;
     }
     text("#tool-back-button", "العودة إلى الأدوات", "Back to tools");
-    text("#tool-detail-title", ({calculator:"الآلة الحاسبة",notes:"المفكرة السريعة",qr:"إنشاء رموز QR",convert:"تحويل PDF وWord"}[activeTool] || "الأداة"),
-      ({calculator:"Calculator",notes:"Quick notes",qr:"QR code generator",convert:"PDF and Word converter"}[activeTool] || "Tool"));
+    text("#tool-detail-title", ({calculator:"الآلة الحاسبة",notes:"المفكرة السريعة",qr:"إنشاء رموز QR"}[activeTool] || "الأداة"),
+      ({calculator:"Calculator",notes:"Quick notes",qr:"QR code generator"}[activeTool] || "Tool"));
     const labels = [
       ["label[for='bill-total-input']","قيمة الفاتورة","Bill amount"],["label[for='bill-people-input']","عدد الأشخاص","Number of people"],
       ["label[for='bill-tip-input']","نسبة الإكرامية (%)","Tip percentage (%)"],["label[for='note-title-input']","عنوان الملاحظة","Note title"],
@@ -37,17 +36,6 @@ export function initMersalTools({ supabase, getCurrentUser, announce, safeText }
       ["label[for='qr-content-input']","النص أو الرابط أو رقم الهاتف","Text, link, or phone number"],
     ];
     for (const [selector, ar, enText] of labels) text(selector, ar, enText);
-    for (const [selector, ar, enText] of converterLabels) text(selector, ar, enText);
-    text("#convert-start-button", "بدء التحويل", "Start conversion");
-    text("#convert-download-button", "تنزيل الملف", "Download file");
-    text("#convert-share-button", "مشاركة الملف", "Share file");
-    text("#convert-file-name", "لم يتم اختيار ملف", "No file selected");    const convertInput = $("#convert-file-input");
-    if (convertInput && !convertInput.files?.length) {
-      const toWord = $("#convert-direction")?.value !== "word-to-pdf";
-      convertInput.setAttribute("aria-label", en
-        ? (toWord ? "Choose a PDF file" : "Choose a Word DOCX file")
-        : (toWord ? "اختر ملف PDF" : "اختر ملف Word بصيغة DOCX"));
-    }
     
     const help = $("#qr-canvas"); if (help) help.setAttribute("aria-label", en ? "Generated QR code" : "رمز QR الذي تم إنشاؤه");
     
