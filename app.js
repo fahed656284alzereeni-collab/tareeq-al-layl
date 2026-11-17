@@ -5188,13 +5188,15 @@ function openGroupInviteShareOptions(){
     card.append(button);
   };
   const inviteUrl=groupInviteUrl.value;
+  let pickerSearch=null;
 
   addOption(english?"Copy link":"نسخ الرابط",async()=>{await copyGroupInviteLink();});
   const destinations=(conversations||[]).filter(item=>item.id!==activeConversation?.id);
   if(destinations.length){
     const forwardTitle=safeText("p","message-forward-title",english?"Choose a Mersal conversation":"اختر محادثة لإرسال الرابط عبر مرسال");
     card.append(forwardTitle);
-    const search=document.createElement("input");\n    pickerSearch=search;
+    const search=document.createElement("input");
+    pickerSearch=search;\n    pickerSearch=search;
     search.type="search";
     search.className="message-forward-search";
     search.placeholder=english?"Search conversations":"البحث في المحادثات";
@@ -5231,7 +5233,6 @@ function openGroupInviteShareOptions(){
       const query=search.value.trim().toLocaleLowerCase();
       for(const entry of entries)entry.button.hidden=!entry.label.toLocaleLowerCase().includes(query);
     });
-    search.focus();
   }else{
     card.append(safeText("p","message-forward-empty",english?"There are no other conversations to send to.":"لا توجد محادثات أخرى لإرسال الرابط إليها."));
   }
@@ -5246,7 +5247,7 @@ function openGroupInviteShareOptions(){
     else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first?.focus();}
   });
   document.body.append(overlay);
-  close.focus();
+  if(pickerSearch)pickerSearch.focus();else close.focus();
 }
 if(groupInviteShareButton)groupInviteShareButton.addEventListener("click",async()=>{
   const conversation=activeConversation;
