@@ -1392,7 +1392,9 @@ function updateBottomTabAccessiblePositions(language = localStorage.getItem("mer
     const label = tab.querySelector(".bottom-nav-label")?.textContent?.trim() || tab.id.replace(/-tab$/, "");
     tab.setAttribute("aria-posinset", String(index + 1));
     tab.setAttribute("aria-setsize", String(total));
-    tab.removeAttribute("aria-description");
+    // iOS VoiceOver may omit aria-posinset/setsize for tab roles.
+    // Keep the native tab role announcement and expose its position as the description.
+    tab.setAttribute("aria-description", `${index + 1} من ${total}`);
     tab.removeAttribute("aria-describedby");
     tab.removeAttribute("aria-roledescription");
     tab.removeAttribute("title");
