@@ -1,4 +1,4 @@
-const STATIC_CACHE = "mersal-static-v44";
+const STATIC_CACHE = "mersal-static-v45";
 const STATIC_PATHS = new Set([
   "/app.js",
   "/auth-bootstrap.js",
@@ -39,31 +39,35 @@ self.addEventListener("fetch", event => {
 
   if (request.mode === "navigate") {
     if (url.pathname !== "/" || url.search) return;
-    const cachePromise = caches.open(STATIC_CACHE);
-    const refreshPromise = cachePromise.then(cache => fetch(request).then(response => {
-      if (response.ok) return cache.put("/", response.clone()).then(() => response);
-      return response;
-    }));
-    // Register background refresh during the fetch event, without delaying cached navigation.
-    event.waitUntil(refreshPromise.then(() => undefined).catch(error => {
-      console.warn("Mersal background page refresh failed:", error);
-    }));
-    event.respondWith(cachePromise.then(cache => cache.match("/")).then(cached => {
-      if (cached) return cached;
-      return refreshPromise;
-    }));
+    event.respondWith((async () => {
+      const cache = await caches.open(STATIC_CACHE);
+      try {
+        // Prefer the latest deployed app shell; use the cached copy only offline.
+        const response = await fetch(request, { cache: "no-store" });
+        if (response.ok) await cache.put("/", response.clone());
+        return response;
+      } catch (error) {
+        const cached = await cache.match("/");
+        if (cached) return cached;
+        throw error;
+      }
+    })());
     return;
   }
 
   if (!STATIC_PATHS.has(url.pathname)) return;
   event.respondWith((async () => {
     const cache = await caches.open(STATIC_CACHE);
-    const cached = await cache.match(request);
-    if (cached) return cached;
-
-    const response = await fetch(request);
-    if (response.ok) await cache.put(request, response.clone());
-    return response;
+    try {
+      // Refresh same-origin app assets instead of serving stale cache-first copies.
+      const response = await fetch(request, { cache: "no-store" });
+      if (response.ok) await cache.put(request, response.clone());
+      return response;
+    } catch (error) {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      throw error;
+    }
   })());
 });
 
