@@ -4303,12 +4303,6 @@ function setStatusKind(kind) {
   if (kind === "video") statusVideoInput.click();
 }
 $("#add-status-button").addEventListener("click", openStatusComposer);
-$("#refresh-statuses-button").addEventListener("click", () => {
-  const button = $("#refresh-statuses-button"); button.disabled = true;
-  void loadStatuses().then(() => announce("تم تحديث الحالات."))
-    .catch(error => announce("تعذر تحديث الحالات: " + error.message, "error"))
-    .finally(() => { button.disabled = false; });
-});
 $("#close-status-composer").addEventListener("click", closeStatusComposer);
 $("#status-text-mode").addEventListener("click", () => setStatusKind("text"));
 $("#status-image-mode").addEventListener("click", () => setStatusKind("image"));
