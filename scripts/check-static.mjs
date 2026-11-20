@@ -49,6 +49,17 @@ for (const dialog of modalDialogs.filter(dialog => /\baria-modal=["']true["']/.t
     "Every modal dialog must have an accessible name");
 }
 
+
+for (const id of ["privacy-policy-view", "terms-of-service-view"]) {
+  const start = html.indexOf('id="' + id + '"');
+  const end = html.indexOf('id="help-support-panel"', start);
+  const legalPage = html.slice(start, end);
+  assert.ok(start >= 0 && end > start, "Both legal pages must remain present");
+  assert.doesNotMatch(legalPage, /<h[1-6]\\b|aria-labelledby=|role=["'](?:region|main|article)["']|<(?:article|section)\\b/i,
+    "Legal pages must not expose heading levels or landmark/article semantics to VoiceOver: " + id);
+  assert.match(legalPage, /legal-page-title|legal-section-title/, "Legal page titles must remain visible as plain text");
+}
+
 const baseCss = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
 assert.ok(!baseCss.includes("body.calls-open #bottom-navigation { display:none !important; }"),
   "The primary tab bar must not be hidden while the calls tab is active");
