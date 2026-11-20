@@ -24,6 +24,8 @@ for (const tab of tabs) {
 }
 const selectedTabs = tabs.filter(tab => /\baria-selected=["']true["']/.test(tab));
 assert.equal(selectedTabs.length, 1, "Exactly one bottom navigation tab must be selected initially");
+const numberedTabs = tabs.map(tab => tab.match(/\\baria-description=["\']رقم ([1-7])["\']/)?.[1]);
+assert.deepEqual(numberedTabs, ["1", "2", "3", "4", "5", "6", "7"], "VoiceOver tab descriptions must announce their position in navigation order");
 assert.doesNotMatch(html, /role=["\']status["\']|role=["\']group["\']|role=["\']main["\']/, "Avoid redundant VoiceOver status, group, and landmark announcements");
 const panelTags = [...html.matchAll(/<(?:div|section)\b[^>]*>/g)].map(match => match[0]);
 for (const tab of tabs) {
