@@ -2,7 +2,42 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
 
 const VAPID_PUBLIC_KEY = "BMoC648dv4JBQ-9UpQBGYfHTgppb1-cFBM-aU15D_TffIy1DdWUtSXQMoZTYQp3eIgwcINgjBJE_X01oAaL8UkU";
 const serviceWorkerReady = "serviceWorker" in navigator
-  ? navigator.serviceWorker.register("/sw.js").then(() => navigator.serviceWorker.ready).catch(error => { console.error("Service worker:", error); return null; })
+  ? navigator.serviceWorker.register("/sw.js", { updateViaCache: "none" }).then(async registration => {
+      const hadController = Boolean(navigator.serviceWorker.controller);
+      const showReloadButton = () => {
+        let button = document.getElementById("mersal-update-reload");
+        if (button) return button;
+        button = document.createElement("button");
+        button.id = "mersal-update-reload";
+        button.type = "button";
+        button.className = "primary-button";
+        button.textContent = localStorage.getItem("mersal-language") === "en" ? "Update Mersal now" : "تحديث مرسال الآن";
+        button.addEventListener("click", () => window.location.reload());
+        document.body.append(button);
+        return button;
+      };
+      const applyUpdate = () => {
+        const active = document.activeElement;
+        const editing = active && active.matches("input,textarea,select,[contenteditable='true']");
+        const callOpen = document.querySelector("#voice-call-panel:not([hidden])");
+        const dialogOpen = document.querySelector("[role='dialog']:not([hidden])");
+        if (editing || callOpen || dialogOpen) { showReloadButton(); return; }
+        window.location.reload();
+      };
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (hadController && !window.__mersalUpdateReloading) {
+          window.__mersalUpdateReloading = true;
+          applyUpdate();
+        }
+      });
+      const checkForUpdates = () => {
+        if (document.visibilityState === "visible") registration.update().catch(error => console.warn("Mersal update check:", error));
+      };
+      checkForUpdates();
+      document.addEventListener("visibilitychange", checkForUpdates);
+      window.setInterval(checkForUpdates, 60000);
+      return navigator.serviceWorker.ready;
+    }).catch(error => { console.error("Service worker:", error); return null; })
   : Promise.resolve(null);
 
 // Capture the first auth event as soon as the client exists, rather than waiting
@@ -1392,9 +1427,8 @@ function updateBottomTabAccessiblePositions(language = localStorage.getItem("mer
     const label = tab.querySelector(".bottom-nav-label")?.textContent?.trim() || tab.id.replace(/-tab$/, "");
     tab.setAttribute("aria-posinset", String(index + 1));
     tab.setAttribute("aria-setsize", String(total));
-    // iOS VoiceOver may omit aria-posinset/setsize for tab roles.
-    // Keep the native tab role announcement and expose its position as the description.
-    tab.setAttribute("aria-description", `${index + 1} من ${total}`);
+    // Keep the native tab role announcement without an extra description announcement.
+    tab.removeAttribute("aria-description");
     tab.removeAttribute("aria-describedby");
     tab.removeAttribute("aria-roledescription");
     tab.removeAttribute("title");
