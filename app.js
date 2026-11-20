@@ -4633,32 +4633,19 @@ async function loadConversations() {
   }
   loadedConversations=visibleConversations;
   const partnerIds = loadedConversations.filter(c=>!c.is_group).map(c => c.user_one === userId ? c.user_two : c.user_one);
-  let profileMap = new Map();
-  if (partnerIds.length) {
-    const [profilesResult, visibleResult] = await Promise.all([
-      supabase.from("profiles").select("id,display_name").in("id", partnerIds),
-      supabase.rpc("get_visible_profiles", { p_user_ids: partnerIds })
-    ]);
-    if (!isCurrent()) return;
-    if (profilesResult.error) throw profilesResult.error;
-    if (visibleResult.error) throw visibleResult.error;
-    const resolvedProfiles = await resolveProfileAvatars(visibleResult.data || []);
-    if (!isCurrent()) return;
-    const visibleMap = new Map(resolvedProfiles.map(profile => [profile.id, profile]));
-    profileMap = new Map((profilesResult.data || []).map(profile => [profile.id, { ...profile, ...(visibleMap.get(profile.id) || {}) }]));
-  }
-  if (!isCurrent()) return;
-  conversations = loadedConversations;
-  callsProfileCache = profileMap;
-  void syncCallChannels().catch(error=>console.warn("Voice call channel sync:",error));
-  conversationList.replaceChildren();
-  if (!loadedConversations.length) {
-    conversationList.append(safeText("li", "empty-item", "لا توجد محادثات بعد."));
-    renderCallsList();
-    return;
-  }
   const conversationIds = loadedConversations.map(conversation => conversation.id);
-  const [latestMessagesResult, unreadNotificationsResult] = await Promise.all([
+  const emptyResult = { data: [], error: null };
+
+  // Load independent conversation data in one network round-trip group.
+  // Previously profile lookups and avatar resolution completed before the
+  // latest-message and unread-notification requests even started.
+  const [profilesResult, visibleResult, latestMessagesResult, unreadNotificationsResult] = await Promise.all([
+    partnerIds.length
+      ? supabase.from("profiles").select("id,display_name").in("id", partnerIds)
+      : Promise.resolve(emptyResult),
+    partnerIds.length
+      ? supabase.rpc("get_visible_profiles", { p_user_ids: partnerIds })
+      : Promise.resolve(emptyResult),
     supabase.from("messages")
       .select("id,conversation_id,sender_id,body,created_at,is_deleted")
       .in("conversation_id", conversationIds)
@@ -4671,8 +4658,11 @@ async function loadConversations() {
       .in("conversation_id", conversationIds)
   ]);
   if (!isCurrent()) return;
+  if (profilesResult.error) throw profilesResult.error;
+  if (visibleResult.error) throw visibleResult.error;
   if (latestMessagesResult.error) throw latestMessagesResult.error;
   if (unreadNotificationsResult.error) throw unreadNotificationsResult.error;
+
   const latestMessageByConversation = new Map();
   for (const message of latestMessagesResult.data || []) {
     if (!latestMessageByConversation.has(message.conversation_id)) {
@@ -4686,17 +4676,30 @@ async function loadConversations() {
       (unreadCountByConversation.get(notification.conversation_id) || 0) + 1
     );
   }
+
   const latestMessageIds = [...latestMessageByConversation.values()].map(message => message.id);
-  let hiddenMessageIds = new Set();
-  if (latestMessageIds.length) {
-    const { data: hiddenMessages, error: hiddenMessagesError } = await supabase.from("message_hidden_for")
-      .select("message_id")
-      .eq("user_id", userId)
-      .in("message_id", latestMessageIds);
-    if (!isCurrent()) return;
-    if (hiddenMessagesError) throw hiddenMessagesError;
-    hiddenMessageIds = new Set((hiddenMessages || []).map(row => row.message_id));
-  }
+  const [resolvedProfiles, hiddenMessagesResult] = await Promise.all([
+    resolveProfileAvatars(visibleResult.data || []),
+    latestMessageIds.length
+      ? supabase.from("message_hidden_for")
+          .select("message_id")
+          .eq("user_id", userId)
+          .in("message_id", latestMessageIds)
+      : Promise.resolve(emptyResult)
+  ]);
+  if (!isCurrent()) return;
+  if (hiddenMessagesResult.error) throw hiddenMessagesResult.error;
+
+  const visibleMap = new Map(resolvedProfiles.map(profile => [profile.id, profile]));
+  const profileMap = new Map((profilesResult.data || []).map(profile => [
+    profile.id,
+    { ...profile, ...(visibleMap.get(profile.id) || {}) }
+  ]));
+  conversations = loadedConversations;
+  callsProfileCache = profileMap;
+  void syncCallChannels().catch(error=>console.warn("Voice call channel sync:",error));
+
+  const hiddenMessageIds = new Set((hiddenMessagesResult.data || []).map(row => row.message_id));
   if (!isCurrent()) return;
   for (const conversation of loadedConversations) {
     const partnerId = conversation.user_one === userId ? conversation.user_two : conversation.user_one;
