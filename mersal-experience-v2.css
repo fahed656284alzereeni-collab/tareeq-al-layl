@@ -1273,7 +1273,7 @@ body.tools-open #workspace {
 }
 .legal-settings-view[hidden] { display:none !important; }
 .legal-settings-header { width:min(100%,760px); margin:0 auto; }
-.legal-settings-header h1 { margin:8px 0 0; font-size:1.35rem; }
+.legal-settings-header .legal-page-title { margin:8px 0 0; font-size:1.35rem; font-weight:700; color:var(--mx-text); }
 .legal-settings-content {
   width:min(100%,760px);
   margin:0 auto;
@@ -1285,6 +1285,6 @@ body.tools-open #workspace {
   font-size:1rem;
   line-height:1.85;
 }
-.legal-settings-content h2 { margin:20px 0 5px; font-size:1.05rem; color:var(--mx-text); }
+.legal-settings-content .legal-section-title { margin:20px 0 5px; font-size:1.05rem; font-weight:700; color:var(--mx-text); }
 .legal-settings-content p { margin:6px 0; color:var(--mx-muted); }
 .legal-settings-content .legal-updated { margin-top:0; font-size:.9rem; }
