@@ -1,9 +1,15 @@
-const STATIC_CACHE = "mersal-static-v2";
+const STATIC_CACHE = "mersal-static-v45";
 const STATIC_PATHS = new Set([
   "/app.js",
+  "/auth-bootstrap.js",
+  "/supabase-client.js",
   "/tools.js",
+  "/channels.js",
+  "/communities.js",
   "/styles.css",
   "/inclusive-responsive.css",
+  "/mersal-redesign.css",
+  "/mersal-experience-v2.css",
   "/icon.svg",
   "/manifest.webmanifest"
 ]);
@@ -36,7 +42,8 @@ self.addEventListener("fetch", event => {
     event.respondWith((async () => {
       const cache = await caches.open(STATIC_CACHE);
       try {
-        const response = await fetch(request);
+        // Prefer the latest deployed app shell; use the cached copy only offline.
+        const response = await fetch(request, { cache: "no-store" });
         if (response.ok) await cache.put("/", response.clone());
         return response;
       } catch (error) {
@@ -51,12 +58,16 @@ self.addEventListener("fetch", event => {
   if (!STATIC_PATHS.has(url.pathname)) return;
   event.respondWith((async () => {
     const cache = await caches.open(STATIC_CACHE);
-    const cached = await cache.match(request);
-    if (cached) return cached;
-
-    const response = await fetch(request);
-    if (response.ok) await cache.put(request, response.clone());
-    return response;
+    try {
+      // Refresh same-origin app assets instead of serving stale cache-first copies.
+      const response = await fetch(request, { cache: "no-store" });
+      if (response.ok) await cache.put(request, response.clone());
+      return response;
+    } catch (error) {
+      const cached = await cache.match(request);
+      if (cached) return cached;
+      throw error;
+    }
   })());
 });
 
