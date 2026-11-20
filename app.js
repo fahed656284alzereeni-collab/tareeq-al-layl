@@ -1,7 +1,4 @@
 import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
-import { initMersalTools } from "./tools.js?v=20261117-large-converter-v3";
-import { initMersalChannels } from "./channels.js?v=20261116-voiceover-clean-v16";
-import { initMersalCommunities } from "./communities.js?v=20261116-voiceover-clean-v9";
 
 const VAPID_PUBLIC_KEY = "BMoC648dv4JBQ-9UpQBGYfHTgppb1-cFBM-aU15D_TffIy1DdWUtSXQMoZTYQp3eIgwcINgjBJE_X01oAaL8UkU";
 const serviceWorkerReady = "serviceWorker" in navigator
@@ -1510,7 +1507,7 @@ function returnToHomeTab() {
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
   homeTabButton.focus();
 }
-function openChannelsTab() {
+async function openChannelsTab() {
   if (!currentUser) return;
   mersalTools.closeTool(false);
   mersalCommunities.close();
@@ -1523,9 +1520,10 @@ function openChannelsTab() {
   closeNewChatForNavigation();
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
   setActiveBottomTab("channels");
-  mersalChannels.open(channelsTabButton);
+  await ensureMersalChannels();
+  if (currentUser && channelsTabButton.getAttribute("aria-selected") === "true") mersalChannels.open(channelsTabButton);
 }
-function openCommunitiesTab() {
+async function openCommunitiesTab() {
   if (!currentUser) return;
   mersalTools.closeTool(false);
   mersalChannels.close();
@@ -1538,7 +1536,8 @@ function openCommunitiesTab() {
   closeNewChatForNavigation();
   if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
   setActiveBottomTab("communities");
-  mersalCommunities.open(communitiesTabButton);
+  await ensureMersalCommunities();
+  if (currentUser && communitiesTabButton.getAttribute("aria-selected") === "true") mersalCommunities.open(communitiesTabButton);
 }
 function openCallsTab() {
   mersalTools.closeTool(false);
@@ -1580,6 +1579,7 @@ function openToolsTab() {
   document.body.classList.add("tools-open");
   setActiveBottomTab("tools");
   document.querySelector("#tools-title")?.focus();
+  void ensureMersalTools();
 }
 
 function openStatusTab() {
@@ -3370,26 +3370,65 @@ let mersalTools = {
     announce(document.documentElement.lang === "en" ? "Tools are temporarily unavailable. Please try again later." : "الأدوات غير متاحة مؤقتًا. حاول مرة أخرى لاحقًا.", "error");
   }
 };
-try {
-  mersalTools = initMersalTools({ supabase, getCurrentUser: () => currentUser, announce, safeText });
-} catch (toolsInitializationError) {
-  // Optional tools must never prevent the core messaging and authentication app from starting.
-  console.error("Mersal tools initialization failed; continuing core startup:", toolsInitializationError);
-}
 let mersalChannels = { open() {}, close() {} };
-try {
-  mersalChannels = initMersalChannels({ supabase, getCurrentUser: () => currentUser, getConversations: () => conversations, announce, safeText });
-} catch (channelsInitializationError) {
-  console.error("Mersal channels initialization failed; continuing core startup:", channelsInitializationError);
-}
-createChannelFromNewChatButton?.addEventListener("click", () => { openChannelsTab(); document.querySelector("#channel-create-button")?.click(); });
 let mersalCommunities = { open() {}, close() {} };
-try {
-  mersalCommunities = initMersalCommunities({ supabase, getCurrentUser: () => currentUser, announce, safeText });
-} catch (communitiesInitializationError) {
-  console.error("Mersal communities initialization failed; continuing core startup:", communitiesInitializationError);
+let toolsInitializationPromise = null;
+let channelsInitializationPromise = null;
+let communitiesInitializationPromise = null;
+
+// Optional sections are downloaded only when opened. Keeping them out of the
+// main module dependency graph lets the chat screen and saved session start first.
+function ensureMersalTools() {
+  if (!toolsInitializationPromise) {
+    toolsInitializationPromise = import("./tools.js?v=20261117-large-converter-v3")
+      .then(({ initMersalTools }) => {
+        mersalTools = initMersalTools({ supabase, getCurrentUser: () => currentUser, announce, safeText });
+        return mersalTools;
+      })
+      .catch(error => {
+        console.error("Mersal tools could not be loaded:", error);
+        announce("تعذر تحميل الأدوات. حاول فتحها مرة أخرى لاحقًا.", "error");
+        return mersalTools;
+      });
+  }
+  return toolsInitializationPromise;
 }
-createCommunityFromNewChatButton?.addEventListener("click", () => { openCommunitiesTab(); document.querySelector("#community-create-button")?.click(); });
+function ensureMersalChannels() {
+  if (!channelsInitializationPromise) {
+    channelsInitializationPromise = import("./channels.js?v=20261116-voiceover-clean-v16")
+      .then(({ initMersalChannels }) => {
+        mersalChannels = initMersalChannels({ supabase, getCurrentUser: () => currentUser, getConversations: () => conversations, announce, safeText });
+        return mersalChannels;
+      })
+      .catch(error => {
+        console.error("Mersal channels could not be loaded:", error);
+        announce("تعذر تحميل القنوات. حاول مرة أخرى لاحقًا.", "error");
+        return mersalChannels;
+      });
+  }
+  return channelsInitializationPromise;
+}
+function ensureMersalCommunities() {
+  if (!communitiesInitializationPromise) {
+    communitiesInitializationPromise = import("./communities.js?v=20261116-voiceover-clean-v9")
+      .then(({ initMersalCommunities }) => {
+        mersalCommunities = initMersalCommunities({ supabase, getCurrentUser: () => currentUser, announce, safeText });
+        return mersalCommunities;
+      })
+      .catch(error => {
+        console.error("Mersal communities could not be loaded:", error);
+        announce("تعذر تحميل المجتمعات. حاول فتحها مرة أخرى لاحقًا.", "error");
+        return mersalCommunities;
+      });
+  }
+  return communitiesInitializationPromise;
+}
+createChannelFromNewChatButton?.addEventListener("click", () => {
+  void openChannelsTab().then(() => document.querySelector("#channel-create-button")?.click());
+});
+createCommunityFromNewChatButton?.addEventListener("click", () => {
+  void openCommunitiesTab().then(() => document.querySelector("#community-create-button")?.click());
+});
 settingsLanguageSelect.addEventListener("change", () => {
   applyMersalLanguage(settingsLanguageSelect.value);
   updateChatPartnerPresence();
