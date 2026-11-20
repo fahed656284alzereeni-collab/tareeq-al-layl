@@ -1432,7 +1432,7 @@ function updateBottomTabAccessiblePositions(language = localStorage.getItem("mer
     tab.removeAttribute("aria-describedby");
     tab.removeAttribute("aria-roledescription");
     tab.removeAttribute("title");
-    tab.setAttribute("aria-label", label);
+    tab.setAttribute("aria-label", `${label}، رقم ${index + 1}`);
     tab.removeAttribute("data-no-translate-aria-label");
   });
 }
