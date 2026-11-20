@@ -1432,8 +1432,8 @@ function updateBottomTabAccessiblePositions(language = localStorage.getItem("mer
     tab.removeAttribute("aria-describedby");
     tab.removeAttribute("aria-roledescription");
     tab.removeAttribute("title");
-    // Let VoiceOver announce the tab name and its native position, e.g. "2 من 7".
-    tab.removeAttribute("aria-label");
+    // The visible label is aria-hidden, so provide an explicit accessible name and position.
+    tab.setAttribute("aria-label", `${label}، ${index + 1} من ${total}`);
     tab.removeAttribute("data-no-translate-aria-label");
   });
 }
