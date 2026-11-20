@@ -77,7 +77,7 @@ assert.doesNotMatch(experienceCss, /body\.calls-open \.topbar,\s*body\.calls-ope
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
 assert.match(app, /aria-posinset/, "Bottom navigation tabs must expose their position in the tab set");
 assert.match(app, /aria-setsize/, "Bottom navigation tabs must expose the total tab count");
-assert.match(app, /tab\.removeAttribute\("aria-label"\)/, "Bottom navigation tabs must use their native accessible name so VoiceOver can announce position as N of 7");
+assert.match(app, /tab\.setAttribute\("aria-label", `\$\{label\}، \$\{index \+ 1\} من \$\{total\}`\)/, "Bottom navigation tabs must expose their accessible name and position as N of 7");
 assert.match(app, /tab\.removeAttribute\("aria-description"\)/, "Bottom navigation tabs must not add an extra VoiceOver description announcement");
 assert.doesNotMatch(app, /from\(["']profiles["']\)\s*\.select\(["'][^"']*(?:about|last_seen_at|created_at)/,
   "Private profile fields must be read through visibility-checked RPCs");
