@@ -4632,6 +4632,13 @@ async function loadConversations() {
     }
   }
   loadedConversations=visibleConversations;
+  if (!loadedConversations.length) {
+    conversations = [];
+    callsProfileCache = new Map();
+    conversationList.replaceChildren(safeText("li", "empty-item", "لا توجد محادثات بعد."));
+    renderCallsList();
+    return;
+  }
   const partnerIds = loadedConversations.filter(c=>!c.is_group).map(c => c.user_one === userId ? c.user_two : c.user_one);
   const conversationIds = loadedConversations.map(conversation => conversation.id);
   const emptyResult = { data: [], error: null };
@@ -4701,6 +4708,7 @@ async function loadConversations() {
 
   const hiddenMessageIds = new Set((hiddenMessagesResult.data || []).map(row => row.message_id));
   if (!isCurrent()) return;
+  conversationList.replaceChildren();
   for (const conversation of loadedConversations) {
     const partnerId = conversation.user_one === userId ? conversation.user_two : conversation.user_one;
     const person = conversation.is_group ? {id:partnerId,display_name:conversation.group_name||"مجموعة"} : (profileMap.get(partnerId) || { id: partnerId, display_name: "مستخدم مرسال" });
