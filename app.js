@@ -2610,9 +2610,11 @@ async function handleSession(session, authEvent = "UNKNOWN") {
 
   try {
     if (!alreadyLoadedForThisUser) {
-      await ensureProfile(session.user);
-      // Load privacy before notifications so a saved hidden-preview preference is applied before any preview is rendered.
-      await loadPrivacySettings();
+      // Profile creation/check and privacy preferences are independent. Run them
+      // together, then load the account's main lists in parallel.
+      await Promise.all([ensureProfile(session.user), loadPrivacySettings()]);
+      // Privacy is ready before notifications render, preventing hidden previews
+      // from flashing while the account is opening.
       await Promise.all([loadPeople(), loadConversations(), loadNotifications(), loadOwnProfile()]);
     }
     await startPresence();
@@ -4551,16 +4553,25 @@ async function loadConversations() {
   if (!userId) return;
   const loadId = (loadConversations.sequence = (loadConversations.sequence || 0) + 1);
   const isCurrent = () => loadConversations.sequence === loadId && currentUser?.id === userId;
-  const { data, error } = await supabase.from("conversations")
-    .select("id,user_one,user_two,last_message_at,is_group,group_name,group_description,group_photo_path,created_at")
-    .or("user_one.eq." + userId + ",user_two.eq." + userId)
-    .order("last_message_at", { ascending: false });
+  // Fetch the independent parts of the conversation list together to avoid
+  // serial network round-trips during sign-in.
+  const [
+    { data, error },
+    { data: memberships, error: membershipError },
+    { data: hiddenRows, error: hiddenError }
+  ] = await Promise.all([
+    supabase.from("conversations")
+      .select("id,user_one,user_two,last_message_at,is_group,group_name,group_description,group_photo_path,created_at")
+      .or("user_one.eq." + userId + ",user_two.eq." + userId)
+      .order("last_message_at", { ascending: false }),
+    supabase.from("conversation_members").select("conversation_id").eq("user_id", userId),
+    supabase.from("conversation_hidden_for").select("conversation_id,hidden_at").eq("user_id", userId)
+  ]);
   if (!isCurrent()) return;
   if (error) throw error;
+  if (membershipError) throw membershipError;
+  if (hiddenError) throw hiddenError;
   const baseConversations = data || [];
-  const {data: memberships, error: membershipError} = await supabase.from("conversation_members").select("conversation_id").eq("user_id",userId);
-  if (!isCurrent()) return;
-  if(membershipError) throw membershipError;
   const groupIds=(memberships||[]).map(m=>m.conversation_id);
   let groupRows=[];
   if(groupIds.length){
@@ -4570,9 +4581,6 @@ async function loadConversations() {
     groupRows=result.data||[];
   }
   let loadedConversations=[...new Map([...baseConversations,...groupRows].map(c=>[c.id,c])).values()].sort((a,b)=>new Date(b.last_message_at||b.created_at||0)-new Date(a.last_message_at||a.created_at||0));
-  const {data:hiddenRows,error:hiddenError}=await supabase.from("conversation_hidden_for").select("conversation_id,hidden_at").eq("user_id",userId);
-  if (!isCurrent()) return;
-  if(hiddenError)throw hiddenError;
   const hiddenMap=new Map((hiddenRows||[]).map(row=>[row.conversation_id,row.hidden_at]));
   const visibleConversations=[];
   for(const conversation of loadedConversations){
@@ -4588,17 +4596,17 @@ async function loadConversations() {
   const partnerIds = loadedConversations.filter(c=>!c.is_group).map(c => c.user_one === userId ? c.user_two : c.user_one);
   let profileMap = new Map();
   if (partnerIds.length) {
-    const { data: profiles, error: profileError } = await supabase.from("profiles")
-      .select("id,display_name").in("id", partnerIds);
+    const [profilesResult, visibleResult] = await Promise.all([
+      supabase.from("profiles").select("id,display_name").in("id", partnerIds),
+      supabase.rpc("get_visible_profiles", { p_user_ids: partnerIds })
+    ]);
     if (!isCurrent()) return;
-    if (profileError) throw profileError;
-    const visible=await supabase.rpc("get_visible_profiles",{p_user_ids:partnerIds});
+    if (profilesResult.error) throw profilesResult.error;
+    if (visibleResult.error) throw visibleResult.error;
+    const resolvedProfiles = await resolveProfileAvatars(visibleResult.data || []);
     if (!isCurrent()) return;
-    if(visible.error)throw visible.error;
-    const resolvedProfiles=await resolveProfileAvatars(visible.data||[]);
-    if (!isCurrent()) return;
-    const visibleMap=new Map(resolvedProfiles.map(profile=>[profile.id,profile]));
-    profileMap=new Map((profiles||[]).map(profile=>[profile.id,{...profile,...(visibleMap.get(profile.id)||{})}]));
+    const visibleMap = new Map(resolvedProfiles.map(profile => [profile.id, profile]));
+    profileMap = new Map((profilesResult.data || []).map(profile => [profile.id, { ...profile, ...(visibleMap.get(profile.id) || {}) }]));
   }
   if (!isCurrent()) return;
   conversations = loadedConversations;
