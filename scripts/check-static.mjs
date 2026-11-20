@@ -25,8 +25,6 @@ for (const tab of tabs) {
 const selectedTabs = tabs.filter(tab => /\baria-selected=["']true["']/.test(tab));
 assert.equal(selectedTabs.length, 1, "Exactly one bottom navigation tab must be selected initially");
 assert.ok(tabs.every(tab => !/\baria-description=/.test(tab)), "Bottom navigation tabs must not add a description prefix to VoiceOver");
-assert.match(app, /aria-posinset/, "Bottom navigation tabs must expose their position in the tab set");
-assert.match(app, /aria-setsize/, "Bottom navigation tabs must expose the total tab count");
 assert.doesNotMatch(html, /role=["\']status["\']|role=["\']group["\']|role=["\']main["\']/, "Avoid redundant VoiceOver status, group, and landmark announcements");
 const panelTags = [...html.matchAll(/<(?:div|section)\b[^>]*>/g)].map(match => match[0]);
 for (const tab of tabs) {
@@ -66,6 +64,9 @@ assert.doesNotMatch(experienceCss, /body\.calls-open \.topbar,\s*body\.calls-ope
   "The calls full-screen rule must not hide the primary tab bar");
 
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
+assert.match(app, /aria-posinset/, "Bottom navigation tabs must expose their position in the tab set");
+assert.match(app, /aria-setsize/, "Bottom navigation tabs must expose the total tab count");
+assert.match(app, /tab\.removeAttribute\("aria-description"\)/, "Bottom navigation tabs must not add an extra VoiceOver description announcement");
 assert.doesNotMatch(app, /from\(["']profiles["']\)\s*\.select\(["'][^"']*(?:about|last_seen_at|created_at)/,
   "Private profile fields must be read through visibility-checked RPCs");
 assert.match(app, /async function loadOwnProfile\(\)[\s\S]*?supabase\.rpc\("get_visible_profiles",\{p_user_ids:\[userId\]\}\)[\s\S]*?const profile = visibleProfile\.data\?\.\[0\] \|\| null;/,
