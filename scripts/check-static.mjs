@@ -179,6 +179,7 @@ assert.match(posts, /aria-label/, "Public post controls must expose accessible n
 assert.doesNotMatch(html, /id="posts-title"|id="posts-intro"/, "The public posts tab must not force extra heading or intro announcements");
 assert.match(html, /id="posts-panel"[^>]*aria-label="المنشورات العامة"/, "The public posts panel must retain a concise accessible name");
 assert.match(posts, /closeButton\.focus\(\)/, "Opening public posts must focus the first useful control instead of a heading");
+assert.match(posts, /panel\.setAttribute\("aria-label", t\("المنشورات العامة", "Public posts"\)\)/, "The public posts panel label must follow the selected language");
 assert.match(app, /tab\.setAttribute\("aria-label", tab\.id === "posts-tab" \? label :/, "The public posts tab must not append positional speech hints");
 assert.ok(channels.includes('panel.removeAttribute("aria-label")') && communities.includes('panel.removeAttribute("aria-label")'),
   "Tab panels must use their existing aria-labelledby relationship without a duplicate label");
