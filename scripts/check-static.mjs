@@ -63,7 +63,7 @@ for (const id of ["privacy-policy-view", "terms-of-service-view"]) {
 const baseCss = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
 assert.ok(!baseCss.includes("body.calls-open #bottom-navigation { display:none !important; }"),
   "The primary tab bar must not be hidden while the calls tab is active");
-assert.ok(baseCss.includes("grid-template-columns:repeat(8,minmax(0,1fr))"),
+assert.ok(baseCss.includes("grid-template-columns: repeat(8, minmax(0, 1fr))"),
   "The base navigation layout must allocate space for all eight tabs");
 
 const experienceCss = readFileSync(new URL("../mersal-experience-v2.css", import.meta.url), "utf8");
@@ -204,7 +204,7 @@ assert.match(app, /async function sendBroadcastList\(list\)[\s\S]*?const senderI
 assert.ok(app.includes("const isPlainTextMessage = !pollMessage && !stickerMessage && attachmentIndex < 0;"), "Message editing must exclude polls, stickers, and all attachments");
 assert.ok(app.includes("if (message.sender_id === currentUser.id && isPlainTextMessage)"), "Only the sender may see edit on plain text messages");
 readFileSync(new URL("../tools.js", import.meta.url), "utf8");
-assert.match(app, /function resetAccountScopedPanels\(\)[\s\S]*?mersalChannels\.close\(\{ restoreFocus: false \}\)[\s\S]*?mersalCommunities\.close\(\{ restoreFocus: false \}\)[\s\S]*?mersalPosts\.close\(\{ restoreFocus: false \}\)[\s\S]*?resetBroadcastPanel\(\)/,
+assert.match(app, /function resetAccountScopedPanels\(\)[\s\S]*?resetBroadcastPanel\(\)[\s\S]*?mersalChannels\.close\(\{ restoreFocus: false \}\)[\s\S]*?mersalCommunities\.close\(\{ restoreFocus: false \}\)[\s\S]*?mersalPosts\.close\(\{ restoreFocus: false \}\)/,
   "Account changes and logout must close account-scoped panels");
 assert.match(app, /function showLoggedOut\([\s\S]*?resetAccountScopedPanels\(\)/,
   "Logging out must reset private panels");
