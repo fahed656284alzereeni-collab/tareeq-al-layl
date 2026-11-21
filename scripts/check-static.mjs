@@ -184,7 +184,7 @@ assert.doesNotMatch(html, /id="posts-close"/, "The public posts panel must not i
 assert.doesNotMatch(posts, /closeButton/, "The public posts module must not depend on a close button");
 assert.match(posts, /panel\.setAttribute\("aria-label", t\("المنشورات العامة", "Public posts"\)\)/, "The public posts panel label must follow the selected language");
 assert.match(app, /tab\.setAttribute\("aria-posinset", String\(index \+ 1\)\)/, "Every primary tab, including public posts, must expose its position");
-assert.match(app, /tab\.setAttribute\("aria-label", `${label}، ${index \+ 1} من ${total}`)/, "Every primary tab, including public posts, must announce its position");
+assert.ok(app.includes('tab.setAttribute("aria-label", `${label}، ${index + 1} من ${total}`);'), "Every primary tab, including public posts, must announce its position");
 assert.ok(channels.includes('panel.removeAttribute("aria-label")') && communities.includes('panel.removeAttribute("aria-label")'),
   "Tab panels must use their existing aria-labelledby relationship without a duplicate label");
 assert.ok(communities.includes('setAttr(postsList, "aria-label", "منشورات المجتمع", "Community posts")'),
