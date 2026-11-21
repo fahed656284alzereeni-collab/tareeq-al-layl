@@ -495,6 +495,11 @@ export function initMersalPosts({ supabase, getCurrentUser, announce, safeText }
     document.body.classList.remove("posts-open");
     loadSequence++;
     await stopRealtime();
+    if (options.clearDraft) {
+      form.reset();
+      mediaName.textContent = "";
+      setStatus("", "");
+    }
     if (options.restoreFocus !== false) returnFocus?.focus?.();
   }
 
