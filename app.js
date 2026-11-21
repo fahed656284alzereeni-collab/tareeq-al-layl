@@ -1514,6 +1514,7 @@ function resetAccountScopedPanels() {
   mersalTools.closeTool(false);
   mersalChannels.close({ restoreFocus: false });
   mersalCommunities.close({ restoreFocus: false });
+  mersalPosts.close({ restoreFocus: false });
   closeHelpSupportForNavigation();
   if (statusExpiryTimer) clearTimeout(statusExpiryTimer);
   statusExpiryTimer = null;
@@ -1523,7 +1524,7 @@ function resetAccountScopedPanels() {
   workspace.classList.remove("chat-open");
   document.body.classList.remove(
     "settings-open", "tools-open", "calls-open", "status-open",
-    "channels-open", "communities-open",
+    "channels-open", "communities-open", "posts-open",
     "help-support-open", "chat-fullscreen", "conversation-info-fullscreen",
     "group-invite-preview-open"
   );
