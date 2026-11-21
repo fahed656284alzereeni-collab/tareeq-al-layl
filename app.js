@@ -1587,6 +1587,7 @@ async function openCommunitiesTab() {
   if (!currentUser) return;
   mersalTools.closeTool(false);
   mersalChannels.close();
+  mersalPosts.close({ restoreFocus: false });
   if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
   if (toolsView) toolsView.hidden = true;
   if (callsView) callsView.hidden = true;
@@ -1602,7 +1603,6 @@ async function openCommunitiesTab() {
 function openCallsTab() {
   mersalTools.closeTool(false);
   mersalChannels.close();
-  mersalPosts.close({ restoreFocus: false });
   mersalPosts.close({ restoreFocus: false });
   mersalCommunities.close();
   if (!currentUser) return;
