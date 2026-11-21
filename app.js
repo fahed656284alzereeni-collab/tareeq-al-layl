@@ -1514,7 +1514,7 @@ function resetAccountScopedPanels() {
   mersalTools.closeTool(false);
   mersalChannels.close({ restoreFocus: false });
   mersalCommunities.close({ restoreFocus: false });
-  mersalPosts.close({ restoreFocus: false });
+  mersalPosts.close({ restoreFocus: false, clearDraft: true });
   closeHelpSupportForNavigation();
   if (statusExpiryTimer) clearTimeout(statusExpiryTimer);
   statusExpiryTimer = null;
