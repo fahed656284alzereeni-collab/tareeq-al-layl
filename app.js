@@ -3484,7 +3484,7 @@ function ensureMersalChannels() {
 }
 function ensureMersalPosts() {
   if (!postsInitializationPromise) {
-    postsInitializationPromise = import("./posts.js?v=20261121-public-feed-v1")
+    postsInitializationPromise = import("./posts.js?v=20261121-voiceover-clean-v2")
       .then(({ initMersalPosts }) => {
         mersalPosts = initMersalPosts({ supabase, getCurrentUser: () => currentUser, announce, safeText });
         return mersalPosts;
