@@ -32,6 +32,8 @@ export function initMersalPosts({ supabase, getCurrentUser, announce, safeText }
     closeButton.textContent = t("إغلاق المنشورات", "Close posts");
     closeButton.setAttribute("aria-label", closeButton.textContent);
     title.textContent = t("المنشورات العامة", "Public posts");
+    const intro = $("#posts-intro");
+    if (intro) intro.textContent = t("شارك أفكارك وصورك وفيديوهاتك مع جميع أعضاء مرسال.", "Share thoughts, photos, and videos with all Mersal members.");
     refreshButton.textContent = t("تحديث المنشورات", "Refresh posts");
     refreshButton.setAttribute("aria-label", refreshButton.textContent);
     const label = form.querySelector("label[for='public-post-body']");
@@ -47,7 +49,7 @@ export function initMersalPosts({ supabase, getCurrentUser, announce, safeText }
   const languageObserver = new MutationObserver(records => {
     if (records.some(record => record.attributeName === "lang")) {
       localize();
-      if (!panel.hidden) renderFeed();
+      if (!panel.hidden) void loadFeed(false);
     }
   });
   languageObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["lang"] });
@@ -116,12 +118,18 @@ export function initMersalPosts({ supabase, getCurrentUser, announce, safeText }
     }
     const ids = posts.map(post => post.id);
     const authorIds = posts.map(post => post.author_id);
-    const [profileMap, likesResult, commentsResult, mediaMap] = await Promise.all([
-      visibleProfiles(authorIds),
-      supabase.from("public_post_likes").select("post_id,user_id").in("post_id", ids),
-      supabase.from("public_post_comments").select("post_id").in("post_id", ids),
-      signedMedia(posts.map(post => post.media_path))
-    ]);
+    let profileMap, likesResult, commentsResult, mediaMap;
+    try {
+      [profileMap, likesResult, commentsResult, mediaMap] = await Promise.all([
+        visibleProfiles(authorIds),
+        supabase.from("public_post_likes").select("post_id,user_id").in("post_id", ids),
+        supabase.from("public_post_comments").select("post_id").in("post_id", ids),
+        signedMedia(posts.map(post => post.media_path))
+      ]);
+    } catch (error) {
+      if (request === loadSequence && !panel.hidden) setStatus(t("تعذر تجهيز بيانات المنشورات: ", "Could not prepare post data: ") + (error.message || ""), "Could not prepare post data.", true);
+      return;
+    }
     if (request !== loadSequence || panel.hidden || getCurrentUser()?.id !== user.id) return;
     if (likesResult.error || commentsResult.error) {
       setStatus("تعذر تحميل تفاعلات المنشورات.", "Could not load post interactions.", true);
@@ -312,7 +320,12 @@ export function initMersalPosts({ supabase, getCurrentUser, announce, safeText }
       target.append(safeText("li", "empty-item", t("لا توجد تعليقات بعد.", "No comments yet.")));
       return;
     }
-    const profiles = await visibleProfiles(result.data.map(comment => comment.author_id));
+    let profiles;
+    try { profiles = await visibleProfiles(result.data.map(comment => comment.author_id)); }
+    catch {
+      target.replaceChildren(safeText("li", "empty-item", t("تعذر تحميل أسماء أصحاب التعليقات.", "Could not load comment authors.")));
+      return;
+    }
     for (const comment of result.data) {
       const profile = profiles.get(comment.author_id) || {};
       const name = profile.display_name?.trim() || t("مستخدم مرسال", "Mersal user");
