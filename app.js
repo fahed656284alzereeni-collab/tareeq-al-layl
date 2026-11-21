@@ -1426,21 +1426,15 @@ function updateBottomTabAccessiblePositions(language = localStorage.getItem("mer
   const total = tabs.length;
   tabs.forEach((tab, index) => {
     const label = tab.querySelector(".bottom-nav-label")?.textContent?.trim() || tab.id.replace(/-tab$/, "");
-    if (tab.id === "posts-tab") {
-      // Keep the public posts tab name concise; do not append positional hints.
-      tab.removeAttribute("aria-posinset");
-      tab.removeAttribute("aria-setsize");
-    } else {
-      tab.setAttribute("aria-posinset", String(index + 1));
-      tab.setAttribute("aria-setsize", String(total));
-    }
+    tab.setAttribute("aria-posinset", String(index + 1));
+    tab.setAttribute("aria-setsize", String(total));
     // Keep the native tab role announcement without an extra description announcement.
     tab.removeAttribute("aria-description");
     tab.removeAttribute("aria-describedby");
     tab.removeAttribute("aria-roledescription");
     tab.removeAttribute("title");
     // The visible label is aria-hidden, so provide an explicit accessible name and position.
-    tab.setAttribute("aria-label", tab.id === "posts-tab" ? label : `${label}، ${index + 1} من ${total}`);
+    tab.setAttribute("aria-label", `${label}، ${index + 1} من ${total}`);
     tab.removeAttribute("data-no-translate-aria-label");
   });
 }
