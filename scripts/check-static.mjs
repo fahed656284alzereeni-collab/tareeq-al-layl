@@ -176,6 +176,10 @@ const posts = readFileSync(new URL("../posts.js", import.meta.url), "utf8");
 assert.match(posts, /from\("public_posts"\)[\s\S]*?from\("public_post_likes"\)[\s\S]*?from\("public_post_comments"\)/, "The public feed must load posts, likes, and comments from their dedicated tables");
 assert.match(posts, /get_visible_profiles/, "Public post author details must use the visibility-checked profile RPC");
 assert.match(posts, /aria-label/, "Public post controls must expose accessible names for VoiceOver");
+assert.doesNotMatch(html, /id="posts-title"|id="posts-intro"/, "The public posts tab must not force extra heading or intro announcements");
+assert.match(html, /id="posts-panel"[^>]*aria-label="المنشورات العامة"/, "The public posts panel must retain a concise accessible name");
+assert.match(posts, /closeButton\.focus\(\)/, "Opening public posts must focus the first useful control instead of a heading");
+assert.match(app, /tab\.setAttribute\("aria-label", tab\.id === "posts-tab" \? label :/, "The public posts tab must not append positional speech hints");
 assert.ok(channels.includes('panel.removeAttribute("aria-label")') && communities.includes('panel.removeAttribute("aria-label")'),
   "Tab panels must use their existing aria-labelledby relationship without a duplicate label");
 assert.ok(communities.includes('setAttr(postsList, "aria-label", "منشورات المجتمع", "Community posts")'),
