@@ -40,7 +40,7 @@ for (const tab of tabs) {
   } else {
     assert.ok(panel.includes('role="tabpanel"') || panel.includes("role='tabpanel'"), `Tab target must expose role=tabpanel: ${panelId}`);
     assert.ok(panel.includes(`aria-labelledby="${tabId}"`) || panel.includes(`aria-labelledby='${tabId}'`) ||
-      /\\baria-label=["'][^"']+["']/.test(panel),
+      panel.includes('aria-label="') || panel.includes("aria-label='"),
       `Tab panel must have an accessible name: ${panelId}`);
   }
 }
