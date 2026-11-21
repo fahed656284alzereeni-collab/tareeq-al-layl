@@ -16,7 +16,7 @@ const duplicateMigrationVersions = [...new Set(migrationVersions.filter((version
 assert.deepEqual(duplicateMigrationVersions, [], "Supabase migration versions must be unique");
 
 const tabs = [...html.matchAll(/<button\b(?=[^>]*\brole=["']tab["'])[^>]*>/g)].map(match => match[0]);
-assert.equal(tabs.length, 7, "The bottom navigation must expose exactly seven tabs");
+assert.equal(tabs.length, 8, "The bottom navigation must expose exactly eight tabs");
 for (const tab of tabs) {
   const control = tab.match(/\baria-controls=["']([^"']+)["']/)?.[1];
   assert.ok(control, "Every bottom navigation tab must identify its controlled panel");
@@ -63,8 +63,8 @@ for (const id of ["privacy-policy-view", "terms-of-service-view"]) {
 const baseCss = readFileSync(new URL("../styles.css", import.meta.url), "utf8");
 assert.ok(!baseCss.includes("body.calls-open #bottom-navigation { display:none !important; }"),
   "The primary tab bar must not be hidden while the calls tab is active");
-assert.ok(baseCss.includes("grid-template-columns:repeat(7,minmax(0,1fr))"),
-  "The base navigation layout must allocate space for all seven tabs");
+assert.ok(baseCss.includes("grid-template-columns:repeat(8,minmax(0,1fr))"),
+  "The base navigation layout must allocate space for all eight tabs");
 
 const experienceCss = readFileSync(new URL("../mersal-experience-v2.css", import.meta.url), "utf8");
 assert.match(experienceCss, /#bottom-navigation\s*\{[^}]*z-index:\s*220/s,
@@ -77,7 +77,7 @@ assert.doesNotMatch(experienceCss, /body\.calls-open \.topbar,\s*body\.calls-ope
 const app = readFileSync(new URL("../app.js", import.meta.url), "utf8");
 assert.match(app, /aria-posinset/, "Bottom navigation tabs must expose their position in the tab set");
 assert.match(app, /aria-setsize/, "Bottom navigation tabs must expose the total tab count");
-assert.match(app, /tab\.setAttribute\("aria-label", `\$\{label\}، \$\{index \+ 1\} من \$\{total\}`\)/, "Bottom navigation tabs must expose their accessible name and position as N of 7");
+assert.match(app, /tab\.setAttribute\("aria-label", `\$\{label\}، \$\{index \+ 1\} من \$\{total\}`\)/, "Bottom navigation tabs must expose their accessible name and position as N of 8");
 assert.match(app, /tab\.removeAttribute\("aria-description"\)/, "Bottom navigation tabs must not add an extra VoiceOver description announcement");
 assert.doesNotMatch(app, /from\(["']profiles["']\)\s*\.select\(["'][^"']*(?:about|last_seen_at|created_at)/,
   "Private profile fields must be read through visibility-checked RPCs");
@@ -97,11 +97,11 @@ for (const id of ["calls-title", "channels-title", "communities-title"]) {
   assert.match(html, new RegExp('id="' + id + '"[^>]*aria-hidden="true"'),
     "Duplicate page titles must stay visual-only when the tab already names the panel: " + id);
 }
-assert.doesNotMatch(html, /aria-label="[^"]*علامة تبويب \d من 7"/, "Tab labels must not repeat tab role and position announcements");
+assert.doesNotMatch(html, /aria-label="[^"]*علامة تبويب \d من 8"/, "Tab labels must not repeat tab role and position announcements");
 assert.doesNotMatch(baseCss + "\\n" + experienceCss, /body\.chat-fullscreen[^}]*#bottom-navigation|body\.conversation-info-fullscreen[^}]*bottom-navigation/, "The bottom navigation must remain visible in chats and conversation info");
 assert.ok(app.includes("let mersalTools =") && app.includes("mersalTools = initMersalTools("),
   "The core application must initialize its tools module");
-assert.ok(app.includes("mersalChannels = initMersalChannels(") && app.includes("mersalCommunities = initMersalCommunities("),
+assert.ok(app.includes("mersalChannels = initMersalChannels(") && app.includes("mersalCommunities = initMersalCommunities(") && app.includes("mersalPosts = initMersalPosts("),
   "The channels and communities modules must be initialized");
 assert.ok(app.includes('settingsLanguageSelect.addEventListener("change"') && app.includes('openPrivacySettingsButton.addEventListener("click"'),
   "Settings controls must retain their event handlers");
@@ -125,9 +125,9 @@ assert.ok(app.includes("if (loadCallHistory.sequence !== requestId || currentUse
   "Call history requests must be invalidated when the active account changes");
 assert.match(app, /async function updateCallLogStatus\(callLogId,statusValue\)[\s\S]*?\.update\(\{status:statusValue,ended_at:new Date\(\)\.toISOString\(\)\}\)/,
   "Call status updates must remain available after loading call history");
-assert.equal((app.match(/closeHelpSupportForNavigation\(\);/g) || []).length, 8,
+assert.equal((app.match(/closeHelpSupportForNavigation\(\);/g) || []).length, 9,
   "Every primary tab must close the Help & Support overlay and stop its realtime subscription");
-assert.equal((app.match(/closeNewChatForNavigation\(\);/g) || []).length, 7,
+assert.equal((app.match(/closeNewChatForNavigation\(\);/g) || []).length, 8,
   "Every primary tab must close the New Chat overlay before navigation");
 assert.match(app, /\.in\("status", \["pending", "failed"\]\)/,
   "Scheduled messages must keep failed items visible to their sender");
@@ -172,6 +172,10 @@ assert.match(channels, /await stopPostsRealtime\(\);\s*if \(activeChannel\?\.id 
 assert.match(channels, /const loadId = \+\+listLoadSequence;[\s\S]*?if \(loadId !== listLoadSequence \|\| panel\.hidden \|\| getCurrentUser\(\)\?\.id !== user\.id\) return;/,
   "Late channel list loads must not overwrite a newer navigation or session");
 const communities = readFileSync(new URL("../communities.js", import.meta.url), "utf8");
+const posts = readFileSync(new URL("../posts.js", import.meta.url), "utf8");
+assert.match(posts, /from\("public_posts"\)[\s\S]*?from\("public_post_likes"\)[\s\S]*?from\("public_post_comments"\)/, "The public feed must load posts, likes, and comments from their dedicated tables");
+assert.match(posts, /get_visible_profiles/, "Public post author details must use the visibility-checked profile RPC");
+assert.match(posts, /aria-label/, "Public post controls must expose accessible names for VoiceOver");
 assert.ok(channels.includes('panel.removeAttribute("aria-label")') && communities.includes('panel.removeAttribute("aria-label")'),
   "Tab panels must use their existing aria-labelledby relationship without a duplicate label");
 assert.ok(communities.includes('setAttr(postsList, "aria-label", "منشورات المجتمع", "Community posts")'),
@@ -200,7 +204,7 @@ assert.match(app, /async function sendBroadcastList\(list\)[\s\S]*?const senderI
 assert.ok(app.includes("const isPlainTextMessage = !pollMessage && !stickerMessage && attachmentIndex < 0;"), "Message editing must exclude polls, stickers, and all attachments");
 assert.ok(app.includes("if (message.sender_id === currentUser.id && isPlainTextMessage)"), "Only the sender may see edit on plain text messages");
 readFileSync(new URL("../tools.js", import.meta.url), "utf8");
-assert.match(app, /function resetAccountScopedPanels\(\)[\s\S]*?mersalChannels\.close\(\{ restoreFocus: false \}\)[\s\S]*?mersalCommunities\.close\(\{ restoreFocus: false \}\)[\s\S]*?resetBroadcastPanel\(\)/,
+assert.match(app, /function resetAccountScopedPanels\(\)[\s\S]*?mersalChannels\.close\(\{ restoreFocus: false \}\)[\s\S]*?mersalCommunities\.close\(\{ restoreFocus: false \}\)[\s\S]*?mersalPosts\.close\(\{ restoreFocus: false \}\)[\s\S]*?resetBroadcastPanel\(\)/,
   "Account changes and logout must close account-scoped panels");
 assert.match(app, /function showLoggedOut\([\s\S]*?resetAccountScopedPanels\(\)/,
   "Logging out must reset private panels");
