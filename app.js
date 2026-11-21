@@ -1214,6 +1214,7 @@ const toolsTabButton = $("#tools-tab");
 const callsTabButton = $("#calls-tab");
 const channelsTabButton = $("#channels-tab");
 const communitiesTabButton = $("#communities-tab");
+const postsTabButton = $("#posts-tab");
 const toolsView = $("#tools-view");
 const statusView = $("#status-view");
 const callsView = $("#calls-view");
@@ -1438,14 +1439,15 @@ function updateBottomTabAccessiblePositions(language = localStorage.getItem("mer
   });
 }
 function setActiveBottomTab(tab) {
-  if (!homeTabButton || !settingsTabButton || !statusTabButton || !toolsTabButton || !callsTabButton || !channelsTabButton || !communitiesTabButton) return;
-  const selected = { home: homeTabButton, statuses: statusTabButton, calls: callsTabButton, channels: channelsTabButton, communities: communitiesTabButton, tools: toolsTabButton, settings: settingsTabButton };
+  if (!homeTabButton || !settingsTabButton || !statusTabButton || !toolsTabButton || !callsTabButton || !channelsTabButton || !communitiesTabButton || !postsTabButton) return;
+  const selected = { home: homeTabButton, statuses: statusTabButton, posts: postsTabButton, calls: callsTabButton, channels: channelsTabButton, communities: communitiesTabButton, tools: toolsTabButton, settings: settingsTabButton };
   for (const [key, button] of Object.entries(selected)) {
     const active = key === tab;
     button.setAttribute("aria-selected", String(active));
     button.tabIndex = active ? 0 : -1;
   }
   // One source of truth for mutually exclusive social-tab visibility.
+  document.body.classList.toggle("posts-open", tab === "posts");
   document.body.classList.toggle("channels-open", tab === "channels");
   document.body.classList.toggle("communities-open", tab === "communities");
   // Keep tab panels separate without adding redundant landmark announcements to the chat workspace.
@@ -1529,6 +1531,7 @@ function resetAccountScopedPanels() {
 function returnToHomeTab() {
   mersalTools.closeTool(false);
   mersalChannels.close();
+  mersalPosts.close({ restoreFocus: false });
   mersalCommunities.close();
   closeHelpSupportForNavigation();
   closeNewChatForNavigation();
@@ -1549,6 +1552,7 @@ function returnToHomeTab() {
 async function openChannelsTab() {
   if (!currentUser) return;
   mersalTools.closeTool(false);
+  mersalPosts.close({ restoreFocus: false });
   mersalCommunities.close();
   if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
   if (toolsView) toolsView.hidden = true;
@@ -1561,6 +1565,23 @@ async function openChannelsTab() {
   setActiveBottomTab("channels");
   await ensureMersalChannels();
   if (currentUser && channelsTabButton.getAttribute("aria-selected") === "true") mersalChannels.open(channelsTabButton);
+}
+async function openPostsTab() {
+  if (!currentUser) return;
+  mersalTools.closeTool(false);
+  mersalChannels.close({ restoreFocus: false });
+  mersalCommunities.close({ restoreFocus: false });
+  if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
+  if (toolsView) toolsView.hidden = true;
+  if (callsView) callsView.hidden = true;
+  statusView.hidden = true;
+  document.body.classList.remove("tools-open", "calls-open", "status-open");
+  closeHelpSupportForNavigation();
+  closeNewChatForNavigation();
+  if (document.body.classList.contains("chat-fullscreen")) backToChatsButton.click();
+  setActiveBottomTab("posts");
+  await ensureMersalPosts();
+  if (currentUser && postsTabButton.getAttribute("aria-selected") === "true") await mersalPosts.open(postsTabButton);
 }
 async function openCommunitiesTab() {
   if (!currentUser) return;
@@ -1581,6 +1602,8 @@ async function openCommunitiesTab() {
 function openCallsTab() {
   mersalTools.closeTool(false);
   mersalChannels.close();
+  mersalPosts.close({ restoreFocus: false });
+  mersalPosts.close({ restoreFocus: false });
   mersalCommunities.close();
   if (!currentUser) return;
   if (settingsPanel && !settingsPanel.hidden) { settingsPanel.hidden = true; document.body.classList.remove("settings-open"); }
@@ -1601,6 +1624,7 @@ function openCallsTab() {
 function openToolsTab() {
   mersalTools.closeTool(false);
   mersalChannels.close();
+  mersalPosts.close({ restoreFocus: false });
   mersalCommunities.close();
   if (!currentUser) return;
   if (callsView) callsView.hidden = true;
@@ -1624,6 +1648,7 @@ function openToolsTab() {
 function openStatusTab() {
   mersalTools.closeTool(false);
   mersalChannels.close();
+  mersalPosts.close({ restoreFocus: false });
   mersalCommunities.close();
   if (!currentUser) return;
   if (settingsPanel && !settingsPanel.hidden) {
@@ -3355,6 +3380,7 @@ async function renderBlockedUsers() {
 function openSettings() {
   mersalTools.closeTool(false);
   mersalChannels.close();
+  mersalPosts.close({ restoreFocus: false });
   mersalCommunities.close();
   if (!currentUser) return;
   closeHelpSupportForNavigation();
@@ -3411,9 +3437,11 @@ let mersalTools = {
 };
 let mersalChannels = { open() {}, close() {} };
 let mersalCommunities = { open() {}, close() {} };
+let mersalPosts = { open() {}, close() {} };
 let toolsInitializationPromise = null;
 let channelsInitializationPromise = null;
 let communitiesInitializationPromise = null;
+let postsInitializationPromise = null;
 
 // Optional sections are downloaded only when opened. Keeping them out of the
 // main module dependency graph lets the chat screen and saved session start first.
@@ -3447,6 +3475,21 @@ function ensureMersalChannels() {
   }
   return channelsInitializationPromise;
 }
+function ensureMersalPosts() {
+  if (!postsInitializationPromise) {
+    postsInitializationPromise = import("./posts.js?v=20261121-public-feed-v1")
+      .then(({ initMersalPosts }) => {
+        mersalPosts = initMersalPosts({ supabase, getCurrentUser: () => currentUser, announce, safeText });
+        return mersalPosts;
+      })
+      .catch(error => {
+        console.error("Mersal public posts could not be loaded:", error);
+        announce("تعذر تحميل المنشورات العامة. حاول فتحها مرة أخرى لاحقًا.", "error");
+        return mersalPosts;
+      });
+  }
+  return postsInitializationPromise;
+}
 function ensureMersalCommunities() {
   if (!communitiesInitializationPromise) {
     communitiesInitializationPromise = import("./communities.js?v=20261116-voiceover-clean-v9")
@@ -3475,6 +3518,7 @@ settingsLanguageSelect.addEventListener("change", () => {
   announce(settingsLanguageSelect.value==="en"?"تم تغيير اللغة إلى الإنجليزية.":"تم تغيير اللغة إلى العربية.");
 });
 settingsTabButton.addEventListener("click", openSettings);
+postsTabButton.addEventListener("click", openPostsTab);
 channelsTabButton.addEventListener("click", openChannelsTab);
 communitiesTabButton.addEventListener("click", openCommunitiesTab);
 statusTabButton.addEventListener("click", openStatusTab);
