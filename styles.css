@@ -1082,7 +1082,7 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 body.group-member-options-fullscreen{overflow:hidden}
 
 
-/* Persistent, VoiceOver-friendly seven-tab bottom navigation */
+/* Persistent, VoiceOver-friendly eight-tab bottom navigation */
 #main-content { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
 .bottom-navigation {
   position: fixed;
@@ -1090,7 +1090,7 @@ body.group-member-options-fullscreen{overflow:hidden}
   bottom: 0;
   z-index: 150;
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 10px;
   min-height: 76px;
   padding: 9px clamp(12px, 4vw, 28px) calc(9px + env(safe-area-inset-bottom));
