@@ -28,6 +28,7 @@ export function initMersalPosts({ supabase, getCurrentUser, announce, safeText }
 
   function localize() {
     if (!panel) return;
+    panel.setAttribute("aria-label", t("المنشورات العامة", "Public posts"));
     closeButton.textContent = t("إغلاق المنشورات", "Close posts");
     closeButton.setAttribute("aria-label", closeButton.textContent);
     refreshButton.textContent = t("تحديث المنشورات", "Refresh posts");
