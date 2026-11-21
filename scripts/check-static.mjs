@@ -179,9 +179,12 @@ assert.match(posts, /get_visible_profiles/, "Public post author details must use
 assert.match(posts, /aria-label/, "Public post controls must expose accessible names for VoiceOver");
 assert.doesNotMatch(html, /id="posts-title"|id="posts-intro"/, "The public posts tab must not force extra heading or intro announcements");
 assert.match(html, /id="posts-panel"[^>]*aria-label="المنشورات العامة"/, "The public posts panel must retain a concise accessible name");
-assert.match(posts, /closeButton\.focus\(\)/, "Opening public posts must focus the first useful control instead of a heading");
+assert.match(posts, /bodyInput\.focus\(\)/, "Opening public posts must focus the post composer instead of a heading or close button");
+assert.doesNotMatch(html, /id="posts-close"/, "The public posts panel must not include a close button");
+assert.doesNotMatch(posts, /closeButton/, "The public posts module must not depend on a close button");
 assert.match(posts, /panel\.setAttribute\("aria-label", t\("المنشورات العامة", "Public posts"\)\)/, "The public posts panel label must follow the selected language");
-assert.match(app, /tab\.setAttribute\("aria-label", tab\.id === "posts-tab" \? label :/, "The public posts tab must not append positional speech hints");
+assert.match(app, /tab\.setAttribute\("aria-posinset", String\(index \+ 1\)\)/, "Every primary tab, including public posts, must expose its position");
+assert.match(app, /tab\.setAttribute\("aria-label", `${label}، ${index \+ 1} من ${total}`)/, "Every primary tab, including public posts, must announce its position");
 assert.ok(channels.includes('panel.removeAttribute("aria-label")') && communities.includes('panel.removeAttribute("aria-label")'),
   "Tab panels must use their existing aria-labelledby relationship without a duplicate label");
 assert.ok(communities.includes('setAttr(postsList, "aria-label", "منشورات المجتمع", "Community posts")'),
