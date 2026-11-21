@@ -2,7 +2,6 @@ const $ = selector => document.querySelector(selector);
 
 export function initMersalPosts({ supabase, getCurrentUser, announce, safeText }) {
   const panel = $("#posts-panel");
-  const closeButton = $("#posts-close");
   const refreshButton = $("#posts-refresh");
   const form = $("#public-post-form");
   const bodyInput = $("#public-post-body");
@@ -29,8 +28,6 @@ export function initMersalPosts({ supabase, getCurrentUser, announce, safeText }
   function localize() {
     if (!panel) return;
     panel.setAttribute("aria-label", t("المنشورات العامة", "Public posts"));
-    closeButton.textContent = t("إغلاق المنشورات", "Close posts");
-    closeButton.setAttribute("aria-label", closeButton.textContent);
     refreshButton.textContent = t("تحديث المنشورات", "Refresh posts");
     refreshButton.setAttribute("aria-label", refreshButton.textContent);
     const label = form.querySelector("label[for='public-post-body']");
@@ -470,7 +467,6 @@ export function initMersalPosts({ supabase, getCurrentUser, announce, safeText }
     mediaName.textContent = file ? t("المرفق المحدد: ", "Selected attachment: ") + file.name : "";
   });
   refreshButton.addEventListener("click", () => { void loadFeed(); });
-  closeButton.addEventListener("click", () => close());
   panel.addEventListener("keydown", event => {
     if (event.key === "Escape") close();
   });
@@ -482,7 +478,7 @@ export function initMersalPosts({ supabase, getCurrentUser, announce, safeText }
     panel.hidden = false;
     document.body.classList.add("posts-open");
     localize();
-    closeButton.focus();
+    bodyInput.focus();
     await loadFeed();
     await startRealtime();
   }
