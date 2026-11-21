@@ -752,6 +752,27 @@
         </div>
       </div>
     </section>
+    <section id="posts-panel" class="posts-panel" role="tabpanel" aria-labelledby="posts-tab" tabindex="-1" hidden>
+      <div class="posts-card">
+        <button id="posts-close" type="button" class="quiet-button" aria-label="إغلاق المنشورات العامة">إغلاق المنشورات</button>
+        <h2 id="posts-title" class="posts-title" tabindex="-1">المنشورات العامة</h2>
+        <p id="posts-intro" class="posts-intro">شارك أفكارك وصورك وفيديوهاتك مع جميع أعضاء مرسال.</p>
+        <form id="public-post-form" class="public-post-form">
+          <label for="public-post-body">اكتب منشورًا للجميع</label>
+          <textarea id="public-post-body" rows="4" maxlength="5000" placeholder="بماذا تفكر؟"></textarea>
+          <label for="public-post-media">إرفاق صورة أو فيديو (اختياري)</label>
+          <input id="public-post-media" type="file" accept="image/*,video/mp4,video/quicktime,video/webm">
+          <p id="public-post-media-name" class="public-post-media-name" aria-live="polite"></p>
+          <p class="posts-help">الحد الأقصى لحجم الصورة أو الفيديو 50 ميغابايت.</p>
+          <button id="public-post-submit" type="submit" class="primary-button">نشر المنشور</button>
+        </form>
+        <div class="posts-feed-toolbar">
+          <p id="posts-status" class="posts-status" aria-live="polite" aria-atomic="true"></p>
+          <button id="posts-refresh" type="button" class="quiet-button">تحديث المنشورات</button>
+        </div>
+        <ul id="public-posts-list" class="public-posts-list" aria-label="المنشورات العامة الأحدث أولًا"></ul>
+      </div>
+    </section>
     <section id="channels-panel" class="channels-panel" role="tabpanel" aria-labelledby="channels-tab" tabindex="0" hidden>
       <div class="channels-card">
         <button id="channels-close" type="button" class="quiet-button" aria-label="إغلاق القنوات" hidden>إغلاق</button>
@@ -891,6 +912,10 @@
       <button id="status-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="status-view" aria-label="الحالات" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="8.2" fill="none" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3.1" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
         <span class="bottom-nav-label" aria-hidden="true">الحالات</span>
+      </button>
+      <button id="posts-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="posts-panel" aria-label="المنشورات العامة" aria-selected="false">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 4.5h14a1.5 1.5 0 0 1 1.5 1.5v12a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 18V6A1.5 1.5 0 0 1 5 4.5Z" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M7.5 8h9M7.5 11.5h9M7.5 15h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <span class="bottom-nav-label" aria-hidden="true">المنشورات</span>
       </button>
       <button id="calls-tab" class="bottom-nav-button" type="button" role="tab" tabindex="-1" aria-controls="calls-view" aria-label="المكالمات" aria-selected="false">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6.6 3.5h3l1.4 4.1-2 1.7a15 15 0 0 0 5.7 5.7l1.7-2 4.1 1.4v3c0 1-.8 1.8-1.8 1.8A15.2 15.2 0 0 1 4.8 5.3c0-1 .8-1.8 1.8-1.8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
