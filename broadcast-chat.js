@@ -48,8 +48,13 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
     const footer = safe("div", "message-footer", "");
     footer.append(safe("time", "message-time", formatTime(row.created_at)));
     const state = safe("span", "message-delivery-state", "");
-    state.setAttribute("aria-label", (english() ? "Sent to " : "تم الإرسال إلى ") + (row.sent_count || 0) + (english() ? " recipients" : " مستلمين"));
-    state.append(safe("span", "message-status-text", (english() ? "Sent to " : "تم الإرسال إلى ") + (row.sent_count || 0) + (english() ? " recipients" : " مستلمين")));
+    const sentCount = Number(row.sent_count) || 0;
+    const failedCount = Number(row.failed_count) || 0;
+    const statusText = failedCount
+      ? (english() ? `Sent to ${sentCount} of ${sentCount + failedCount}; ${failedCount} failed` : `تم الإرسال إلى ${sentCount} من ${sentCount + failedCount}، وتعذر الإرسال إلى ${failedCount}`)
+      : (english() ? `Sent to all ${sentCount} recipients` : `تم الإرسال إلى جميع المستلمين وعددهم ${sentCount}`);
+    state.setAttribute("aria-label", statusText);
+    state.append(safe("span", "message-status-text", statusText));
     footer.append(state);
     item.append(footer);
     return item;
@@ -58,7 +63,7 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
   async function loadHistory(list) {
     messages.replaceChildren(safe("li", "empty-item", english() ? "Loading messages…" : "جارٍ تحميل رسائل القائمة…"));
     const { data, error } = await supabase.from("broadcast_messages")
-      .select("id,body,created_at,sent_count")
+      .select("id,body,created_at,sent_count,failed_count")
       .eq("broadcast_list_id", list.id)
       .order("created_at", { ascending: true })
       .limit(200);
@@ -104,6 +109,7 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
     sendButton.disabled = true;
     let sent = 0;
     let failed = 0;
+    const failureReasons = [];
     try {
       for (const member of members) {
         if (activeList === null) return;
@@ -119,6 +125,7 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
             .catch(pushError => console.warn("Broadcast push request:", pushError));
         } catch (deliveryError) {
           failed++;
+          failureReasons.push(deliveryError?.message || "سبب غير معروف");
           console.warn("Broadcast recipient delivery failed:", deliveryError?.message || deliveryError);
         }
       }
@@ -126,7 +133,7 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
         const saved = await supabase.from("broadcast_messages").insert({
           broadcast_list_id: activeList.id, sender_id: sender.id, body,
           sent_count: sent, failed_count: failed
-        }).select("id,body,created_at,sent_count").single();
+        }).select("id,body,created_at,sent_count,failed_count").single();
         if (saved.error) throw saved.error;
         if (activeList) {
           messages.querySelector(".empty-item")?.remove();
@@ -136,8 +143,8 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
       }
       input.value = "";
       say(
-        failed ? "تم إرسال الرسالة إلى " + sent + " مستلمين، وتعذر إرسالها إلى " + failed + "." : "تم إرسال الرسالة إلى جميع المستلمين وعددهم " + sent + ".",
-        failed ? "Message sent to " + sent + " recipients; " + failed + " failed." : "Message sent to all " + sent + " recipients."
+        failed ? "تم إرسال الرسالة إلى " + sent + " من " + members.length + "، وتعذر الإرسال إلى " + failed + ". السبب: " + (failureReasons[0] || "غير معروف") : "تم إرسال الرسالة إلى جميع المستلمين وعددهم " + sent + ".",
+        failed ? "Message sent to " + sent + " of " + members.length + "; " + failed + " failed. Reason: " + (failureReasons[0] || "unknown") : "Message sent to all " + sent + " recipients."
       );
     } finally {
       sending = false;
