@@ -166,6 +166,21 @@ assert.match(app, /const loadId = \+\+statusLoadSequence;[\s\S]*?if \(loadId !==
   "Stale status list requests must not overwrite a newer account or refresh");
 assert.match(app, /const requestId = \+\+statusViewerRequestId;[\s\S]*?if \(!isCurrent\(\)\) return;/,
   "Late status viewer requests must not replace the currently selected status");
+assert.match(app, /group_conversation_id: groupConversationId/,
+  "Status publishing must attach group statuses to their selected group");
+assert.match(app, /status_enabled,status_posting_by/,
+  "Group settings must load group status visibility and posting permissions");
+assert.match(html, /id="group-settings-status-enabled"/,
+  "Group settings must expose an accessible toggle for group statuses");
+assert.match(html, /id="group-settings-status-posting"/,
+  "Group settings must expose who can publish group statuses");
+assert.match(html, /id="group-status-publish"/,
+  "Group members must have a dedicated action to publish group statuses");
+const groupStatusMigration = readFileSync(new URL("../supabase/migrations/20261126190000_add_group_statuses_and_permissions.sql", import.meta.url), "utf8");
+assert.match(groupStatusMigration, /private\.can_view_status_item[\s\S]*?s\.group_conversation_id[\s\S]*?public\.conversation_members/,
+  "Group status visibility must be enforced by database membership checks");
+assert.match(groupStatusMigration, /status_posting_by[\s\S]*?private\.is_group_admin/,
+  "Group status publishing permissions must be enforced in the database");
 assert.match(app, /function closeStatusViewer\(\) \{\s*statusViewerRequestId\+\+;/,
   "Closing a status viewer must invalidate pending requests");
 assert.match(channels, /await stopPostsRealtime\(\);\s*if \(activeChannel\?\.id !== channelId \|\| detailView\.hidden \|\| panel\.hidden\) return;/,
