@@ -1729,7 +1729,6 @@ const groupSettingsInfoSection = $("#group-settings-info");
 const groupSettingsApprovalCheckbox = $("#group-settings-approval");
 const groupSettingsStatusEnabledCheckbox = $("#group-settings-status-enabled");
 const groupSettingsStatusPostingSelect = $("#group-settings-status-posting");
-const groupStatusPublishButton = $("#group-status-publish");
 const groupInfoStatusPublishButton = $("#group-info-status-publish");
 let groupStatusPublishingAllowed = false;
 const groupJoinRequestsSection = $("#group-join-requests-section");
@@ -5874,12 +5873,10 @@ function updateGroupSettingsSaveButton() {
     groupSettingsStatusEnabledCheckbox.disabled || groupSettingsStatusPostingSelect.disabled;
 }
 function updateGroupStatusPublishButton(canManage = false) {
-  if (!groupStatusPublishButton) return;
   groupStatusPublishingAllowed = Boolean(
     groupSettingsStatusEnabledCheckbox?.checked &&
     (groupSettingsStatusPostingSelect?.value === "everyone" || canManage)
   );
-  groupStatusPublishButton.hidden = !groupStatusPublishingAllowed;
   if (groupInfoStatusPublishButton) groupInfoStatusPublishButton.hidden = !groupStatusPublishingAllowed;
 }
 async function openGroupSettings() {
@@ -5903,7 +5900,6 @@ async function openGroupSettings() {
   groupSettingsStatusEnabledCheckbox.disabled = true;
   groupSettingsStatusPostingSelect.disabled = true;
   groupSettingsSaveButton.disabled = true;
-  groupStatusPublishButton.hidden = true;
   try {
     const permissions = await getCurrentGroupPermissions();
     if (!activeConversation?.is_group || activeConversation.id !== conversationId) {
@@ -5949,7 +5945,6 @@ function closeGroupSettings() {
   groupSettingsMemberManagement.hidden = true;
   groupSettingsAddMembers.hidden = true;
   groupStatusPublishingAllowed = false;
-  groupStatusPublishButton.hidden = true;
   document.body.classList.remove("group-settings-open");
   const target = groupSettingsReturnFocus?.isConnected ? groupSettingsReturnFocus : groupSettingsOpenButton;
   groupSettingsReturnFocus = null;
@@ -6006,10 +6001,6 @@ if (groupSettingsPanel) groupSettingsPanel.addEventListener("keydown", event => 
 });
 [groupSettingsSendSelect, groupSettingsAddSelect, groupSettingsApprovalCheckbox, groupSettingsStatusEnabledCheckbox, groupSettingsStatusPostingSelect].forEach(control => {
   control?.addEventListener("change", updateGroupSettingsSaveButton);
-});
-if (groupStatusPublishButton) groupStatusPublishButton.addEventListener("click", () => {
-  if (!groupStatusPublishingAllowed || !activeConversation?.is_group) return;
-  openStatusComposer(activeConversation.id, groupStatusPublishButton);
 });
 if (groupInfoStatusPublishButton) groupInfoStatusPublishButton.addEventListener("click", () => {
   if (!groupStatusPublishingAllowed || !activeConversation?.is_group) return;
