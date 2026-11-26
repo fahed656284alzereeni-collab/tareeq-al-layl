@@ -1027,6 +1027,20 @@
                   <p id="group-settings-approval-help" class="settings-help">لن ينضم أي شخص عبر الرابط حتى يوافق أحد المشرفين على طلبه.</p>
                   <button id="group-settings-save" type="button" class="quiet-button" disabled>حفظ إعدادات المجموعة</button>
                 </div>
+                <div id="group-settings-status-section" class="group-settings-section">
+                  <div id="group-settings-status-title" class="group-settings-section-title" role="none">حالات المجموعة</div>
+                  <label class="group-settings-checkbox-label" for="group-settings-status-enabled">
+                    <input id="group-settings-status-enabled" type="checkbox" aria-describedby="group-settings-status-help" disabled>
+                    <span>تفعيل حالات المجموعة</span>
+                  </label>
+                  <p id="group-settings-status-help" class="settings-help">تظهر حالات المجموعة لأعضاء المجموعة فقط وتنتهي بعد 24 ساعة.</p>
+                  <label for="group-settings-status-posting">من يستطيع نشر الحالات؟</label>
+                  <select id="group-settings-status-posting" disabled>
+                    <option value="everyone">جميع الأعضاء</option>
+                    <option value="admins">المشرفون فقط</option>
+                  </select>
+                  <button id="group-status-publish" type="button" class="primary-button" hidden>نشر حالة للمجموعة</button>
+                </div>
                 <div id="group-join-requests-section" class="group-settings-section group-join-requests-section" hidden>
                   <div class="group-settings-section-title" role="none">طلبات الانضمام</div>
                   <button id="group-join-requests-refresh" type="button" class="quiet-button">تحديث الطلبات</button>
