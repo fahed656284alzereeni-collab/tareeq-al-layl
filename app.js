@@ -7910,7 +7910,6 @@ async function loadMessages() {
   })().catch(error=>console.warn("Delivery/read receipt refresh:",error));
 }
 cancelReplyButton.addEventListener("click", () => { replyingToMessage = null; replyingTo.hidden = true; messageInput.focus(); });
-$("#refresh-chat").addEventListener("click", () => { void loadMessages(); });
 
 function localDateTimeValue(date) {
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
