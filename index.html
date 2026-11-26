@@ -23,7 +23,7 @@
     <link rel="stylesheet" href="/mersal-redesign.css?v=20261117-chat-refresh-v2">
     <link rel="stylesheet" href="/mersal-experience-v2.css?v=20261121-public-posts-v1">
   <script type="module" src="/auth-bootstrap.js?v=20261116-auth-bootstrap-v1"></script>
-  <script type="module" src="/app.js?v=20261126-group-info-status-button-v2"></script>
+  <script type="module" src="/app.js?v=20261126-conversation-info-scheduled-messages-v1"></script>
 </head>
 <body>
 <div class="topbar">
@@ -577,8 +577,6 @@
             <div class="chat-actions">
               <button id="voice-call-button" type="button" class="quiet-button">اتصال صوتي</button>
               <button id="video-call-button" type="button" class="quiet-button">مكالمة مرئية</button>
-              <button id="refresh-chat" type="button" class="quiet-button">تحديث الرسائل</button>
-              <button id="scheduled-messages-button" type="button" class="quiet-button" aria-controls="scheduled-messages-panel">الرسائل المجدولة</button>
             </div>
           </div>
           <section id="conversation-info" class="conversation-info" hidden>
@@ -639,6 +637,7 @@
               <label class="visually-hidden" for="conversation-search-input">البحث في الرسائل</label>
               <input id="conversation-search-input" class="conversation-search-input" type="search" autocomplete="off" placeholder="ابحث في الرسائل" aria-label="البحث في الرسائل">
               <button id="conversation-starred-messages-button" type="button" class="quiet-button" aria-controls="starred-messages-panel">الرسائل المميزة بنجمة</button>
+              <button id="scheduled-messages-button" type="button" class="quiet-button" aria-controls="scheduled-messages-panel">الرسائل المجدولة</button>
               <button id="conversation-info-export" type="button" class="quiet-button">تنزيل سجل المحادثة</button>
               <button id="conversation-info-mute" type="button" class="quiet-button">كتم إشعارات المحادثة</button>
 
