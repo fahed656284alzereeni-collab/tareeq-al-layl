@@ -247,7 +247,7 @@ const mersalTranslations = {
   "تعذر تحميل المجموعات.":"Could not load groups.",
   "تعذر تحميل المجموعات. حاول مرة أخرى.":"Could not load groups. Try again.",
 
-  "صورة المجموعة":"Group photo","وصف المجموعة":"Group description","وصف المجموعة (اختياري)":"Group description (optional)","أضف وصفًا يعرّف بالمجموعة":"Add a description for this group","يمكن أن يصل الوصف إلى 500 حرف.":"The description can be up to 500 characters.","حفظ وصف المجموعة":"Save group description","اختيار صورة للمجموعة":"Choose group photo","إضافة صورة للمجموعة (اختياري)":"Add a group photo (optional)","إزالة صورة المجموعة":"Remove group photo","إزالة الصورة المحددة":"Remove selected photo","حفظ صورة المجموعة":"Save group photo","معاينة صورة المجموعة":"Group photo preview","معاينة صورة المجموعة المحددة":"Selected group photo preview","لا يوجد وصف للمجموعة.":"No group description.","تم حفظ وصف المجموعة.":"Group description saved.","تم حفظ صورة المجموعة.":"Group photo saved.","تمت إزالة صورة المجموعة.":"Group photo removed.","تعذر حفظ وصف المجموعة:":"Could not save group description:","تعذر حفظ صورة المجموعة:":"Could not save group photo:","صورة المجموعة يجب أن تكون بصيغة JPG أو PNG أو WebP أو GIF.":"Group photo must be JPG, PNG, WebP, or GIF.","حجم صورة المجموعة أكبر من 50 ميغابايت.":"Group photo exceeds 50 MB.","حجم صورة المجموعة يجب ألا يتجاوز 50 ميغابايت.":"Group photo must not exceed 50 MB.","وصف المجموعة يجب ألا يتجاوز 500 حرف.":"Group description must not exceed 500 characters.","تعذر تحديث معلومات المجموعة:":"Could not update group information:","تاريخ الانضمام إلى مرسال":"Joined Mersal","تاريخ إنشاء المجموعة":"Group created",
+  "صورة المجموعة":"Group photo","حالات المجموعة":"Group statuses","تفعيل حالات المجموعة":"Enable group statuses","تظهر حالات المجموعة لأعضاء المجموعة فقط وتنتهي بعد 24 ساعة.":"Group statuses are visible only to group members and expire after 24 hours.","من يستطيع نشر الحالات؟":"Who can post statuses?","نشر حالة للمجموعة":"Post a group status","نشر حالة المجموعة":"Post group status","حالة المجموعة: ":"Group status: ","تم نشر حالة المجموعة.":"Group status posted.","إضافة حالة للمجموعة":"Add a group status","وصف المجموعة":"Group description","وصف المجموعة (اختياري)":"Group description (optional)","أضف وصفًا يعرّف بالمجموعة":"Add a description for this group","يمكن أن يصل الوصف إلى 500 حرف.":"The description can be up to 500 characters.","حفظ وصف المجموعة":"Save group description","اختيار صورة للمجموعة":"Choose group photo","إضافة صورة للمجموعة (اختياري)":"Add a group photo (optional)","إزالة صورة المجموعة":"Remove group photo","إزالة الصورة المحددة":"Remove selected photo","حفظ صورة المجموعة":"Save group photo","معاينة صورة المجموعة":"Group photo preview","معاينة صورة المجموعة المحددة":"Selected group photo preview","لا يوجد وصف للمجموعة.":"No group description.","تم حفظ وصف المجموعة.":"Group description saved.","تم حفظ صورة المجموعة.":"Group photo saved.","تمت إزالة صورة المجموعة.":"Group photo removed.","تعذر حفظ وصف المجموعة:":"Could not save group description:","تعذر حفظ صورة المجموعة:":"Could not save group photo:","صورة المجموعة يجب أن تكون بصيغة JPG أو PNG أو WebP أو GIF.":"Group photo must be JPG, PNG, WebP, or GIF.","حجم صورة المجموعة أكبر من 50 ميغابايت.":"Group photo exceeds 50 MB.","حجم صورة المجموعة يجب ألا يتجاوز 50 ميغابايت.":"Group photo must not exceed 50 MB.","وصف المجموعة يجب ألا يتجاوز 500 حرف.":"Group description must not exceed 500 characters.","تعذر تحديث معلومات المجموعة:":"Could not update group information:","تاريخ الانضمام إلى مرسال":"Joined Mersal","تاريخ إنشاء المجموعة":"Group created",
   "الملف الشخصي":"Profile","الحساب":"Account","رجوع":"Back","حفظ الاختيار":"Save selection","حفظ الاستثناءات":"Save exclusions","حفظ الملف الشخصي":"Save profile","رفع صورة شخصية":"Upload profile photo","إزالة الصورة الشخصية":"Remove profile photo",
   "عام":"General","الخصوصية":"Privacy","الدردشات":"Chats","الأدوات":"Tools","الأدوات، 3 من 4":"Tools, 3 of 4","مساحة الأدوات في مرسال.":"Mersal tools space.","لا توجد أدوات متاحة حاليًا.":"No tools are available right now.","الدردشات، 1 من 4":"Chats, 1 of 4","الحالات، 2 من 4":"Statuses, 2 of 4","الإعدادات، 4 من 4":"Settings, 4 of 4","المساعدة والدعم":"Help & Support","مركز المساعدة":"Help Center","كيف يمكننا مساعدتك؟":"How can we help?","إرسال طلب مساعدة جديد":"Send a new support request","طلباتي السابقة ومتابعتها":"My previous requests","صندوق الدعم للمطور":"Developer support inbox","الأسئلة الشائعة":"Frequently asked questions","كيف أتابع طلبي؟":"How can I track my request?","كيف أبلغ عن مشكلة؟":"How do I report a problem?","كيف أبلغ عن إساءة؟":"How do I report abuse?","كيف أقترح ميزة؟":"How do I suggest a feature?","هل يمكنني متابعة رد المطور؟":"Can I follow the developer's reply?","إرسال طلب جديد":"Send a new request","رجوع للمساعدة والدعم":"Back to Help & Support","نوع الطلب":"Request type","مساعدة عامة":"General help","مشكلة تقنية":"Technical issue","الإبلاغ عن خلل":"Report a bug","الإبلاغ عن إساءة أو محتوى":"Report abuse or content","اقتراح ميزة":"Suggest a feature","أخرى":"Other","عنوان الطلب":"Request subject","اكتب عنوانًا مختصرًا":"Enter a short subject","التفاصيل":"Details","اشرح طلبك أو المشكلة بالتفصيل":"Describe your request or issue","إرسال الطلب":"Submit request","طلباتي السابقة":"My previous requests","تصفية الطلبات حسب الحالة":"Filter requests by status","كل الطلبات":"All requests","جديدة":"New","قيد المراجعة":"In review","تم الحل":"Resolved","مغلقة":"Closed","تحديث الطلبات":"Refresh requests","جميع طلبات المستخدمين":"All user requests","تفاصيل الطلب":"Request details","رجوع إلى الطلبات":"Back to requests","تحديث حالة الطلب":"Update request status","جديد":"New","مغلق":"Closed","حفظ الحالة":"Save status","المراسلات":"Messages","اكتب ردًا":"Write a reply","اكتب رسالتك لفريق الدعم":"Write your message to support","إرسال الرد":"Send reply","المطور":"Developer","أنت":"You","لا توجد طلبات حتى الآن.":"No requests yet.","لا توجد طلبات تطابق التصفية.":"No requests match this filter.","لا توجد مراسلات بعد.":"No messages yet.","رقم الطلب":"Ticket number","الحالة":"Status","تم إرسال طلبك بنجاح.":"Your request was submitted successfully.","تم إرسال الرد.":"Your reply was sent.","تم تحديث حالة الطلب.":"Request status updated.","تعذر تحميل طلبات الدعم: ":"Could not load support requests: ","تعذر تحميل تفاصيل الطلب: ":"Could not load request details: ","تعذر إرسال الطلب: ":"Could not submit request: ","تعذر إرسال الرد: ":"Could not send reply: ","تعذر تحديث الحالة: ":"Could not update status: ","لم يتم العثور على الطلب.":"Request not found.","طلب جديد":"New request","قيد المراجعة":"In review","تم الحل":"Resolved","مغلق":"Closed","جارٍ تحميل الطلبات…":"Loading requests…","جارٍ تحميل المراسلات…":"Loading messages…","طلبات الدعم":"Support requests","الرد من المطور":"Reply from developer","رد من المستخدم":"User reply","لا يمكن فتح هذا الطلب.":"This request cannot be opened.","إرفاق صورة أو فيديو أو ملف PDF (اختياري)":"Attach an image, video, or PDF (optional)","يمكنك إرفاق صورة أو فيديو أو PDF، بحد أقصى 20 ميغابايت. سيُعرض المرفق داخل مرسال.":"You can attach an image, video, or PDF up to 20 MB. It will be displayed inside Mersal.","حجم نص الرسائل داخل المحادثة":"Message text size in chats","عادي":"Normal","كبير":"Large","كبير جدًا":"Extra large","يؤثر هذا الخيار في نصوص الرسائل داخل المحادثات فقط.":"This affects message text inside chats only.","إرسال الرسالة بالضغط على Enter":"Press Enter to send messages","عند التفعيل، يرسل Enter الرسالة، ويضيف Shift مع Enter سطرًا جديدًا.":"When enabled, Enter sends the message; Shift + Enter inserts a new line.","تأكيد قبل حذف الرسائل":"Confirm before deleting messages","عند إيقافه، تُحذف الرسائل مباشرة عند اختيار الحذف.":"When disabled, messages are deleted immediately when you choose Delete.","إظهار وقت الرسائل":"Show message timestamps","يؤدي إيقاف هذا الخيار إلى إخفاء أوقات الرسائل داخل المحادثة فقط.":"Turn this off to hide timestamps inside chats only.","تقليل المسافات بين الرسائل":"Compact message spacing","يعرض الرسائل بمسافات أقل لتسهيل استعراض المحادثات الطويلة.":"Use tighter spacing to make long conversations easier to browse.","تم تشغيل إظهار وقت الرسائل.":"Message timestamps are now shown.","تم إيقاف إظهار وقت الرسائل.":"Message timestamps are now hidden.","تم تفعيل العرض المضغوط للرسائل.":"Compact message spacing enabled.","تم إيقاف العرض المضغوط للرسائل.":"Compact message spacing disabled.","آخر ظهور":"Last seen","حالة الاتصال":"Online status","صورة الملف الشخصي":"Profile photo","النبذة":"About",
   "من يستطيع رؤية صورة ملفك الشخصي":"Who can see your profile photo","من يستطيع رؤية نبذتك":"Who can see your About",
@@ -1727,6 +1727,10 @@ const groupSettingsSaveButton = $("#group-settings-save");
 const groupSettingsPermissionsSection = $("#group-settings-permissions");
 const groupSettingsInfoSection = $("#group-settings-info");
 const groupSettingsApprovalCheckbox = $("#group-settings-approval");
+const groupSettingsStatusEnabledCheckbox = $("#group-settings-status-enabled");
+const groupSettingsStatusPostingSelect = $("#group-settings-status-posting");
+const groupStatusPublishButton = $("#group-status-publish");
+let groupStatusPublishingAllowed = false;
 const groupJoinRequestsSection = $("#group-join-requests-section");
 const groupJoinRequestsList = $("#group-join-requests-list");
 const groupJoinRequestsStatus = $("#group-join-requests-status");
@@ -4318,6 +4322,8 @@ createGroupButton.addEventListener("click",async()=>{
 
 let selectedStatusKind = "text";
 let selectedStatusFile = null;
+let selectedStatusGroupConversationId = null;
+let statusComposerReturnFocus = null;
 let statusExpiryTimer = null;
 let statusLoadSequence = 0;
 let statusViewerRequestId = 0;
@@ -4333,7 +4339,7 @@ async function loadStatuses() {
   const userId = currentUser.id;
   if (statusExpiryTimer) clearTimeout(statusExpiryTimer);
   const { data, error } = await supabase.from("statuses")
-    .select("id,user_id,kind,content,media_path,media_type,created_at,expires_at")
+    .select("id,user_id,kind,content,media_path,media_type,created_at,expires_at,group_conversation_id")
     .gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false });
   if (loadId !== statusLoadSequence || currentUser?.id !== userId) return;
   if (error) throw error;
@@ -4345,36 +4351,59 @@ async function loadStatuses() {
     }, Math.max(1000, nextExpiry - Date.now() + 1000));
   }
   const ids = [...new Set(rows.map(row => row.user_id))];
+  const groupIds = [...new Set(rows.map(row => row.group_conversation_id).filter(Boolean))];
   let profiles = new Map();
+  let groupNames = new Map();
   if (ids.length) {
     const result = await supabase.from("profiles").select("id,display_name").in("id", ids);
     if (loadId !== statusLoadSequence || currentUser?.id !== userId) return;
     if (result.error) throw result.error;
     profiles = new Map((result.data || []).map(profile => [profile.id, profile]));
   }
+  if (groupIds.length) {
+    const result = await supabase.from("conversations").select("id,group_name").in("id", groupIds);
+    if (loadId !== statusLoadSequence || currentUser?.id !== userId) return;
+    if (result.error) console.warn("تعذر تحميل أسماء مجموعات الحالات:", result.error.message);
+    else groupNames = new Map((result.data || []).map(group => [group.id, group.group_name || "مجموعة"]));
+  }
   if (loadId !== statusLoadSequence || currentUser?.id !== userId) return;
   statusList.replaceChildren();
   if (!rows.length) { statusList.append(safeText("li", "empty-item", "لا توجد حالات حاليًا.")); return; }
   for (const row of rows) {
     const own = row.user_id === currentUser.id;
-    const name = own ? "حالتي" : displayName(profiles.get(row.user_id));
+    const author = own ? "أنت" : displayName(profiles.get(row.user_id));
+    const name = row.group_conversation_id
+      ? "حالة المجموعة: " + (groupNames.get(row.group_conversation_id) || "مجموعة") + "، من " + author
+      : own ? "حالتي" : author;
     const button = safeText("button", "status-entry", name + "، " + statusKindLabel(row.kind) + "، " + statusTimeLabel(row.created_at));
     button.type = "button";
     button.addEventListener("click", () => { void openStatusViewer(row, name, button); });
     const item = document.createElement("li"); item.append(button); statusList.append(item);
   }
 }
-function openStatusComposer() {
+function openStatusComposer(groupConversationId = null, returnFocus = document.activeElement) {
   selectedStatusKind = "text"; selectedStatusFile = null;
+  selectedStatusGroupConversationId = groupConversationId;
+  statusComposerReturnFocus = returnFocus;
   statusTextInput.value = ""; statusImageInput.value = ""; statusVideoInput.value = "";
   $("#status-selected-media").textContent = "";
   $("#status-text-mode").setAttribute("aria-pressed", "true");
   $("#status-image-mode").setAttribute("aria-pressed", "false");
   $("#status-video-mode").setAttribute("aria-pressed", "false");
   statusTextInput.placeholder = "اكتب حالتك";
+  statusComposerPanel.setAttribute("aria-label", groupConversationId ? "إضافة حالة للمجموعة" : "إضافة حالة");
+  $("#publish-status-button").textContent = groupConversationId ? "نشر حالة المجموعة" : "نشر الحالة";
   statusComposerPanel.hidden = false; $("#close-status-composer").focus();
 }
-function closeStatusComposer() { statusComposerPanel.hidden = true; $("#add-status-button").focus(); }
+function closeStatusComposer() {
+  statusComposerPanel.hidden = true;
+  statusComposerPanel.setAttribute("aria-label", "إضافة حالة");
+  $("#publish-status-button").textContent = "نشر الحالة";
+  const target = statusComposerReturnFocus?.isConnected ? statusComposerReturnFocus : $("#add-status-button");
+  statusComposerReturnFocus = null;
+  selectedStatusGroupConversationId = null;
+  target?.focus?.();
+}
 function setStatusKind(kind) {
   selectedStatusKind = kind; selectedStatusFile = null;
   statusImageInput.value = ""; statusVideoInput.value = "";
@@ -4386,7 +4415,7 @@ function setStatusKind(kind) {
   if (kind === "image") statusImageInput.click();
   if (kind === "video") statusVideoInput.click();
 }
-$("#add-status-button").addEventListener("click", openStatusComposer);
+$("#add-status-button").addEventListener("click", () => openStatusComposer());
 $("#close-status-composer").addEventListener("click", closeStatusComposer);
 $("#status-text-mode").addEventListener("click", () => setStatusKind("text"));
 $("#status-image-mode").addEventListener("click", () => setStatusKind("image"));
@@ -4401,6 +4430,7 @@ statusVideoInput.addEventListener("change", () => {
 });
 $("#publish-status-button").addEventListener("click", async () => {
   if (!currentUser) return;
+  const groupConversationId = selectedStatusGroupConversationId;
   const content = statusTextInput.value.trim();
   if (selectedStatusKind === "text" && !content) { announce("اكتب نص الحالة أولًا.", "error"); statusTextInput.focus(); return; }
   if (selectedStatusKind !== "text" && !selectedStatusFile) { announce("اختر صورة أو فيديو أولًا.", "error"); return; }
@@ -4423,13 +4453,19 @@ $("#publish-status-button").addEventListener("click", async () => {
     const { error } = await supabase.from("statuses").insert({
       user_id: currentUser.id, kind: selectedStatusKind, content: content || null,
       media_path: uploadedPath, media_type: mediaType,
+      group_conversation_id: groupConversationId,
       expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
     });
     if (error) throw error;
     statusComposerPanel.hidden = true;
+    statusComposerPanel.setAttribute("aria-label", "إضافة حالة");
+    $("#publish-status-button").textContent = "نشر الحالة";
+    const focusTarget = statusComposerReturnFocus;
+    statusComposerReturnFocus = null;
+    selectedStatusGroupConversationId = null;
     await loadStatuses();
-    $("#add-status-button").focus();
-    announce("تم نشر الحالة.");
+    (focusTarget?.isConnected ? focusTarget : $("#add-status-button"))?.focus?.();
+    announce(groupConversationId ? "تم نشر حالة المجموعة." : "تم نشر الحالة.");
   } catch (error) {
     if (uploadedPath) await supabase.storage.from("mersal-attachments").remove([uploadedPath]);
     announce("تعذر نشر الحالة: " + (error.message || "حاول مرة أخرى."), "error");
@@ -5819,14 +5855,25 @@ function getGroupSettingsSnapshot() {
   return JSON.stringify({
     send_messages_by: groupSettingsSendSelect?.value || "everyone",
     add_members_by: groupSettingsAddSelect?.value || "admins",
-    require_admin_approval: Boolean(groupSettingsApprovalCheckbox?.checked)
+    require_admin_approval: Boolean(groupSettingsApprovalCheckbox?.checked),
+    status_enabled: Boolean(groupSettingsStatusEnabledCheckbox?.checked),
+    status_posting_by: groupSettingsStatusPostingSelect?.value || "everyone"
   });
 }
 function updateGroupSettingsSaveButton() {
   if (!groupSettingsSaveButton) return;
   groupSettingsSaveButton.disabled = groupSettingsSaving || !groupSettingsSnapshot ||
     getGroupSettingsSnapshot() === groupSettingsSnapshot ||
-    groupSettingsSendSelect.disabled || groupSettingsApprovalCheckbox.disabled;
+    groupSettingsSendSelect.disabled || groupSettingsApprovalCheckbox.disabled ||
+    groupSettingsStatusEnabledCheckbox.disabled || groupSettingsStatusPostingSelect.disabled;
+}
+function updateGroupStatusPublishButton(canManage = false) {
+  if (!groupStatusPublishButton) return;
+  groupStatusPublishingAllowed = Boolean(
+    groupSettingsStatusEnabledCheckbox?.checked &&
+    (groupSettingsStatusPostingSelect?.value === "everyone" || canManage)
+  );
+  groupStatusPublishButton.hidden = !groupStatusPublishingAllowed;
 }
 async function openGroupSettings() {
   if (!activeConversation?.is_group || !currentUser || !groupSettingsPanel) return;
@@ -5846,7 +5893,10 @@ async function openGroupSettings() {
   groupSettingsSendSelect.disabled = true;
   groupSettingsAddSelect.disabled = true;
   groupSettingsApprovalCheckbox.disabled = true;
+  groupSettingsStatusEnabledCheckbox.disabled = true;
+  groupSettingsStatusPostingSelect.disabled = true;
   groupSettingsSaveButton.disabled = true;
+  groupStatusPublishButton.hidden = true;
   try {
     const permissions = await getCurrentGroupPermissions();
     if (!activeConversation?.is_group || activeConversation.id !== conversationId) {
@@ -5856,7 +5906,7 @@ async function openGroupSettings() {
     const canManage = Boolean(permissions.isAdmin);
     if (groupSettingsPermissionsSection) groupSettingsPermissionsSection.hidden = !canManage;
     const { data, error } = await supabase.from("group_settings")
-      .select("send_messages_by,add_members_by,require_admin_approval")
+      .select("send_messages_by,add_members_by,require_admin_approval,status_enabled,status_posting_by")
       .eq("conversation_id", conversationId)
       .maybeSingle();
     if (error) throw error;
@@ -5867,10 +5917,15 @@ async function openGroupSettings() {
     groupSettingsSendSelect.value = data?.send_messages_by || "everyone";
     groupSettingsAddSelect.value = data?.add_members_by || "admins";
     groupSettingsApprovalCheckbox.checked = Boolean(data?.require_admin_approval);
+    groupSettingsStatusEnabledCheckbox.checked = data?.status_enabled !== false;
+    groupSettingsStatusPostingSelect.value = data?.status_posting_by || "everyone";
     groupSettingsSendSelect.disabled = !canManage;
     groupSettingsAddSelect.disabled = !canManage;
     groupSettingsApprovalCheckbox.disabled = !canManage;
+    groupSettingsStatusEnabledCheckbox.disabled = !canManage;
+    groupSettingsStatusPostingSelect.disabled = !canManage;
     groupJoinRequestsSection.hidden = !canManage;
+    updateGroupStatusPublishButton(canManage);
     groupSettingsSnapshot = getGroupSettingsSnapshot();
     updateGroupSettingsSaveButton();
     if (canManage) void loadGroupJoinRequests(conversationId);
@@ -5886,6 +5941,8 @@ function closeGroupSettings() {
   groupSettingsPanel.setAttribute("aria-hidden", "true");
   groupSettingsMemberManagement.hidden = true;
   groupSettingsAddMembers.hidden = true;
+  groupStatusPublishingAllowed = false;
+  groupStatusPublishButton.hidden = true;
   document.body.classList.remove("group-settings-open");
   const target = groupSettingsReturnFocus?.isConnected ? groupSettingsReturnFocus : groupSettingsOpenButton;
   groupSettingsReturnFocus = null;
@@ -5940,8 +5997,12 @@ if (groupSettingsCloseButton) groupSettingsCloseButton.addEventListener("click",
 if (groupSettingsPanel) groupSettingsPanel.addEventListener("keydown", event => {
   if (event.key === "Escape") closeGroupSettings();
 });
-[groupSettingsSendSelect, groupSettingsAddSelect, groupSettingsApprovalCheckbox].forEach(control => {
+[groupSettingsSendSelect, groupSettingsAddSelect, groupSettingsApprovalCheckbox, groupSettingsStatusEnabledCheckbox, groupSettingsStatusPostingSelect].forEach(control => {
   control?.addEventListener("change", updateGroupSettingsSaveButton);
+});
+if (groupStatusPublishButton) groupStatusPublishButton.addEventListener("click", () => {
+  if (!groupStatusPublishingAllowed || !activeConversation?.is_group) return;
+  openStatusComposer(activeConversation.id, groupStatusPublishButton);
 });
 if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", async () => {
   if (!activeConversation?.is_group || !currentUser || groupSettingsSaving || groupSettingsSendSelect.disabled) return;
@@ -5954,6 +6015,8 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
       send_messages_by: groupSettingsSendSelect.value,
       add_members_by: groupSettingsAddSelect.value,
       require_admin_approval: groupSettingsApprovalCheckbox.checked,
+      status_enabled: groupSettingsStatusEnabledCheckbox.checked,
+      status_posting_by: groupSettingsStatusPostingSelect.value,
       updated_by: currentUser.id
     };
     const { error } = await supabase.from("group_settings").upsert(payload, { onConflict: "conversation_id" });
@@ -5963,6 +6026,8 @@ if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", a
       const permissions = await getCurrentGroupPermissions();
       if (activeConversation?.id === conversationId) await loadGroupInviteLink(conversationId, permissions.isAdmin);
     }
+    const savedPermissions = await getCurrentGroupPermissions();
+    updateGroupStatusPublishButton(Boolean(savedPermissions.isAdmin));
     groupSettingsSnapshot = getGroupSettingsSnapshot();
     updateGroupSettingsSaveButton();
     announce("تم حفظ إعدادات المجموعة.");
