@@ -4157,8 +4157,11 @@ async function sendBroadcastList(list) {
       }).select("id").single();
       if (result.error) throw result.error;
       sent++;
-      const push = await supabase.functions.invoke("send-push", { body: { message_id: result.data.id } });
-      if (push.error) console.warn("Broadcast push failed:", push.error.message);
+      void supabase.functions.invoke("send-push", { body: { message_id: result.data.id } })
+        .then(({ error: pushError }) => {
+          if (pushError) console.warn("Broadcast push failed:", pushError.message);
+        })
+        .catch(pushError => console.warn("Broadcast push request failed:", pushError));
     } catch (sendError) {
       failed.push(sendError.message || member.recipient_id);
     }
