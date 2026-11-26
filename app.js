@@ -4091,6 +4091,8 @@ async function loadBroadcastLists() {
     const send = safeText("button", "broadcast-list-send", list.name + " — " + (counts.get(list.id) || 0) + (english ? " recipients" : " مستلمين"));
     send.type = "button";
     send.dataset.broadcastListId = list.id;
+    send.dataset.broadcastListName = list.name;
+    send.dataset.broadcastMemberCount = String(counts.get(list.id) || 0);
     // Broadcast list opening is handled by broadcast-chat.js; keep this button out of the legacy prompt-based sender.
     const remove = safeText("button", "quiet-button", english ? "Delete list" : "حذف قائمة الرسائل الجماعية");
     remove.type = "button";
