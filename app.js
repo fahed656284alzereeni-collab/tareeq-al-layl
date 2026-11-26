@@ -1730,6 +1730,7 @@ const groupSettingsApprovalCheckbox = $("#group-settings-approval");
 const groupSettingsStatusEnabledCheckbox = $("#group-settings-status-enabled");
 const groupSettingsStatusPostingSelect = $("#group-settings-status-posting");
 const groupStatusPublishButton = $("#group-status-publish");
+const groupInfoStatusPublishButton = $("#group-info-status-publish");
 let groupStatusPublishingAllowed = false;
 const groupJoinRequestsSection = $("#group-join-requests-section");
 const groupJoinRequestsList = $("#group-join-requests-list");
@@ -5700,12 +5701,17 @@ async function updateConversationInfo() {
   if (isGroup) {
     const { data: groupSettingsForAdd, error: groupSettingsForAddError } = await supabase
       .from("group_settings")
-      .select("add_members_by")
+      .select("add_members_by,status_enabled,status_posting_by")
       .eq("conversation_id", conversationId)
       .maybeSingle();
     if (!isCurrent()) return;
     if (groupSettingsForAddError) console.warn("تعذر تحميل صلاحية إضافة الأعضاء:", groupSettingsForAddError.message);
-    else groupAddPermission = groupSettingsForAdd?.add_members_by || "admins";
+    else {
+      groupAddPermission = groupSettingsForAdd?.add_members_by || "admins";
+      groupSettingsStatusEnabledCheckbox.checked = groupSettingsForAdd?.status_enabled !== false;
+      groupSettingsStatusPostingSelect.value = groupSettingsForAdd?.status_posting_by || "everyone";
+      updateGroupStatusPublishButton(isAdmin);
+    }
   }
   groupAddMembersButton.hidden = !(isAdmin || (isGroup && groupAddPermission === "everyone"));
   if (groupSettingsOpenButton) groupSettingsOpenButton.hidden = !isGroup;
@@ -5874,6 +5880,7 @@ function updateGroupStatusPublishButton(canManage = false) {
     (groupSettingsStatusPostingSelect?.value === "everyone" || canManage)
   );
   groupStatusPublishButton.hidden = !groupStatusPublishingAllowed;
+  if (groupInfoStatusPublishButton) groupInfoStatusPublishButton.hidden = !groupStatusPublishingAllowed;
 }
 async function openGroupSettings() {
   if (!activeConversation?.is_group || !currentUser || !groupSettingsPanel) return;
@@ -6003,6 +6010,10 @@ if (groupSettingsPanel) groupSettingsPanel.addEventListener("keydown", event => 
 if (groupStatusPublishButton) groupStatusPublishButton.addEventListener("click", () => {
   if (!groupStatusPublishingAllowed || !activeConversation?.is_group) return;
   openStatusComposer(activeConversation.id, groupStatusPublishButton);
+});
+if (groupInfoStatusPublishButton) groupInfoStatusPublishButton.addEventListener("click", () => {
+  if (!groupStatusPublishingAllowed || !activeConversation?.is_group) return;
+  openStatusComposer(activeConversation.id, groupInfoStatusPublishButton);
 });
 if (groupSettingsSaveButton) groupSettingsSaveButton.addEventListener("click", async () => {
   if (!activeConversation?.is_group || !currentUser || groupSettingsSaving || groupSettingsSendSelect.disabled) return;
