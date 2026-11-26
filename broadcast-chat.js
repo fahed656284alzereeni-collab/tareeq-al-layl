@@ -159,6 +159,9 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
       return;
     }
     activeList = { ...list, memberCount: members?.length || 0 };
+    for (const channel of supabase.getChannels()) {
+      if (String(channel.topic || "").includes("messages-")) void supabase.removeChannel(channel);
+    }
     returnButton = button;
     panel.hidden = true;
     chatEmpty.hidden = true;
@@ -214,6 +217,13 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
       return;
     }
     void sendToList(body).catch(error => say("تعذر إرسال الرسالة: " + (error.message || "حاول مرة أخرى."), "Could not send message: " + (error.message || "Try again.")));
+  }, true);
+
+  titleButton?.addEventListener("click", event => {
+    if (!activeList) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    say("هذه معلومات قائمة الرسائل الجماعية. عدد المستلمين: " + activeList.memberCount, "Broadcast list. Recipients: " + activeList.memberCount);
   }, true);
 
   backButton.addEventListener("click", event => {
