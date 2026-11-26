@@ -4085,6 +4085,7 @@ async function loadBroadcastLists() {
     item.className = "broadcast-list-item";
     const send = safeText("button", "broadcast-list-send", list.name + " — " + (counts.get(list.id) || 0) + (english ? " recipients" : " مستلمين"));
     send.type = "button";
+    send.dataset.broadcastListId = list.id;
     send.addEventListener("click", () => { void sendBroadcastList(list); });
     const remove = safeText("button", "quiet-button", english ? "Delete list" : "حذف قائمة الرسائل الجماعية");
     remove.type = "button";
