@@ -146,19 +146,10 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
     }
   }
 
-  async function openList(list, button) {
-    const { data: userResult, error: userError } = await supabase.auth.getUser();
-    if (userError || !userResult?.user) {
-      say("يرجى تسجيل الدخول مجددًا.", "Please sign in again.");
-      return;
-    }
-    const { data: members, error } = await supabase.from("broadcast_list_members")
-      .select("recipient_id").eq("broadcast_list_id", list.id);
-    if (error) {
-      say("تعذر فتح قائمة الرسائل الجماعية: " + error.message, "Could not open broadcast list: " + error.message);
-      return;
-    }
-    activeList = { ...list, memberCount: members?.length || 0 };
+  function openList(list, button) {
+    // Render the conversation synchronously; network requests must never block opening.
+    activeList = { ...list, memberCount: Number(list.memberCount) || 0 };
+    const openedListId = activeList.id;
     for (const channel of supabase.getChannels()) {
       if (String(channel.topic || "").includes("messages-")) void supabase.removeChannel(channel);
     }
@@ -179,8 +170,24 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
     input.disabled = false;
     input.placeholder = english() ? "Write a message to the list…" : "اكتب رسالتك للقائمة…";
     messages.setAttribute("aria-label", english() ? "Broadcast list messages" : "رسائل القائمة الجماعية");
-    await loadHistory(activeList);
     titleButton.focus();
+    void loadHistory(activeList);
+    void supabase.from("broadcast_list_members").select("recipient_id")
+      .eq("broadcast_list_id", openedListId)
+      .then(({ data, error }) => {
+        if (activeList?.id !== openedListId) return;
+        if (error) {
+          say("تعذر تحميل عدد المستلمين: " + error.message, "Could not load recipient count: " + error.message);
+          return;
+        }
+        activeList.memberCount = data?.length || 0;
+        presence.textContent = english()
+          ? "Broadcast list · " + activeList.memberCount + " recipients"
+          : "قائمة رسائل جماعية · " + activeList.memberCount + " مستلمين";
+      })
+      .catch(error => {
+        if (activeList?.id === openedListId) say("تعذر تحميل عدد المستلمين: " + (error.message || ""), "Could not load recipient count.");
+      });
   }
 
   document.addEventListener("click", event => {
@@ -193,13 +200,12 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
       say("تعذر تحديد القائمة. حدّث الصفحة وحاول مرة أخرى.", "Could not identify the list. Refresh and try again.");
       return;
     }
-    void supabase.auth.getUser().then(async ({ data, error }) => {
-      if (error || !data?.user) throw error || new Error("انتهت جلسة تسجيل الدخول.");
-      const result = await supabase.from("broadcast_lists").select("id,name")
-        .eq("id", listId).eq("owner_id", data.user.id).single();
-      if (result.error) throw result.error;
-      await openList(result.data, button);
-    }).catch(error => say("تعذر فتح القائمة: " + (error.message || "حاول مرة أخرى."), "Could not open list: " + (error.message || "Try again.")));
+    const listName = button.dataset.broadcastListName || button.textContent.split(" — ")[0] || "قائمة الرسائل الجماعية";
+    openList({
+      id: listId,
+      name: listName,
+      memberCount: Number(button.dataset.broadcastMemberCount) || 0
+    }, button);
   }, true);
 
   form.addEventListener("submit", event => {
