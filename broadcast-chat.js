@@ -183,9 +183,9 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
     titleButton.focus();
   }
 
-  listHost.addEventListener("click", event => {
+  document.addEventListener("click", event => {
     const button = event.target.closest(".broadcast-list-send");
-    if (!button) return;
+    if (!button || !listHost.contains(button)) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     const listId = button.dataset.broadcastListId;
