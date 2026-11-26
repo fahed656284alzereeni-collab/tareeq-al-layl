@@ -130,7 +130,11 @@ assert.equal((app.match(/closeHelpSupportForNavigation\(\);/g) || []).length, 9,
   "Every primary tab must close the Help & Support overlay and stop its realtime subscription");
 assert.equal((app.match(/closeNewChatForNavigation\(\);/g) || []).length, 8,
   "Every primary tab must close the New Chat overlay before navigation");
-assert.match(app, /\.in\("status", \["pending", "failed"\]\)/,
+assert.match(html, /id="scheduled-messages-button"[^>]*aria-controls="scheduled-messages-panel"/, "Scheduled messages must be available from conversation information");
+assert.match(html, /id="conversation-info"[^]*id="scheduled-messages-button"/, "The scheduled-messages action must be inside conversation information");
+assert.doesNotMatch(html, /id="refresh-chat"|id="scheduled-messages-button"[^]*class="chat-actions"/, "The chat header must not show refresh or scheduled-message actions");
+assert.doesNotMatch(app, /\$\("#refresh-chat"\)/, "The removed refresh-messages button must not have an event handler");
+assert.match(app, /\.in\("status", \["pending", "failed"\]\)/
   "Scheduled messages must keep failed items visible to their sender");
 assert.match(app, /scheduled\.failure_reason/,
   "Failed scheduled messages must show the reason they were not sent");
