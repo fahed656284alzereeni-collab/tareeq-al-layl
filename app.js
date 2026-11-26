@@ -3396,6 +3396,11 @@ function openSettings() {
   document.body.classList.remove("tools-open");
   if (callsView) callsView.hidden = true;
   document.body.classList.remove("calls-open");
+  // Close an active private or broadcast chat before opening the settings overlay.
+  // The broadcast chat uses the same fullscreen body state and must run its own cleanup.
+  if (document.body.classList.contains("chat-fullscreen") && backToChatsButton) {
+    backToChatsButton.click();
+  }
   settingsReturnFocus = document.activeElement;
   settingsEmail.value = currentUser.email || "";
   textSizeSelect.value = localStorage.getItem("mersal-text-size") || "normal";
