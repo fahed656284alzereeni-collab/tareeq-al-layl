@@ -176,7 +176,7 @@ assert.match(html, /id="group-settings-status-posting"/,
   "Group settings must expose who can publish group statuses");
 assert.match(html, /id="group-status-publish"/,
   "Group members must have a dedicated action to publish group statuses");
-const groupStatusMigration = readFileSync(new URL("../supabase/migrations/20261126190000_add_group_statuses_and_permissions.sql", import.meta.url), "utf8");
+const groupStatusMigration = readFileSync(new URL("../supabase/migrations/20261126150621_add_group_statuses_and_permissions.sql", import.meta.url), "utf8");
 assert.match(groupStatusMigration, /private\.can_view_status_item[\s\S]*?s\.group_conversation_id[\s\S]*?public\.conversation_members/,
   "Group status visibility must be enforced by database membership checks");
 assert.match(groupStatusMigration, /status_posting_by[\s\S]*?private\.is_group_admin/,
