@@ -154,6 +154,12 @@ import { supabase } from "./supabase-client.js?v=20261116-auth-bootstrap-v1";
       if (String(channel.topic || "").includes("messages-")) void supabase.removeChannel(channel);
     }
     returnButton = button;
+    // A broadcast list can be opened from Settings. The settings overlay hides
+    // the workspace (body.settings-open .workspace), so close that layer before
+    // switching the workspace into the full-screen conversation.
+    const settingsPanel = $("#settings-panel");
+    if (settingsPanel && !settingsPanel.hidden) settingsPanel.hidden = true;
+    document.body.classList.remove("settings-open");
     panel.hidden = true;
     chatEmpty.hidden = true;
     chatView.hidden = false;
