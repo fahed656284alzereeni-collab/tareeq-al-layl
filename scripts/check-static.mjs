@@ -174,8 +174,10 @@ assert.match(html, /id="group-settings-status-enabled"/,
   "Group settings must expose an accessible toggle for group statuses");
 assert.match(html, /id="group-settings-status-posting"/,
   "Group settings must expose who can publish group statuses");
-assert.match(html, /id="group-status-publish"/,
-  "Group members must have a dedicated action to publish group statuses");
+assert.match(html, /id="group-info-status-publish"/,
+  "Group information must provide the dedicated action to publish group statuses");
+assert.doesNotMatch(html, /id="group-status-publish"/,
+  "Group settings must not contain a duplicate group status publishing action");
 const groupStatusMigration = readFileSync(new URL("../supabase/migrations/20261126150621_add_group_statuses_and_permissions.sql", import.meta.url), "utf8");
 assert.match(groupStatusMigration, /private\.can_view_status_item[\s\S]*?s\.group_conversation_id[\s\S]*?public\.conversation_members/,
   "Group status visibility must be enforced by database membership checks");
