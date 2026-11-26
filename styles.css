@@ -517,8 +517,7 @@ body.chat-fullscreen {
   height: 100dvh;
 }
 body.chat-fullscreen .topbar,
-body.chat-fullscreen #main-content > :not(#workspace),
-body.chat-fullscreen #bottom-navigation {
+body.chat-fullscreen #main-content > :not(#workspace) {
   display: none !important;
 }
 body.chat-fullscreen #main-content {
@@ -1083,7 +1082,7 @@ body.conversation-info-fullscreen .workspace.chat-open .conversation-info-list .
 body.group-member-options-fullscreen{overflow:hidden}
 
 
-/* Persistent, VoiceOver-friendly two-tab bottom navigation */
+/* Persistent, VoiceOver-friendly eight-tab bottom navigation */
 #main-content { padding-bottom: calc(88px + env(safe-area-inset-bottom)); }
 .bottom-navigation {
   position: fixed;
@@ -1091,7 +1090,7 @@ body.group-member-options-fullscreen{overflow:hidden}
   bottom: 0;
   z-index: 150;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(8, minmax(0, 1fr));
   gap: 10px;
   min-height: 76px;
   padding: 9px clamp(12px, 4vw, 28px) calc(9px + env(safe-area-inset-bottom));
@@ -1131,7 +1130,6 @@ body.settings-open .workspace { visibility: hidden; }
 .workspace.chat-open .chat-view {
   padding-bottom: calc(76px + env(safe-area-inset-bottom));
 }
-body.conversation-info-fullscreen .bottom-navigation { display: none; }
 :root[data-theme="light"] .bottom-navigation {
   border-color: #c4d1e2;
   background: #f7f9fcf5;
@@ -1340,7 +1338,7 @@ input::placeholder, textarea::placeholder { color: #c4d0e2; opacity: 1; }
 .attachment-choice { width: 100%; text-align: right; }
 .bottom-navigation {
   min-height: 88px;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 12px;
   padding: 10px clamp(12px, 4vw, 30px) calc(10px + env(safe-area-inset-bottom));
 }
@@ -2786,7 +2784,7 @@ body.conversation-info-fullscreen .conversation-info-list [hidden] {
 .calls-page { width:min(100%,900px); margin:0 auto; }
 .calls-back-button { min-height:48px; margin:0 0 16px; }
 body.calls-open { overflow:hidden; }
-body.calls-open #bottom-navigation { display:none !important; }
+body.calls-open #bottom-navigation { display:flex !important; visibility:visible !important; }
 body.calls-open #main-content { padding-bottom:0 !important; }
 .calls-intro { margin:0 0 18px; }
 .calls-page-title { margin:0 0 8px; font-size:clamp(1.45rem,4vw,2rem); font-weight:800; line-height:1.4; }
@@ -2801,7 +2799,7 @@ body.calls-open #main-content { padding-bottom:0 !important; }
 .calls-conversation-kind { color:var(--muted,#b8c4d8); font-size:.9rem; line-height:1.5; }
 .calls-start-button { flex:0 0 auto; min-width:126px; min-height:50px; }
 .calls-view :focus-visible { outline:3px solid var(--focus,#8db7ff); outline-offset:3px; }
-.bottom-navigation { grid-template-columns:repeat(5,minmax(0,1fr)) !important; gap:clamp(3px,1vw,10px); }
+.bottom-navigation { grid-template-columns:repeat(7,minmax(0,1fr)) !important; gap:clamp(3px,1vw,10px); }
 .bottom-nav-button { min-width:0; }
 @media(max-width:520px) {
   .calls-toolbar { grid-template-columns:minmax(0,1fr); }
@@ -2835,3 +2833,49 @@ body.calls-open #main-content { padding-bottom:0 !important; }
   .calls-start-actions .calls-start-button { width:100%; min-width:0; }
   .voice-call-video-grid { grid-template-columns:1fr; }
 }
+
+/* Keep destructive conversation and group actions together at the very bottom. */
+.conversation-danger-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  max-width: 760px;
+  margin: 22px auto 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+.conversation-danger-actions > button {
+  width: 100%;
+  min-height: 52px;
+}
+
+
+/* Mersal on-device PDF and Word conversion tool */
+.document-converter { display:grid; gap:12px; align-content:start; }
+.document-converter > label { display:block; margin:4px 0 -6px; font-weight:750; }
+.document-converter input[type="file"],
+.document-converter-select {
+  display:block; width:100%; min-height:52px; box-sizing:border-box; padding:12px 14px;
+  border:1px solid var(--border,#405273); border-radius:12px;
+  background:var(--surface-raised,#17243a); color:var(--text,#f5f7ff);
+  font:inherit; font-size:16px;
+}
+.document-converter input[type="file"] { padding:10px; }
+.document-converter input[type="file"]::file-selector-button {
+  min-height:38px; margin-inline-end:10px; padding:6px 12px; border:0; border-radius:8px;
+  background:var(--surface,#26384e); color:inherit; font:inherit;
+}
+.document-converter-status { min-height:3em; padding:12px; border:1px solid var(--border,#405273); border-radius:12px; background:var(--surface,#17243a); overflow-wrap:anywhere; }
+.document-converter-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+.document-converter-actions button { min-width:0; min-height:52px; }
+.document-converter :focus-visible { outline:3px solid var(--focus,#8db7ff); outline-offset:3px; }
+@media(max-width:520px) { .document-converter-actions { grid-template-columns:1fr; } }
+:root[data-theme="light"] .document-converter input[type="file"],
+:root[data-theme="light"] .document-converter-select { background:#fff; color:#20334d; }
+
+
+/* Accessible progress display for large document conversion. */
+.document-converter-progress { display:grid; gap:8px; margin:12px 0; }
+.document-converter-progress progress { display:block; width:100%; min-height:14px; border-radius:999px; }
+.document-converter-progress p { margin:0; }

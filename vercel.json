@@ -84,5 +84,16 @@
         }
       ]
     }
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "mersal-whatsapp-expansion": false
+    }
+  },
+  "crons": [
+    {
+      "path": "/api/converter/cleanup",
+      "schedule": "0 3 * * *"
+    }
   ]
 }

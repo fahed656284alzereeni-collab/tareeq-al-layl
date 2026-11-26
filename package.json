@@ -2,6 +2,18 @@
   "name": "mersal-v2",
   "version": "2.0.0",
   "private": true,
-  "description": "واجهة مرسال الجديدة — تطبيق ويب ثابت على Cloudflare Pages",
-  "type": "module"
+  "description": "واجهة مرسال الجديدة — تطبيق ويب ثابت مستضاف على Vercel",
+  "type": "module",
+  "scripts": {
+    "check": "node --check app.js && node --check broadcast-chat.js && node --check tools.js && node --check channels.js && node --check communities.js && node --check posts.js && node --check api/converter/worker.js && node --check api/converter/upload.js && node --check api/converter/cleanup.js && node --check worker/server.mjs && node scripts/check-static.mjs",
+    "test": "npm run check",
+    "build": "npm run check"
+  },
+  "engines": {
+    "node": "24.x"
+  },
+  "dependencies": {
+    "@vercel/sandbox": "4.0.0",
+    "@vercel/blob": "2.9.0"
+  }
 }

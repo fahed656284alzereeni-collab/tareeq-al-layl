@@ -1,0 +1,2 @@
+create index if not exists public_post_comments_author_created_idx on public.public_post_comments(author_id, created_at desc);
+create index if not exists public_post_reports_reporter_created_idx on public.public_post_reports(reporter_id, created_at desc);
